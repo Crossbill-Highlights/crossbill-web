@@ -15,13 +15,19 @@ export interface HighlightCardProps {
 const previewLength = 200;
 
 export const HighlightCard = ({ highlight }: HighlightCardProps) => {
+  const startsWithLowercase =
+    highlight.text.length > 0 &&
+    highlight.text[0] === highlight.text[0].toLowerCase() &&
+    highlight.text[0] !== highlight.text[0].toUpperCase();
+  const formattedText = startsWithLowercase ? `...${highlight.text}` : highlight.text;
+
   const previewText =
-    highlight.text.length > previewLength
-      ? highlight.text.substring(0, previewLength) + '...'
-      : highlight.text;
+    formattedText.length > previewLength
+      ? formattedText.substring(0, previewLength) + '...'
+      : formattedText;
 
   const [isExpanded, setExpanded] = useState(false);
-  const isExpandable = highlight.text.length > previewLength;
+  const isExpandable = formattedText.length > previewLength;
 
   return (
     <HoverableCard
@@ -76,7 +82,7 @@ export const HighlightCard = ({ highlight }: HighlightCardProps) => {
                   pl: 4.5,
                 }}
               >
-                {highlight.text.length > previewLength && highlight.text.substring(previewLength)}
+                {formattedText.length > previewLength && formattedText.substring(previewLength)}
               </Typography>
             </Collapse>
 
