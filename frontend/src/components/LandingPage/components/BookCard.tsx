@@ -1,3 +1,4 @@
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { Box, CardContent, Typography } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 import type { BookWithHighlightCount } from '../../../api/generated/model';
@@ -8,6 +9,10 @@ export interface BookCardProps {
 }
 
 export const BookCard = ({ book }: BookCardProps) => {
+  // Get the API base URL for cover images
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  const coverUrl = book.cover ? `${apiUrl}${book.cover}` : null;
+
   return (
     <Link
       to="/book/$bookId"
@@ -21,6 +26,49 @@ export const BookCard = ({ book }: BookCardProps) => {
           flexDirection: 'column',
         }}
       >
+        {/* Book Cover Image */}
+        <Box
+          sx={{
+            width: '100%',
+            height: 200,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: coverUrl ? 'transparent' : 'action.hover',
+            overflow: 'hidden',
+          }}
+        >
+          {coverUrl ? (
+            <img
+              src={coverUrl}
+              alt={`${book.title} cover`}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+              }}
+              onError={(e) => {
+                // Fallback to placeholder if image fails to load
+                e.currentTarget.style.display = 'none';
+                const placeholder = e.currentTarget.nextSibling as HTMLElement;
+                if (placeholder) placeholder.style.display = 'flex';
+              }}
+            />
+          ) : null}
+          {/* Placeholder icon when no cover is available */}
+          <Box
+            sx={{
+              display: coverUrl ? 'none' : 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
+              height: '100%',
+            }}
+          >
+            <MenuBookIcon sx={{ fontSize: 80, color: 'text.disabled' }} />
+          </Box>
+        </Box>
+
         <CardContent>
           <Typography
             variant="h6"
