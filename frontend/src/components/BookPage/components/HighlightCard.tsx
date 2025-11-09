@@ -4,14 +4,8 @@ import {
   FormatQuote as QuoteIcon,
 } from '@mui/icons-material';
 import { Box, CardContent, Collapse, IconButton, Typography } from '@mui/material';
+import type { Highlight } from '@/api/generated/model';
 import { HoverableCard } from '../../common/HoverableCard';
-
-export interface Highlight {
-  id: number;
-  text: string;
-  datetime: string;
-  page?: number;
-}
 
 export interface HighlightCardProps {
   highlight: Highlight;
