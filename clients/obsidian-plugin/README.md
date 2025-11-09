@@ -43,6 +43,24 @@ Once this plugin is published:
 2. Click "Browse" and search for "Crossbill"
 3. Click Install, then Enable
 
+## Prerequisites
+
+### Backend CORS Configuration
+
+The Crossbill backend must allow CORS requests from the Obsidian plugin. By default, the backend allows all origins (`*`), which works for desktop applications like Obsidian.
+
+If you need to restrict CORS origins, set the `CORS_ORIGINS` environment variable in your backend:
+
+```bash
+# In backend/.env or as environment variable
+CORS_ORIGINS=*  # Allow all origins (default, recommended for Obsidian)
+
+# Or specify multiple origins (comma-separated):
+# CORS_ORIGINS=http://localhost:3000,http://localhost:8000,app://obsidian.md
+```
+
+After changing CORS settings, restart your Crossbill backend server.
+
 ## Configuration
 
 Before using the plugin, you need to configure your Crossbill server:
