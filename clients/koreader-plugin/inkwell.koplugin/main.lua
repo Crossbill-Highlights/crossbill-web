@@ -3,6 +3,7 @@ local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local DocSettings = require("docsettings")
+local Device = require("device")
 local socket = require("socket")
 local http = require("socket.http")
 local https = require("ssl.https")
@@ -79,7 +80,54 @@ function InkwellSync:configureServer()
     input_dialog:onShowKeyboard()
 end
 
+function InkwellSync:ensureWifiEnabled()
+    -- Enable WiFi if it's not already on (important for battery-saving devices like Pocketbook)
+    if Device:hasWifiToggle() and not Device:isConnected() then
+        logger.info("Inkwell: WiFi not connected, enabling...")
+        UIManager:show(InfoMessage:new{
+            text = _("Enabling WiFi..."),
+            timeout = 2,
+        })
+
+        -- Turn on WiFi
+        Device:turnOnWifi()
+
+        -- Wait for WiFi to connect (up to 10 seconds)
+        local max_wait = 10
+        local wait_interval = 0.5
+        local elapsed = 0
+
+        while elapsed < max_wait and not Device:isConnected() do
+            logger.dbg("Inkwell: Waiting for WiFi connection... ", elapsed, "s")
+            UIManager:scheduleIn(wait_interval, function() end)
+            UIManager:handleInput()
+            elapsed = elapsed + wait_interval
+        end
+
+        if Device:isConnected() then
+            logger.info("Inkwell: WiFi connected successfully")
+            return true
+        else
+            logger.warn("Inkwell: WiFi connection timeout")
+            UIManager:show(InfoMessage:new{
+                text = _("WiFi connection timeout. Please enable WiFi manually."),
+                timeout = 3,
+            })
+            return false
+        end
+    end
+
+    -- WiFi already connected or no WiFi toggle available
+    return true
+end
+
 function InkwellSync:syncCurrentBook()
+    -- Ensure WiFi is enabled before attempting to sync
+    if not self:ensureWifiEnabled() then
+        logger.err("Inkwell: Cannot sync - WiFi not available")
+        return
+    end
+
     UIManager:show(InfoMessage:new{
         text = _("Syncing highlights..."),
         timeout = 2,
