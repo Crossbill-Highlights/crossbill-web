@@ -2,6 +2,9 @@
 
 ## Code Quality Requirements
 
+### Working style
+- Always make logically separated commits when working on big changes
+
 ### Pre-Commit Checklist
 - **ALWAYS** run linter before making commits: `npm run lint:fix`
 - **ALWAYS** run formatter before making commits: `npm run format`
