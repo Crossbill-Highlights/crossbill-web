@@ -1,0 +1,14 @@
+# build
+main.js
+main.js.map
+*.js.map
+
+# dependencies
+node_modules/
+
+# IDEs
+.vscode/
+.idea/
+
+# misc
+.DS_Store

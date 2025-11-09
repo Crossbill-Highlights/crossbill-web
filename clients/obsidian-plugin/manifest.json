@@ -1,0 +1,10 @@
+{
+  "id": "crossbill",
+  "name": "Crossbill",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Import highlights from Crossbill into your Obsidian notes",
+  "author": "Crossbill",
+  "authorUrl": "https://github.com/Tumetsu/Crossbill",
+  "isDesktopOnly": false
+}
