@@ -1,14 +1,19 @@
 """Main FastAPI application."""
 
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from crossbill.config import get_settings
 from crossbill.routers import books, highlights
 
 settings = get_settings()
+
+# Directory for book cover images
+COVERS_DIR = Path(__file__).parent.parent / "book-covers"
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -31,6 +36,11 @@ app.add_middleware(
 # Register routers
 app.include_router(highlights.router, prefix=settings.API_V1_PREFIX)
 app.include_router(books.router, prefix=settings.API_V1_PREFIX)
+
+# Mount static files for book covers
+# Ensure directory exists before mounting
+COVERS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/media/covers", StaticFiles(directory=str(COVERS_DIR)), name="covers")
 
 
 @app.get("/")
