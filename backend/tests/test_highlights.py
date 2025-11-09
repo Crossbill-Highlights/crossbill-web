@@ -17,7 +17,6 @@ class TestHighlightsUpload:
                 "title": "Test Book",
                 "author": "Test Author",
                 "isbn": "1234567890",
-                "file_path": "/path/to/book.epub",
             },
             "highlights": [
                 {
@@ -48,7 +47,9 @@ class TestHighlightsUpload:
         assert "Successfully synced highlights" in data["message"]
 
         # Verify book was created in database
-        book = db_session.query(models.Book).filter_by(file_path="/path/to/book.epub").first()
+        book = (
+            db_session.query(models.Book).filter_by(title="Test Book", author="Test Author").first()
+        )
         assert book is not None
         assert book.title == "Test Book"
         assert book.author == "Test Author"
@@ -72,7 +73,6 @@ class TestHighlightsUpload:
             "book": {
                 "title": "Test Book Without Chapters",
                 "author": "Test Author",
-                "file_path": "/path/to/book_no_chapters.epub",
             },
             "highlights": [
                 {
@@ -94,7 +94,7 @@ class TestHighlightsUpload:
         # Verify no chapters were created
         book = (
             db_session.query(models.Book)
-            .filter_by(file_path="/path/to/book_no_chapters.epub")
+            .filter_by(title="Test Book Without Chapters", author="Test Author")
             .first()
         )
         chapters = db_session.query(models.Chapter).filter_by(book_id=book.id).all()
@@ -109,9 +109,8 @@ class TestHighlightsUpload:
         """Test that duplicate highlights are properly skipped."""
         payload = {
             "book": {
-                "title": "Test Book",
+                "title": "Duplicate Test Book",
                 "author": "Test Author",
-                "file_path": "/path/to/duplicate_test.epub",
             },
             "highlights": [
                 {
@@ -139,7 +138,7 @@ class TestHighlightsUpload:
         # Verify only one highlight exists in database
         book = (
             db_session.query(models.Book)
-            .filter_by(file_path="/path/to/duplicate_test.epub")
+            .filter_by(title="Duplicate Test Book", author="Test Author")
             .first()
         )
         highlights = db_session.query(models.Highlight).filter_by(book_id=book.id).all()
@@ -150,9 +149,8 @@ class TestHighlightsUpload:
         # First upload
         payload1 = {
             "book": {
-                "title": "Test Book",
+                "title": "Partial Duplicate Test Book",
                 "author": "Test Author",
-                "file_path": "/path/to/partial_duplicate_test.epub",
             },
             "highlights": [
                 {
@@ -173,9 +171,8 @@ class TestHighlightsUpload:
         # Second upload with mix of new and duplicate
         payload2 = {
             "book": {
-                "title": "Test Book",
+                "title": "Partial Duplicate Test Book",
                 "author": "Test Author",
-                "file_path": "/path/to/partial_duplicate_test.epub",
             },
             "highlights": [
                 {
@@ -197,15 +194,12 @@ class TestHighlightsUpload:
 
     def test_upload_updates_book_metadata(self, client: TestClient, db_session: Session) -> None:
         """Test that uploading to existing book updates its metadata."""
-        file_path = "/path/to/book_update_test.epub"
-
         # First upload
         payload1 = {
             "book": {
-                "title": "Original Title",
+                "title": "Update Test Book",
                 "author": "Original Author",
                 "isbn": "1111111111",
-                "file_path": file_path,
             },
             "highlights": [
                 {
@@ -219,13 +213,12 @@ class TestHighlightsUpload:
         assert response1.status_code == status.HTTP_200_OK
         book_id = response1.json()["book_id"]
 
-        # Second upload with updated metadata
+        # Second upload with updated metadata (same title and author means same book)
         payload2 = {
             "book": {
-                "title": "Updated Title",
-                "author": "Updated Author",
-                "isbn": "2222222222",
-                "file_path": file_path,
+                "title": "Update Test Book",
+                "author": "Original Author",
+                "isbn": "2222222222",  # Updated ISBN
             },
             "highlights": [
                 {
@@ -241,8 +234,8 @@ class TestHighlightsUpload:
 
         # Verify book metadata was updated
         book = db_session.query(models.Book).filter_by(id=book_id).first()
-        assert book.title == "Updated Title"
-        assert book.author == "Updated Author"
+        assert book.title == "Update Test Book"
+        assert book.author == "Original Author"
         assert book.isbn == "2222222222"
 
         # Verify both highlights exist
@@ -253,9 +246,8 @@ class TestHighlightsUpload:
         """Test uploading with empty highlights list."""
         payload = {
             "book": {
-                "title": "Test Book",
+                "title": "Empty Highlights Book",
                 "author": "Test Author",
-                "file_path": "/path/to/empty_highlights.epub",
             },
             "highlights": [],
         }
@@ -274,9 +266,8 @@ class TestHighlightsUpload:
         """Test that same text at different times creates separate highlights."""
         payload = {
             "book": {
-                "title": "Test Book",
+                "title": "Same Text Test Book",
                 "author": "Test Author",
-                "file_path": "/path/to/same_text_test.epub",
             },
             "highlights": [
                 {
@@ -317,7 +308,7 @@ class TestHighlightsUpload:
         payload = {
             "book": {
                 "title": "Test Book",
-                # Missing file_path
+                # Missing required fields are okay (author, isbn are optional)
             },
             "highlights": [
                 {
@@ -337,9 +328,8 @@ class TestHighlightsUpload:
         """Test that multiple highlights in same chapter only create one chapter."""
         payload = {
             "book": {
-                "title": "Test Book",
+                "title": "Chapter Dedup Test Book",
                 "author": "Test Author",
-                "file_path": "/path/to/chapter_dedup_test.epub",
             },
             "highlights": [
                 {
@@ -369,7 +359,7 @@ class TestHighlightsUpload:
         # Verify only one chapter was created
         book = (
             db_session.query(models.Book)
-            .filter_by(file_path="/path/to/chapter_dedup_test.epub")
+            .filter_by(title="Chapter Dedup Test Book", author="Test Author")
             .first()
         )
         chapters = db_session.query(models.Chapter).filter_by(book_id=book.id).all()

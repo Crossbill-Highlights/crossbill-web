@@ -17,7 +17,6 @@ class Book(Base):
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     author: Mapped[str | None] = mapped_column(String(500), nullable=True)
     isbn: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    file_path: Mapped[str] = mapped_column(String(1000), unique=True, index=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

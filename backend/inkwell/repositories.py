@@ -19,9 +19,9 @@ class BookRepository:
         """Initialize repository with database session."""
         self.db = db
 
-    def find_by_file_path(self, file_path: str) -> models.Book | None:
-        """Find a book by its file path."""
-        stmt = select(models.Book).where(models.Book.file_path == file_path)
+    def find_by_title_and_author(self, title: str, author: str | None) -> models.Book | None:
+        """Find a book by its title and author."""
+        stmt = select(models.Book).where(models.Book.title == title, models.Book.author == author)
         return self.db.execute(stmt).scalar_one_or_none()
 
     def create(self, book_data: schemas.BookCreate) -> models.Book:
@@ -44,8 +44,8 @@ class BookRepository:
         return book
 
     def get_or_create(self, book_data: schemas.BookCreate) -> models.Book:
-        """Get existing book by file path or create a new one."""
-        book = self.find_by_file_path(book_data.file_path)
+        """Get existing book by title and author or create a new one."""
+        book = self.find_by_title_and_author(book_data.title, book_data.author)
 
         if book:
             # Update metadata in case it changed

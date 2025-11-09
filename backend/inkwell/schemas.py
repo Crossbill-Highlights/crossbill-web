@@ -11,12 +11,10 @@ class BookBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500, description="Book title")
     author: str | None = Field(None, max_length=500, description="Book author")
     isbn: str | None = Field(None, max_length=20, description="Book ISBN")
-    file_path: str = Field(..., min_length=1, max_length=1000, description="Path to the book file")
 
 
 class BookCreate(BookBase):
     """Schema for creating a Book."""
-
 
 
 class Book(BookBase):
@@ -58,7 +56,6 @@ class HighlightBase(BaseModel):
 
 class HighlightCreate(HighlightBase):
     """Schema for creating a Highlight."""
-
 
 
 class Highlight(HighlightBase):
