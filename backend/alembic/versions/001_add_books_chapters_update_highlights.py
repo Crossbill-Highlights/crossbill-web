@@ -75,11 +75,7 @@ def upgrade() -> None:
     op.create_index(op.f("ix_chapters_id"), "chapters", ["id"], unique=False)
     op.create_index(op.f("ix_chapters_book_id"), "chapters", ["book_id"], unique=False)
 
-    # Update highlights table
-    # First, drop the existing highlights table if it exists
-    op.drop_table("highlights")
-
-    # Recreate highlights table with new structure
+    # Create highlights table
     op.create_table(
         "highlights",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -125,6 +121,9 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # Drop highlights table
+    op.drop_index(op.f("ix_highlights_chapter_id"), table_name="highlights")
+    op.drop_index(op.f("ix_highlights_book_id"), table_name="highlights")
+    op.drop_index(op.f("ix_highlights_id"), table_name="highlights")
     op.drop_table("highlights")
 
     # Drop chapters table
@@ -136,27 +135,3 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_books_file_path"), table_name="books")
     op.drop_index(op.f("ix_books_id"), table_name="books")
     op.drop_table("books")
-
-    # Recreate old highlights table
-    op.create_table(
-        "highlights",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("text", sa.Text(), nullable=False),
-        sa.Column("chapter", sa.String(length=500), nullable=True),
-        sa.Column("page", sa.Integer(), nullable=True),
-        sa.Column("note", sa.Text(), nullable=True),
-        sa.Column(
-            "created_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.text("now()"),
-            nullable=False,
-        ),
-        sa.Column(
-            "updated_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.text("now()"),
-            nullable=False,
-        ),
-        sa.PrimaryKeyConstraint("id"),
-    )
-    op.create_index(op.f("ix_highlights_id"), "highlights", ["id"], unique=False)
