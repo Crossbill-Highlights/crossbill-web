@@ -26,6 +26,7 @@ class Settings:
     # CORS
     CORS_ORIGINS: ClassVar[list[str]] = [
         "http://localhost:3000",
+        "http://localhost:5173",  # Vite dev server
         "http://localhost:8000",
     ]
 
