@@ -1,7 +1,6 @@
 import { BookmarkBorder as BookmarkIcon } from '@mui/icons-material';
 import { Alert, Box, Card, Container, Typography } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
-import { useState } from 'react';
 import { useGetBookDetailsApiV1BookBookIdGet } from '../../api/generated/books/books';
 import { SectionTitle } from '../common/SectionTitle';
 import { Spinner } from '../common/Spinner';
@@ -10,11 +9,6 @@ import { HighlightCard } from './components/HighlightCard';
 export const BookPage = () => {
   const { bookId } = useParams({ from: '/book/$bookId' });
   const { data: book, isLoading, isError } = useGetBookDetailsApiV1BookBookIdGet(Number(bookId));
-  const [expandedCard, setExpandedCard] = useState<number | null>(null);
-
-  const toggleCard = (id: number) => {
-    setExpandedCard(expandedCard === id ? null : id);
-  };
 
   const totalHighlights =
     book?.chapters?.reduce((sum, chapter) => sum + (chapter.highlights?.length || 0), 0) || 0;
@@ -116,12 +110,7 @@ export const BookPage = () => {
                 {chapter.highlights && chapter.highlights.length > 0 ? (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                     {chapter.highlights.map((highlight) => (
-                      <HighlightCard
-                        key={highlight.id}
-                        highlight={highlight}
-                        isExpanded={expandedCard === highlight.id}
-                        onToggle={toggleCard}
-                      />
+                      <HighlightCard key={highlight.id} highlight={highlight} />
                     ))}
                   </Box>
                 ) : (

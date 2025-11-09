@@ -5,21 +5,23 @@ import {
   FormatQuote as QuoteIcon,
 } from '@mui/icons-material';
 import { Box, CardContent, Collapse, IconButton, Typography } from '@mui/material';
+import { useState } from 'react';
 import { HoverableCard } from '../../common/HoverableCard';
 
 export interface HighlightCardProps {
   highlight: Highlight;
-  isExpanded: boolean;
-  onToggle: (id: number) => void;
 }
 
 const previewLength = 200;
 
-export const HighlightCard = ({ highlight, isExpanded, onToggle }: HighlightCardProps) => {
+export const HighlightCard = ({ highlight }: HighlightCardProps) => {
   const previewText =
     highlight.text.length > previewLength
       ? highlight.text.substring(0, previewLength) + '...'
       : highlight.text;
+
+  const [isExpanded, setExpanded] = useState(false);
+  const isExpandable = highlight.text.length > previewLength;
 
   return (
     <HoverableCard
@@ -28,7 +30,7 @@ export const HighlightCard = ({ highlight, isExpanded, onToggle }: HighlightCard
       }}
     >
       <CardContent
-        onClick={() => onToggle(highlight.id)}
+        onClick={() => (isExpandable ? setExpanded(!isExpanded) : null)}
         sx={{
           '&:last-child': { pb: 3 },
         }}
@@ -64,7 +66,6 @@ export const HighlightCard = ({ highlight, isExpanded, onToggle }: HighlightCard
               </Typography>
             </Box>
 
-            {/* Expanded Full Text */}
             <Collapse in={isExpanded}>
               <Typography
                 variant="body1"
@@ -117,18 +118,19 @@ export const HighlightCard = ({ highlight, isExpanded, onToggle }: HighlightCard
             </Box>
           </Box>
 
-          {/* Expand/Collapse Icon */}
-          <IconButton
-            size="small"
-            sx={{
-              color: 'primary.main',
-              transition: 'transform 0.2s',
-              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-              flexShrink: 0,
-            }}
-          >
-            <ChevronRightIcon />
-          </IconButton>
+          {isExpandable && (
+            <IconButton
+              size="small"
+              sx={{
+                color: 'primary.main',
+                transition: 'transform 0.2s',
+                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                flexShrink: 0,
+              }}
+            >
+              <ChevronRightIcon />
+            </IconButton>
+          )}
         </Box>
       </CardContent>
     </HoverableCard>
