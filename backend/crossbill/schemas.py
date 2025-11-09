@@ -106,7 +106,9 @@ class BookWithHighlightCount(BaseModel):
 class BooksListResponse(BaseModel):
     """Schema for paginated books list response."""
 
-    books: list[BookWithHighlightCount] = Field(..., description="List of books with highlight counts")
+    books: list[BookWithHighlightCount] = Field(
+        ..., description="List of books with highlight counts"
+    )
     total: int = Field(..., ge=0, description="Total number of books")
     offset: int = Field(..., ge=0, description="Current offset")
     limit: int = Field(..., ge=1, description="Current limit")
