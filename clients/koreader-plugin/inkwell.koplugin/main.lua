@@ -4,6 +4,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local DocSettings = require("docsettings")
 local socket = require("socket")
+local http = require("socket.http")
 local https = require("ssl.https")
 local ltn12 = require("ltn12")
 local socketutil = require("socketutil")
@@ -213,7 +214,15 @@ function InkwellSync:sendToServer(book_data, highlights)
             sink = ltn12.sink.table(response_body),
         }
 
-        local code, headers, status = socket.skip(1, https.request(request))
+        -- Use HTTP or HTTPS based on URL scheme
+        local code, headers, status
+        if self.settings.api_url:match("^https://") then
+            logger.dbg("Inkwell: Using HTTPS")
+            code, headers, status = socket.skip(1, https.request(request))
+        else
+            logger.dbg("Inkwell: Using HTTP")
+            code, headers, status = socket.skip(1, http.request(request))
+        end
         socketutil:reset_timeout()
 
         logger.dbg("Inkwell: Response code:", code)
