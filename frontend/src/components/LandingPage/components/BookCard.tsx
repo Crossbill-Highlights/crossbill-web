@@ -1,6 +1,7 @@
-import { Box, Card, CardContent, Typography } from '@mui/material';
+import { Box, CardContent, Typography } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 import type { BookWithHighlightCount } from '../../../api/generated/model';
+import { HoverableCard } from '../../common/HoverableCard';
 
 export interface BookCardProps {
   book: BookWithHighlightCount;
@@ -13,17 +14,12 @@ export const BookCard = ({ book }: BookCardProps) => {
       params={{ bookId: String(book.id) }}
       style={{ textDecoration: 'none', color: 'inherit' }}
     >
-      <Card
+      <HoverableCard
+        hoverEffect="lift"
         sx={{
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          transition: 'transform 0.2s, box-shadow 0.2s',
-          cursor: 'pointer',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: 3,
-          },
         }}
       >
         <CardContent>
@@ -39,7 +35,7 @@ export const BookCard = ({ book }: BookCardProps) => {
             </Typography>
           </Box>
         </CardContent>
-      </Card>
+      </HoverableCard>
     </Link>
   );
 };
