@@ -12,7 +12,8 @@ dependencies = [
     "uvicorn[standard] (>=0.38.0,<0.39.0)",
     "sqlalchemy (>=2.0.44,<3.0.0)",
     "alembic (>=1.17.1,<2.0.0)",
-    "psycopg[binary] (>=3.2.12,<4.0.0)"
+    "psycopg[binary] (>=3.2.12,<4.0.0)",
+    "psycopg2-binary (>=2.9.11,<3.0.0)"
 ]
 
 
@@ -20,15 +21,13 @@ dependencies = [
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[dependency-groups]
-dev = [
-    "ruff (>=0.14.4,<0.15.0)",
-    "black (>=25.9.0,<26.0.0)",
-    "mypy (>=1.18.2,<2.0.0)",
-    "pytest (>=8.2,<9)",
-    "pytest-asyncio (>=1.2.0,<2.0.0)",
-    "httpx (>=0.28.1,<0.29.0)"
-]
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.14.4"
+black = "^25.9.0"
+mypy = "^1.18.2"
+pytest = "^8.2"
+pytest-asyncio = "^1.2.0"
+httpx = "^0.28.1"
 
 [tool.ruff]
 line-length = 100
