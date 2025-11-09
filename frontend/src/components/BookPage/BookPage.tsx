@@ -83,6 +83,7 @@ export const BookPage = () => {
                               month: 'long',
                               day: 'numeric',
                             })}
+                            {highlight.page && ` • Page ${highlight.page}`}
                           </Typography>
                         </CardContent>
                       </Card>
