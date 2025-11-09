@@ -1,22 +1,22 @@
 /* Crossbill Plugin Styles */
 
 .crossbill-book-title {
-	font-weight: bold;
-	margin-bottom: 4px;
+  font-weight: bold;
+  margin-bottom: 4px;
 }
 
 .crossbill-book-author {
-	color: var(--text-muted);
-	display: block;
-	margin-bottom: 2px;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 2px;
 }
 
 .crossbill-chapter-name {
-	font-weight: 500;
-	margin-bottom: 4px;
+  font-weight: 500;
+  margin-bottom: 4px;
 }
 
 .crossbill-highlight-count {
-	color: var(--text-muted);
-	font-size: 0.9em;
+  color: var(--text-muted);
+  font-size: 0.9em;
 }

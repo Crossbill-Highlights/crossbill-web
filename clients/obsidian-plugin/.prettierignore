@@ -1,0 +1,5 @@
+# Build outputs
+*.js
+
+# Dependencies
+node_modules

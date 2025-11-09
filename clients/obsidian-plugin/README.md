@@ -14,18 +14,21 @@ This plugin allows you to import highlights from your Crossbill server directly 
 ### For Development
 
 1. Clone this repository or copy the plugin folder to your Obsidian vault's plugins directory:
+
    ```bash
    cd /path/to/your/vault/.obsidian/plugins/
    cp -r /path/to/Crossbill/clients/obsidian-plugin ./crossbill
    ```
 
 2. Install dependencies:
+
    ```bash
    cd crossbill
    npm install
    ```
 
 3. Build the plugin:
+
    ```bash
    npm run build
    ```
@@ -39,6 +42,7 @@ This plugin allows you to import highlights from your Crossbill server directly 
 ### From Release (Future)
 
 Once this plugin is published:
+
 1. Open Settings → Community Plugins
 2. Click "Browse" and search for "Crossbill"
 3. Click Install, then Enable
@@ -85,15 +89,17 @@ Highlights are imported in the following format:
 
 ```markdown
 ## Book Title
+
 **Author:** Author Name
 **Chapter:** Chapter Name
 
 ### Highlight 1
+
 > Highlighted text here
 
 **Note:** Any notes you made on the highlight
 
-*Page 42*
+_Page 42_
 
 ---
 ```
