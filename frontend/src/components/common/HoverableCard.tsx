@@ -8,12 +8,7 @@ export interface HoverableCardProps extends Omit<CardProps, 'sx'> {
   sx?: SxProps<Theme>;
 }
 
-export const HoverableCard = ({
-  hoverEffect = 'both',
-  sx,
-  children,
-  ...rest
-}: HoverableCardProps) => {
+export const HoverableCard = ({ sx, children, ...rest }: HoverableCardProps) => {
   return (
     <Card
       sx={{

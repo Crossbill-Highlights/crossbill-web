@@ -6,7 +6,11 @@ export interface SectionTitleProps {
   showDivider?: boolean;
 }
 
-export const SectionTitle = ({ children, component = 'h2', showDivider = false }: SectionTitleProps) => {
+export const SectionTitle = ({
+  children,
+  component = 'h2',
+  showDivider = false,
+}: SectionTitleProps) => {
   if (!showDivider) {
     return (
       <Typography variant="h3" component={component} gutterBottom sx={{ color: 'primary.dark' }}>
