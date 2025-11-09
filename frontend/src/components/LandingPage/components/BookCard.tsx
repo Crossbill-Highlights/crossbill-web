@@ -22,7 +22,12 @@ export const BookCard = ({ book }: BookCardProps) => {
         }}
       >
         <CardContent>
-          <Typography variant="h6" component="h3" gutterBottom>
+          <Typography
+            variant="h6"
+            component="h3"
+            gutterBottom
+            sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.5 }}
+          >
             {book.title}
           </Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
