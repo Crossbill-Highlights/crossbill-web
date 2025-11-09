@@ -7,15 +7,21 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from inkwell.database import Base, get_db
 from inkwell.main import app
+from inkwell.models import Book, Chapter, Highlight  # noqa: F401 - Import to register models
 
 # Test database URL (in-memory SQLite)
 TEST_DATABASE_URL = "sqlite:///:memory:"
 
-# Create test engine
-test_engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+# Create test engine with StaticPool to reuse the same connection
+test_engine = create_engine(
+    TEST_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
 
 # Create test session factory
 TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
