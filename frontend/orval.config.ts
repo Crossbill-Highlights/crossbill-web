@@ -14,6 +14,7 @@ export default defineConfig({
       mock: false,
       clean: true,
       prettier: true,
+      tsconfig: './tsconfig.json',
       override: {
         mutator: {
           path: './src/api/axios-instance.ts',

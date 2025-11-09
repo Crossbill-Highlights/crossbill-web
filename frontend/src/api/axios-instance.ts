@@ -1,7 +1,9 @@
 import Axios, { AxiosRequestConfig } from 'axios';
 
+// Default baseURL - can be overridden by setting AXIOS_INSTANCE.defaults.baseURL
+// In development, this points to the local backend server
 export const AXIOS_INSTANCE = Axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  baseURL: 'http://localhost:8000',
   headers: {
     'Content-Type': 'application/json',
   },
