@@ -29,8 +29,12 @@ class Book(Base):
     )
 
     # Relationships
-    highlights: Mapped[list["Highlight"]] = relationship(back_populates="book", cascade="all, delete-orphan")
-    chapters: Mapped[list["Chapter"]] = relationship(back_populates="book", cascade="all, delete-orphan")
+    highlights: Mapped[list["Highlight"]] = relationship(
+        back_populates="book", cascade="all, delete-orphan"
+    )
+    chapters: Mapped[list["Chapter"]] = relationship(
+        back_populates="book", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         """String representation of Book."""
@@ -43,7 +47,9 @@ class Chapter(Base):
     __tablename__ = "chapters"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    book_id: Mapped[int] = mapped_column(ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False)
+    book_id: Mapped[int] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    )
     name: Mapped[str] = mapped_column(String(500), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -60,9 +66,7 @@ class Chapter(Base):
     highlights: Mapped[list["Highlight"]] = relationship(back_populates="chapter")
 
     # Unique constraint: chapters are unique within a book
-    __table_args__ = (
-        UniqueConstraint('book_id', 'name', name='uq_chapter_per_book'),
-    )
+    __table_args__ = (UniqueConstraint("book_id", "name", name="uq_chapter_per_book"),)
 
     def __repr__(self) -> str:
         """String representation of Chapter."""
@@ -75,8 +79,12 @@ class Highlight(Base):
     __tablename__ = "highlights"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    book_id: Mapped[int] = mapped_column(ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False)
-    chapter_id: Mapped[int | None] = mapped_column(ForeignKey("chapters.id", ondelete="SET NULL"), index=True, nullable=True)
+    book_id: Mapped[int] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    chapter_id: Mapped[int | None] = mapped_column(
+        ForeignKey("chapters.id", ondelete="SET NULL"), index=True, nullable=True
+    )
     text: Mapped[str] = mapped_column(Text, nullable=False)
     page: Mapped[int | None] = mapped_column(nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -96,9 +104,7 @@ class Highlight(Base):
     chapter: Mapped["Chapter | None"] = relationship(back_populates="highlights")
 
     # Unique constraint for deduplication: same text at same time in same book
-    __table_args__ = (
-        UniqueConstraint('book_id', 'text', 'datetime', name='uq_highlight_dedup'),
-    )
+    __table_args__ = (UniqueConstraint("book_id", "text", "datetime", name="uq_highlight_dedup"),)
 
     def __repr__(self) -> str:
         """String representation of Highlight."""
