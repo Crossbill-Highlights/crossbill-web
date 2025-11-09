@@ -105,3 +105,6 @@ addopts = [
     "--strict-markers",
     "--tb=short",
 ]
+
+[tool.poetry]
+package-mode = false
