@@ -81,52 +81,31 @@ function InkwellSync:configureServer()
 end
 
 function InkwellSync:ensureWifiEnabled()
-    -- Enable WiFi if it's not already on (important for battery-saving devices like Pocketbook)
-    if Device:hasWifiToggle() and not Device:isConnected() then
-        logger.info("Inkwell: WiFi not connected, enabling...")
+    -- Enable WiFi if device supports it (important for battery-saving devices like Pocketbook)
+    if Device:hasWifiToggle() then
+        logger.info("Inkwell: Ensuring WiFi is enabled...")
         UIManager:show(InfoMessage:new{
             text = _("Enabling WiFi..."),
-            timeout = 2,
+            timeout = 1,
         })
 
-        -- Turn on WiFi
+        -- Turn on WiFi (this is safe to call even if already on)
         Device:turnOnWifi()
 
-        -- Wait for WiFi to connect (up to 10 seconds)
-        local max_wait = 10
-        local wait_interval = 0.5
-        local elapsed = 0
+        -- Give WiFi a moment to initialize
+        -- Using a simple delay instead of checking connection status
+        local util = require("util")
+        util.usleep(2000000)  -- 2 seconds in microseconds
 
-        while elapsed < max_wait and not Device:isConnected() do
-            logger.dbg("Inkwell: Waiting for WiFi connection... ", elapsed, "s")
-            UIManager:scheduleIn(wait_interval, function() end)
-            UIManager:handleInput()
-            elapsed = elapsed + wait_interval
-        end
-
-        if Device:isConnected() then
-            logger.info("Inkwell: WiFi connected successfully")
-            return true
-        else
-            logger.warn("Inkwell: WiFi connection timeout")
-            UIManager:show(InfoMessage:new{
-                text = _("WiFi connection timeout. Please enable WiFi manually."),
-                timeout = 3,
-            })
-            return false
-        end
+        logger.info("Inkwell: WiFi enabled")
     end
 
-    -- WiFi already connected or no WiFi toggle available
     return true
 end
 
 function InkwellSync:syncCurrentBook()
     -- Ensure WiFi is enabled before attempting to sync
-    if not self:ensureWifiEnabled() then
-        logger.err("Inkwell: Cannot sync - WiFi not available")
-        return
-    end
+    self:ensureWifiEnabled()
 
     UIManager:show(InfoMessage:new{
         text = _("Syncing highlights..."),
