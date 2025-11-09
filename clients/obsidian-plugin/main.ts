@@ -251,16 +251,10 @@ export default class CrossbillPlugin extends Plugin {
     const cursor = editor.getCursor();
     let content = '';
 
-    // Add header
-    content += `## ${book.title}\n`;
-    if (book.author) {
-      content += `**Author:** ${book.author}\n`;
-    }
     content += `**Chapter:** ${chapter.name}\n\n`;
 
     // Add highlights
     chapter.highlights.forEach((highlight, index) => {
-      content += `### Highlight ${index + 1}\n`;
       content += `> ${highlight.text}\n\n`;
 
       if (highlight.note) {
