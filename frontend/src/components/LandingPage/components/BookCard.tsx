@@ -15,7 +15,6 @@ export const BookCard = ({ book }: BookCardProps) => {
       style={{ textDecoration: 'none', color: 'inherit' }}
     >
       <HoverableCard
-        hoverEffect="lift"
         sx={{
           height: '100%',
           display: 'flex',

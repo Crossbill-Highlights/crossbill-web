@@ -139,7 +139,6 @@ export const BookPage = () => {
                       return (
                         <HoverableCard
                           key={highlight.id}
-                          hoverEffect="borderGlow"
                           sx={{
                             overflow: 'visible',
                           }}
