@@ -17,6 +17,7 @@ import {
 import { useParams } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useGetBookDetailsApiV1BookBookIdGet } from '../../api/generated/books/books';
+import { HoverableCard } from '../common/HoverableCard';
 import { SectionTitle } from '../common/SectionTitle';
 import { Spinner } from '../common/Spinner';
 
@@ -136,21 +137,16 @@ export const BookPage = () => {
                           : highlight.text;
 
                       return (
-                        <Card
+                        <HoverableCard
                           key={highlight.id}
-                          sx={(theme) => ({
+                          hoverEffect="borderGlow"
+                          sx={{
                             overflow: 'visible',
-                            transition: 'all 0.2s',
-                            '&:hover': {
-                              boxShadow: 3,
-                              borderColor: `rgba(${parseInt(theme.palette.primary.main.slice(1, 3), 16)}, ${parseInt(theme.palette.primary.main.slice(3, 5), 16)}, ${parseInt(theme.palette.primary.main.slice(5, 7), 16)}, 0.3)`,
-                            },
-                          })}
+                          }}
                         >
                           <CardContent
                             onClick={() => toggleCard(highlight.id)}
                             sx={{
-                              cursor: 'pointer',
                               '&:last-child': { pb: 3 },
                             }}
                           >
@@ -251,7 +247,7 @@ export const BookPage = () => {
                               </IconButton>
                             </Box>
                           </CardContent>
-                        </Card>
+                        </HoverableCard>
                       );
                     })}
                   </Box>
