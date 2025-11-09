@@ -64,7 +64,7 @@ poetry run alembic upgrade head
 ### 5. Run the development server
 
 ```bash
-poetry run uvicorn crossbill.main:app --reload
+poetry run uvicorn crossbill.main:app --reload --host 0.0.0.0 --port 8000 
 ```
 
 The API will be available at http://localhost:8000
