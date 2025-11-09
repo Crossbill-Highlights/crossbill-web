@@ -17,9 +17,8 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 # Import your models here to enable autogenerate
-# from inkwell.models import Base
-# target_metadata = Base.metadata
-target_metadata = None
+from inkwell.models import Base
+target_metadata = Base.metadata
 
 # Get database URL from environment variable
 database_url = os.getenv(
