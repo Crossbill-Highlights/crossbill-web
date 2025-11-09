@@ -194,12 +194,12 @@ export default class CrossbillPlugin extends Plugin {
     await this.loadSettings();
     this.api = new CrossbillAPI(this.settings.serverHost);
 
-    // Add command to import highlights
+    // Add command to import highlights from a single chapter
     this.addCommand({
       id: 'import-highlights',
-      name: 'Import highlights from Crossbill',
+      name: 'Import highlights from a chapter',
       editorCallback: (editor: Editor) => {
-        this.importHighlights(editor);
+        this.importChapterHighlights(editor);
       },
     });
 
@@ -207,9 +207,75 @@ export default class CrossbillPlugin extends Plugin {
     this.addSettingTab(new CrossbillSettingTab(this.app, this));
   }
 
-  async importHighlights(editor: Editor) {
+  /**
+   * Format a single highlight with its note and page number
+   */
+  private formatHighlight(highlight: Highlight): string {
+    let content = '';
+
+    content += `> ${highlight.text}\n\n`;
+
+    if (highlight.note) {
+      content += `**Note:** ${highlight.note}\n\n`;
+    }
+
+    if (highlight.page !== null) {
+      content += `*Page ${highlight.page}*\n\n`;
+    }
+
+    content += '---\n\n';
+
+    return content;
+  }
+
+  /**
+   * Format book header with title and author
+   */
+  private formatBookHeader(book: Book): string {
+    let content = `## ${book.title}\n`;
+    if (book.author) {
+      content += `**Author:** ${book.author}\n\n`;
+    } else {
+      content += '\n';
+    }
+    return content;
+  }
+
+  /**
+   * Format a chapter with all its highlights
+   */
+  private formatChapter(chapter: ChapterWithHighlights, includeChapterHeader = true): string {
+    let content = '';
+
+    if (includeChapterHeader) {
+      content += `### ${chapter.name}\n\n`;
+    }
+
+    chapter.highlights.forEach((highlight) => {
+      content += this.formatHighlight(highlight);
+    });
+
+    return content;
+  }
+
+  /**
+   * Format entire book with all chapters and highlights
+   */
+  private formatBook(book: BookDetails): string {
+    let content = this.formatBookHeader(book);
+
+    book.chapters.forEach((chapter) => {
+      content += this.formatChapter(chapter, true);
+    });
+
+    return content;
+  }
+
+  /**
+   * Select a book from the list and fetch its details
+   */
+  private async selectBook(onBookSelected: (book: BookDetails) => void) {
     try {
-      // Step 1: Fetch and select book
       const booksResponse = await this.api.getBooks();
       if (booksResponse.books.length === 0) {
         new Notice('No books found in Crossbill');
@@ -218,7 +284,6 @@ export default class CrossbillPlugin extends Plugin {
 
       new BookSuggestModal(this.app, booksResponse.books, async (selectedBook) => {
         try {
-          // Step 2: Fetch book details with chapters
           const bookDetails = await this.api.getBookDetails(selectedBook.id);
 
           if (bookDetails.chapters.length === 0) {
@@ -226,16 +291,7 @@ export default class CrossbillPlugin extends Plugin {
             return;
           }
 
-          // Step 3: Select chapter
-          new ChapterSuggestModal(this.app, bookDetails.chapters, async (selectedChapter) => {
-            try {
-              // Step 4: Format and insert highlights
-              this.insertHighlights(editor, selectedBook, selectedChapter);
-            } catch (error) {
-              new Notice(`Error inserting highlights: ${error.message}`);
-              console.error('Error inserting highlights:', error);
-            }
-          }).open();
+          onBookSelected(bookDetails);
         } catch (error) {
           new Notice(`Error fetching book details: ${error.message}`);
           console.error('Error fetching book details:', error);
@@ -247,29 +303,29 @@ export default class CrossbillPlugin extends Plugin {
     }
   }
 
-  insertHighlights(editor: Editor, book: BookWithHighlightCount, chapter: ChapterWithHighlights) {
-    const cursor = editor.getCursor();
-    let content = '';
+  /**
+   * Import highlights from a single chapter
+   */
+  async importChapterHighlights(editor: Editor) {
+    await this.selectBook((bookDetails) => {
+      // Show chapter selection modal
+      new ChapterSuggestModal(this.app, bookDetails.chapters, (selectedChapter) => {
+        try {
+          const content =
+            this.formatBookHeader(bookDetails) + this.formatChapter(selectedChapter, true);
 
-    content += `**Chapter:** ${chapter.name}\n\n`;
+          const cursor = editor.getCursor();
+          editor.replaceRange(content, cursor);
 
-    // Add highlights
-    chapter.highlights.forEach((highlight, index) => {
-      content += `> ${highlight.text}\n\n`;
-
-      if (highlight.note) {
-        content += `**Note:** ${highlight.note}\n\n`;
-      }
-
-      if (highlight.page !== null) {
-        content += `*Page ${highlight.page}*\n\n`;
-      }
-
-      content += '---\n\n';
+          new Notice(
+            `Imported ${selectedChapter.highlights.length} highlights from "${selectedChapter.name}"`
+          );
+        } catch (error) {
+          new Notice(`Error inserting highlights: ${error.message}`);
+          console.error('Error inserting highlights:', error);
+        }
+      }).open();
     });
-
-    editor.replaceRange(content, cursor);
-    new Notice(`Imported ${chapter.highlights.length} highlights from "${chapter.name}"`);
   }
 
   async loadSettings() {
