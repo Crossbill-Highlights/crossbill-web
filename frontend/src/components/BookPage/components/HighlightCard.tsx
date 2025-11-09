@@ -86,6 +86,7 @@ export const HighlightCard = ({ highlight, isExpanded, onToggle }: HighlightCard
                 alignItems: 'center',
                 gap: 1,
                 pl: 4.5,
+                opacity: 0.6,
               }}
             >
               <CalendarIcon
@@ -93,7 +94,7 @@ export const HighlightCard = ({ highlight, isExpanded, onToggle }: HighlightCard
                   fontSize: 14,
                   color:
                     theme.palette.mode === 'light'
-                      ? `rgba(${parseInt(theme.palette.secondary.main.slice(1, 3), 16)}, ${parseInt(theme.palette.secondary.main.slice(3, 5), 16)}, ${parseInt(theme.palette.secondary.main.slice(5, 7), 16)}, 0.7)`
+                      ? `theme.palette.secondary.main`
                       : 'secondary.light',
                 })}
               />
@@ -102,7 +103,7 @@ export const HighlightCard = ({ highlight, isExpanded, onToggle }: HighlightCard
                 sx={(theme) => ({
                   color:
                     theme.palette.mode === 'light'
-                      ? `rgba(${parseInt(theme.palette.secondary.main.slice(1, 3), 16)}, ${parseInt(theme.palette.secondary.main.slice(3, 5), 16)}, ${parseInt(theme.palette.secondary.main.slice(5, 7), 16)}, 0.9)`
+                      ? `theme.palette.secondary.main`
                       : 'secondary.light',
                 })}
               >
