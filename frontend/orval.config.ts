@@ -1,0 +1,30 @@
+import { defineConfig } from 'orval';
+
+export default defineConfig({
+  crossbill: {
+    input: {
+      target: 'http://localhost:8000/api/v1/openapi.json',
+    },
+    output: {
+      mode: 'tags-split',
+      target: './src/api/generated',
+      schemas: './src/api/generated/model',
+      client: 'react-query',
+      httpClient: 'axios',
+      mock: false,
+      clean: true,
+      prettier: true,
+      override: {
+        mutator: {
+          path: './src/api/axios-instance.ts',
+          name: 'axiosInstance',
+        },
+        query: {
+          useQuery: true,
+          useMutation: true,
+          signal: true,
+        },
+      },
+    },
+  },
+});
