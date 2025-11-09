@@ -1,0 +1,20 @@
+# Build outputs
+dist
+build
+coverage
+
+# Dependencies
+node_modules
+
+# Generated files
+src/api/generated
+
+# Config files
+*.config.js
+*.config.ts
+vite.config.ts
+
+# Lock files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
