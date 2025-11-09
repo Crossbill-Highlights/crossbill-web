@@ -112,3 +112,29 @@ class BooksListResponse(BaseModel):
     total: int = Field(..., ge=0, description="Total number of books")
     offset: int = Field(..., ge=0, description="Current offset")
     limit: int = Field(..., ge=1, description="Current limit")
+
+
+class ChapterWithHighlights(BaseModel):
+    """Schema for Chapter with its highlights."""
+
+    id: int
+    name: str
+    highlights: list[Highlight] = Field(default_factory=list, description="List of highlights in this chapter")
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class BookDetails(BaseModel):
+    """Schema for detailed Book response with chapters and highlights."""
+
+    id: int
+    title: str
+    author: str | None
+    isbn: str | None
+    chapters: list[ChapterWithHighlights] = Field(default_factory=list, description="List of chapters with highlights")
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}

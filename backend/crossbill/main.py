@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from crossbill.config import get_settings
-from crossbill.routers import highlights
+from crossbill.routers import books, highlights
 
 settings = get_settings()
 
@@ -29,6 +29,7 @@ app.add_middleware(
 
 # Register routers
 app.include_router(highlights.router, prefix=settings.API_V1_PREFIX)
+app.include_router(books.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/")

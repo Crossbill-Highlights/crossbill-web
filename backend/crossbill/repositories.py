@@ -84,6 +84,11 @@ class BookRepository:
         result = self.db.execute(stmt).all()
         return result, total
 
+    def get_by_id(self, book_id: int) -> models.Book | None:
+        """Get a book by its ID."""
+        stmt = select(models.Book).where(models.Book.id == book_id)
+        return self.db.execute(stmt).scalar_one_or_none()
+
 
 class ChapterRepository:
     """Repository for Chapter database operations."""
@@ -124,6 +129,11 @@ class ChapterRepository:
             if chapter:
                 return chapter
             raise
+
+    def get_by_book_id(self, book_id: int) -> Sequence[models.Chapter]:
+        """Get all chapters for a book."""
+        stmt = select(models.Chapter).where(models.Chapter.book_id == book_id).order_by(models.Chapter.name)
+        return self.db.execute(stmt).scalars().all()
 
 
 class HighlightRepository:
@@ -211,4 +221,13 @@ class HighlightRepository:
     def find_by_book(self, book_id: int) -> Sequence[models.Highlight]:
         """Find all highlights for a book."""
         stmt = select(models.Highlight).where(models.Highlight.book_id == book_id)
+        return self.db.execute(stmt).scalars().all()
+
+    def find_by_chapter(self, chapter_id: int) -> Sequence[models.Highlight]:
+        """Find all highlights for a chapter, ordered by datetime."""
+        stmt = (
+            select(models.Highlight)
+            .where(models.Highlight.chapter_id == chapter_id)
+            .order_by(models.Highlight.datetime)
+        )
         return self.db.execute(stmt).scalars().all()
