@@ -5,6 +5,7 @@ from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from crossbill.config import get_settings
@@ -14,6 +15,9 @@ settings = get_settings()
 
 # Directory for book cover images
 COVERS_DIR = Path(__file__).parent.parent / "book-covers"
+
+# Directory for frontend static files
+STATIC_DIR = Path(__file__).parent.parent / "static"
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -43,12 +47,6 @@ COVERS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/media/covers", StaticFiles(directory=str(COVERS_DIR)), name="covers")
 
 
-@app.get("/")
-async def root() -> dict[str, str]:
-    """Root endpoint."""
-    return {"message": "Welcome to crossbill API"}
-
-
 @app.get("/health")
 async def health() -> dict[str, str]:
     """Health check endpoint."""
@@ -63,3 +61,23 @@ async def api_root() -> dict[str, Any]:
         "version": settings.VERSION,
         "docs": f"{settings.API_V1_PREFIX}/docs",
     }
+
+
+# Mount static files for frontend assets (JS, CSS, etc.)
+# Only mount if static directory exists (for development without built frontend)
+if STATIC_DIR.exists():
+    app.mount(
+        "/assets", StaticFiles(directory=str(STATIC_DIR / "assets")), name="static_assets"
+    )
+
+    # Catch-all route for SPA - serves index.html for all other routes
+    # This must be last to not interfere with API routes
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str) -> FileResponse:
+        """Serve the SPA for all non-API routes."""
+        # If the path is a file that exists in static, serve it
+        file_path = STATIC_DIR / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
+        # Otherwise serve index.html for client-side routing
+        return FileResponse(STATIC_DIR / "index.html")

@@ -13,7 +13,8 @@ dependencies = [
     "sqlalchemy (>=2.0.44,<3.0.0)",
     "alembic (>=1.17.1,<2.0.0)",
     "psycopg[binary] (>=3.2.12,<4.0.0)",
-    "psycopg2-binary (>=2.9.11,<3.0.0)"
+    "psycopg2-binary (>=2.9.11,<3.0.0)",
+    "httpx (>=0.28.1,<0.29.0)"
 ]
 
 

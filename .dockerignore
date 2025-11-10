@@ -1,0 +1,57 @@
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+**/*.so
+.Python
+**/env/
+**/venv/
+**/ENV/
+**/.venv
+
+# Testing
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
+**/*.cover
+
+# IDEs
+.vscode/
+.idea/
+**/*.swp
+**/*.swo
+**/*~
+
+# Git
+.git/
+.gitignore
+
+# Docker
+**/Dockerfile
+**/.dockerignore
+**/docker-compose*.yml
+
+# Documentation
+**/*.md
+
+# Database
+**/*.db
+**/*.sqlite
+
+# Environment
+**/.env
+**/.env.*
+
+# Frontend node_modules and build artifacts (we copy these explicitly)
+**/node_modules/
+**/npm-debug.log
+**/yarn-error.log
+frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend specific
+backend/book-covers/
+backend/*.db
