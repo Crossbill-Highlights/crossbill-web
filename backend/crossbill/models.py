@@ -98,6 +98,9 @@ class Highlight(Base):
         onupdate=func.now(),
         nullable=False,
     )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
 
     # Relationships
     book: Mapped["Book"] = relationship(back_populates="highlights")
