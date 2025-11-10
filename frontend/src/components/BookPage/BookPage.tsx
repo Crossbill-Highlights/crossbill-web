@@ -1,8 +1,8 @@
 import { BookmarkBorder as BookmarkIcon } from '@mui/icons-material';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { Alert, Box, Card, Container, Typography } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
 import { useGetBookDetailsApiV1BookBookIdGet } from '../../api/generated/books/books';
+import { BookCover } from '../common/BookCover';
 import { SectionTitle } from '../common/SectionTitle';
 import { Spinner } from '../common/Spinner';
 import { HighlightCard } from './components/HighlightCard';
@@ -13,10 +13,6 @@ export const BookPage = () => {
 
   const totalHighlights =
     book?.chapters?.reduce((sum, chapter) => sum + (chapter.highlights?.length || 0), 0) || 0;
-
-  // Get the API base URL for cover images
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  const coverUrl = book?.cover ? `${apiUrl}${book.cover}` : null;
 
   if (isLoading) {
     return (
@@ -83,51 +79,15 @@ export const BookPage = () => {
               </Box>
             </Box>
             {/* Book Cover */}
-            <Box
-              sx={(theme) => ({
-                width: { xs: 80, sm: 96 },
-                height: { xs: 106, sm: 128 },
-                background: coverUrl
-                  ? 'transparent'
-                  : `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.dark} 100%)`,
-                borderRadius: 2,
-                boxShadow: 2,
-                flexShrink: 0,
-                ml: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-              })}
-            >
-              {coverUrl ? (
-                <img
-                  src={coverUrl}
-                  alt={`${book.title} cover`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    borderRadius: '8px',
-                  }}
-                  onError={(e) => {
-                    // Fallback to placeholder if image fails to load
-                    e.currentTarget.style.display = 'none';
-                    const parent = e.currentTarget.parentElement;
-                    if (parent) {
-                      parent.style.background = `linear-gradient(135deg, var(--mui-palette-primary-light) 0%, var(--mui-palette-primary-dark) 100%)`;
-                      const icon = document.createElement('div');
-                      icon.style.display = 'flex';
-                      icon.style.alignItems = 'center';
-                      icon.style.justifyContent = 'center';
-                      parent.appendChild(icon);
-                    }
-                  }}
-                />
-              ) : (
-                <MenuBookIcon sx={{ fontSize: { xs: 40, sm: 48 }, color: 'white', opacity: 0.7 }} />
-              )}
-            </Box>
+            <BookCover
+              coverPath={book.cover}
+              title={book.title}
+              width={{ xs: 80, sm: 96 }}
+              height={{ xs: 106, sm: 128 }}
+              objectFit="cover"
+              gradientPlaceholder
+              sx={{ boxShadow: 2, flexShrink: 0, ml: 2 }}
+            />
           </Box>
         </Card>
 
