@@ -84,12 +84,9 @@ export const BookCard = ({ book }: BookCardProps) => {
             position: 'absolute',
             bottom: 8,
             right: 8,
-            bgcolor: 'background.paper',
-            boxShadow: 1,
             zIndex: 1,
             '&:hover': {
               bgcolor: 'background.paper',
-              boxShadow: 2,
             },
           }}
         >
