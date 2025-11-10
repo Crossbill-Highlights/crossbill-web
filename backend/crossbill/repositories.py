@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import Sequence
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -91,10 +92,14 @@ class BookRepository:
         total_stmt = select(func.count(models.Book.id))
         total = self.db.execute(total_stmt).scalar() or 0
 
-        # Main query for books with highlight counts
+        # Main query for books with highlight counts (excluding soft-deleted highlights)
         stmt = (
             select(models.Book, func.count(models.Highlight.id).label("highlight_count"))
-            .outerjoin(models.Highlight, models.Book.id == models.Highlight.book_id)
+            .outerjoin(
+                models.Highlight,
+                (models.Book.id == models.Highlight.book_id)
+                & (models.Highlight.deleted_at.is_(None)),
+            )
             .group_by(models.Book.id)
             .order_by(models.Book.title)
             .offset(offset)
@@ -108,6 +113,25 @@ class BookRepository:
         """Get a book by its ID."""
         stmt = select(models.Book).where(models.Book.id == book_id)
         return self.db.execute(stmt).scalar_one_or_none()
+
+    def delete(self, book_id: int) -> bool:
+        """
+        Delete a book by its ID (hard delete).
+
+        Args:
+            book_id: ID of the book to delete
+
+        Returns:
+            bool: True if book was deleted, False if book was not found
+        """
+        book = self.get_by_id(book_id)
+        if not book:
+            return False
+
+        self.db.delete(book)
+        self.db.commit()
+        logger.info(f"Deleted book: {book.title} (id={book.id})")
+        return True
 
 
 class ChapterRepository:
@@ -197,10 +221,29 @@ class HighlightRepository:
         """
         Try to create a highlight.
 
+        Checks if the highlight was soft-deleted before attempting to create.
+        If a soft-deleted version exists, skip creation.
+
         Returns:
             tuple[Highlight | None, bool]: (highlight, was_created)
-            If duplicate, returns (None, False)
+            If duplicate or soft-deleted, returns (None, False)
         """
+        # Check if this highlight was previously soft-deleted
+        stmt = select(models.Highlight).where(
+            models.Highlight.book_id == book_id,
+            models.Highlight.text == highlight_data.text,
+            models.Highlight.datetime == highlight_data.datetime,
+            models.Highlight.deleted_at.is_not(None),
+        )
+        deleted_highlight = self.db.execute(stmt).scalar_one_or_none()
+
+        if deleted_highlight:
+            logger.debug(
+                f"Skipped soft-deleted highlight for book_id={book_id}, "
+                f"text='{highlight_data.text[:50]}...'"
+            )
+            return None, False
+
         try:
             highlight = self.create_with_chapter(book_id, chapter_id, highlight_data)
             return highlight, True
@@ -243,15 +286,61 @@ class HighlightRepository:
         return created, skipped
 
     def find_by_book(self, book_id: int) -> Sequence[models.Highlight]:
-        """Find all highlights for a book."""
-        stmt = select(models.Highlight).where(models.Highlight.book_id == book_id)
+        """Find all non-deleted highlights for a book."""
+        stmt = select(models.Highlight).where(
+            models.Highlight.book_id == book_id, models.Highlight.deleted_at.is_(None)
+        )
         return self.db.execute(stmt).scalars().all()
 
     def find_by_chapter(self, chapter_id: int) -> Sequence[models.Highlight]:
-        """Find all highlights for a chapter, ordered by datetime."""
+        """Find all non-deleted highlights for a chapter, ordered by datetime."""
         stmt = (
             select(models.Highlight)
-            .where(models.Highlight.chapter_id == chapter_id)
+            .where(models.Highlight.chapter_id == chapter_id, models.Highlight.deleted_at.is_(None))
             .order_by(models.Highlight.datetime)
+        )
+        return self.db.execute(stmt).scalars().all()
+
+    def soft_delete_by_ids(self, book_id: int, highlight_ids: list[int]) -> int:
+        """
+        Soft delete highlights by their IDs for a specific book.
+
+        Args:
+            book_id: ID of the book (for validation)
+            highlight_ids: List of highlight IDs to soft delete
+
+        Returns:
+            int: Number of highlights soft deleted
+        """
+        # Find highlights that belong to the book and are not already deleted
+        stmt = select(models.Highlight).where(
+            models.Highlight.id.in_(highlight_ids),
+            models.Highlight.book_id == book_id,
+            models.Highlight.deleted_at.is_(None),
+        )
+        highlights = self.db.execute(stmt).scalars().all()
+
+        # Soft delete each highlight
+        count = 0
+        for highlight in highlights:
+            highlight.deleted_at = datetime.now(UTC)
+            count += 1
+
+        self.db.commit()
+        logger.info(f"Soft deleted {count} highlights for book_id={book_id}")
+        return count
+
+    def find_deleted_by_book(self, book_id: int) -> Sequence[models.Highlight]:
+        """
+        Find all soft-deleted highlights for a book.
+
+        Args:
+            book_id: ID of the book
+
+        Returns:
+            Sequence[Highlight]: List of soft-deleted highlights
+        """
+        stmt = select(models.Highlight).where(
+            models.Highlight.book_id == book_id, models.Highlight.deleted_at.is_not(None)
         )
         return self.db.execute(stmt).scalars().all()
