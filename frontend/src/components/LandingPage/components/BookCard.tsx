@@ -53,8 +53,14 @@ export const BookCard = ({ book }: BookCardProps) => {
     ) {
       try {
         await deleteBookMutation.mutateAsync({ bookId: book.id });
-        // Invalidate the books list query to refresh the UI
-        await queryClient.invalidateQueries({ queryKey: ['GetBooksApiV1HighlightsBooksGet'] });
+        // Invalidate and immediately refetch the books list query to refresh the UI
+        await queryClient.invalidateQueries({
+          queryKey: ['GetBooksApiV1HighlightsBooksGet'],
+          refetchType: 'active',
+        });
+        await queryClient.refetchQueries({
+          queryKey: ['GetBooksApiV1HighlightsBooksGet'],
+        });
       } catch (error) {
         console.error('Failed to delete book:', error);
         alert('Failed to delete book. Please try again.');

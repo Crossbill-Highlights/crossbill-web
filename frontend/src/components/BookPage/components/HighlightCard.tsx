@@ -77,8 +77,12 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
           bookId,
           data: { highlight_ids: [highlight.id] },
         });
-        // Invalidate the book details query to refresh the UI
+        // Invalidate and immediately refetch the book details query to refresh the UI
         await queryClient.invalidateQueries({
+          queryKey: ['GetBookDetailsApiV1BookBookIdGet', bookId],
+          refetchType: 'active',
+        });
+        await queryClient.refetchQueries({
           queryKey: ['GetBookDetailsApiV1BookBookIdGet', bookId],
         });
       } catch (error) {
