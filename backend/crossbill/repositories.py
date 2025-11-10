@@ -310,18 +310,3 @@ class HighlightRepository:
         self.db.commit()
         logger.info(f"Soft deleted {count} highlights for book_id={book_id}")
         return count
-
-    def find_deleted_by_book(self, book_id: int) -> Sequence[models.Highlight]:
-        """
-        Find all soft-deleted highlights for a book.
-
-        Args:
-            book_id: ID of the book
-
-        Returns:
-            Sequence[Highlight]: List of soft-deleted highlights
-        """
-        stmt = select(models.Highlight).where(
-            models.Highlight.book_id == book_id, models.Highlight.deleted_at.is_not(None)
-        )
-        return self.db.execute(stmt).scalars().all()
