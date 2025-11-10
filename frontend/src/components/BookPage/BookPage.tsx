@@ -43,6 +43,10 @@ export const BookPage = () => {
     );
   }
 
+  const chapters = (book.chapters || []).filter(
+    (chapter) => chapter.highlights && chapter.highlights.length > 0
+  );
+
   return (
     <Box
       sx={{
@@ -55,33 +59,31 @@ export const BookPage = () => {
 
         {/* Highlights by Chapter */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {book.chapters && book.chapters.length === 0 && (
+          {chapters && chapters.length === 0 && (
             <Typography variant="body1" color="text.secondary">
               No chapters found for this book.
             </Typography>
           )}
 
-          {book.chapters &&
-            book.chapters.length > 0 &&
-            book.chapters.map((chapter) => (
-              <Box key={chapter.id}>
-                {/* Chapter Header */}
-                <SectionTitle showDivider>{chapter.name}</SectionTitle>
+          {chapters.map((chapter) => (
+            <Box key={chapter.id}>
+              {/* Chapter Header */}
+              <SectionTitle showDivider>{chapter.name}</SectionTitle>
 
-                {/* Highlights in this chapter */}
-                {chapter.highlights && chapter.highlights.length > 0 ? (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    {chapter.highlights.map((highlight) => (
-                      <HighlightCard key={highlight.id} highlight={highlight} bookId={book.id} />
-                    ))}
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ pl: 0.5 }}>
-                    No highlights found in this chapter.
-                  </Typography>
-                )}
-              </Box>
-            ))}
+              {/* Highlights in this chapter */}
+              {chapter.highlights && chapter.highlights.length > 0 ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  {chapter.highlights.map((highlight) => (
+                    <HighlightCard key={highlight.id} highlight={highlight} bookId={book.id} />
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ pl: 0.5 }}>
+                  No highlights found in this chapter.
+                </Typography>
+              )}
+            </Box>
+          ))}
         </Box>
       </Container>
     </Box>
