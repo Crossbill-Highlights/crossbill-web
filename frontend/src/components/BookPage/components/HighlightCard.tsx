@@ -101,7 +101,7 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
         onClick={handleMenuOpen}
         sx={{
           position: 'absolute',
-          top: 8,
+          bottom: 8,
           right: 8,
           bgcolor: 'background.paper',
           boxShadow: 1,
@@ -121,11 +121,11 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
         onClose={(event) => handleMenuClose(event as React.MouseEvent)}
         onClick={(event) => event.stopPropagation()}
         anchorOrigin={{
-          vertical: 'top',
+          vertical: 'bottom',
           horizontal: 'right',
         }}
         transformOrigin={{
-          vertical: 'top',
+          vertical: 'bottom',
           horizontal: 'right',
         }}
       >

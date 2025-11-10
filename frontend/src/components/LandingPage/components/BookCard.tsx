@@ -82,7 +82,7 @@ export const BookCard = ({ book }: BookCardProps) => {
           onClick={handleMenuOpen}
           sx={{
             position: 'absolute',
-            top: 8,
+            bottom: 8,
             right: 8,
             bgcolor: 'background.paper',
             boxShadow: 1,
@@ -102,11 +102,11 @@ export const BookCard = ({ book }: BookCardProps) => {
           onClose={(event) => handleMenuClose(event as React.MouseEvent)}
           onClick={(event) => event.stopPropagation()}
           anchorOrigin={{
-            vertical: 'top',
+            vertical: 'bottom',
             horizontal: 'right',
           }}
           transformOrigin={{
-            vertical: 'top',
+            vertical: 'bottom',
             horizontal: 'right',
           }}
         >
