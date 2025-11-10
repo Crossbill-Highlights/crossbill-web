@@ -221,34 +221,15 @@ class HighlightRepository:
         """
         Try to create a highlight.
 
-        Checks if the highlight was soft-deleted before attempting to create.
-        If a soft-deleted version exists, skip creation.
-
         Returns:
             tuple[Highlight | None, bool]: (highlight, was_created)
-            If duplicate or soft-deleted, returns (None, False)
+            If duplicate (including soft-deleted), returns (None, False)
         """
-        # Check if this highlight was previously soft-deleted
-        stmt = select(models.Highlight).where(
-            models.Highlight.book_id == book_id,
-            models.Highlight.text == highlight_data.text,
-            models.Highlight.datetime == highlight_data.datetime,
-            models.Highlight.deleted_at.is_not(None),
-        )
-        deleted_highlight = self.db.execute(stmt).scalar_one_or_none()
-
-        if deleted_highlight:
-            logger.debug(
-                f"Skipped soft-deleted highlight for book_id={book_id}, "
-                f"text='{highlight_data.text[:50]}...'"
-            )
-            return None, False
-
         try:
             highlight = self.create_with_chapter(book_id, chapter_id, highlight_data)
             return highlight, True
         except IntegrityError:
-            # Duplicate - unique constraint violated
+            # Duplicate - unique constraint violated (active or soft-deleted)
             self.db.rollback()
             logger.debug(
                 f"Skipped duplicate highlight for book_id={book_id}, "
