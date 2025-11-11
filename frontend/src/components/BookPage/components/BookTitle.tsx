@@ -12,33 +12,36 @@ export const BookTitle = ({ book, highlightCount }: BookTitleProps) => {
   return (
     <Card
       sx={{
-        p: { xs: 4, sm: 6 },
         mb: 4,
         boxShadow: 3,
+        overflow: 'hidden',
       }}
     >
       <Box
         sx={{
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'center', sm: 'start' },
-          justifyContent: 'space-between',
-          gap: { xs: 3, sm: 0 },
+          alignItems: { xs: 'center', sm: 'stretch' },
         }}
       >
-        {/* Book Cover - displayed first on mobile */}
+        {/* Book Cover - first on mobile, right on desktop */}
         <Box
           sx={{
-            order: { xs: -1, sm: 1 },
             flexShrink: 0,
-            ml: { xs: 0, sm: 2 },
+            display: { xs: 'flex', sm: 'block' },
+            justifyContent: { xs: 'center', sm: 'initial' },
+            width: { xs: '100%', sm: 'auto' },
+            pt: { xs: 4, sm: 0 },
+            pb: { xs: 2, sm: 0 },
+            order: { xs: 0, sm: 1 },
           }}
         >
           <BookCover
             coverPath={book.cover}
             title={book.title}
-            height={200}
-            width={{ xs: 140, sm: 128 }}
+            height={{ xs: 200, sm: '100%' }}
+            width={{ xs: 140, sm: 200 }}
+            objectFit="cover"
           />
         </Box>
 
@@ -46,7 +49,12 @@ export const BookTitle = ({ book, highlightCount }: BookTitleProps) => {
         <Box
           sx={{
             flex: 1,
+            p: { xs: 4, sm: 6 },
+            pt: { xs: 2, sm: 6 },
             textAlign: { xs: 'center', sm: 'left' },
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
             order: { xs: 1, sm: 0 },
           }}
         >
