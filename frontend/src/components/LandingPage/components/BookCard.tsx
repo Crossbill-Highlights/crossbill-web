@@ -146,7 +146,7 @@ export const BookCard = ({ book }: BookCardProps) => {
             color="text.secondary"
             gutterBottom
             sx={{
-              width: '250px',
+              width: { xs: '120px', sm: '200px' },
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
