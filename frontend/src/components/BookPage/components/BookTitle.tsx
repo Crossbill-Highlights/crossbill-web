@@ -55,7 +55,7 @@ export const BookTitle = ({ book, highlightCount }: BookTitleProps) => {
           </Typography>
           <Typography
             variant="h2"
-            sx={{ color: 'primary.dark', fontWeight: 500, mb: 2 }}
+            sx={{ color: 'primary.main', fontWeight: 500, mb: 2 }}
             gutterBottom
           >
             {book.author || 'Unknown Author'}

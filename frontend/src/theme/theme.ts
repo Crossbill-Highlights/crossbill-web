@@ -2,9 +2,9 @@ import { createTheme } from '@mui/material/styles';
 
 const colors = {
   amber: {
-    600: '#d97706',
-    700: '#b45309',
-    800: '#92400e',
+    600: '#685A4B',
+    700: '#43311E',
+    800: '#2E2215',
   },
   stone: {
     50: '#fafaf9',

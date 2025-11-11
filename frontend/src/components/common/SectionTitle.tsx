@@ -13,7 +13,7 @@ export const SectionTitle = ({
 }: SectionTitleProps) => {
   if (!showDivider) {
     return (
-      <Typography variant="h3" component={component} gutterBottom sx={{ color: 'primary.dark' }}>
+      <Typography variant="h3" component={component} gutterBottom sx={{ color: 'primary.main' }}>
         {children}
       </Typography>
     );
@@ -21,7 +21,7 @@ export const SectionTitle = ({
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, px: 0.5 }}>
-      <Typography variant="h3" component={component} sx={{ color: 'primary.dark' }}>
+      <Typography variant="h3" component={component} sx={{ color: 'primary.main' }}>
         {children}
       </Typography>
       <Box
