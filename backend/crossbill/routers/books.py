@@ -72,6 +72,7 @@ def get_book_details(
             chapter_with_highlights = schemas.ChapterWithHighlights(
                 id=chapter.id,
                 name=chapter.name,
+                chapter_number=chapter.chapter_number,
                 highlights=highlight_schemas,
                 created_at=chapter.created_at,
                 updated_at=chapter.updated_at,
