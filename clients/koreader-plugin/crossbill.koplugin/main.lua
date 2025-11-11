@@ -148,8 +148,11 @@ function CrossbillSync:performSync()
 
         logger.dbg("Crossbill: Found", #highlights, "highlights")
 
+        -- Get chapter list (table of contents)
+        local chapters = self:getChapterList()
+
         -- Send to server
-        self:sendToServer(book_data, highlights)
+        self:sendToServer(book_data, highlights, chapters)
     end)
 
     if not success then
@@ -229,12 +232,41 @@ function CrossbillSync:getHighlights(doc_path)
     return results
 end
 
-function CrossbillSync:sendToServer(book_data, highlights)
+function CrossbillSync:getChapterList()
+    -- Extract table of contents (TOC) from the document
+    -- This provides an ordered list of chapters for proper sorting
+    local chapters = {}
+
+    -- Get TOC from the document
+    -- self.ui.toc is the TOC controller which has the toc table
+    if self.ui.toc and self.ui.toc.toc then
+        local toc = self.ui.toc.toc
+
+        for i, item in ipairs(toc) do
+            -- Each TOC item has a title field
+            if item.title then
+                table.insert(chapters, {
+                    name = item.title,
+                    number = i,
+                })
+            end
+        end
+
+        logger.dbg("Crossbill: Found", #chapters, "chapters in TOC")
+    else
+        logger.dbg("Crossbill: No TOC available for this document")
+    end
+
+    return chapters
+end
+
+function CrossbillSync:sendToServer(book_data, highlights, chapters)
     -- Wrap everything in pcall for error handling
     local success, result = pcall(function()
         local payload = {
             book = book_data,
             highlights = highlights,
+            chapters = chapters or {},
         }
 
         local body_json = JSON.encode(payload)
