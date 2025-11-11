@@ -142,6 +142,7 @@ def search_highlights(
                 book_author=highlight.book.author,
                 chapter_id=highlight.chapter_id,
                 chapter_name=highlight.chapter.name if highlight.chapter else None,
+                chapter_number=highlight.chapter.chapter_number if highlight.chapter else None,
                 created_at=highlight.created_at,
                 updated_at=highlight.updated_at,
             )
