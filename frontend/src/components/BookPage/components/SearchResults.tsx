@@ -28,15 +28,23 @@ export const SearchResults = ({
     );
   }
 
-  // Group highlights by chapter and sort chapters by chapter_id
+  // Group highlights by chapter and sort chapters by chapter_number
   const sortedChapters = chain(highlights)
     .groupBy((highlight) => highlight.chapter_id ?? 'null')
     .map((chapterHighlights, chapterIdStr) => ({
       chapterId: chapterIdStr === 'null' ? null : Number(chapterIdStr),
       chapterName: chapterHighlights[0]?.chapter_name ?? 'Unknown Chapter',
+      chapterNumber: chapterHighlights[0]?.chapter_number,
       highlights: sortBy(chapterHighlights, (highlight) => highlight.page ?? Infinity),
     }))
-    .sortBy((chapter) => chapter.chapterId ?? Infinity)
+    .sortBy((chapter) => {
+      // Sort by chapter_number if available, otherwise by chapter_id
+      // Chapters without number go to the end
+      if (chapter.chapterNumber !== null && chapter.chapterNumber !== undefined) {
+        return chapter.chapterNumber;
+      }
+      return (chapter.chapterId ?? 0) + 1000000; // Large offset to put them at the end
+    })
     .value();
 
   // Results display
