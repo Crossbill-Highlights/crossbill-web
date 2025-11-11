@@ -148,11 +148,18 @@ function CrossbillSync:performSync()
 
         logger.dbg("Crossbill: Found", #highlights, "highlights")
 
-        -- Get chapter list (table of contents)
-        local chapters = self:getChapterList()
+        -- Get chapter number mapping from table of contents
+        local chapter_number_map = self:getChapterNumberMap()
+
+        -- Add chapter numbers to highlights based on their chapter names
+        for _, highlight in ipairs(highlights) do
+            if highlight.chapter and chapter_number_map[highlight.chapter] then
+                highlight.chapter_number = chapter_number_map[highlight.chapter]
+            end
+        end
 
         -- Send to server
-        self:sendToServer(book_data, highlights, chapters)
+        self:sendToServer(book_data, highlights)
     end)
 
     if not success then
@@ -232,10 +239,10 @@ function CrossbillSync:getHighlights(doc_path)
     return results
 end
 
-function CrossbillSync:getChapterList()
+function CrossbillSync:getChapterNumberMap()
     -- Extract table of contents (TOC) from the document
-    -- This provides an ordered list of chapters for proper sorting
-    local chapters = {}
+    -- Returns a mapping from chapter name to chapter number for proper sorting
+    local chapter_map = {}
 
     -- Get TOC from the document
     -- self.ui.toc is the TOC controller which has the toc table
@@ -245,28 +252,24 @@ function CrossbillSync:getChapterList()
         for i, item in ipairs(toc) do
             -- Each TOC item has a title field
             if item.title then
-                table.insert(chapters, {
-                    name = item.title,
-                    number = i,
-                })
+                chapter_map[item.title] = i
             end
         end
 
-        logger.dbg("Crossbill: Found", #chapters, "chapters in TOC")
+        logger.dbg("Crossbill: Created mapping for", #toc, "chapters from TOC")
     else
         logger.dbg("Crossbill: No TOC available for this document")
     end
 
-    return chapters
+    return chapter_map
 end
 
-function CrossbillSync:sendToServer(book_data, highlights, chapters)
+function CrossbillSync:sendToServer(book_data, highlights)
     -- Wrap everything in pcall for error handling
     local success, result = pcall(function()
         local payload = {
             book = book_data,
             highlights = highlights,
-            chapters = chapters or {},
         }
 
         local body_json = JSON.encode(payload)
