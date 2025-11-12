@@ -92,6 +92,14 @@ class HighlightUploadResponse(BaseModel):
     )
 
 
+class CoverUploadResponse(BaseModel):
+    """Schema for cover upload response."""
+
+    success: bool = Field(..., description="Whether the upload was successful")
+    message: str = Field(..., description="Response message")
+    cover_url: str = Field(..., description="URL path to the uploaded cover image")
+
+
 class BookWithHighlightCount(BaseModel):
     """Schema for Book with highlight count."""
 
