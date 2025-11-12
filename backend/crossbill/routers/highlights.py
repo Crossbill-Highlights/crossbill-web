@@ -4,8 +4,9 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from crossbill import repositories, schemas, services
+from crossbill import repositories, schemas
 from crossbill.database import DatabaseSession
+from crossbill.services import HighlightUploadService
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ def upload_highlights(
         HTTPException: If upload fails due to server error
     """
     try:
-        service = services.HighlightUploadService(db)
+        service = HighlightUploadService(db)
         return service.upload_highlights(request)
     except Exception as e:
         logger.error(f"Failed to upload highlights: {e!s}", exc_info=True)
