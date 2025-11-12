@@ -4,9 +4,9 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from crossbill import repositories, schemas
+from crossbill import schemas
 from crossbill.database import DatabaseSession
-from crossbill.services import HighlightUploadService
+from crossbill.services import HighlightService
 
 logger = logging.getLogger(__name__)
 
@@ -34,25 +34,8 @@ def get_books(
         HTTPException: If fetching books fails due to server error
     """
     try:
-        book_repo = repositories.BookRepository(db)
-        books_with_counts, total = book_repo.get_books_with_highlight_count(offset, limit)
-
-        # Convert to response schema
-        books_list = [
-            schemas.BookWithHighlightCount(
-                id=book.id,
-                title=book.title,
-                author=book.author,
-                isbn=book.isbn,
-                cover=book.cover,
-                highlight_count=count,
-                created_at=book.created_at,
-                updated_at=book.updated_at,
-            )
-            for book, count in books_with_counts
-        ]
-
-        return schemas.BooksListResponse(books=books_list, total=total, offset=offset, limit=limit)
+        service = HighlightService(db)
+        return service.get_books_with_counts(offset, limit)
     except Exception as e:
         logger.error(f"Failed to fetch books: {e!s}", exc_info=True)
         raise HTTPException(
@@ -85,7 +68,7 @@ def upload_highlights(
         HTTPException: If upload fails due to server error
     """
     try:
-        service = HighlightUploadService(db)
+        service = HighlightService(db)
         return service.upload_highlights(request)
     except Exception as e:
         logger.error(f"Failed to upload highlights: {e!s}", exc_info=True)
@@ -127,32 +110,8 @@ def search_highlights(
         HTTPException: If search fails due to server error
     """
     try:
-        highlight_repo = repositories.HighlightRepository(db)
-        highlights = highlight_repo.search(search_text, book_id, limit)
-
-        # Convert to response schema with book and chapter data
-        search_results = [
-            schemas.HighlightSearchResult(
-                id=highlight.id,
-                text=highlight.text,
-                page=highlight.page,
-                note=highlight.note,
-                datetime=highlight.datetime,
-                book_id=highlight.book_id,
-                book_title=highlight.book.title,
-                book_author=highlight.book.author,
-                chapter_id=highlight.chapter_id,
-                chapter_name=highlight.chapter.name if highlight.chapter else None,
-                chapter_number=highlight.chapter.chapter_number if highlight.chapter else None,
-                created_at=highlight.created_at,
-                updated_at=highlight.updated_at,
-            )
-            for highlight in highlights
-        ]
-
-        return schemas.HighlightSearchResponse(
-            highlights=search_results, total=len(search_results)
-        )
+        service = HighlightService(db)
+        return service.search_highlights(search_text, book_id, limit)
     except Exception as e:
         logger.error(f"Failed to search highlights: {e!s}", exc_info=True)
         raise HTTPException(
