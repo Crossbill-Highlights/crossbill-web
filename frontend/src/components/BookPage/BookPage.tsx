@@ -3,7 +3,7 @@ import { useSearchHighlightsApiV1HighlightsSearchGet } from '@/api/generated/hig
 import { Alert, Box, Container, Typography } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
 import { debounce } from 'lodash';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SectionTitle } from '../common/SectionTitle';
 import { Spinner } from '../common/Spinner';
 import { BookTitle } from './components/BookTitle';
@@ -19,7 +19,6 @@ export const BookPage = () => {
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearchText, setDebouncedSearchText] = useState('');
 
-  // Debounced search handler
   const debouncedSearch = useMemo(
     () =>
       debounce((value: string) => {
@@ -27,6 +26,13 @@ export const BookPage = () => {
       }, 300),
     []
   );
+
+  // Cleanup debounced function on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   // Search query - only enabled when there's search text
   // Use a placeholder when empty to satisfy validation (query won't run due to enabled flag)
@@ -89,6 +95,7 @@ export const BookPage = () => {
 
   // Clear search
   const handleClearSearch = () => {
+    debouncedSearch.cancel(); // Cancel any pending debounced search
     setSearchInput('');
     setDebouncedSearchText('');
   };
