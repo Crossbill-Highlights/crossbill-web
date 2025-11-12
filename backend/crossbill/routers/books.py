@@ -205,12 +205,16 @@ def delete_highlights(
         ) from e
 
 
-@router.post("/{book_id}/metadata/cover", status_code=status.HTTP_200_OK)
+@router.post(
+    "/{book_id}/metadata/cover",
+    response_model=schemas.CoverUploadResponse,
+    status_code=status.HTTP_200_OK,
+)
 def upload_book_cover(
     book_id: int,
     cover: UploadFile = File(...),
     db: DatabaseSession = None,
-) -> dict[str, str]:
+) -> schemas.CoverUploadResponse:
     """
     Upload a book cover image.
 
@@ -258,11 +262,11 @@ def upload_book_cover(
         book.cover = cover_url
         db.commit()
 
-        return {
-            "success": True,
-            "message": "Cover uploaded successfully",
-            "cover_url": cover_url,
-        }
+        return schemas.CoverUploadResponse(
+            success=True,
+            message="Cover uploaded successfully",
+            cover_url=cover_url,
+        )
     except HTTPException:
         # Re-raise HTTP exceptions as-is
         raise
