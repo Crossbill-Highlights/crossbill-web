@@ -1,4 +1,4 @@
-"""Service layer for business logic."""
+"""Service layer for highlight-related business logic."""
 
 import logging
 
