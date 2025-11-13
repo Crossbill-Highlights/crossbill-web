@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Table, Text, UniqueConstraint, func
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -13,9 +13,9 @@ from crossbill.database import Base
 book_tags = Table(
     "book_tags",
     Base.metadata,
-    mapped_column("book_id", ForeignKey("books.id", ondelete="CASCADE"), primary_key=True, index=True),
-    mapped_column("tag_id", ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True, index=True),
-    mapped_column(
+    Column("book_id", Integer, ForeignKey("books.id", ondelete="CASCADE"), primary_key=True, index=True),
+    Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True, index=True),
+    Column(
         "created_at",
         DateTime(timezone=True),
         server_default=func.now(),
