@@ -12,6 +12,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   BookWithHighlightCount,
@@ -47,13 +48,15 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
     },
   });
 
-  // Reset form when modal opens with new book data
-  const handleModalOpen = () => {
-    reset({
-      tags: book.tags.map((tag) => tag.name),
-    });
-    updateBookMutation.reset(); // Reset mutation state
-  };
+  // Reset form when modal opens
+  useEffect(() => {
+    if (open) {
+      reset({
+        tags: book.tags.map((tag) => tag.name),
+      });
+      updateBookMutation.reset(); // Reset mutation state
+    }
+  }, [open, book.tags, reset, updateBookMutation]);
 
   const onSubmit = (data: BookEditFormData) => {
     updateBookMutation.mutate({
@@ -68,15 +71,7 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
   const error = updateBookMutation.error;
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      TransitionProps={{
-        onEntered: handleModalOpen,
-      }}
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           Edit Book
