@@ -1,4 +1,8 @@
-import { Delete as DeleteIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
+import {
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  MoreVert as MoreVertIcon,
+} from '@mui/icons-material';
 import {
   Box,
   CardContent,
@@ -15,6 +19,7 @@ import { useDeleteBookApiV1BookBookIdDelete } from '../../../api/generated/books
 import type { BookWithHighlightCount } from '../../../api/generated/model';
 import { BookCover } from '../../common/BookCover';
 import { HoverableCard } from '../../common/HoverableCard';
+import { BookEditModal } from './BookEditModal';
 
 export interface BookCardProps {
   book: BookWithHighlightCount;
@@ -22,6 +27,7 @@ export interface BookCardProps {
 
 export const BookCard = ({ book }: BookCardProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const menuOpen = Boolean(anchorEl);
   const queryClient = useQueryClient();
 
@@ -53,6 +59,13 @@ export const BookCard = ({ book }: BookCardProps) => {
       event.stopPropagation();
     }
     setAnchorEl(null);
+  };
+
+  const handleEdit = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    handleMenuClose();
+    setEditModalOpen(true);
   };
 
   const handleDelete = (event: React.MouseEvent) => {
@@ -115,6 +128,12 @@ export const BookCard = ({ book }: BookCardProps) => {
             horizontal: 'right',
           }}
         >
+          <MenuItem onClick={handleEdit}>
+            <ListItemIcon>
+              <EditIcon fontSize="small" />
+            </ListItemIcon>
+            Edit
+          </MenuItem>
           <MenuItem onClick={handleDelete}>
             <ListItemIcon>
               <DeleteIcon fontSize="small" />
@@ -122,6 +141,9 @@ export const BookCard = ({ book }: BookCardProps) => {
             Delete
           </MenuItem>
         </Menu>
+
+        {/* Edit Modal */}
+        <BookEditModal book={book} open={editModalOpen} onClose={() => setEditModalOpen(false)} />
 
         <BookCover
           coverPath={book.cover}
