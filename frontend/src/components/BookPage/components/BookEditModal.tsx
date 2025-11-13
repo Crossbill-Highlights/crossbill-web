@@ -56,7 +56,9 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
       });
       updateBookMutation.reset(); // Reset mutation state
     }
-  }, [open, book.tags, reset, updateBookMutation]);
+    // Only run when modal opens - reset and updateBookMutation are stable/not needed in deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const onSubmit = (data: BookEditFormData) => {
     updateBookMutation.mutate({
