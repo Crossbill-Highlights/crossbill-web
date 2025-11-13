@@ -2,11 +2,26 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint, func
+from sqlalchemy import DateTime, ForeignKey, String, Table, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from crossbill.database import Base
+
+
+# Association table for many-to-many relationship between books and tags
+book_tags = Table(
+    "book_tags",
+    Base.metadata,
+    mapped_column("book_id", ForeignKey("books.id", ondelete="CASCADE"), primary_key=True, index=True),
+    mapped_column("tag_id", ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True, index=True),
+    mapped_column(
+        "created_at",
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    ),
+)
 
 
 class Book(Base):
@@ -35,6 +50,9 @@ class Book(Base):
     )
     chapters: Mapped[list["Chapter"]] = relationship(
         back_populates="book", cascade="all, delete-orphan"
+    )
+    tags: Mapped[list["Tag"]] = relationship(
+        secondary=book_tags, back_populates="books", lazy="selectin"
     )
 
     def __repr__(self) -> str:
@@ -115,3 +133,30 @@ class Highlight(Base):
     def __repr__(self) -> str:
         """String representation of Highlight."""
         return f"<Highlight(id={self.id}, text='{self.text[:50]}...', book_id={self.book_id})>"
+
+
+class Tag(Base):
+    """Tag model for categorizing books."""
+
+    __tablename__ = "tags"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    # Relationships
+    books: Mapped[list["Book"]] = relationship(
+        secondary=book_tags, back_populates="tags", lazy="selectin"
+    )
+
+    def __repr__(self) -> str:
+        """String representation of Tag."""
+        return f"<Tag(id={self.id}, name='{self.name}')>"
