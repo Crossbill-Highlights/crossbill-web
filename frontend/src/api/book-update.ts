@@ -64,14 +64,12 @@ export const useUpdateBookApiV1BookBookIdPost = <TError = unknown, TContext = un
   return useMutation<BookWithHighlightCount, TError, { bookId: number; data: BookUpdateRequest }, TContext>({
     mutationFn: ({ bookId, data }) => updateBook(bookId, data),
     onSuccess: async (data, variables, context) => {
-      // Refetch both the books list AND the individual book details to get updated data
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: ['/api/v1/highlights/books'] }),
-        queryClient.refetchQueries({ queryKey: [`/api/v1/book/${variables.bookId}`] }),
-      ]);
+      // Invalidate all queries to ensure fresh data everywhere
+      // This is safer than trying to match specific Orval-generated query keys
+      await queryClient.invalidateQueries();
 
       // Call user-provided onSuccess if exists
-      // This will be called after the refetch completes
+      // This will be called after the invalidation completes
       await mutationOptions?.onSuccess?.(data, variables, context);
     },
     ...mutationOptions,
