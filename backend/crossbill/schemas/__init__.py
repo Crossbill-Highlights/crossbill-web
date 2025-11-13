@@ -22,12 +22,14 @@ from crossbill.schemas.highlight_schemas import (
     HighlightUploadRequest,
     HighlightUploadResponse,
 )
+from crossbill.schemas.tag_schemas import BookUpdateRequest, Tag
 
 __all__ = [
     "Book",
     "BookBase",
     "BookCreate",
     "BookDetails",
+    "BookUpdateRequest",
     "BookWithHighlightCount",
     "BooksListResponse",
     "Chapter",
@@ -43,4 +45,5 @@ __all__ = [
     "HighlightSearchResult",
     "HighlightUploadRequest",
     "HighlightUploadResponse",
+    "Tag",
 ]

@@ -111,6 +111,13 @@ class HighlightRepository:
         )
         return self.db.execute(stmt).scalars().all()
 
+    def count_by_book_id(self, book_id: int) -> int:
+        """Count all non-deleted highlights for a book."""
+        stmt = select(func.count(models.Highlight.id)).where(
+            models.Highlight.book_id == book_id, models.Highlight.deleted_at.is_(None)
+        )
+        return self.db.execute(stmt).scalar() or 0
+
     def search(
         self, search_text: str, book_id: int | None = None, limit: int = 100
     ) -> Sequence[models.Highlight]:

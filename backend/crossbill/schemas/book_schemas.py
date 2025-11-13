@@ -28,6 +28,15 @@ class Book(BookBase):
     model_config = {"from_attributes": True}
 
 
+class TagInBook(BaseModel):
+    """Minimal tag schema for book responses."""
+
+    id: int
+    name: str
+
+    model_config = {"from_attributes": True}
+
+
 class BookWithHighlightCount(BaseModel):
     """Schema for Book with highlight count."""
 
@@ -37,6 +46,7 @@ class BookWithHighlightCount(BaseModel):
     isbn: str | None
     cover: str | None
     highlight_count: int = Field(..., ge=0, description="Number of highlights for this book")
+    tags: list[TagInBook] = Field(default_factory=list, description="List of tags for this book")
     created_at: datetime
     updated_at: datetime
 
