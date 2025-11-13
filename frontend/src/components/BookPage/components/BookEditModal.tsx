@@ -1,9 +1,10 @@
+import { useUpdateBookApiV1BookBookIdPost } from '@/api/generated/books/books.ts';
+import { BookWithHighlightCount } from '@/api/generated/model';
 import { Close as CloseIcon } from '@mui/icons-material';
 import {
   Autocomplete,
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -12,12 +13,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import {
-  BookWithHighlightCount,
-  useUpdateBookApiV1BookBookIdPost,
-} from '../../../api/book-update';
 import { BookCover } from '../../common/BookCover';
 
 interface BookEditFormData {
@@ -31,15 +29,21 @@ interface BookEditModalProps {
 }
 
 export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
+  const queryClient = useQueryClient();
   const { control, handleSubmit, reset } = useForm<BookEditFormData>({
     defaultValues: {
-      tags: book.tags.map((tag) => tag.name),
+      tags: book.tags?.map((tag) => tag.name) || [],
     },
   });
 
   const updateBookMutation = useUpdateBookApiV1BookBookIdPost({
     mutation: {
-      onSuccess: () => {
+      onSuccess: async () => {
+        // Invalidate and refetch both the books list and the specific book details
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['/api/v1/highlights/books'] }),
+          queryClient.invalidateQueries({ queryKey: [`/api/v1/book/${book.id}`] }),
+        ]);
         onClose();
       },
       onError: (error) => {
@@ -52,7 +56,7 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
   useEffect(() => {
     if (open) {
       reset({
-        tags: book.tags.map((tag) => tag.name),
+        tags: book.tags?.map((tag) => tag.name) || [],
       });
       updateBookMutation.reset(); // Reset mutation state
     }
@@ -125,7 +129,6 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
               control={control}
               render={({ field }) => (
                 <Autocomplete
-                  {...field}
                   multiple
                   freeSolo
                   options={[]}
@@ -133,16 +136,7 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
                   onChange={(_, newValue) => {
                     field.onChange(newValue);
                   }}
-                  renderTags={(value, getTagProps) =>
-                    value.map((option, index) => (
-                      <Chip
-                        label={option}
-                        {...getTagProps({ index })}
-                        key={option}
-                        disabled={isSaving}
-                      />
-                    ))
-                  }
+                  onBlur={field.onBlur}
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -152,6 +146,11 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
                       disabled={isSaving}
                     />
                   )}
+                  slotProps={{
+                    chip: {
+                      disabled: isSaving,
+                    },
+                  }}
                   disabled={isSaving}
                 />
               )}
@@ -161,7 +160,7 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
           {/* Error Message */}
           {error && (
             <Typography color="error" variant="body2">
-              {error instanceof Error ? error.message : 'Failed to update book'}
+              Failed to update book
             </Typography>
           )}
         </Box>
