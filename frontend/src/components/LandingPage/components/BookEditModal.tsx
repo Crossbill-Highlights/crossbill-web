@@ -12,28 +12,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import {
+  BookWithHighlightCount,
+  useUpdateBookApiV1BookBookIdPost,
+} from '../../../api/book-update';
 import { BookCover } from '../../common/BookCover';
-
-// Type definitions (will be replaced by generated types once API is regenerated)
-interface Tag {
-  id: number;
-  name: string;
-}
-
-interface BookWithHighlightCount {
-  id: number;
-  title: string;
-  author: string | null;
-  isbn: string | null;
-  cover: string | null;
-  highlight_count: number;
-  tags: Tag[];
-  created_at: string;
-  updated_at: string;
-}
 
 interface BookEditFormData {
   tags: string[];
@@ -46,13 +30,20 @@ interface BookEditModalProps {
 }
 
 export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
-  const queryClient = useQueryClient();
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   const { control, handleSubmit, reset } = useForm<BookEditFormData>({
     defaultValues: {
       tags: book.tags.map((tag) => tag.name),
+    },
+  });
+
+  const updateBookMutation = useUpdateBookApiV1BookBookIdPost({
+    mutation: {
+      onSuccess: () => {
+        onClose();
+      },
+      onError: (error) => {
+        console.error('Error updating book:', error);
+      },
     },
   });
 
@@ -61,43 +52,20 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
     reset({
       tags: book.tags.map((tag) => tag.name),
     });
-    setError(null);
+    updateBookMutation.reset(); // Reset mutation state
   };
 
-  const onSubmit = async (data: BookEditFormData) => {
-    setIsSaving(true);
-    setError(null);
-
-    try {
-      // Make API call to update book
-      const response = await fetch(`/api/v1/book/${book.id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tags: data.tags,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update book: ${response.statusText}`);
-      }
-
-      // Refetch the books list to update the UI
-      await queryClient.refetchQueries({
-        queryKey: ['/api/v1/highlights/books'],
-        exact: true,
-      });
-
-      onClose();
-    } catch (err) {
-      console.error('Error updating book:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update book');
-    } finally {
-      setIsSaving(false);
-    }
+  const onSubmit = (data: BookEditFormData) => {
+    updateBookMutation.mutate({
+      bookId: book.id,
+      data: {
+        tags: data.tags,
+      },
+    });
   };
+
+  const isSaving = updateBookMutation.isPending;
+  const error = updateBookMutation.error;
 
   return (
     <Dialog
@@ -196,7 +164,7 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
           {/* Error Message */}
           {error && (
             <Typography color="error" variant="body2">
-              {error}
+              {error instanceof Error ? error.message : 'Failed to update book'}
             </Typography>
           )}
         </Box>
