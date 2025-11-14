@@ -3,6 +3,13 @@
 from crossbill.repositories.book_repository import BookRepository
 from crossbill.repositories.chapter_repository import ChapterRepository
 from crossbill.repositories.highlight_repository import HighlightRepository
+from crossbill.repositories.highlight_tag_repository import HighlightTagRepository
 from crossbill.repositories.tag_repository import TagRepository
 
-__all__ = ["BookRepository", "ChapterRepository", "HighlightRepository", "TagRepository"]
+__all__ = [
+    "BookRepository",
+    "ChapterRepository",
+    "HighlightRepository",
+    "HighlightTagRepository",
+    "TagRepository",
+]
