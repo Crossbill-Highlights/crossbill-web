@@ -21,6 +21,12 @@ book_tags = Table(
         server_default=func.now(),
         nullable=False,
     ),
+    Column(
+        "deleted_at",
+        DateTime(timezone=True),
+        nullable=True,
+        index=True,
+    ),
 )
 
 
@@ -52,7 +58,11 @@ class Book(Base):
         back_populates="book", cascade="all, delete-orphan"
     )
     tags: Mapped[list["Tag"]] = relationship(
-        secondary=book_tags, back_populates="books", lazy="selectin"
+        secondary=book_tags,
+        back_populates="books",
+        lazy="selectin",
+        primaryjoin="Book.id == book_tags.c.book_id",
+        secondaryjoin="and_(Tag.id == book_tags.c.tag_id, book_tags.c.deleted_at.is_(None))",
     )
 
     def __repr__(self) -> str:
@@ -154,7 +164,11 @@ class Tag(Base):
 
     # Relationships
     books: Mapped[list["Book"]] = relationship(
-        secondary=book_tags, back_populates="tags", lazy="selectin"
+        secondary=book_tags,
+        back_populates="tags",
+        lazy="selectin",
+        primaryjoin="Tag.id == book_tags.c.tag_id",
+        secondaryjoin="and_(Book.id == book_tags.c.book_id, book_tags.c.deleted_at.is_(None))",
     )
 
     def __repr__(self) -> str:
