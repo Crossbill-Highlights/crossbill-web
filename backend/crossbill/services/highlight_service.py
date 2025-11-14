@@ -138,6 +138,7 @@ class HighlightService:
                 chapter_id=highlight.chapter_id,
                 chapter_name=highlight.chapter.name if highlight.chapter else None,
                 chapter_number=highlight.chapter.chapter_number if highlight.chapter else None,
+                highlight_tags=highlight.highlight_tags,  # Tags are automatically loaded via lazy="selectin"
                 created_at=highlight.created_at,
                 updated_at=highlight.updated_at,
             )

@@ -64,6 +64,7 @@ class BookService:
                     page=h.page,
                     note=h.note,
                     datetime=h.datetime,
+                    highlight_tags=h.highlight_tags,  # Tags are automatically loaded via lazy="selectin"
                     created_at=h.created_at,
                     updated_at=h.updated_at,
                 )

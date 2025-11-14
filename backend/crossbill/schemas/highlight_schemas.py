@@ -29,6 +29,9 @@ class Highlight(HighlightBase):
     id: int
     book_id: int
     chapter_id: int | None
+    highlight_tags: list[HighlightTagInBook] = Field(
+        default_factory=list, description="List of highlight tags for this highlight"
+    )
     created_at: datetime
     updated_at: datetime
 
@@ -120,6 +123,9 @@ class HighlightSearchResult(BaseModel):
     chapter_id: int | None
     chapter_name: str | None
     chapter_number: int | None = Field(None, description="Chapter order number from TOC")
+    highlight_tags: list[HighlightTagInBook] = Field(
+        default_factory=list, description="List of highlight tags for this highlight"
+    )
     created_at: datetime
     updated_at: datetime
 
