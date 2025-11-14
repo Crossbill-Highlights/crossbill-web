@@ -1,7 +1,8 @@
-import { Box, Typography } from '@mui/material';
+import type { BookWithHighlightCount } from '@/api/generated/model';
+import { theme } from '@/theme/theme.ts';
 import { BookmarkBorder as BookmarkIcon } from '@mui/icons-material';
+import { Box, Typography } from '@mui/material';
 import { Link } from '@tanstack/react-router';
-import type { BookWithHighlightCount } from '../../../api/generated/model';
 import { BookCover } from '../../common/BookCover';
 
 export interface BookCardProps {
@@ -41,20 +42,19 @@ export const BookCard = ({ book }: BookCardProps) => {
             objectFit="cover"
           />
 
-          {/* Highlight count overlay */}
+          {/* Highlight count chip */}
           <Box
             sx={{
               position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.75)',
+              top: 8,
+              right: 8,
+              backgroundColor: theme.palette.primary.main,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
               gap: 0.5,
               py: 0.5,
               px: 1,
+              borderRadius: 2,
             }}
           >
             <BookmarkIcon sx={{ fontSize: 16, color: 'white' }} />
@@ -79,13 +79,10 @@ export const BookCard = ({ book }: BookCardProps) => {
             color: 'text.primary',
             mt: 1,
             maxWidth: 150,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
           }}
           title={book.title}
         >
-          {truncateText(book.title, 100)}
+          {truncateText(book.title, 50)}
         </Typography>
 
         {/* Book author */}
@@ -94,13 +91,10 @@ export const BookCard = ({ book }: BookCardProps) => {
           color="text.secondary"
           sx={{
             maxWidth: 150,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
           }}
           title={book.author || 'Unknown Author'}
         >
-          {truncateText(book.author || 'Unknown Author', 100)}
+          {truncateText(book.author || 'Unknown Author', 30)}
         </Typography>
       </Box>
     </Link>
