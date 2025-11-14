@@ -24,6 +24,21 @@ book_tags = Table(
 )
 
 
+# Association table for many-to-many relationship between highlights and highlight_tags
+highlight_highlight_tags = Table(
+    "highlight_highlight_tags",
+    Base.metadata,
+    Column("highlight_id", Integer, ForeignKey("highlights.id", ondelete="CASCADE"), primary_key=True, index=True),
+    Column("highlight_tag_id", Integer, ForeignKey("highlight_tags.id", ondelete="CASCADE"), primary_key=True, index=True),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    ),
+)
+
+
 class Book(Base):
     """Book model for storing book metadata."""
 
@@ -53,6 +68,9 @@ class Book(Base):
     )
     tags: Mapped[list["Tag"]] = relationship(
         secondary=book_tags, back_populates="books", lazy="selectin"
+    )
+    highlight_tags: Mapped[list["HighlightTag"]] = relationship(
+        back_populates="book", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
@@ -126,6 +144,9 @@ class Highlight(Base):
     # Relationships
     book: Mapped["Book"] = relationship(back_populates="highlights")
     chapter: Mapped["Chapter | None"] = relationship(back_populates="highlights")
+    highlight_tags: Mapped[list["HighlightTag"]] = relationship(
+        secondary=highlight_highlight_tags, back_populates="highlights", lazy="selectin"
+    )
 
     # Unique constraint for deduplication: same text at same time in same book
     __table_args__ = (UniqueConstraint("book_id", "text", "datetime", name="uq_highlight_dedup"),)
@@ -160,3 +181,37 @@ class Tag(Base):
     def __repr__(self) -> str:
         """String representation of Tag."""
         return f"<Tag(id={self.id}, name='{self.name}')>"
+
+
+class HighlightTag(Base):
+    """HighlightTag model for categorizing highlights within a book."""
+
+    __tablename__ = "highlight_tags"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    book_id: Mapped[int] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    # Relationships
+    book: Mapped["Book"] = relationship(back_populates="highlight_tags")
+    highlights: Mapped[list["Highlight"]] = relationship(
+        secondary=highlight_highlight_tags, back_populates="highlight_tags", lazy="selectin"
+    )
+
+    # Unique constraint: tag names are unique within a book
+    __table_args__ = (UniqueConstraint("book_id", "name", name="uq_highlight_tag_book_name"),)
+
+    def __repr__(self) -> str:
+        """String representation of HighlightTag."""
+        return f"<HighlightTag(id={self.id}, name='{self.name}', book_id={self.book_id})>"
