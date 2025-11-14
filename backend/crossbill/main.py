@@ -14,7 +14,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 
 from crossbill.config import configure_logging, get_settings
 from crossbill.exceptions import BookNotFoundError, CrossbillError, NotFoundError
-from crossbill.routers import books, highlights
+from crossbill.routers import books, highlight, highlights
 
 settings = get_settings()
 
@@ -135,6 +135,7 @@ async def crossbill_exception_handler(request: Request, exc: CrossbillError) -> 
 
 # Register routers
 app.include_router(highlights.router, prefix=settings.API_V1_PREFIX)
+app.include_router(highlight.router, prefix=settings.API_V1_PREFIX)
 app.include_router(books.router, prefix=settings.API_V1_PREFIX)
 
 # Mount static files for book covers

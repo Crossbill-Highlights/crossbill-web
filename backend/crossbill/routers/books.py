@@ -8,7 +8,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from crossbill import schemas
 from crossbill.database import DatabaseSession
 from crossbill.exceptions import CrossbillError
-from crossbill.services import BookService
+from crossbill.services import BookService, HighlightTagService
 
 logger = logging.getLogger(__name__)
 
@@ -201,4 +201,96 @@ def update_book(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update book: {e!s}",
+        ) from e
+
+
+@router.post(
+    "/{book_id}/highlight_tag",
+    response_model=schemas.HighlightTag,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_highlight_tag(
+    book_id: int,
+    request: schemas.HighlightTagCreateRequest,
+    db: DatabaseSession,
+) -> schemas.HighlightTag:
+    """
+    Create a new highlight tag for a book.
+
+    Args:
+        book_id: ID of the book
+        request: Request containing tag name
+        db: Database session
+
+    Returns:
+        Created HighlightTag
+
+    Raises:
+        HTTPException: If book is not found, tag already exists, or creation fails
+    """
+    try:
+        service = HighlightTagService(db)
+        return service.create_tag_for_book(book_id, request.name)
+    except CrossbillError:
+        # Re-raise custom exceptions - handled by exception handlers
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    except Exception as e:
+        logger.error(f"Failed to create highlight tag for book {book_id}: {e!s}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create highlight tag: {e!s}",
+        ) from e
+
+
+@router.delete(
+    "/{book_id}/highlight_tag/{tag_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_highlight_tag(
+    book_id: int,
+    tag_id: int,
+    db: DatabaseSession,
+) -> None:
+    """
+    Delete a highlight tag from a book.
+
+    This will also remove the tag from all highlights it was associated with.
+
+    Args:
+        book_id: ID of the book
+        tag_id: ID of the tag to delete
+        db: Database session
+
+    Raises:
+        HTTPException: If tag is not found, doesn't belong to book, or deletion fails
+    """
+    try:
+        service = HighlightTagService(db)
+        deleted = service.delete_tag(book_id, tag_id)
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Highlight tag {tag_id} not found",
+            )
+    except CrossbillError:
+        # Re-raise custom exceptions - handled by exception handlers
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    except HTTPException:
+        # Re-raise HTTPException
+        raise
+    except Exception as e:
+        logger.error(f"Failed to delete highlight tag {tag_id} for book {book_id}: {e!s}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete highlight tag: {e!s}",
         ) from e
