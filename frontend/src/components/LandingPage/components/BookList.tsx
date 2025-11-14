@@ -12,12 +12,13 @@ export const BookList = ({ books }: BookListProps) => {
       sx={{
         display: 'grid',
         gridTemplateColumns: {
-          xs: '1fr',
-          sm: '1fr',
-          md: 'repeat(2, 1fr)',
-          lg: 'repeat(3, 1fr)',
+          xs: 'repeat(auto-fill, minmax(150px, 1fr))',
+          sm: 'repeat(auto-fill, minmax(150px, 1fr))',
+          md: 'repeat(auto-fill, minmax(150px, 1fr))',
+          lg: 'repeat(auto-fill, minmax(150px, 1fr))',
         },
         gap: 3,
+        justifyItems: 'start',
       }}
     >
       {books.map((book) => (

@@ -1,67 +1,108 @@
-import { Box, CardContent, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
+import { BookmarkBorder as BookmarkIcon } from '@mui/icons-material';
 import { Link } from '@tanstack/react-router';
 import type { BookWithHighlightCount } from '../../../api/generated/model';
 import { BookCover } from '../../common/BookCover';
-import { HoverableCard } from '../../common/HoverableCard';
 
 export interface BookCardProps {
   book: BookWithHighlightCount;
 }
+
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '...';
+};
 
 export const BookCard = ({ book }: BookCardProps) => {
   return (
     <Link
       to="/book/$bookId"
       params={{ bookId: String(book.id) }}
-      style={{ textDecoration: 'none', color: 'inherit' }}
+      style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}
     >
-      <HoverableCard
+      <Box
         sx={{
-          height: '100%',
           display: 'flex',
-          flexDirection: 'row',
-          position: 'relative',
-          minHeight: 180,
+          flexDirection: 'column',
+          width: 'fit-content',
+          transition: 'transform 0.2s',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+          },
         }}
       >
-        <BookCover
-          coverPath={book.cover}
-          title={book.title}
-          width="35%"
-          height="100%"
-          objectFit="cover"
-          sx={{ flexShrink: 0 }}
-        />
+        {/* Book cover with highlight count overlay */}
+        <Box sx={{ position: 'relative', width: 'fit-content' }}>
+          <BookCover
+            coverPath={book.cover}
+            title={book.title}
+            width={150}
+            height={220}
+            objectFit="cover"
+          />
 
-        <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', paddingRight: 6 }}>
-          <Typography
-            variant="h6"
-            component="h3"
-            gutterBottom
-            sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.5 }}
-          >
-            {book.title}
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            gutterBottom
+          {/* Highlight count overlay */}
+          <Box
             sx={{
-              width: { xs: '120px', sm: '200px' },
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.75)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 0.5,
+              py: 0.5,
+              px: 1,
             }}
           >
-            {book.author || 'Unknown Author'}
-          </Typography>
-          <Box sx={{ mt: 'auto' }}>
-            <Typography variant="body2" color="text.secondary">
-              {book.highlight_count} {book.highlight_count === 1 ? 'highlight' : 'highlights'}
+            <BookmarkIcon sx={{ fontSize: 16, color: 'white' }} />
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'white',
+                fontWeight: 500,
+              }}
+            >
+              {book.highlight_count}
             </Typography>
           </Box>
-        </CardContent>
-      </HoverableCard>
+        </Box>
+
+        {/* Book title */}
+        <Typography
+          variant="body1"
+          component="h3"
+          sx={{
+            fontWeight: 700,
+            color: 'text.primary',
+            mt: 1,
+            maxWidth: 150,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+          title={book.title}
+        >
+          {truncateText(book.title, 100)}
+        </Typography>
+
+        {/* Book author */}
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{
+            maxWidth: 150,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+          title={book.author || 'Unknown Author'}
+        >
+          {truncateText(book.author || 'Unknown Author', 100)}
+        </Typography>
+      </Box>
     </Link>
   );
 };
