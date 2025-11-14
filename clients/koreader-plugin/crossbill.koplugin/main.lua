@@ -134,10 +134,27 @@ function CrossbillSync:performSync()
             logger.dbg("Crossbill: No identifiers field found in metadata")
         end
 
+        -- Extract tags from keywords
+        -- Keywords are stored as newline-separated strings in the metadata
+        local tags = {}
+        if metadata_props.keywords then
+            -- Split keywords by newlines
+            for tag in metadata_props.keywords:gmatch("[^\r\n]+") do
+                tag = tag:match("^%s*(.-)%s*$") -- Trim whitespace
+                if tag and tag ~= "" then
+                    table.insert(tags, tag)
+                end
+            end
+            logger.dbg("Crossbill: Extracted tags:", table.concat(tags, ", "))
+        else
+            logger.dbg("Crossbill: No keywords found in metadata")
+        end
+
         local book_data = {
             title = book_props.display_title or book_props.title or self:getFilename(doc_path),
             author = book_props.authors or nil,
             isbn = isbn,
+            tags = tags,
         }
 
         -- Get highlights from memory (ReaderAnnotation) if available,
