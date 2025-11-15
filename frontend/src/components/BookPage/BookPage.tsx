@@ -16,6 +16,7 @@ export const BookPage = () => {
   const { data: book, isLoading, isError } = useGetBookDetailsApiV1BookBookIdGet(Number(bookId));
 
   const [searchText, setSearchText] = useState('');
+  const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
 
   // Search query - only enabled when there's search text
   const { data: searchResults, isLoading: isSearching } =
@@ -68,8 +69,24 @@ export const BookPage = () => {
     (chapter) => chapter.highlights && chapter.highlights.length > 0
   );
 
+  // Filter chapters by selected tag
+  const filteredChapters = selectedTagId
+    ? chapters
+        .map((chapter) => ({
+          ...chapter,
+          highlights: chapter.highlights?.filter((highlight) =>
+            highlight.highlight_tags?.some((tag) => tag.id === selectedTagId)
+          ),
+        }))
+        .filter((chapter) => chapter.highlights && chapter.highlights.length > 0)
+    : chapters;
+
   // Show search results or regular chapter view
   const showSearchResults = searchText.length > 0;
+
+  const handleTagClick = (tagId: number | null) => {
+    setSelectedTagId(tagId);
+  };
 
   return (
     <Box
@@ -106,13 +123,15 @@ export const BookPage = () => {
           >
             {/* Main content - Highlights */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {chapters && chapters.length === 0 && (
+              {filteredChapters && filteredChapters.length === 0 && (
                 <Typography variant="body1" color="text.secondary">
-                  No chapters found for this book.
+                  {selectedTagId
+                    ? 'No highlights found with the selected tag.'
+                    : 'No chapters found for this book.'}
                 </Typography>
               )}
 
-              {chapters.map((chapter) => (
+              {filteredChapters.map((chapter) => (
                 <Box key={chapter.id}>
                   {/* Chapter Header */}
                   <SectionTitle showDivider>{chapter.name}</SectionTitle>
@@ -135,7 +154,11 @@ export const BookPage = () => {
 
             {/* Sidebar - Tags (Desktop only) */}
             <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
-              <HighlightTags tags={book.highlight_tags || []} />
+              <HighlightTags
+                tags={book.highlight_tags || []}
+                selectedTag={selectedTagId}
+                onTagClick={handleTagClick}
+              />
             </Box>
           </Box>
         )}
