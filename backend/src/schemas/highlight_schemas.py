@@ -1,8 +1,9 @@
 """Pydantic schemas for Highlight API request/response validation."""
 
 from datetime import datetime
+from typing import Any
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field, model_validator
 
 from src.schemas.book_schemas import BookCreate, TagInBook
 from src.schemas.highlight_tag_schemas import HighlightTagInBook
@@ -37,25 +38,42 @@ class Highlight(HighlightBase):
 
     model_config = {"from_attributes": True}
 
-    @field_serializer("chapter")
-    def serialize_chapter(self, chapter: object, _info) -> str | None:
-        """Serialize chapter from relationship or string."""
-        if chapter is None:
-            return None
-        # If it's a Chapter model object, extract the name
-        if hasattr(chapter, "name"):
-            return chapter.name
-        # Otherwise it should be a string already
-        return str(chapter) if chapter else None
-
-    @field_serializer("chapter_number")
-    def serialize_chapter_number(self, chapter_number: object, _info) -> int | None:
-        """Serialize chapter_number from chapter relationship if needed."""
-        # chapter_number isn't stored in Highlight model, need to get from chapter relationship
-        # This will be None unless we explicitly set it during serialization
-        if chapter_number is not None and isinstance(chapter_number, int):
-            return chapter_number
-        return None
+    @model_validator(mode="before")
+    @classmethod
+    def extract_chapter_from_relationship(cls, data: Any) -> Any:
+        """Extract chapter name and number from Chapter relationship object before validation."""
+        # Handle both dict and ORM model object
+        if isinstance(data, dict):
+            # If already a dict, check if we need to transform anything
+            chapter = data.get("chapter")
+            if chapter is not None and hasattr(chapter, "name"):
+                data["chapter"] = chapter.name
+                # Also extract chapter_number if not present
+                if "chapter_number" not in data or data["chapter_number"] is None:
+                    data["chapter_number"] = getattr(chapter, "chapter_number", None)
+        else:
+            # It's an ORM model object - get attributes
+            if hasattr(data, "chapter"):
+                chapter = data.chapter
+                if chapter is not None and hasattr(chapter, "name"):
+                    # Need to set chapter to the name string
+                    # Since we can't modify the ORM object, create a dict
+                    data_dict = {
+                        "id": data.id,
+                        "book_id": data.book_id,
+                        "chapter_id": data.chapter_id,
+                        "text": data.text,
+                        "page": data.page,
+                        "note": data.note,
+                        "datetime": data.datetime,
+                        "created_at": data.created_at,
+                        "updated_at": data.updated_at,
+                        "highlight_tags": data.highlight_tags,
+                        "chapter": chapter.name,
+                        "chapter_number": getattr(chapter, "chapter_number", None),
+                    }
+                    return data_dict
+        return data
 
 
 class HighlightUploadRequest(BaseModel):
