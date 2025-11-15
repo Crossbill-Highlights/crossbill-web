@@ -114,8 +114,14 @@ export const BookPage = () => {
           />
         </Box>
 
-        {/* Search Bar */}
-        <SearchBar onSearch={setSearchText} />
+        {/* Search Bar - Aligned with content column on desktop */}
+        <Box
+          sx={{
+            maxWidth: { xs: '100%', lg: 'calc(100% - 300px - 32px)' }, // Subtract sidebar width + gap
+          }}
+        >
+          <SearchBar onSearch={setSearchText} />
+        </Box>
 
         {/* Search Results */}
         {showSearchResults && (
