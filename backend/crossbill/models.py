@@ -164,7 +164,9 @@ class Highlight(Base):
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
-    text_search_vector: Mapped[TSVECTOR | None] = mapped_column(TSVECTOR, nullable=True, index=True)
+    text_search_vector: Mapped[str | None] = mapped_column(
+        Text().with_variant(TSVECTOR, "postgresql"), nullable=True, index=True
+    )
 
     # Relationships
     book: Mapped["Book"] = relationship(back_populates="highlights")
