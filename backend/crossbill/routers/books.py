@@ -332,3 +332,131 @@ def delete_highlight_tag(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete highlight tag: {e!s}",
         ) from e
+
+
+@router.post(
+    "/{book_id}/highlight/{highlight_id}/tag",
+    response_model=schemas.Highlight,
+    status_code=status.HTTP_200_OK,
+)
+def add_tag_to_highlight(
+    book_id: int,
+    highlight_id: int,
+    request: schemas.HighlightTagAssociationRequest,
+    db: DatabaseSession,
+) -> schemas.Highlight:
+    """
+    Add a tag to a highlight.
+
+    If a tag name is provided and doesn't exist, it will be created first.
+    If a tag_id is provided, it will be used directly.
+
+    Args:
+        book_id: ID of the book
+        highlight_id: ID of the highlight
+        request: Request containing either tag name or tag_id
+        db: Database session
+
+    Returns:
+        Updated Highlight with tags
+
+    Raises:
+        HTTPException: If highlight or tag not found, or association fails
+    """
+    try:
+        service = HighlightTagService(db)
+
+        # If tag_id is provided, use it directly
+        if request.tag_id is not None:
+            tag_id = request.tag_id
+        # Otherwise, create or get tag by name
+        elif request.name is not None:
+            # Try to get existing tag or create new one
+            from crossbill.repositories import HighlightTagRepository
+            tag_repo = HighlightTagRepository(db)
+            existing_tag = tag_repo.get_by_book_and_name(book_id, request.name)
+            if existing_tag:
+                tag_id = existing_tag.id
+            else:
+                # Create new tag
+                new_tag = service.create_tag_for_book(book_id, request.name)
+                tag_id = new_tag.id
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Either tag_id or name must be provided",
+            )
+
+        # Add tag to highlight
+        highlight = service.add_tag_to_highlight(highlight_id, tag_id)
+        return highlight
+    except CrossbillError:
+        # Re-raise custom exceptions - handled by exception handlers
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    except HTTPException:
+        # Re-raise HTTPException
+        raise
+    except Exception as e:
+        logger.error(
+            f"Failed to add tag to highlight {highlight_id}: {e!s}", exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to add tag to highlight: {e!s}",
+        ) from e
+
+
+@router.delete(
+    "/{book_id}/highlight/{highlight_id}/tag/{tag_id}",
+    response_model=schemas.Highlight,
+    status_code=status.HTTP_200_OK,
+)
+def remove_tag_from_highlight(
+    book_id: int,
+    highlight_id: int,
+    tag_id: int,
+    db: DatabaseSession,
+) -> schemas.Highlight:
+    """
+    Remove a tag from a highlight.
+
+    Args:
+        book_id: ID of the book
+        highlight_id: ID of the highlight
+        tag_id: ID of the tag to remove
+        db: Database session
+
+    Returns:
+        Updated Highlight with tags
+
+    Raises:
+        HTTPException: If highlight not found or removal fails
+    """
+    try:
+        service = HighlightTagService(db)
+        highlight = service.remove_tag_from_highlight(highlight_id, tag_id)
+        return highlight
+    except CrossbillError:
+        # Re-raise custom exceptions - handled by exception handlers
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    except HTTPException:
+        # Re-raise HTTPException
+        raise
+    except Exception as e:
+        logger.error(
+            f"Failed to remove tag from highlight {highlight_id}: {e!s}", exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to remove tag from highlight: {e!s}",
+        ) from e

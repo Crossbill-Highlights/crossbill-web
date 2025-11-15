@@ -5,7 +5,6 @@ import {
 import { BookWithHighlightCount } from '@/api/generated/model';
 import { Close as CloseIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
-  Autocomplete,
   Box,
   Button,
   Dialog,
@@ -13,14 +12,14 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  TextField,
   Typography,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { BookCover } from '../../common/BookCover';
+import { TagInput } from '../../common/TagInput';
 
 interface BookEditFormData {
   tags: string[];
@@ -160,37 +159,7 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
 
           {/* Editable Tags Field */}
           <Box>
-            <Controller
-              name="tags"
-              control={control}
-              render={({ field }) => (
-                <Autocomplete
-                  multiple
-                  freeSolo
-                  options={[]}
-                  value={field.value}
-                  onChange={(_, newValue) => {
-                    field.onChange(newValue);
-                  }}
-                  onBlur={field.onBlur}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Tags"
-                      placeholder="Add tags..."
-                      helperText="Press Enter to add a tag"
-                      disabled={isLoading}
-                    />
-                  )}
-                  slotProps={{
-                    chip: {
-                      disabled: isLoading,
-                    },
-                  }}
-                  disabled={isLoading}
-                />
-              )}
-            />
+            <TagInput control={control} name="tags" disabled={isLoading} />
           </Box>
 
           {/* Error Message */}

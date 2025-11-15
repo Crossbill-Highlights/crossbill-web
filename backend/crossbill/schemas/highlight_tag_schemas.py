@@ -41,3 +41,10 @@ class HighlightTagsResponse(BaseModel):
     """Schema for list of highlight tags response."""
 
     tags: list[HighlightTag] = Field(default_factory=list, description="List of highlight tags")
+
+
+class HighlightTagAssociationRequest(BaseModel):
+    """Schema for associating a tag with a highlight."""
+
+    tag_id: int | None = Field(None, description="ID of existing tag to associate")
+    name: str | None = Field(None, min_length=1, max_length=100, description="Name of tag to create/associate")

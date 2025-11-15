@@ -4,6 +4,7 @@ import {
   CalendarMonth as CalendarIcon,
   ChevronRight as ChevronRightIcon,
   Delete as DeleteIcon,
+  LocalOffer as TagIcon,
   MoreVert as MoreVertIcon,
   FormatQuote as QuoteIcon,
 } from '@mui/icons-material';
@@ -19,8 +20,12 @@ import {
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useDeleteHighlightsApiV1BookBookIdHighlightDelete } from '../../../api/generated/books/books';
+import {
+  useDeleteHighlightsApiV1BookBookIdHighlightDelete,
+  useGetHighlightTagsApiV1BookBookIdHighlightTagsGet,
+} from '../../../api/generated/books/books';
 import { HoverableCard } from '../../common/HoverableCard';
+import { HighlightEditDialog } from './HighlightEditDialog';
 
 export interface HighlightCardProps {
   highlight: Highlight;
@@ -95,8 +100,12 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
 
   const [isExpanded, setExpanded] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const menuOpen = Boolean(anchorEl);
   const queryClient = useQueryClient();
+
+  // Fetch available tags for the book
+  const { data: tagsResponse } = useGetHighlightTagsApiV1BookBookIdHighlightTagsGet(bookId);
 
   const deleteHighlightMutation = useDeleteHighlightsApiV1BookBookIdHighlightDelete({
     mutation: {
@@ -142,6 +151,12 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
     }
   };
 
+  const handleAddTag = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    handleMenuClose();
+    setEditDialogOpen(true);
+  };
+
   return (
     <HoverableCard
       sx={{
@@ -180,6 +195,12 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
           horizontal: 'right',
         }}
       >
+        <MenuItem onClick={handleAddTag}>
+          <ListItemIcon>
+            <TagIcon fontSize="small" />
+          </ListItemIcon>
+          Add tag
+        </MenuItem>
         <MenuItem onClick={handleDelete}>
           <ListItemIcon>
             <DeleteIcon fontSize="small" />
@@ -187,6 +208,15 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
           Delete
         </MenuItem>
       </Menu>
+
+      {/* Highlight Edit Dialog */}
+      <HighlightEditDialog
+        highlight={highlight}
+        bookId={bookId}
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        availableTags={tagsResponse?.tags || []}
+      />
 
       <CardContent
         onClick={() => (isExpandable ? setExpanded(!isExpanded) : null)}

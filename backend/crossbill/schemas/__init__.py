@@ -24,6 +24,7 @@ from crossbill.schemas.highlight_schemas import (
 )
 from crossbill.schemas.highlight_tag_schemas import (
     HighlightTag,
+    HighlightTagAssociationRequest,
     HighlightTagBase,
     HighlightTagCreateRequest,
     HighlightTagInBook,
@@ -51,6 +52,7 @@ __all__ = [
     "HighlightSearchResponse",
     "HighlightSearchResult",
     "HighlightTag",
+    "HighlightTagAssociationRequest",
     "HighlightTagBase",
     "HighlightTagCreateRequest",
     "HighlightTagInBook",
