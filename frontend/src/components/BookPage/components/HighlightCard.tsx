@@ -163,13 +163,13 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
         px: 2,
         borderBottom: 1,
         borderColor: 'divider',
+        borderLeft: 3,
+        borderLeftStyle: 'solid',
+        borderLeftColor: 'transparent',
         transition: 'all 0.2s',
         '&:hover': {
           bgcolor: 'action.hover',
-          borderLeftWidth: 3,
-          borderLeftStyle: 'solid',
           borderLeftColor: 'primary.main',
-          px: 1.75, // Compensate for the thicker left border
         },
       }}
     >
