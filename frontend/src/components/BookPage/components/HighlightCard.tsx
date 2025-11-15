@@ -10,7 +10,6 @@ import {
 } from '@mui/icons-material';
 import {
   Box,
-  CardContent,
   Collapse,
   IconButton,
   ListItemIcon,
@@ -24,7 +23,6 @@ import {
   useDeleteHighlightsApiV1BookBookIdHighlightDelete,
   useGetHighlightTagsApiV1BookBookIdHighlightTagsGet,
 } from '../../../api/generated/books/books';
-import { HoverableCard } from '../../common/HoverableCard';
 import { HighlightEditDialog } from './HighlightEditDialog';
 
 export interface HighlightCardProps {
@@ -158,10 +156,21 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
   };
 
   return (
-    <HoverableCard
+    <Box
       sx={{
-        overflow: 'visible',
         position: 'relative',
+        py: 3,
+        px: 2,
+        borderBottom: 1,
+        borderColor: 'divider',
+        transition: 'all 0.2s',
+        '&:hover': {
+          bgcolor: 'action.hover',
+          borderLeftWidth: 3,
+          borderLeftStyle: 'solid',
+          borderLeftColor: 'primary.main',
+          px: 1.75, // Compensate for the thicker left border
+        },
       }}
     >
       {/* Menu Button */}
@@ -173,8 +182,11 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
           bottom: 18,
           right: 18,
           zIndex: 1,
+          opacity: 0.6,
+          transition: 'opacity 0.2s',
           '&:hover': {
-            bgcolor: 'background.paper',
+            opacity: 1,
+            bgcolor: 'action.selected',
           },
         }}
       >
@@ -218,10 +230,10 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
         availableTags={tagsResponse?.tags || []}
       />
 
-      <CardContent
+      <Box
         onClick={() => (isExpandable ? setExpanded(!isExpanded) : null)}
         sx={{
-          '&:last-child': { pb: 3 },
+          cursor: isExpandable ? 'pointer' : 'default',
           pr: 2, // Make room for the menu button
         }}
       >
@@ -242,6 +254,7 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
                   color: 'primary.main',
                   flexShrink: 0,
                   mt: 0.3,
+                  opacity: 0.7,
                 }}
               />
               <Typography
@@ -260,7 +273,7 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
               <Typography
                 variant="body1"
                 sx={{
-                  color: 'secondary.dark',
+                  color: 'text.secondary',
                   lineHeight: 1.6,
                   mb: 2,
                   pl: 4.5,
@@ -287,7 +300,7 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
             </IconButton>
           )}
         </Box>
-      </CardContent>
-    </HoverableCard>
+      </Box>
+    </Box>
   );
 };
