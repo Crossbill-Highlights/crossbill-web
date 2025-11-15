@@ -13,6 +13,8 @@ import {
   DialogTitle,
   IconButton,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -34,6 +36,8 @@ interface BookEditModalProps {
 export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const { control, handleSubmit, reset } = useForm<BookEditFormData>({
     defaultValues: {
       tags: book.tags?.map((tag) => tag.name) || [],
@@ -112,7 +116,7 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
   const error = updateBookMutation.error;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth fullScreen={fullScreen} scroll="paper">
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           Edit Book
@@ -131,7 +135,7 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
       <DialogContent dividers>
         <Box display="flex" flexDirection="column" gap={3}>
           {/* Book Info Display */}
-          <Box display="flex" gap={2}>
+          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2} alignItems={{ xs: 'center', sm: 'flex-start' }}>
             <BookCover
               coverPath={book.cover}
               title={book.title}
@@ -139,7 +143,7 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
               height="180px"
               objectFit="cover"
             />
-            <Box flex={1}>
+            <Box flex={1} sx={{ textAlign: { xs: 'center', sm: 'left' }, width: { xs: '100%', sm: 'auto' } }}>
               <Typography variant="h6" gutterBottom>
                 {book.title}
               </Typography>
