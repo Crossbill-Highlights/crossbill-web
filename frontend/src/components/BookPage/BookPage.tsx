@@ -105,6 +105,15 @@ export const BookPage = () => {
         {/* Book Info Card */}
         <BookTitle book={book} highlightCount={totalHighlights} />
 
+        {/* Tags (Mobile only - above search bar) */}
+        <Box sx={{ display: { xs: 'block', lg: 'none' }, mb: 3 }}>
+          <HighlightTags
+            tags={book.highlight_tags || []}
+            selectedTag={selectedTagId}
+            onTagClick={handleTagClick}
+          />
+        </Box>
+
         {/* Search Bar */}
         <SearchBar onSearch={setSearchText} />
 
