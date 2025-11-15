@@ -59,7 +59,8 @@ class TestDeleteBook:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         data = response.json()
-        assert "not found" in data["detail"].lower()
+        assert "not found" in data["message"].lower()
+        assert data["book_id"] == 99999
 
     def test_delete_book_empty_database(self, client: TestClient, db_session: Session) -> None:
         """Test deletion when database is empty."""
@@ -232,7 +233,8 @@ class TestDeleteHighlights:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         data = response.json()
-        assert "not found" in data["detail"].lower()
+        assert "not found" in data["message"].lower()
+        assert data["book_id"] == 99999
 
     def test_delete_highlights_empty_list(self, client: TestClient, db_session: Session) -> None:
         """Test deletion with empty highlight list."""

@@ -149,6 +149,12 @@ async def health() -> dict[str, str]:
     return {"status": "healthy"}
 
 
+@app.get("/")
+async def root() -> dict[str, str]:
+    """Root endpoint."""
+    return {"message": "Welcome to crossbill API"}
+
+
 @app.get(f"{settings.API_V1_PREFIX}/")
 async def api_root() -> dict[str, Any]:
     """API root endpoint."""
