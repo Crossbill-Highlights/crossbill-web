@@ -23,9 +23,13 @@ function CrossbillSync:init()
     -- Load settings
     self.settings = G_reader_settings:readSetting("crossbill_sync") or {
         base_url = "http://localhost:8000",
+        autosync_enabled = false,
     }
 
     self.ui.menu:registerToMainMenu(self)
+
+    -- Register event handlers for autosync
+    self:registerEventHandlers()
 end
 
 function CrossbillSync:addToMainMenu(menu_items)
@@ -42,6 +46,21 @@ function CrossbillSync:addToMainMenu(menu_items)
                 text = _("Configure Server"),
                 callback = function()
                     self:configureServer()
+                end,
+            },
+            {
+                text = _("Auto-sync"),
+                checked_func = function()
+                    return self.settings.autosync_enabled
+                end,
+                callback = function()
+                    self.settings.autosync_enabled = not self.settings.autosync_enabled
+                    G_reader_settings:saveSetting("crossbill_sync", self.settings)
+                    UIManager:show(InfoMessage:new{
+                        text = self.settings.autosync_enabled and
+                               _("Auto-sync enabled") or
+                               _("Auto-sync disabled"),
+                    })
                 end,
             },
         },
@@ -480,6 +499,39 @@ function CrossbillSync:uploadCoverImage(book_id)
         logger.err("Crossbill: Error uploading cover:", err)
         -- Don't show error to user, cover upload is optional
     end
+end
+
+function CrossbillSync:registerEventHandlers()
+    -- Event handlers are automatically called by KOReader framework
+    -- when methods match the naming pattern on<EventName>
+    -- No explicit registration needed
+end
+
+function CrossbillSync:onCloseDocument()
+    -- Called when user closes the current book
+    if self.settings.autosync_enabled then
+        logger.info("Crossbill: Auto-syncing on document close")
+        self:syncCurrentBook()
+    end
+    return false  -- Allow other handlers to process this event
+end
+
+function CrossbillSync:onSuspend()
+    -- Called when device goes to sleep/suspend (user stops reading)
+    if self.settings.autosync_enabled then
+        logger.info("Crossbill: Auto-syncing on suspend")
+        self:syncCurrentBook()
+    end
+    return false  -- Allow other handlers to process this event
+end
+
+function CrossbillSync:onExit()
+    -- Called when KOReader exits
+    if self.settings.autosync_enabled then
+        logger.info("Crossbill: Auto-syncing on exit")
+        self:syncCurrentBook()
+    end
+    return false  -- Allow other handlers to process this event
 end
 
 return CrossbillSync
