@@ -1,29 +1,10 @@
 import type { Highlight } from '@/api/generated/model';
 import { TagList } from '@/components/BookPage/components/TagList.tsx';
-import {
-  CalendarMonth as CalendarIcon,
-  ChevronRight as ChevronRightIcon,
-  Delete as DeleteIcon,
-  MoreVert as MoreVertIcon,
-  FormatQuote as QuoteIcon,
-  LocalOffer as TagIcon,
-} from '@mui/icons-material';
-import {
-  Box,
-  Collapse,
-  IconButton,
-  ListItemIcon,
-  Menu,
-  MenuItem,
-  Typography,
-} from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
+import { CalendarMonth as CalendarIcon, FormatQuote as QuoteIcon } from '@mui/icons-material';
+import { Box, Typography } from '@mui/material';
 import { useState } from 'react';
-import {
-  useDeleteHighlightsApiV1BookBookIdHighlightDelete,
-  useGetHighlightTagsApiV1BookBookIdHighlightTagsGet,
-} from '../../../api/generated/books/books';
-import { HighlightEditDialog } from './HighlightEditDialog';
+import { useGetHighlightTagsApiV1BookBookIdHighlightTagsGet } from '../../../api/generated/books/books';
+import { HighlightViewModal } from './HighlightViewModal';
 
 export interface HighlightCardProps {
   highlight: Highlight;
@@ -88,219 +69,74 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
   const formattedText = startsWithLowercase ? `...${highlight.text}` : highlight.text;
 
   const words = formattedText.split(/\s+/);
-  const isExpandable = words.length > previewWordCount;
+  const shouldTruncate = words.length > previewWordCount;
 
-  const previewText = isExpandable
+  const previewText = shouldTruncate
     ? words.slice(0, previewWordCount).join(' ') + '...'
     : formattedText;
 
-  const remainingText = isExpandable ? words.slice(previewWordCount).join(' ') : '';
-
-  const [isExpanded, setExpanded] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const menuOpen = Boolean(anchorEl);
-  const queryClient = useQueryClient();
+  const [viewModalOpen, setViewModalOpen] = useState(false);
 
   // Fetch available tags for the book
   const { data: tagsResponse } = useGetHighlightTagsApiV1BookBookIdHighlightTagsGet(bookId);
 
-  const deleteHighlightMutation = useDeleteHighlightsApiV1BookBookIdHighlightDelete({
-    mutation: {
-      onSuccess: () => {
-        // Immediately refetch the book details query to refresh the UI
-        queryClient.refetchQueries({
-          queryKey: [`/api/v1/book/${bookId}`],
-          exact: true,
-        });
-      },
-      onError: (error) => {
-        console.error('Failed to delete highlight:', error);
-        alert('Failed to delete highlight. Please try again.');
-      },
-    },
-  });
-
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    event.stopPropagation();
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = (event?: React.MouseEvent) => {
-    if (event) {
-      event.stopPropagation();
-    }
-    setAnchorEl(null);
-  };
-
-  const handleDelete = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    handleMenuClose();
-
-    if (
-      confirm(
-        'Are you sure you want to delete this highlight? This will soft-delete the highlight and prevent it from being recreated during sync.'
-      )
-    ) {
-      deleteHighlightMutation.mutate({
-        bookId,
-        data: { highlight_ids: [highlight.id] },
-      });
-    }
-  };
-
-  const handleAddTag = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    handleMenuClose();
-    setEditDialogOpen(true);
-  };
-
   return (
-    <Box
-      sx={{
-        position: 'relative',
-        py: 3,
-        px: 2,
-        borderBottom: 1,
-        borderColor: 'divider',
-        borderLeft: 3,
-        borderLeftStyle: 'solid',
-        borderLeftColor: 'transparent',
-        transition: 'all 0.2s',
-        '&:hover': {
-          bgcolor: 'action.hover',
-          borderLeftColor: 'primary.main',
-        },
-      }}
-    >
-      {/* Menu Button */}
-      <IconButton
-        size="small"
-        onClick={handleMenuOpen}
+    <>
+      <Box
+        onClick={() => setViewModalOpen(true)}
         sx={{
-          position: 'absolute',
-          bottom: 18,
-          right: 18,
-          zIndex: 1,
-          opacity: 0.6,
-          transition: 'opacity 0.2s',
+          position: 'relative',
+          py: 3,
+          px: 2,
+          borderBottom: 1,
+          borderColor: 'divider',
+          borderLeft: 3,
+          borderLeftStyle: 'solid',
+          borderLeftColor: 'transparent',
+          transition: 'all 0.2s',
+          cursor: 'pointer',
           '&:hover': {
-            opacity: 1,
-            bgcolor: 'action.selected',
+            bgcolor: 'action.hover',
+            borderLeftColor: 'primary.main',
           },
         }}
       >
-        <MoreVertIcon fontSize="small" />
-      </IconButton>
-
-      <Menu
-        anchorEl={anchorEl}
-        open={menuOpen}
-        onClose={(event) => handleMenuClose(event as React.MouseEvent)}
-        onClick={(event) => event.stopPropagation()}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-      >
-        <MenuItem onClick={handleAddTag}>
-          <ListItemIcon>
-            <TagIcon fontSize="small" />
-          </ListItemIcon>
-          Add tag
-        </MenuItem>
-        <MenuItem onClick={handleDelete}>
-          <ListItemIcon>
-            <DeleteIcon fontSize="small" />
-          </ListItemIcon>
-          Delete
-        </MenuItem>
-      </Menu>
-
-      {/* Highlight Edit Dialog */}
-      <HighlightEditDialog
-        highlight={highlight}
-        bookId={bookId}
-        open={editDialogOpen}
-        onClose={() => setEditDialogOpen(false)}
-        availableTags={tagsResponse?.tags || []}
-      />
-
-      <Box
-        onClick={() => (isExpandable ? setExpanded(!isExpanded) : null)}
-        sx={{
-          cursor: isExpandable ? 'pointer' : 'default',
-          pr: 2, // Make room for the menu button
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'start',
-            justifyContent: 'space-between',
-            gap: 2,
-          }}
-        >
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            {/* Quote Icon and Text */}
-            <Box sx={{ display: 'flex', alignItems: 'start', gap: 1.5, mb: 2 }}>
-              <QuoteIcon
-                sx={{
-                  fontSize: 18,
-                  color: 'primary.main',
-                  flexShrink: 0,
-                  mt: 0.3,
-                  opacity: 0.7,
-                }}
-              />
-              <Typography
-                variant="body1"
-                sx={{
-                  fontWeight: 600,
-                  color: 'text.primary',
-                  lineHeight: 1.5,
-                }}
-              >
-                {previewText}
-              </Typography>
-            </Box>
-
-            <Collapse in={isExpanded}>
-              <Typography
-                variant="body1"
-                sx={{
-                  color: 'text.secondary',
-                  lineHeight: 1.6,
-                  mb: 2,
-                  pl: 4.5,
-                }}
-              >
-                {remainingText}
-              </Typography>
-            </Collapse>
-
-            <Footer highlight={highlight} />
-          </Box>
-
-          {isExpandable && (
-            <IconButton
-              size="small"
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          {/* Quote Icon and Text */}
+          <Box sx={{ display: 'flex', alignItems: 'start', gap: 1.5, mb: 2 }}>
+            <QuoteIcon
               sx={{
+                fontSize: 18,
                 color: 'primary.main',
-                transition: 'transform 0.2s',
-                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
                 flexShrink: 0,
+                mt: 0.3,
+                opacity: 0.7,
+              }}
+            />
+            <Typography
+              variant="body1"
+              sx={{
+                fontWeight: 600,
+                color: 'text.primary',
+                lineHeight: 1.5,
               }}
             >
-              <ChevronRightIcon />
-            </IconButton>
-          )}
+              {previewText}
+            </Typography>
+          </Box>
+
+          <Footer highlight={highlight} />
         </Box>
       </Box>
-    </Box>
+
+      {/* Highlight View Modal */}
+      <HighlightViewModal
+        highlight={highlight}
+        bookId={bookId}
+        open={viewModalOpen}
+        onClose={() => setViewModalOpen(false)}
+        availableTags={tagsResponse?.tags || []}
+      />
+    </>
   );
 };
