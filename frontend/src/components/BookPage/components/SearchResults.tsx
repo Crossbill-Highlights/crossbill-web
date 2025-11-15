@@ -9,6 +9,7 @@ interface SearchResultsProps {
   highlights: HighlightSearchResult[] | undefined;
   searchText: string;
   bookId: number;
+  selectedTagId?: number | null;
 }
 
 export const SearchResults = ({
@@ -16,6 +17,7 @@ export const SearchResults = ({
   highlights,
   searchText,
   bookId,
+  selectedTagId,
 }: SearchResultsProps) => {
   // Loading state
   if (isSearching) {
@@ -74,7 +76,9 @@ export const SearchResults = ({
         </>
       ) : (
         <Typography variant="body1" color="text.secondary">
-          No highlights found matching "{searchText}"
+          {selectedTagId
+            ? `No highlights found matching "${searchText}" with the selected tag`
+            : `No highlights found matching "${searchText}"`}
         </Typography>
       )}
     </Box>

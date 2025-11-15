@@ -81,6 +81,13 @@ export const BookPage = () => {
         .filter((chapter) => chapter.highlights && chapter.highlights.length > 0)
     : chapters;
 
+  // Filter search results by selected tag
+  const filteredSearchResults = selectedTagId
+    ? searchResults?.highlights?.filter((highlight) =>
+        highlight.highlight_tags?.some((tag) => tag.id === selectedTagId)
+      )
+    : searchResults?.highlights;
+
   // Show search results or regular chapter view
   const showSearchResults = searchText.length > 0;
 
@@ -103,12 +110,31 @@ export const BookPage = () => {
 
         {/* Search Results */}
         {showSearchResults && (
-          <SearchResults
-            isSearching={isSearching}
-            highlights={searchResults?.highlights}
-            searchText={searchText}
-            bookId={book.id}
-          />
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', lg: '1fr 300px' },
+              gap: 4,
+              alignItems: 'start',
+            }}
+          >
+            <SearchResults
+              isSearching={isSearching}
+              highlights={filteredSearchResults}
+              searchText={searchText}
+              bookId={book.id}
+              selectedTagId={selectedTagId}
+            />
+
+            {/* Sidebar - Tags (Desktop only) */}
+            <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+              <HighlightTags
+                tags={book.highlight_tags || []}
+                selectedTag={selectedTagId}
+                onTagClick={handleTagClick}
+              />
+            </Box>
+          </Box>
         )}
 
         {/* Regular Chapter View (when not searching) */}
