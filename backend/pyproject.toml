@@ -110,4 +110,5 @@ addopts = [
 ]
 
 [tool.poetry]
-package-mode = false
+package-mode = true
+packages = [{include = "src"}]
