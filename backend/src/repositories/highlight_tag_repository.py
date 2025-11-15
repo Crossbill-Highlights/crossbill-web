@@ -31,10 +31,19 @@ class HighlightTagRepository:
         return self.db.execute(stmt).scalar_one_or_none()
 
     def get_by_book_id(self, book_id: int) -> list[models.HighlightTag]:
-        """Get all highlight tags for a book."""
+        """
+        Get all highlight tags for a book that have active associations with highlights.
+
+        Only returns tags that are currently associated with at least one highlight.
+        """
         stmt = (
             select(models.HighlightTag)
+            .join(
+                models.highlight_highlight_tags,
+                models.HighlightTag.id == models.highlight_highlight_tags.c.highlight_tag_id,
+            )
             .where(models.HighlightTag.book_id == book_id)
+            .distinct()
             .order_by(models.HighlightTag.name)
         )
         return list(self.db.execute(stmt).scalars().all())
