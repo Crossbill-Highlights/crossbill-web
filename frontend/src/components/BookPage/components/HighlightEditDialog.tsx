@@ -18,38 +18,28 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
-interface HighlightEditDialogProps {
+interface HighlightTagInputProps {
   highlight: Highlight;
   bookId: number;
-  open: boolean;
-  onClose: () => void;
   availableTags: HighlightTagInBook[];
 }
 
-export const HighlightEditDialog = ({
-  highlight,
-  bookId,
-  open,
-  onClose,
-  availableTags,
-}: HighlightEditDialogProps) => {
+const HighlightTagInput = ({ highlight, bookId, availableTags }: HighlightTagInputProps) => {
   const queryClient = useQueryClient();
-  const [currentTags, setCurrentTags] = useState<HighlightTagInBook[]>([]);
+  const [currentTags, setCurrentTags] = useState<HighlightTagInBook[]>(
+    highlight.highlight_tags || []
+  );
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Initialize current tags when dialog opens or highlight changes
+  // Update current tags when highlight changes
   useEffect(() => {
-    if (open && highlight.highlight_tags) {
-      setCurrentTags(highlight.highlight_tags);
-    }
-  }, [open, highlight.highlight_tags]);
+    setCurrentTags(highlight.highlight_tags || []);
+  }, [highlight.highlight_tags]);
 
-  // Mutation hooks
   const addTagMutation = useAddTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost({
     mutation: {
       onSuccess: (data) => {
         setCurrentTags(data.highlight_tags || []);
-        // Invalidate queries to refresh the UI
         queryClient.invalidateQueries({
           queryKey: [`/api/v1/book/${bookId}`],
         });
@@ -68,7 +58,6 @@ export const HighlightEditDialog = ({
     mutation: {
       onSuccess: (data) => {
         setCurrentTags(data.highlight_tags || []);
-        // Invalidate queries to refresh the UI
         queryClient.invalidateQueries({
           queryKey: [`/api/v1/book/${bookId}`],
         });
@@ -133,6 +122,64 @@ export const HighlightEditDialog = ({
     }
   };
 
+  return (
+    <Autocomplete
+      multiple
+      freeSolo
+      options={availableTags}
+      getOptionLabel={(option) => (typeof option === 'string' ? option : option.name)}
+      value={currentTags}
+      onChange={handleTagChange}
+      isOptionEqualToValue={(option, value) => {
+        if (typeof option === 'string' || typeof value === 'string') {
+          return option === value;
+        }
+        return option.id === value.id;
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Tags"
+          placeholder="Add tags..."
+          helperText="Press Enter to add a tag, click X to remove"
+          disabled={isProcessing}
+        />
+      )}
+      renderTags={(tagValue, getTagProps) =>
+        tagValue.map((option, index) => {
+          const { key, ...tagProps } = getTagProps({ index });
+          return (
+            <Chip
+              key={key}
+              label={typeof option === 'string' ? option : option.name}
+              {...tagProps}
+              disabled={isProcessing}
+            />
+          );
+        })
+      }
+      disabled={isProcessing}
+    />
+  );
+};
+
+interface HighlightEditDialogProps {
+  highlight: Highlight;
+  bookId: number;
+  open: boolean;
+  onClose: () => void;
+  availableTags: HighlightTagInBook[];
+}
+
+export const HighlightEditDialog = ({
+  highlight,
+  bookId,
+  open,
+  onClose,
+  availableTags,
+}: HighlightEditDialogProps) => {
+  const queryClient = useQueryClient();
+
   const handleClose = () => {
     // Final refresh when closing the dialog
     queryClient.invalidateQueries({
@@ -157,7 +204,6 @@ export const HighlightEditDialog = ({
             color="inherit"
             onClick={handleClose}
             aria-label="close"
-            disabled={isProcessing}
           >
             <CloseIcon />
           </IconButton>
@@ -179,42 +225,10 @@ export const HighlightEditDialog = ({
 
           {/* Tag Input */}
           <Box>
-            <Autocomplete
-              multiple
-              freeSolo
-              options={availableTags}
-              getOptionLabel={(option) => (typeof option === 'string' ? option : option.name)}
-              value={currentTags}
-              onChange={handleTagChange}
-              isOptionEqualToValue={(option, value) => {
-                if (typeof option === 'string' || typeof value === 'string') {
-                  return option === value;
-                }
-                return option.id === value.id;
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Tags"
-                  placeholder="Add tags..."
-                  helperText="Press Enter to add a tag, click X to remove"
-                  disabled={isProcessing}
-                />
-              )}
-              renderTags={(tagValue, getTagProps) =>
-                tagValue.map((option, index) => {
-                  const { key, ...tagProps } = getTagProps({ index });
-                  return (
-                    <Chip
-                      key={key}
-                      label={typeof option === 'string' ? option : option.name}
-                      {...tagProps}
-                      disabled={isProcessing}
-                    />
-                  );
-                })
-              }
-              disabled={isProcessing}
+            <HighlightTagInput
+              highlight={highlight}
+              bookId={bookId}
+              availableTags={availableTags}
             />
           </Box>
         </Box>
