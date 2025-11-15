@@ -59,7 +59,7 @@ const Footer = ({ highlight }: FooterProps) => {
         </Typography>
       </Box>
 
-      <Box sx={{ pl: { xs: 4.5, sm: 0 } }}>
+      <Box>
         <TagList tags={highlight.highlight_tags} />
       </Box>
     </Box>
