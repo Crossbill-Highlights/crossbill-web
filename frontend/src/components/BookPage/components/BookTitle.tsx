@@ -103,37 +103,12 @@ export const BookTitle = ({ book, highlightCount }: BookTitleProps) => {
             <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
               {highlightCount} {highlightCount === 1 ? 'highlight' : 'highlights'}
             </Typography>
-          </Box>
-
-          <TagList tags={book.tags} />
-
-          <Button
-            variant="outlined"
-            startIcon={<EditIcon />}
-            onClick={handleEdit}
-            sx={{
-              position: 'absolute',
-              bottom: 0,
-              right: 0,
-              display: { xs: 'none', md: 'inline-flex' },
-            }}
-          >
-            Edit
-          </Button>
-
-          {/* Edit Button (Mobile only) */}
-          <Box
-            sx={{
-              display: { xs: 'flex', md: 'none' },
-              justifyContent: 'center',
-              mt: 2,
-              width: '100%',
-            }}
-          >
-            <Button variant="outlined" startIcon={<EditIcon />} onClick={handleEdit}>
+            <Button variant="text" startIcon={<EditIcon />} onClick={handleEdit} size="small">
               Edit
             </Button>
           </Box>
+
+          <TagList tags={book.tags} />
         </Box>
       </Box>
 
