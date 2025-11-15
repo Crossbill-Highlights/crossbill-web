@@ -1,9 +1,9 @@
-import type { Highlight, HighlightTagInBook } from '@/api/generated/model';
 import {
   useAddTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost,
   useDeleteHighlightsApiV1BookBookIdHighlightDelete,
   useRemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete,
 } from '@/api/generated/books/books';
+import type { Highlight, HighlightTagInBook } from '@/api/generated/model';
 import {
   CalendarMonth as CalendarIcon,
   Close as CloseIcon,
@@ -81,23 +81,24 @@ export const HighlightViewModal = ({
     },
   });
 
-  const removeTagMutation = useRemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete({
-    mutation: {
-      onSuccess: (data) => {
-        setCurrentTags(data.highlight_tags || []);
-        queryClient.invalidateQueries({
-          queryKey: [`/api/v1/book/${bookId}`],
-        });
-        queryClient.invalidateQueries({
-          queryKey: [`/api/v1/book/${bookId}/highlight_tags`],
-        });
+  const removeTagMutation =
+    useRemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete({
+      mutation: {
+        onSuccess: (data) => {
+          setCurrentTags(data.highlight_tags || []);
+          queryClient.invalidateQueries({
+            queryKey: [`/api/v1/book/${bookId}`],
+          });
+          queryClient.invalidateQueries({
+            queryKey: [`/api/v1/book/${bookId}/highlight_tags`],
+          });
+        },
+        onError: (error) => {
+          console.error('Failed to remove tag:', error);
+          alert('Failed to remove tag. Please try again.');
+        },
       },
-      onError: (error) => {
-        console.error('Failed to remove tag:', error);
-        alert('Failed to remove tag. Please try again.');
-      },
-    },
-  });
+    });
 
   const deleteHighlightMutation = useDeleteHighlightsApiV1BookBookIdHighlightDelete({
     mutation: {

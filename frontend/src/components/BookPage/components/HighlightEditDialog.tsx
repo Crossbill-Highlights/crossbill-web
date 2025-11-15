@@ -1,8 +1,8 @@
-import type { Highlight, HighlightTagInBook } from '@/api/generated/model';
 import {
   useAddTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost,
   useRemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete,
 } from '@/api/generated/books/books';
+import type { Highlight, HighlightTagInBook } from '@/api/generated/model';
 import { Close as CloseIcon, LocalOffer as TagIcon } from '@mui/icons-material';
 import {
   Autocomplete,
@@ -54,23 +54,24 @@ const HighlightTagInput = ({ highlight, bookId, availableTags }: HighlightTagInp
     },
   });
 
-  const removeTagMutation = useRemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete({
-    mutation: {
-      onSuccess: (data) => {
-        setCurrentTags(data.highlight_tags || []);
-        queryClient.invalidateQueries({
-          queryKey: [`/api/v1/book/${bookId}`],
-        });
-        queryClient.invalidateQueries({
-          queryKey: [`/api/v1/book/${bookId}/highlight_tags`],
-        });
+  const removeTagMutation =
+    useRemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete({
+      mutation: {
+        onSuccess: (data) => {
+          setCurrentTags(data.highlight_tags || []);
+          queryClient.invalidateQueries({
+            queryKey: [`/api/v1/book/${bookId}`],
+          });
+          queryClient.invalidateQueries({
+            queryKey: [`/api/v1/book/${bookId}/highlight_tags`],
+          });
+        },
+        onError: (error) => {
+          console.error('Failed to remove tag:', error);
+          alert('Failed to remove tag. Please try again.');
+        },
       },
-      onError: (error) => {
-        console.error('Failed to remove tag:', error);
-        alert('Failed to remove tag. Please try again.');
-      },
-    },
-  });
+    });
 
   const addTagToHighlight = async (tagName: string) => {
     setIsProcessing(true);
@@ -199,12 +200,7 @@ export const HighlightEditDialog = ({
             <TagIcon />
             <span>Manage Tags</span>
           </Box>
-          <IconButton
-            edge="end"
-            color="inherit"
-            onClick={handleClose}
-            aria-label="close"
-          >
+          <IconButton edge="end" color="inherit" onClick={handleClose} aria-label="close">
             <CloseIcon />
           </IconButton>
         </Box>
