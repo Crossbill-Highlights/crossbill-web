@@ -251,7 +251,7 @@ class TestDeleteHighlights:
         )
 
         # Should fail validation because of min_length=1
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 class TestHighlightSyncWithSoftDelete:
