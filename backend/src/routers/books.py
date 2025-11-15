@@ -9,7 +9,6 @@ from src import schemas
 from src.database import DatabaseSession
 from src.exceptions import CrossbillError
 from src.services import BookService, HighlightTagService
-from src.repositories import HighlightTagRepository
 
 logger = logging.getLogger(__name__)
 
@@ -367,28 +366,17 @@ def add_tag_to_highlight(
     try:
         service = HighlightTagService(db)
 
-        # If tag_id is provided, use it directly
+        # Add tag by ID or by name (with get_or_create)
         if request.tag_id is not None:
-            tag_id = request.tag_id
-        # Otherwise, create or get tag by name
+            highlight = service.add_tag_to_highlight(highlight_id, request.tag_id)
         elif request.name is not None:
-            # Try to get existing tag or create new one
-            tag_repo = HighlightTagRepository(db)
-            existing_tag = tag_repo.get_by_book_and_name(book_id, request.name)
-            if existing_tag:
-                tag_id = existing_tag.id
-            else:
-                # Create new tag
-                new_tag = service.create_tag_for_book(book_id, request.name)
-                tag_id = new_tag.id
+            highlight = service.add_tag_to_highlight_by_name(book_id, highlight_id, request.name)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Either tag_id or name must be provided",
             )
 
-        # Add tag to highlight
-        highlight = service.add_tag_to_highlight(highlight_id, tag_id)
         return highlight
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers

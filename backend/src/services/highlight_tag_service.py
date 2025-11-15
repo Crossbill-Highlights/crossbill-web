@@ -160,6 +160,60 @@ class HighlightTagService:
 
         return highlight
 
+    def add_tag_to_highlight_by_name(
+        self, book_id: int, highlight_id: int, tag_name: str
+    ) -> models.Highlight:
+        """
+        Add a tag to a highlight by tag name, creating the tag if it doesn't exist.
+
+        Args:
+            book_id: ID of the book (for validation and tag creation)
+            highlight_id: ID of the highlight
+            tag_name: Name of the tag to add
+
+        Returns:
+            Updated Highlight model
+
+        Raises:
+            ValueError: If highlight not found, tag name is empty, or book/highlight mismatch
+        """
+        # Validate highlight exists and belongs to the book
+        highlight = self.highlight_repo.get_by_id(highlight_id)
+        if not highlight:
+            raise ValueError(f"Highlight with id {highlight_id} not found")
+
+        if highlight.book_id != book_id:
+            raise ValueError(
+                f"Highlight {highlight_id} does not belong to book {book_id}"
+            )
+
+        # Validate tag name
+        tag_name = tag_name.strip()
+        if not tag_name:
+            raise ValueError("Tag name cannot be empty")
+
+        # Get or create the tag
+        tag = self.highlight_tag_repo.get_or_create(book_id, tag_name)
+
+        # Add tag if not already present
+        if tag not in highlight.highlight_tags:
+            highlight.highlight_tags.append(tag)
+            self.db.commit()
+            logger.info(
+                "added_tag_to_highlight_by_name",
+                highlight_id=highlight_id,
+                tag_id=tag.id,
+                tag_name=tag_name,
+            )
+        else:
+            logger.debug(
+                "tag_already_on_highlight",
+                highlight_id=highlight_id,
+                tag_id=tag.id,
+            )
+
+        return highlight
+
     def remove_tag_from_highlight(self, highlight_id: int, tag_id: int) -> models.Highlight:
         """
         Remove a tag from a highlight.
