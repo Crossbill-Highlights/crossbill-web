@@ -129,6 +129,13 @@ export const theme = createTheme({
         },
       },
     },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: colors.stone[50], // Same as body background
+        },
+      },
+    },
     MuiTextField: {
       styleOverrides: {
         root: {
