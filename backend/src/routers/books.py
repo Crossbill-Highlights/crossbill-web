@@ -390,9 +390,7 @@ def add_tag_to_highlight(
         # Re-raise HTTPException
         raise
     except Exception as e:
-        logger.error(
-            f"Failed to add tag to highlight {highlight_id}: {e!s}", exc_info=True
-        )
+        logger.error(f"Failed to add tag to highlight {highlight_id}: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to add tag to highlight: {e!s}",
@@ -440,9 +438,7 @@ def remove_tag_from_highlight(
         # Re-raise HTTPException
         raise
     except Exception as e:
-        logger.error(
-            f"Failed to remove tag from highlight {highlight_id}: {e!s}", exc_info=True
-        )
+        logger.error(f"Failed to remove tag from highlight {highlight_id}: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to remove tag from highlight: {e!s}",

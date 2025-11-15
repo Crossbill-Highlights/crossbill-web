@@ -183,9 +183,7 @@ class HighlightTagService:
             raise ValueError(f"Highlight with id {highlight_id} not found")
 
         if highlight.book_id != book_id:
-            raise ValueError(
-                f"Highlight {highlight_id} does not belong to book {book_id}"
-            )
+            raise ValueError(f"Highlight {highlight_id} does not belong to book {book_id}")
 
         # Validate tag name
         tag_name = tag_name.strip()
