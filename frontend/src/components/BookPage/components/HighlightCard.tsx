@@ -4,9 +4,9 @@ import {
   CalendarMonth as CalendarIcon,
   ChevronRight as ChevronRightIcon,
   Delete as DeleteIcon,
-  LocalOffer as TagIcon,
   MoreVert as MoreVertIcon,
   FormatQuote as QuoteIcon,
+  LocalOffer as TagIcon,
 } from '@mui/icons-material';
 import {
   Box,

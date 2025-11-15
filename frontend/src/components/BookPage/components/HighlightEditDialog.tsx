@@ -43,16 +43,13 @@ export const HighlightEditDialog = ({
   const addTagToHighlight = async (tagName: string) => {
     setIsProcessing(true);
     try {
-      const response = await fetch(
-        `/api/v1/book/${bookId}/highlight/${highlight.id}/tag`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ name: tagName }),
-        }
-      );
+      const response = await fetch(`/api/v1/book/${bookId}/highlight/${highlight.id}/tag`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: tagName }),
+      });
 
       if (!response.ok) {
         throw new Error('Failed to add tag');
