@@ -27,9 +27,11 @@ import type {
   BookWithHighlightCount,
   CoverUploadResponse,
   HTTPValidationError,
+  Highlight,
   HighlightDeleteRequest,
   HighlightDeleteResponse,
   HighlightTag,
+  HighlightTagAssociationRequest,
   HighlightTagCreateRequest,
   HighlightTagsResponse,
 } from '.././model';
@@ -903,6 +905,223 @@ export const useDeleteHighlightTagApiV1BookBookIdHighlightTagTagIdDelete = <
 > => {
   const mutationOptions =
     getDeleteHighlightTagApiV1BookBookIdHighlightTagTagIdDeleteMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+/**
+ * Add a tag to a highlight.
+
+If a tag name is provided and doesn't exist, it will be created first.
+If a tag_id is provided, it will be used directly.
+
+Args:
+    book_id: ID of the book
+    highlight_id: ID of the highlight
+    request: Request containing either tag name or tag_id
+    db: Database session
+
+Returns:
+    Updated Highlight with tags
+
+Raises:
+    HTTPException: If highlight or tag not found, or association fails
+ * @summary Add Tag To Highlight
+ */
+export const addTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost = (
+  bookId: number,
+  highlightId: number,
+  highlightTagAssociationRequest: HighlightTagAssociationRequest,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<Highlight>({
+    url: `/api/v1/book/${bookId}/highlight/${highlightId}/tag`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: highlightTagAssociationRequest,
+    signal,
+  });
+};
+
+export const getAddTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost>>,
+    TError,
+    { bookId: number; highlightId: number; data: HighlightTagAssociationRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost>>,
+  TError,
+  { bookId: number; highlightId: number; data: HighlightTagAssociationRequest },
+  TContext
+> => {
+  const mutationKey = ['addTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost>>,
+    { bookId: number; highlightId: number; data: HighlightTagAssociationRequest }
+  > = (props) => {
+    const { bookId, highlightId, data } = props ?? {};
+
+    return addTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost(bookId, highlightId, data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost>>
+>;
+export type AddTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPostMutationBody =
+  HighlightTagAssociationRequest;
+export type AddTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPostMutationError =
+  HTTPValidationError;
+
+/**
+ * @summary Add Tag To Highlight
+ */
+export const useAddTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof addTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost>>,
+      TError,
+      { bookId: number; highlightId: number; data: HighlightTagAssociationRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof addTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost>>,
+  TError,
+  { bookId: number; highlightId: number; data: HighlightTagAssociationRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getAddTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPostMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+/**
+ * Remove a tag from a highlight.
+
+Args:
+    book_id: ID of the book
+    highlight_id: ID of the highlight
+    tag_id: ID of the tag to remove
+    db: Database session
+
+Returns:
+    Updated Highlight with tags
+
+Raises:
+    HTTPException: If highlight not found or removal fails
+ * @summary Remove Tag From Highlight
+ */
+export const removeTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete = (
+  bookId: number,
+  highlightId: number,
+  tagId: number
+) => {
+  return axiosInstance<Highlight>({
+    url: `/api/v1/book/${bookId}/highlight/${highlightId}/tag/${tagId}`,
+    method: 'DELETE',
+  });
+};
+
+export const getRemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDeleteMutationOptions =
+  <TError = HTTPValidationError, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof removeTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete>
+      >,
+      TError,
+      { bookId: number; highlightId: number; tagId: number },
+      TContext
+    >;
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<typeof removeTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete>
+    >,
+    TError,
+    { bookId: number; highlightId: number; tagId: number },
+    TContext
+  > => {
+    const mutationKey = ['removeTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete'];
+    const { mutation: mutationOptions } = options
+      ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey } };
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<typeof removeTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete>
+      >,
+      { bookId: number; highlightId: number; tagId: number }
+    > = (props) => {
+      const { bookId, highlightId, tagId } = props ?? {};
+
+      return removeTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete(
+        bookId,
+        highlightId,
+        tagId
+      );
+    };
+
+    return { mutationFn, ...mutationOptions };
+  };
+
+export type RemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDeleteMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof removeTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete>
+    >
+  >;
+
+export type RemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDeleteMutationError =
+  HTTPValidationError;
+
+/**
+ * @summary Remove Tag From Highlight
+ */
+export const useRemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof removeTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete>
+      >,
+      TError,
+      { bookId: number; highlightId: number; tagId: number },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<
+    ReturnType<typeof removeTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete>
+  >,
+  TError,
+  { bookId: number; highlightId: number; tagId: number },
+  TContext
+> => {
+  const mutationOptions =
+    getRemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDeleteMutationOptions(
+      options
+    );
 
   return useMutation(mutationOptions, queryClient);
 };
