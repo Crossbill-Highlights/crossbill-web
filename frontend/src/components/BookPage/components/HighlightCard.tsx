@@ -9,6 +9,8 @@ import { HighlightViewModal } from './HighlightViewModal';
 export interface HighlightCardProps {
   highlight: Highlight;
   bookId: number;
+  allHighlights?: Highlight[];
+  currentIndex?: number;
 }
 
 interface FooterProps {
@@ -68,7 +70,7 @@ const Footer = ({ highlight }: FooterProps) => {
 
 const previewWordCount = 40;
 
-export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
+export const HighlightCard = ({ highlight, bookId, allHighlights, currentIndex }: HighlightCardProps) => {
   const startsWithLowercase =
     highlight.text.length > 0 &&
     highlight.text[0] === highlight.text[0].toLowerCase() &&
@@ -83,14 +85,26 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
     : formattedText;
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [currentHighlightIndex, setCurrentHighlightIndex] = useState(currentIndex ?? 0);
 
   // Fetch available tags for the book
   const { data: tagsResponse } = useGetHighlightTagsApiV1BookBookIdHighlightTagsGet(bookId);
 
+  const handleOpenModal = () => {
+    setCurrentHighlightIndex(currentIndex ?? 0);
+    setViewModalOpen(true);
+  };
+
+  const handleNavigate = (newIndex: number) => {
+    setCurrentHighlightIndex(newIndex);
+  };
+
+  const currentHighlight = allHighlights?.[currentHighlightIndex] ?? highlight;
+
   return (
     <>
       <Box
-        onClick={() => setViewModalOpen(true)}
+        onClick={handleOpenModal}
         sx={{
           position: 'relative',
           py: 3,
@@ -143,11 +157,14 @@ export const HighlightCard = ({ highlight, bookId }: HighlightCardProps) => {
 
       {/* Highlight View Modal */}
       <HighlightViewModal
-        highlight={highlight}
+        highlight={currentHighlight}
         bookId={bookId}
         open={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
         availableTags={tagsResponse?.tags || []}
+        allHighlights={allHighlights}
+        currentIndex={currentHighlightIndex}
+        onNavigate={handleNavigate}
       />
     </>
   );

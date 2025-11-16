@@ -51,6 +51,9 @@ export const SearchResults = ({
     })
     .value();
 
+  // Create a flat array of all highlights for navigation
+  const allHighlights = highlights || [];
+
   // Results display
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -72,9 +75,20 @@ export const SearchResults = ({
 
                       {/* Highlights in this chapter */}
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                        {chapter.highlights.map((highlight) => (
-                          <HighlightCard key={highlight.id} highlight={highlight} bookId={bookId} />
-                        ))}
+                        {chapter.highlights.map((highlight) => {
+                          const highlightIndex = allHighlights.findIndex(
+                            (h) => h.id === highlight.id
+                          );
+                          return (
+                            <HighlightCard
+                              key={highlight.id}
+                              highlight={highlight}
+                              bookId={bookId}
+                              allHighlights={allHighlights}
+                              currentIndex={highlightIndex}
+                            />
+                          );
+                        })}
                       </Box>
                     </Box>
                   </FadeInOut>

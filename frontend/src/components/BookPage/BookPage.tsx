@@ -105,6 +105,9 @@ export const BookPage = () => {
         .filter((chapter) => chapter.highlights && chapter.highlights.length > 0)
     : chapters;
 
+  // Create a flat array of all highlights for navigation
+  const allFilteredHighlights = filteredChapters.flatMap((chapter) => chapter.highlights || []);
+
   // Filter search results by selected tag
   const filteredSearchResults = selectedTagId
     ? searchResults?.highlights?.filter((highlight) =>
@@ -205,13 +208,20 @@ export const BookPage = () => {
                     {/* Highlights in this chapter */}
                     {chapter.highlights && chapter.highlights.length > 0 ? (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                        {chapter.highlights.map((highlight) => (
-                          <HighlightCard
-                            key={highlight.id}
-                            highlight={highlight}
-                            bookId={book.id}
-                          />
-                        ))}
+                        {chapter.highlights.map((highlight) => {
+                          const highlightIndex = allFilteredHighlights.findIndex(
+                            (h) => h.id === highlight.id
+                          );
+                          return (
+                            <HighlightCard
+                              key={highlight.id}
+                              highlight={highlight}
+                              bookId={book.id}
+                              allHighlights={allFilteredHighlights}
+                              currentIndex={highlightIndex}
+                            />
+                          );
+                        })}
                       </Box>
                     ) : (
                       <Typography variant="body2" color="text.secondary" sx={{ pl: 0.5 }}>
