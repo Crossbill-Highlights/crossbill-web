@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
+import { useSwipeable } from 'react-swipeable';
 import { CommonDialog } from '../../common/CommonDialog';
 
 interface HighlightNoteProps {
@@ -373,6 +374,18 @@ export const HighlightViewModal = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open, hasNavigation, hasPrevious, hasNext, currentIndex, handlePrevious, handleNext]);
 
+  // Swipe navigation
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (hasNext) handleNext();
+    },
+    onSwipedRight: () => {
+      if (hasPrevious) handlePrevious();
+    },
+    swipeDuration: 500,
+    preventScrollOnSwipe: false,
+  });
+
   const deleteHighlightMutation = useDeleteHighlightsApiV1BookBookIdHighlightDelete({
     mutation: {
       onSuccess: () => {
@@ -456,7 +469,7 @@ export const HighlightViewModal = ({
         )}
 
         {/* Main Content */}
-        <Box display="flex" flexDirection="column" gap={3} flex={1}>
+        <Box display="flex" flexDirection="column" gap={3} flex={1} {...swipeHandlers}>
           {/* Highlight Text */}
           <FadeInOut ekey={highlight.id}>
             <Box display="flex" flexDirection="column" gap={3} flex={1}>
@@ -533,7 +546,10 @@ export const HighlightViewModal = ({
       </Box>
 
       {/* Mobile Layout: Navigation buttons below tags */}
-      <Box sx={{ display: { xs: 'flex', sm: 'none' }, flexDirection: 'column', gap: 3 }}>
+      <Box
+        sx={{ display: { xs: 'flex', sm: 'none' }, flexDirection: 'column', gap: 3 }}
+        {...swipeHandlers}
+      >
         {/* Highlight Text */}
         <Box sx={{ display: 'flex', alignItems: 'start', gap: 2 }}>
           <QuoteIcon
