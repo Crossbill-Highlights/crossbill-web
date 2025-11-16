@@ -49,6 +49,26 @@ export const CommonDialog = ({
       fullWidth
       fullScreen={fullScreen}
       scroll="paper"
+      slotProps={{
+        backdrop: {
+          sx: {
+            // Prevent touch scrolling on backdrop
+            touchAction: 'none',
+          },
+        },
+      }}
+      sx={{
+        // Prevent overscroll behavior on mobile
+        '& .MuiDialog-container': {
+          overscrollBehavior: 'contain',
+          // Prevent touch scrolling from affecting content behind modal
+          touchAction: 'none',
+        },
+        // Ensure dialog paper prevents touch scrolling propagation
+        '& .MuiDialog-paper': {
+          overscrollBehavior: 'contain',
+        },
+      }}
     >
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
