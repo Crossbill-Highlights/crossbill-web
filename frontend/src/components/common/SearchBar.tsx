@@ -8,7 +8,11 @@ interface SearchBarProps {
   initialValue?: string;
 }
 
-export const SearchBar = ({ onSearch, placeholder = 'Search...', initialValue = '' }: SearchBarProps) => {
+export const SearchBar = ({
+  onSearch,
+  placeholder = 'Search...',
+  initialValue = '',
+}: SearchBarProps) => {
   const [searchInput, setSearchInput] = useState(initialValue);
 
   const debouncedSearch = useMemo(

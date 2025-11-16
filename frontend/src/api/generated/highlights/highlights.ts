@@ -24,6 +24,8 @@ import type {
   BooksListResponse,
   GetBooksApiV1HighlightsBooksGetParams,
   HTTPValidationError,
+  HighlightNoteUpdate,
+  HighlightNoteUpdateResponse,
   HighlightSearchResponse,
   HighlightUploadRequest,
   HighlightUploadResponse,
@@ -440,3 +442,102 @@ export function useSearchHighlightsApiV1HighlightsSearchGet<
 
   return query;
 }
+
+/**
+ * Update the note field of a highlight.
+
+Args:
+    highlight_id: ID of the highlight to update
+    request: Note update request
+    db: Database session
+
+Returns:
+    HighlightNoteUpdateResponse with the updated highlight
+
+Raises:
+    HTTPException: If highlight not found or update fails
+ * @summary Update Highlight Note
+ */
+export const updateHighlightNoteApiV1HighlightsHighlightIdNotePost = (
+  highlightId: number,
+  highlightNoteUpdate: HighlightNoteUpdate,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<HighlightNoteUpdateResponse>({
+    url: `/api/v1/highlights/${highlightId}/note`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: highlightNoteUpdate,
+    signal,
+  });
+};
+
+export const getUpdateHighlightNoteApiV1HighlightsHighlightIdNotePostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateHighlightNoteApiV1HighlightsHighlightIdNotePost>>,
+    TError,
+    { highlightId: number; data: HighlightNoteUpdate },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateHighlightNoteApiV1HighlightsHighlightIdNotePost>>,
+  TError,
+  { highlightId: number; data: HighlightNoteUpdate },
+  TContext
+> => {
+  const mutationKey = ['updateHighlightNoteApiV1HighlightsHighlightIdNotePost'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateHighlightNoteApiV1HighlightsHighlightIdNotePost>>,
+    { highlightId: number; data: HighlightNoteUpdate }
+  > = (props) => {
+    const { highlightId, data } = props ?? {};
+
+    return updateHighlightNoteApiV1HighlightsHighlightIdNotePost(highlightId, data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateHighlightNoteApiV1HighlightsHighlightIdNotePostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateHighlightNoteApiV1HighlightsHighlightIdNotePost>>
+>;
+export type UpdateHighlightNoteApiV1HighlightsHighlightIdNotePostMutationBody = HighlightNoteUpdate;
+export type UpdateHighlightNoteApiV1HighlightsHighlightIdNotePostMutationError =
+  HTTPValidationError;
+
+/**
+ * @summary Update Highlight Note
+ */
+export const useUpdateHighlightNoteApiV1HighlightsHighlightIdNotePost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateHighlightNoteApiV1HighlightsHighlightIdNotePost>>,
+      TError,
+      { highlightId: number; data: HighlightNoteUpdate },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateHighlightNoteApiV1HighlightsHighlightIdNotePost>>,
+  TError,
+  { highlightId: number; data: HighlightNoteUpdate },
+  TContext
+> => {
+  const mutationOptions =
+    getUpdateHighlightNoteApiV1HighlightsHighlightIdNotePostMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
