@@ -94,6 +94,8 @@ export const CommonDialog = ({
             // Add safe-area padding for iPhone rounded corners
             // Uses max() to ensure minimum 16px padding, but respects safe-area-inset-bottom
             pb: 'max(16px, calc(16px + env(safe-area-inset-bottom)))',
+            pr: 2,
+            pl: 2,
           }}
         >
           {footerActions}
