@@ -528,7 +528,6 @@ export const HighlightViewModal = ({
           </Typography>
         </Box>
 
-        {/* Note */}
         <HighlightNote
           highlightId={highlight.id}
           bookId={bookId}
@@ -536,14 +535,15 @@ export const HighlightViewModal = ({
           disabled={isLoading}
         />
 
-        {/* Tags */}
-        <TagInput
-          highlightId={highlight.id}
-          bookId={bookId}
-          initialTags={highlight.highlight_tags || []}
-          availableTags={availableTags}
-          disabled={isLoading}
-        />
+        <Box sx={{ mt: -2 }}>
+          <TagInput
+            highlightId={highlight.id}
+            bookId={bookId}
+            initialTags={highlight.highlight_tags || []}
+            availableTags={availableTags}
+            disabled={isLoading}
+          />
+        </Box>
 
         {/* Navigation Buttons (Mobile) */}
         {hasNavigation && (
