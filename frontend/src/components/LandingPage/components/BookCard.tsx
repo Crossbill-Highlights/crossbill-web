@@ -17,7 +17,7 @@ const truncateText = (text: string, maxLength: number) => {
 
 export const BookCard = ({ book }: BookCardProps) => {
   return (
-    <FadeInOut key={book.id}>
+    <FadeInOut ekey={book.id}>
       <Link
         to="/book/$bookId"
         params={{ bookId: String(book.id) }}

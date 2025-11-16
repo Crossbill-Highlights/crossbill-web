@@ -1,7 +1,9 @@
 import { HighlightSearchResult } from '@/api/generated/model';
+import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { SectionTitle } from '@/components/common/SectionTitle';
 import { Box, Typography } from '@mui/material';
 import { chain, sortBy } from 'lodash';
+import { AnimatePresence } from 'motion/react';
 import { HighlightCard } from './HighlightCard';
 
 interface SearchResultsProps {
@@ -58,21 +60,28 @@ export const SearchResults = ({
             Found {highlights.length} highlight
             {highlights.length !== 1 ? 's' : ''}
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {sortedChapters?.map((chapter) => (
-              <Box key={chapter.chapterId ?? 'unknown'}>
-                {/* Chapter Header */}
-                <SectionTitle showDivider>{chapter.chapterName}</SectionTitle>
+          <AnimatePresence>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {sortedChapters?.map((chapter) => {
+                const key = chapter.chapterId ?? 'unknown';
+                return (
+                  <FadeInOut key={key} ekey={key}>
+                    <Box>
+                      {/* Chapter Header */}
+                      <SectionTitle showDivider>{chapter.chapterName}</SectionTitle>
 
-                {/* Highlights in this chapter */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  {chapter.highlights.map((highlight) => (
-                    <HighlightCard key={highlight.id} highlight={highlight} bookId={bookId} />
-                  ))}
-                </Box>
-              </Box>
-            ))}
-          </Box>
+                      {/* Highlights in this chapter */}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        {chapter.highlights.map((highlight) => (
+                          <HighlightCard key={highlight.id} highlight={highlight} bookId={bookId} />
+                        ))}
+                      </Box>
+                    </Box>
+                  </FadeInOut>
+                );
+              })}
+            </Box>
+          </AnimatePresence>
         </>
       ) : (
         <Typography variant="body1" color="text.secondary">

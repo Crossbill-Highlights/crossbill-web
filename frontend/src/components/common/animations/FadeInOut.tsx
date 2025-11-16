@@ -1,9 +1,9 @@
 import { motion } from 'motion/react';
 
-export const FadeInOut = ({ children, key }: { children: React.ReactNode; key: React.Key }) => {
+export const FadeInOut = ({ children, ekey }: { children: React.ReactNode; ekey: React.Key }) => {
   return (
     <motion.div
-      key={key}
+      key={ekey}
       initial={{
         opacity: 0,
         y: 20,

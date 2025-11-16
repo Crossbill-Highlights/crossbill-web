@@ -1,5 +1,6 @@
 import { useGetBookDetailsApiV1BookBookIdGet } from '@/api/generated/books/books.ts';
 import { useSearchHighlightsApiV1HighlightsSearchGet } from '@/api/generated/highlights/highlights.ts';
+import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { Alert, Box, Container, Typography } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -162,36 +163,42 @@ export const BookPage = () => {
               alignItems: 'start',
             }}
           >
-            {/* Main content - Highlights */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {filteredChapters && filteredChapters.length === 0 && (
-                <Typography variant="body1" color="text.secondary">
-                  {selectedTagId
-                    ? 'No highlights found with the selected tag.'
-                    : 'No chapters found for this book.'}
-                </Typography>
-              )}
+            <FadeInOut ekey="chapters-view">
+              {/* Main content - Highlights */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {filteredChapters && filteredChapters.length === 0 && (
+                  <Typography variant="body1" color="text.secondary">
+                    {selectedTagId
+                      ? 'No highlights found with the selected tag.'
+                      : 'No chapters found for this book.'}
+                  </Typography>
+                )}
 
-              {filteredChapters.map((chapter) => (
-                <Box key={chapter.id}>
-                  {/* Chapter Header */}
-                  <SectionTitle showDivider>{chapter.name}</SectionTitle>
+                {filteredChapters.map((chapter) => (
+                  <Box key={chapter.id}>
+                    {/* Chapter Header */}
+                    <SectionTitle showDivider>{chapter.name}</SectionTitle>
 
-                  {/* Highlights in this chapter */}
-                  {chapter.highlights && chapter.highlights.length > 0 ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                      {chapter.highlights.map((highlight) => (
-                        <HighlightCard key={highlight.id} highlight={highlight} bookId={book.id} />
-                      ))}
-                    </Box>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary" sx={{ pl: 0.5 }}>
-                      No highlights found in this chapter.
-                    </Typography>
-                  )}
-                </Box>
-              ))}
-            </Box>
+                    {/* Highlights in this chapter */}
+                    {chapter.highlights && chapter.highlights.length > 0 ? (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        {chapter.highlights.map((highlight) => (
+                          <HighlightCard
+                            key={highlight.id}
+                            highlight={highlight}
+                            bookId={book.id}
+                          />
+                        ))}
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary" sx={{ pl: 0.5 }}>
+                        No highlights found in this chapter.
+                      </Typography>
+                    )}
+                  </Box>
+                ))}
+              </Box>
+            </FadeInOut>
 
             {/* Sidebar - Tags (Desktop only) */}
             <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
