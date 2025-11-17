@@ -30,6 +30,9 @@ function CrossbillSync:init()
 
     -- Register event handlers for autosync
     self:registerEventHandlers()
+
+    -- Track whether we enabled WiFi (so we can turn it off after sync)
+    self.wifi_was_enabled_by_us = false
 end
 
 function CrossbillSync:addToMainMenu(menu_items)
@@ -109,11 +112,24 @@ function CrossbillSync:ensureWifiEnabled(callback)
     if NetworkMgr:willRerunWhenOnline(callback) then
         -- Network is off, NetworkMgr will call callback when online
         logger.info("crossbill: WiFi is off, prompting to enable...")
+        self.wifi_was_enabled_by_us = true
         return false
     else
         -- Network is already on
         logger.info("crossbill: WiFi already enabled")
+        self.wifi_was_enabled_by_us = false
         return true
+    end
+end
+
+function CrossbillSync:disableWifiIfNeeded()
+    -- Disable WiFi if we enabled it for the sync
+    if self.wifi_was_enabled_by_us then
+        logger.info("crossbill: Disabling WiFi after sync")
+        NetworkMgr:turnOffWifi()
+        self.wifi_was_enabled_by_us = false
+    else
+        logger.info("crossbill: WiFi was already on, leaving it enabled")
     end
 end
 
@@ -193,6 +209,9 @@ function CrossbillSync:performSync()
             timeout = 5,
         })
     end
+
+    -- Always disable WiFi after sync completes (success or failure)
+    self:disableWifiIfNeeded()
 end
 
 function CrossbillSync:syncCurrentBook()
