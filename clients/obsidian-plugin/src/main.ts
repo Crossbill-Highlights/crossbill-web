@@ -162,7 +162,7 @@ export default class CrossbillPlugin extends Plugin {
       // Show highlight selection modal
       new HighlightSuggestModal(this.app, allHighlights, (selectedHighlight) => {
         try {
-          const content = formatBookHeader(bookDetails) + formatHighlight(selectedHighlight);
+          const content = formatHighlight(selectedHighlight, bookDetails.title);
 
           const cursor = editor.getCursor();
           editor.replaceRange(content, cursor);

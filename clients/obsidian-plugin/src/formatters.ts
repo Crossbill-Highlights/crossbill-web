@@ -6,8 +6,10 @@ import { Book, Highlight, ChapterWithHighlights, BookDetails } from './types';
 
 /**
  * Format a single highlight with its note, page number, and tags
+ * @param highlight - The highlight to format
+ * @param bookTitle - Optional book title to display (for single highlight imports)
  */
-export function formatHighlight(highlight: Highlight): string {
+export function formatHighlight(highlight: Highlight, bookTitle?: string): string {
   let content = '';
 
   content += `> ${highlight.text}\n\n`;
@@ -18,6 +20,10 @@ export function formatHighlight(highlight: Highlight): string {
 
   if (highlight.page !== null) {
     content += `*Page ${highlight.page}*\n\n`;
+  }
+
+  if (bookTitle) {
+    content += `*${bookTitle}*\n\n`;
   }
 
   // Add tags in Obsidian format (#tagname)
