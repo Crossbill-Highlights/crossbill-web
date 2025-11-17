@@ -342,7 +342,35 @@ export const HighlightViewModal = ({
     highlight.text.length > 0 &&
     highlight.text[0] === highlight.text[0].toLowerCase() &&
     highlight.text[0] !== highlight.text[0].toUpperCase();
-  const formattedText = startsWithLowercase ? `...${highlight.text}` : highlight.text;
+
+  // Helper function to render highlight text as paragraphs
+  const renderHighlightText = () => {
+    const prefix = startsWithLowercase ? '...' : '';
+    // Split by newlines and filter out empty strings
+    const paragraphs = highlight.text.split('\n').filter((p) => p.trim() !== '');
+
+    return (
+      <>
+        {paragraphs.map((paragraph, index) => (
+          <Typography
+            key={index}
+            component="p"
+            variant="h6"
+            sx={{
+              fontWeight: 500,
+              color: 'text.primary',
+              lineHeight: 1.7,
+              fontSize: '1.25rem',
+              margin: 0,
+              marginBottom: index < paragraphs.length - 1 ? 2 : 0,
+            }}
+          >
+            {index === 0 ? prefix + paragraph : paragraph}
+          </Typography>
+        ))}
+      </>
+    );
+  };
 
   const handlePrevious = useCallback(() => {
     if (hasPrevious && onNavigate) {
@@ -483,17 +511,7 @@ export const HighlightViewModal = ({
                     opacity: 0.7,
                   }}
                 />
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 500,
-                    color: 'text.primary',
-                    lineHeight: 1.7,
-                    fontSize: '1.25rem',
-                  }}
-                >
-                  {formattedText}
-                </Typography>
+                <Box sx={{ flex: 1 }}>{renderHighlightText()}</Box>
               </Box>
 
               {/* Metadata */}
@@ -561,17 +579,7 @@ export const HighlightViewModal = ({
               opacity: 0.7,
             }}
           />
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 500,
-              color: 'text.primary',
-              lineHeight: 1.7,
-              fontSize: '1.25rem',
-            }}
-          >
-            {formattedText}
-          </Typography>
+          <Box sx={{ flex: 1 }}>{renderHighlightText()}</Box>
         </Box>
 
         {/* Metadata */}
