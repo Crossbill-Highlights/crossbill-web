@@ -153,7 +153,6 @@ class SettingsDialog(QDialog):
         # Save config
         mw.addonManager.writeConfig(__name__.split('.')[0], self.config)
 
-        showInfo("Settings saved successfully!")
         self.accept()
 
 
