@@ -44,7 +44,7 @@ class HighlightsBrowserDialog(QDialog):
 
         # Get dialog size from config
         width = self.config.get('ui_preferences', {}).get('dialog_width', 900)
-        height = self.config.get('ui_preferences', {}).get('dialog_height', 600)
+        height = self.config.get('ui_preferences', {}).get('dialog_height', 700)
         self.resize(width, height)
 
         layout = QVBoxLayout()
@@ -53,48 +53,58 @@ class HighlightsBrowserDialog(QDialog):
         header_label = QLabel("<h2>Browse Crossbill Highlights</h2>")
         layout.addWidget(header_label)
 
-        # Main content area with splitter
-        splitter = QSplitter(Qt.Orientation.Horizontal)
+        # Main content area with vertical splitter for resizable sections
+        splitter = QSplitter(Qt.Orientation.Vertical)
 
-        # Left panel: Books list
-        left_panel = QVBoxLayout()
+        # Books section - full width
+        books_container = QLabel()  # Container widget for layout
+        books_layout = QVBoxLayout()
+        books_layout.setContentsMargins(0, 0, 0, 0)
+
         books_label = QLabel("<b>Books</b>")
-        left_panel.addWidget(books_label)
+        books_layout.addWidget(books_label)
 
         self.books_list = QListWidget()
         self.books_list.itemClicked.connect(self.on_book_selected)
-        left_panel.addWidget(self.books_list)
+        books_layout.addWidget(self.books_list)
 
-        left_widget = QLabel()  # Container widget
-        left_widget.setLayout(left_panel)
-        splitter.addWidget(self.books_list)
+        books_container.setLayout(books_layout)
+        splitter.addWidget(books_container)
 
-        # Right panel: Highlights list and details
-        right_panel = QVBoxLayout()
+        # Highlights section - full width
+        highlights_container = QLabel()  # Container widget for layout
+        highlights_layout = QVBoxLayout()
+        highlights_layout.setContentsMargins(0, 0, 0, 0)
 
         highlights_label = QLabel("<b>Highlights</b>")
-        right_panel.addWidget(highlights_label)
+        highlights_layout.addWidget(highlights_label)
 
         self.highlights_list = QListWidget()
         self.highlights_list.itemClicked.connect(self.on_highlight_selected)
-        right_panel.addWidget(self.highlights_list)
+        highlights_layout.addWidget(self.highlights_list)
 
-        # Highlight details
+        highlights_container.setLayout(highlights_layout)
+        splitter.addWidget(highlights_container)
+
+        # Details section - full width
+        details_container = QLabel()  # Container widget for layout
+        details_layout = QVBoxLayout()
+        details_layout.setContentsMargins(0, 0, 0, 0)
+
         details_label = QLabel("<b>Details</b>")
-        right_panel.addWidget(details_label)
+        details_layout.addWidget(details_label)
 
         self.highlight_details = QTextEdit()
         self.highlight_details.setReadOnly(True)
-        self.highlight_details.setMaximumHeight(200)
-        right_panel.addWidget(self.highlight_details)
+        details_layout.addWidget(self.highlight_details)
 
-        right_widget = QLabel()  # Container widget
-        right_widget.setLayout(right_panel)
-        splitter.addWidget(right_widget)
+        details_container.setLayout(details_layout)
+        splitter.addWidget(details_container)
 
-        # Set splitter proportions
-        splitter.setStretchFactor(0, 1)
-        splitter.setStretchFactor(1, 2)
+        # Set initial splitter proportions (books: highlights: details = 2:3:2)
+        splitter.setStretchFactor(0, 2)
+        splitter.setStretchFactor(1, 3)
+        splitter.setStretchFactor(2, 2)
 
         layout.addWidget(splitter)
 
