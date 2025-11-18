@@ -204,9 +204,15 @@ def create_or_update_tag_group(
         )
         return tag_group
     except ValueError as e:
+        # Check if it's a "not found" error or a validation error
+        error_msg = str(e)
+        if "not found" in error_msg.lower():
+            status_code = status.HTTP_404_NOT_FOUND
+        else:
+            status_code = status.HTTP_400_BAD_REQUEST
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
+            status_code=status_code,
+            detail=error_msg,
         ) from e
     except CrossbillError as e:
         raise HTTPException(
