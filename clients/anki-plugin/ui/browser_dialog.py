@@ -8,11 +8,11 @@ from typing import List, Optional
 
 from aqt import mw
 from aqt.qt import (
-    QDialog, QVBoxLayout, QHBoxLayout, QSplitter,
-    QListWidget, QListWidgetItem, QTextEdit, QPushButton,
+    QDialog, QVBoxLayout, QHBoxLayout, QSplitter, QFormLayout,
+    QListWidget, QListWidgetItem, QTextEdit, QPushButton, QComboBox, QCheckBox,
     QLabel, QMessageBox, QProgressDialog, Qt
 )
-from aqt.utils import showInfo
+from aqt.utils import showInfo, tooltip
 
 # Add plugin directory to path to import our modules
 plugin_dir = os.path.dirname(os.path.dirname(__file__))
@@ -20,7 +20,8 @@ if plugin_dir not in sys.path:
     sys.path.insert(0, plugin_dir)
 
 from api import CrossbillAPI, CrossbillAPIError
-from models import BookWithHighlightCount, BookDetails, Highlight
+from models import BookWithHighlightCount, BookDetails, Highlight, PluginConfig
+from note_creator import NoteCreator
 
 
 class HighlightsBrowserDialog(QDialog):
@@ -29,13 +30,17 @@ class HighlightsBrowserDialog(QDialog):
     def __init__(self, parent=None, config=None):
         super().__init__(parent)
         self.config = config or mw.addonManager.getConfig(__name__.split('.')[0])
+        self.plugin_config = PluginConfig.from_dict(self.config)
         self.api = CrossbillAPI(self.config.get('server_host', 'http://localhost:8000'))
+        self.note_creator = NoteCreator(self.plugin_config)
 
         self.books: List[BookWithHighlightCount] = []
         self.current_book: Optional[BookDetails] = None
         self.all_highlights: List[Highlight] = []
+        self.imported_highlight_ids = set()
 
         self.setup_ui()
+        self.load_imported_highlights()
         self.load_books()
 
     def setup_ui(self):
@@ -76,12 +81,53 @@ class HighlightsBrowserDialog(QDialog):
         highlights_layout = QVBoxLayout()
         highlights_layout.setContentsMargins(0, 0, 0, 0)
 
+        # Highlights header with controls
+        highlights_header = QHBoxLayout()
         highlights_label = QLabel("<b>Highlights</b>")
-        highlights_layout.addWidget(highlights_label)
+        highlights_header.addWidget(highlights_label)
+        highlights_header.addStretch()
 
+        # Selection buttons
+        select_all_btn = QPushButton("Select All")
+        select_all_btn.clicked.connect(self.select_all_highlights)
+        highlights_header.addWidget(select_all_btn)
+
+        deselect_all_btn = QPushButton("Deselect All")
+        deselect_all_btn.clicked.connect(self.deselect_all_highlights)
+        highlights_header.addWidget(deselect_all_btn)
+
+        highlights_layout.addLayout(highlights_header)
+
+        # Highlights list with checkboxes
         self.highlights_list = QListWidget()
-        self.highlights_list.itemClicked.connect(self.on_highlight_selected)
+        self.highlights_list.itemClicked.connect(self.on_highlight_clicked)
         highlights_layout.addWidget(self.highlights_list)
+
+        # Import controls
+        import_controls = QFormLayout()
+
+        # Deck selection
+        self.deck_combo = QComboBox()
+        self.populate_decks()
+        import_controls.addRow("Deck:", self.deck_combo)
+
+        # Note type selection
+        self.note_type_combo = QComboBox()
+        self.populate_note_types()
+        import_controls.addRow("Note Type:", self.note_type_combo)
+
+        highlights_layout.addLayout(import_controls)
+
+        # Import button
+        import_button_layout = QHBoxLayout()
+        import_button_layout.addStretch()
+
+        self.import_btn = QPushButton("Import Selected Highlights")
+        self.import_btn.clicked.connect(self.import_selected_highlights)
+        self.import_btn.setEnabled(False)  # Disabled until book is selected
+        import_button_layout.addWidget(self.import_btn)
+
+        highlights_layout.addLayout(import_button_layout)
 
         highlights_container.setLayout(highlights_layout)
         splitter.addWidget(highlights_container)
@@ -192,21 +238,11 @@ class HighlightsBrowserDialog(QDialog):
             for chapter in self.current_book.chapters:
                 self.all_highlights.extend(chapter.highlights)
 
-            # Populate highlights list
-            self.highlights_list.clear()
-            for highlight in self.all_highlights:
-                # Create preview text (first 100 chars)
-                preview = highlight.text[:100]
-                if len(highlight.text) > 100:
-                    preview += "..."
+            # Populate highlights list with checkboxes and import status
+            self.refresh_highlights_list()
 
-                chapter_text = f" [{highlight.chapter}]" if highlight.chapter else ""
-                page_text = f" (p. {highlight.page})" if highlight.page else ""
-
-                item_text = f"{preview}{chapter_text}{page_text}"
-                item = QListWidgetItem(item_text)
-                item.setData(Qt.ItemDataRole.UserRole, highlight.id)
-                self.highlights_list.addItem(item)
+            # Enable import button
+            self.import_btn.setEnabled(True)
 
             count = len(self.all_highlights)
             self.status_label.setText(f"Loaded {count} highlights from {self.current_book.title}")
@@ -258,6 +294,185 @@ class HighlightsBrowserDialog(QDialog):
             details_html += f"<p><b>Tags:</b> {tags}</p>"
 
         self.highlight_details.setHtml(details_html)
+
+    def populate_decks(self):
+        """Populate the deck selection dropdown"""
+        deck_names = sorted(mw.col.decks.all_names())
+        self.deck_combo.addItems(deck_names)
+
+        # Set default deck from config
+        default_deck = self.config.get('default_deck', 'Default')
+        index = self.deck_combo.findText(default_deck)
+        if index >= 0:
+            self.deck_combo.setCurrentIndex(index)
+
+    def populate_note_types(self):
+        """Populate the note type selection dropdown"""
+        model_names = sorted(mw.col.models.all_names())
+        self.note_type_combo.addItems(model_names)
+
+        # Set default note type from config
+        default_note_type = self.config.get('default_note_type', 'Basic')
+        index = self.note_type_combo.findText(default_note_type)
+        if index >= 0:
+            self.note_type_combo.setCurrentIndex(index)
+
+    def load_imported_highlights(self):
+        """Load the set of already imported highlight IDs"""
+        self.imported_highlight_ids = self.note_creator.get_imported_highlight_ids()
+
+    def select_all_highlights(self):
+        """Select all highlights in the list"""
+        for i in range(self.highlights_list.count()):
+            item = self.highlights_list.item(i)
+            if item.checkState() != Qt.CheckState.Checked:
+                item.setCheckState(Qt.CheckState.Checked)
+
+    def deselect_all_highlights(self):
+        """Deselect all highlights in the list"""
+        for i in range(self.highlights_list.count()):
+            item = self.highlights_list.item(i)
+            if item.checkState() == Qt.CheckState.Checked:
+                item.setCheckState(Qt.CheckState.Unchecked)
+
+    def on_highlight_clicked(self, item: QListWidgetItem):
+        """Handle highlight click - show details"""
+        self.on_highlight_selected(item)
+
+    def get_selected_highlights(self) -> List[Highlight]:
+        """Get list of selected highlights"""
+        selected = []
+        for i in range(self.highlights_list.count()):
+            item = self.highlights_list.item(i)
+            if item.checkState() == Qt.CheckState.Checked:
+                highlight_id = item.data(Qt.ItemDataRole.UserRole)
+                # Find the highlight object
+                for hl in self.all_highlights:
+                    if hl.id == highlight_id:
+                        selected.append(hl)
+                        break
+        return selected
+
+    def import_selected_highlights(self):
+        """Import selected highlights as Anki notes"""
+        if not self.current_book:
+            QMessageBox.warning(
+                self,
+                "No Book Selected",
+                "Please select a book first."
+            )
+            return
+
+        selected_highlights = self.get_selected_highlights()
+        if not selected_highlights:
+            QMessageBox.warning(
+                self,
+                "No Highlights Selected",
+                "Please select at least one highlight to import."
+            )
+            return
+
+        # Get selected deck and note type
+        deck_name = self.deck_combo.currentText()
+        note_type_name = self.note_type_combo.currentText()
+
+        # Confirm import
+        count = len(selected_highlights)
+        reply = QMessageBox.question(
+            self,
+            "Confirm Import",
+            f"Import {count} highlight(s) to deck '{deck_name}'?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        # Show progress dialog
+        progress = QProgressDialog("Importing highlights...", "Cancel", 0, count, self)
+        progress.setWindowTitle("Import Progress")
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.show()
+
+        # Import highlights
+        stats = self.note_creator.import_highlights(
+            selected_highlights,
+            self.current_book,
+            deck_name,
+            note_type_name,
+            skip_duplicates=True
+        )
+
+        progress.close()
+
+        # Show results
+        result_msg = f"Import complete!\n\n"
+        result_msg += f"Created: {stats['created']} notes\n"
+        if stats['skipped'] > 0:
+            result_msg += f"Skipped (already imported): {stats['skipped']}\n"
+        if stats['failed'] > 0:
+            result_msg += f"Failed: {stats['failed']}\n"
+
+        if stats['errors']:
+            result_msg += f"\nErrors:\n"
+            for error in stats['errors'][:5]:  # Show first 5 errors
+                result_msg += f"- {error}\n"
+            if len(stats['errors']) > 5:
+                result_msg += f"... and {len(stats['errors']) - 5} more errors"
+
+        if stats['created'] > 0:
+            QMessageBox.information(self, "Import Successful", result_msg)
+            # Reload imported highlights
+            self.load_imported_highlights()
+            # Refresh the highlights list to show import status
+            if self.current_book:
+                self.refresh_highlights_list()
+        else:
+            QMessageBox.warning(self, "Import Results", result_msg)
+
+    def refresh_highlights_list(self):
+        """Refresh the highlights list to update import status"""
+        if not self.all_highlights:
+            return
+
+        # Remember current selections
+        selected_ids = set()
+        for i in range(self.highlights_list.count()):
+            item = self.highlights_list.item(i)
+            if item.checkState() == Qt.CheckState.Checked:
+                selected_ids.add(item.data(Qt.ItemDataRole.UserRole))
+
+        # Rebuild list
+        self.highlights_list.clear()
+        for highlight in self.all_highlights:
+            # Create preview text (first 100 chars)
+            preview = highlight.text[:100]
+            if len(highlight.text) > 100:
+                preview += "..."
+
+            chapter_text = f" [{highlight.chapter}]" if highlight.chapter else ""
+            page_text = f" (p. {highlight.page})" if highlight.page else ""
+
+            # Add import status
+            is_imported = highlight.id in self.imported_highlight_ids
+            status_text = " ✓ Imported" if is_imported else ""
+
+            item_text = f"{preview}{chapter_text}{page_text}{status_text}"
+            item = QListWidgetItem(item_text)
+            item.setData(Qt.ItemDataRole.UserRole, highlight.id)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+
+            # Restore selection state
+            if highlight.id in selected_ids:
+                item.setCheckState(Qt.CheckState.Checked)
+            else:
+                item.setCheckState(Qt.CheckState.Unchecked)
+
+            # Gray out imported highlights
+            if is_imported:
+                item.setForeground(Qt.GlobalColor.gray)
+
+            self.highlights_list.addItem(item)
 
     def closeEvent(self, event):
         """Save dialog size when closing"""
