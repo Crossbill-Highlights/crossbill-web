@@ -23,14 +23,8 @@ def show_highlights_browser():
         showInfo("Failed to load plugin configuration. Please reinstall the plugin.")
         return
 
-    # Check if server is configured
-    server_host = config.get('server_host', '')
-    if not server_host or server_host == 'http://localhost:8000':
-        from .ui.settings_dialog import show_settings_dialog
-        show_settings_dialog()
-        return
-
     # Show the browser dialog
+    # If connection fails, the dialog will show appropriate error messages
     dialog = HighlightsBrowserDialog(mw, config)
     dialog.exec()
 
