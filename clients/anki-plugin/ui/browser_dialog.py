@@ -513,7 +513,7 @@ class HighlightsBrowserDialog(QDialog):
             if selected_tag and selected_tag not in [tag.name for tag in highlight.highlight_tags]:
                 continue
 
-            if selected_chapter and highlight.chapter != selected_chapter:
+            if selected_chapter and highlight.chapter_id != selected_chapter:
                 continue
 
             displayed_count += 1
@@ -587,7 +587,7 @@ class HighlightsBrowserDialog(QDialog):
         # Add chapters to dropdown
         for chapter in self.current_book.chapters:
             if chapter.highlights:  # Only show chapters with highlights
-                self.chapter_filter_combo.addItem(chapter.name, chapter.name)
+                self.chapter_filter_combo.addItem(chapter.name, chapter.id)
 
     def on_search_changed(self, text):
         """Handle search text change"""
@@ -658,9 +658,9 @@ class HighlightsBrowserDialog(QDialog):
             )
             return
 
-        # Get current chapter filter
-        selected_chapter = self.chapter_filter_combo.currentData()
-        if not selected_chapter:
+        # Get current chapter filter (chapter ID)
+        selected_chapter_id = self.chapter_filter_combo.currentData()
+        if not selected_chapter_id:
             QMessageBox.information(
                 self,
                 "No Chapter Selected",
@@ -668,15 +668,18 @@ class HighlightsBrowserDialog(QDialog):
             )
             return
 
-        # Filter highlights by chapter
+        # Get chapter name for display
+        selected_chapter_name = self.chapter_filter_combo.currentText()
+
+        # Filter highlights by chapter ID
         chapter_highlights = [hl for hl in self.all_highlights
-                            if hl.chapter == selected_chapter]
+                            if hl.chapter_id == selected_chapter_id]
 
         if not chapter_highlights:
             QMessageBox.warning(
                 self,
                 "No Highlights",
-                f"No highlights found in chapter '{selected_chapter}'."
+                f"No highlights found in chapter '{selected_chapter_name}'."
             )
             return
 
@@ -695,7 +698,7 @@ class HighlightsBrowserDialog(QDialog):
             QMessageBox.information(
                 self,
                 "All Imported",
-                f"All {total_count} highlights from chapter '{selected_chapter}' "
+                f"All {total_count} highlights from chapter '{selected_chapter_name}' "
                 f"have already been imported."
             )
             return
@@ -703,7 +706,7 @@ class HighlightsBrowserDialog(QDialog):
         reply = QMessageBox.question(
             self,
             "Confirm Batch Import",
-            f"Import all {total_count} highlights from chapter '{selected_chapter}'?\n"
+            f"Import all {total_count} highlights from chapter '{selected_chapter_name}'?\n"
             f"({new_count} new, {total_count - new_count} already imported)\n\n"
             f"Deck: {deck_name}",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
