@@ -136,9 +136,7 @@ class TestDeleteTagGroup:
         db_session.refresh(tag_group)
 
         # Delete tag group
-        response = client.delete(
-            f"/api/v1/highlights/tag_group/{tag_group.id}?bookId={book.id}"
-        )
+        response = client.delete(f"/api/v1/highlights/tag_group/{tag_group.id}")
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -169,9 +167,7 @@ class TestDeleteTagGroup:
         db_session.refresh(tag2)
 
         # Delete tag group
-        response = client.delete(
-            f"/api/v1/highlights/tag_group/{tag_group.id}?bookId={book.id}"
-        )
+        response = client.delete(f"/api/v1/highlights/tag_group/{tag_group.id}")
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -183,43 +179,9 @@ class TestDeleteTagGroup:
 
     def test_delete_tag_group_not_found(self, client: TestClient, db_session: Session) -> None:
         """Test deleting non-existent tag group."""
-        book = models.Book(title="Test Book", author="Test Author")
-        db_session.add(book)
-        db_session.commit()
-        db_session.refresh(book)
-
-        response = client.delete(f"/api/v1/highlights/tag_group/99999?bookId={book.id}")
+        response = client.delete("/api/v1/highlights/tag_group/99999")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    def test_delete_tag_group_wrong_book(self, client: TestClient, db_session: Session) -> None:
-        """Test deleting tag group with wrong book_id."""
-        # Create two books
-        book1 = models.Book(title="Book 1", author="Author 1")
-        book2 = models.Book(title="Book 2", author="Author 2")
-        db_session.add_all([book1, book2])
-        db_session.commit()
-        db_session.refresh(book1)
-        db_session.refresh(book2)
-
-        # Create tag group for book1
-        tag_group = models.HighlightTagGroup(book_id=book1.id, name="Themes")
-        db_session.add(tag_group)
-        db_session.commit()
-        db_session.refresh(tag_group)
-
-        # Try to delete with book2's ID
-        response = client.delete(
-            f"/api/v1/highlights/tag_group/{tag_group.id}?bookId={book2.id}"
-        )
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-        # Verify tag group still exists
-        existing_group = (
-            db_session.query(models.HighlightTagGroup).filter_by(id=tag_group.id).first()
-        )
-        assert existing_group is not None
 
 
 class TestUpdateTag:
