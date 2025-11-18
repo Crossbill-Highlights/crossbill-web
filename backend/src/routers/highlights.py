@@ -228,14 +228,12 @@ def create_or_update_tag_group(
 def delete_tag_group(
     tag_group_id: int,
     db: DatabaseSession,
-    book_id: int = Query(..., alias="bookId", description="ID of the book for validation"),
 ) -> None:
     """
     Delete a tag group.
 
     Args:
         tag_group_id: ID of the tag group to delete
-        book_id: ID of the book (for validation)
         db: Database session
 
     Raises:
@@ -243,17 +241,12 @@ def delete_tag_group(
     """
     try:
         service = HighlightTagService(db)
-        success = service.delete_tag_group(book_id, tag_group_id)
+        success = service.delete_tag_group(tag_group_id)
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Tag group with id {tag_group_id} not found",
             )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
     except HTTPException:
         raise
     except Exception as e:

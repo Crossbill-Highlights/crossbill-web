@@ -361,32 +361,20 @@ class HighlightTagService:
         )
         return tag_group
 
-    def delete_tag_group(self, book_id: int, tag_group_id: int) -> bool:
+    def delete_tag_group(self, tag_group_id: int) -> bool:
         """
         Delete a highlight tag group.
 
         Args:
-            book_id: ID of the book (for validation)
             tag_group_id: ID of the tag group to delete
 
         Returns:
             True if deleted, False if not found
-
-        Raises:
-            ValueError: If tag group doesn't belong to the specified book
         """
-        tag_group = self.highlight_tag_repo.get_tag_group_by_id(tag_group_id)
-        if not tag_group:
-            return False
-
-        # Verify the tag group belongs to the specified book
-        if tag_group.book_id != book_id:
-            raise ValueError(f"Tag group {tag_group_id} does not belong to book {book_id}")
-
         # Delete the tag group (tags' foreign keys will be set to NULL)
         success = self.highlight_tag_repo.delete_tag_group(tag_group_id)
         if success:
             self.db.commit()
-            logger.info("deleted_highlight_tag_group", tag_group_id=tag_group_id, book_id=book_id)
+            logger.info("deleted_highlight_tag_group", tag_group_id=tag_group_id)
 
         return success
