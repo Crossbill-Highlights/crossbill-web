@@ -133,12 +133,15 @@ function CrossbillSync:disableWifiIfNeeded()
     end
 end
 
-function CrossbillSync:performSync()
+function CrossbillSync:performSync(is_autosync)
     -- The actual sync logic (separated so it can be called after WiFi is enabled)
-    UIManager:show(InfoMessage:new{
-        text = _("Syncing highlights..."),
-        timeout = 2,
-    })
+    -- is_autosync: if true, don't show result popup (silent mode)
+    if not is_autosync then
+        UIManager:show(InfoMessage:new{
+            text = _("Syncing highlights..."),
+            timeout = 2,
+        })
+    end
 
     local success, err = pcall(function()
         -- Get book metadata
@@ -199,7 +202,7 @@ function CrossbillSync:performSync()
         end
 
         -- Send to server
-        self:sendToServer(book_data, highlights)
+        self:sendToServer(book_data, highlights, is_autosync)
     end)
 
     if not success then
@@ -214,11 +217,12 @@ function CrossbillSync:performSync()
     self:disableWifiIfNeeded()
 end
 
-function CrossbillSync:syncCurrentBook()
+function CrossbillSync:syncCurrentBook(is_autosync)
     -- Ensure WiFi is enabled before attempting to sync
     -- NetworkMgr will handle prompting user or auto-enabling based on settings
+    -- is_autosync: if true, don't show result popup (silent mode)
     local callback = function()
-        self:performSync()
+        self:performSync(is_autosync)
     end
 
     if not self:ensureWifiEnabled(callback) then
@@ -226,7 +230,7 @@ function CrossbillSync:syncCurrentBook()
         logger.info("Crossbill: Waiting for WiFi to be enabled...")
     else
         -- WiFi already on, sync immediately
-        self:performSync()
+        self:performSync(is_autosync)
     end
 end
 
@@ -341,8 +345,9 @@ function CrossbillSync:getChapterNumberMap()
     return chapter_map
 end
 
-function CrossbillSync:sendToServer(book_data, highlights)
+function CrossbillSync:sendToServer(book_data, highlights, is_autosync)
     -- Wrap everything in pcall for error handling
+    -- is_autosync: if true, don't show result popup (silent mode)
     local success, result = pcall(function()
         local payload = {
             book = book_data,
@@ -398,31 +403,40 @@ function CrossbillSync:sendToServer(book_data, highlights)
                 self:uploadCoverImage(response_data.book_id)
             end
 
-            UIManager:show(InfoMessage:new{
-                text = string.format(
-                    _("Synced successfully!\n%d new, %d duplicates"),
-                    response_data.highlights_created or 0,
-                    response_data.highlights_skipped or 0
-                ),
-                timeout = 3,
-            })
+            -- Only show success popup for manual syncs
+            if not is_autosync then
+                UIManager:show(InfoMessage:new{
+                    text = string.format(
+                        _("Synced successfully!\n%d new, %d duplicates"),
+                        response_data.highlights_created or 0,
+                        response_data.highlights_skipped or 0
+                    ),
+                    timeout = 3,
+                })
+            end
             return true
         else
             logger.err("Crossbill: Sync failed with code:", code)
-            UIManager:show(InfoMessage:new{
-                text = _("Sync failed: ") .. tostring(code or "unknown error"),
-                timeout = 3,
-            })
+            -- Only show error popup for manual syncs
+            if not is_autosync then
+                UIManager:show(InfoMessage:new{
+                    text = _("Sync failed: ") .. tostring(code or "unknown error"),
+                    timeout = 3,
+                })
+            end
             return false, code
         end
     end)
 
     if not success then
         logger.err("Crossbill: Exception during sync:", result)
-        UIManager:show(InfoMessage:new{
-            text = _("Sync error: ") .. tostring(result),
-            timeout = 5,
-        })
+        -- Only show error popup for manual syncs
+        if not is_autosync then
+            UIManager:show(InfoMessage:new{
+                text = _("Sync error: ") .. tostring(result),
+                timeout = 5,
+            })
+        end
     end
 end
 
@@ -530,7 +544,7 @@ function CrossbillSync:onCloseDocument()
     -- Called when user closes the current book
     if self.settings.autosync_enabled then
         logger.info("Crossbill: Auto-syncing on document close")
-        self:syncCurrentBook()
+        self:syncCurrentBook(true)  -- true = autosync (silent mode)
     end
     return false  -- Allow other handlers to process this event
 end
@@ -539,7 +553,7 @@ function CrossbillSync:onSuspend()
     -- Called when device goes to sleep/suspend (user stops reading)
     if self.settings.autosync_enabled then
         logger.info("Crossbill: Auto-syncing on suspend")
-        self:syncCurrentBook()
+        self:syncCurrentBook(true)  -- true = autosync (silent mode)
     end
     return false  -- Allow other handlers to process this event
 end
@@ -548,7 +562,7 @@ function CrossbillSync:onExit()
     -- Called when KOReader exits
     if self.settings.autosync_enabled then
         logger.info("Crossbill: Auto-syncing on exit")
-        self:syncCurrentBook()
+        self:syncCurrentBook(true)  -- true = autosync (silent mode)
     end
     return false  -- Allow other handlers to process this event
 end
