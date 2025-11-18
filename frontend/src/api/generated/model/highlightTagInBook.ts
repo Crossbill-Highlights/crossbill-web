@@ -4,6 +4,7 @@
  * crossbill API
  * OpenAPI spec version: 0.1.0
  */
+import type { HighlightTagInBookTagGroupId } from './highlightTagInBookTagGroupId';
 
 /**
  * Minimal highlight tag schema for book responses.
@@ -11,4 +12,5 @@
 export interface HighlightTagInBook {
   id: number;
   name: string;
+  tag_group_id?: HighlightTagInBookTagGroupId;
 }

@@ -40,11 +40,7 @@ export const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: [
-      '"Lora"',
-      'Georgia',
-      'serif',
-    ].join(','),
+    fontFamily: ['"Lora"', 'Georgia', 'serif'].join(','),
     h1: {
       fontSize: '2rem',
       fontWeight: 900, // Extreme weight for impact

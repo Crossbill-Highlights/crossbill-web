@@ -27,6 +27,8 @@ import type {
   HighlightNoteUpdate,
   HighlightNoteUpdateResponse,
   HighlightSearchResponse,
+  HighlightTagGroup,
+  HighlightTagGroupCreateRequest,
   HighlightUploadRequest,
   HighlightUploadResponse,
   SearchHighlightsApiV1HighlightsSearchGetParams,
@@ -538,6 +540,189 @@ export const useUpdateHighlightNoteApiV1HighlightsHighlightIdNotePost = <
 > => {
   const mutationOptions =
     getUpdateHighlightNoteApiV1HighlightsHighlightIdNotePostMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+/**
+ * Create a new tag group or update an existing one.
+
+Args:
+    request: Tag group creation/update request
+    db: Database session
+
+Returns:
+    Created or updated HighlightTagGroup
+
+Raises:
+    HTTPException: If creation/update fails
+ * @summary Create Or Update Tag Group
+ */
+export const createOrUpdateTagGroupApiV1HighlightsTagGroupPost = (
+  highlightTagGroupCreateRequest: HighlightTagGroupCreateRequest,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<HighlightTagGroup>({
+    url: `/api/v1/highlights/tag_group`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: highlightTagGroupCreateRequest,
+    signal,
+  });
+};
+
+export const getCreateOrUpdateTagGroupApiV1HighlightsTagGroupPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createOrUpdateTagGroupApiV1HighlightsTagGroupPost>>,
+    TError,
+    { data: HighlightTagGroupCreateRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createOrUpdateTagGroupApiV1HighlightsTagGroupPost>>,
+  TError,
+  { data: HighlightTagGroupCreateRequest },
+  TContext
+> => {
+  const mutationKey = ['createOrUpdateTagGroupApiV1HighlightsTagGroupPost'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createOrUpdateTagGroupApiV1HighlightsTagGroupPost>>,
+    { data: HighlightTagGroupCreateRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createOrUpdateTagGroupApiV1HighlightsTagGroupPost(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateOrUpdateTagGroupApiV1HighlightsTagGroupPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createOrUpdateTagGroupApiV1HighlightsTagGroupPost>>
+>;
+export type CreateOrUpdateTagGroupApiV1HighlightsTagGroupPostMutationBody =
+  HighlightTagGroupCreateRequest;
+export type CreateOrUpdateTagGroupApiV1HighlightsTagGroupPostMutationError = HTTPValidationError;
+
+/**
+ * @summary Create Or Update Tag Group
+ */
+export const useCreateOrUpdateTagGroupApiV1HighlightsTagGroupPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createOrUpdateTagGroupApiV1HighlightsTagGroupPost>>,
+      TError,
+      { data: HighlightTagGroupCreateRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof createOrUpdateTagGroupApiV1HighlightsTagGroupPost>>,
+  TError,
+  { data: HighlightTagGroupCreateRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getCreateOrUpdateTagGroupApiV1HighlightsTagGroupPostMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+/**
+ * Delete a tag group.
+
+Args:
+    tag_group_id: ID of the tag group to delete
+    db: Database session
+
+Raises:
+    HTTPException: If tag group not found or deletion fails
+ * @summary Delete Tag Group
+ */
+export const deleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete = (tagGroupId: number) => {
+  return axiosInstance<void>({
+    url: `/api/v1/highlights/tag_group/${tagGroupId}`,
+    method: 'DELETE',
+  });
+};
+
+export const getDeleteTagGroupApiV1HighlightsTagGroupTagGroupIdDeleteMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete>>,
+    TError,
+    { tagGroupId: number },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete>>,
+  TError,
+  { tagGroupId: number },
+  TContext
+> => {
+  const mutationKey = ['deleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete>>,
+    { tagGroupId: number }
+  > = (props) => {
+    const { tagGroupId } = props ?? {};
+
+    return deleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete(tagGroupId);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteTagGroupApiV1HighlightsTagGroupTagGroupIdDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete>>
+>;
+
+export type DeleteTagGroupApiV1HighlightsTagGroupTagGroupIdDeleteMutationError =
+  HTTPValidationError;
+
+/**
+ * @summary Delete Tag Group
+ */
+export const useDeleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete>>,
+      TError,
+      { tagGroupId: number },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete>>,
+  TError,
+  { tagGroupId: number },
+  TContext
+> => {
+  const mutationOptions =
+    getDeleteTagGroupApiV1HighlightsTagGroupTagGroupIdDeleteMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

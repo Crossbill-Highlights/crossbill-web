@@ -33,6 +33,7 @@ import type {
   HighlightTag,
   HighlightTagAssociationRequest,
   HighlightTagCreateRequest,
+  HighlightTagUpdateRequest,
   HighlightTagsResponse,
 } from '.././model';
 
@@ -905,6 +906,107 @@ export const useDeleteHighlightTagApiV1BookBookIdHighlightTagTagIdDelete = <
 > => {
   const mutationOptions =
     getDeleteHighlightTagApiV1BookBookIdHighlightTagTagIdDeleteMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+/**
+ * Update a highlight tag's name and/or tag group association.
+
+Args:
+    book_id: ID of the book
+    tag_id: ID of the tag to update
+    request: Request containing updated tag information
+    db: Database session
+
+Returns:
+    Updated HighlightTag
+
+Raises:
+    HTTPException: If tag not found, doesn't belong to book, or update fails
+ * @summary Update Highlight Tag
+ */
+export const updateHighlightTagApiV1BookBookIdHighlightTagTagIdPost = (
+  bookId: number,
+  tagId: number,
+  highlightTagUpdateRequest: HighlightTagUpdateRequest,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<HighlightTag>({
+    url: `/api/v1/book/${bookId}/highlight_tag/${tagId}`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: highlightTagUpdateRequest,
+    signal,
+  });
+};
+
+export const getUpdateHighlightTagApiV1BookBookIdHighlightTagTagIdPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateHighlightTagApiV1BookBookIdHighlightTagTagIdPost>>,
+    TError,
+    { bookId: number; tagId: number; data: HighlightTagUpdateRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateHighlightTagApiV1BookBookIdHighlightTagTagIdPost>>,
+  TError,
+  { bookId: number; tagId: number; data: HighlightTagUpdateRequest },
+  TContext
+> => {
+  const mutationKey = ['updateHighlightTagApiV1BookBookIdHighlightTagTagIdPost'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateHighlightTagApiV1BookBookIdHighlightTagTagIdPost>>,
+    { bookId: number; tagId: number; data: HighlightTagUpdateRequest }
+  > = (props) => {
+    const { bookId, tagId, data } = props ?? {};
+
+    return updateHighlightTagApiV1BookBookIdHighlightTagTagIdPost(bookId, tagId, data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateHighlightTagApiV1BookBookIdHighlightTagTagIdPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateHighlightTagApiV1BookBookIdHighlightTagTagIdPost>>
+>;
+export type UpdateHighlightTagApiV1BookBookIdHighlightTagTagIdPostMutationBody =
+  HighlightTagUpdateRequest;
+export type UpdateHighlightTagApiV1BookBookIdHighlightTagTagIdPostMutationError =
+  HTTPValidationError;
+
+/**
+ * @summary Update Highlight Tag
+ */
+export const useUpdateHighlightTagApiV1BookBookIdHighlightTagTagIdPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateHighlightTagApiV1BookBookIdHighlightTagTagIdPost>>,
+      TError,
+      { bookId: number; tagId: number; data: HighlightTagUpdateRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateHighlightTagApiV1BookBookIdHighlightTagTagIdPost>>,
+  TError,
+  { bookId: number; tagId: number; data: HighlightTagUpdateRequest },
+  TContext
+> => {
+  const mutationOptions =
+    getUpdateHighlightTagApiV1BookBookIdHighlightTagTagIdPostMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

@@ -4,21 +4,19 @@
  * crossbill API
  * OpenAPI spec version: 0.1.0
  */
-import type { HighlightTagTagGroupId } from './highlightTagTagGroupId';
 
 /**
- * Schema for HighlightTag response.
+ * Schema for HighlightTagGroup response.
  */
-export interface HighlightTag {
+export interface HighlightTagGroup {
   /**
-   * Tag name
+   * Tag group name
    * @minLength 1
    * @maxLength 100
    */
   name: string;
   id: number;
   book_id: number;
-  tag_group_id?: HighlightTagTagGroupId;
   created_at: string;
   updated_at: string;
 }
