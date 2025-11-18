@@ -124,15 +124,13 @@ The Crossbill Anki Plugin allows users to import highlights from their Crossbill
    - Filter by book
    - Search highlight text
    - Filter by tags
-2. Implement batch import
+2. Display chapter information in highlights list
+3. Implement batch import
    - Import all highlights from a book
    - Import all highlights from a chapter
-3. Add custom note type mapping
+4. Add custom note type mapping
    - Allow users to map highlight fields to custom note types
    - Save mapping preferences
-4. Implement sync tracking
-   - Track last sync time
-   - Show only new highlights since last sync
 5. Add export/import of plugin settings
 6. Error handling and user feedback improvements
 
@@ -154,16 +152,9 @@ The Crossbill Anki Plugin allows users to import highlights from their Crossbill
    - Custom tag mapping
 3. Implement bi-directional sync
    - Track note updates in Anki
-   - Option to push updates back to Crossbill (future)
-4. Add statistics and insights
-   - Show import statistics
-   - Highlight usage analytics
-5. Performance optimizations
-   - Caching
-   - Lazy loading for large libraries
-6. Comprehensive testing
-7. Documentation and user guide
-8. Prepare for AnkiWeb distribution
+4. Comprehensive testing
+5. Documentation and user guide
+6. Prepare for AnkiWeb distribution
 
 **Deliverables**:
 - Production-ready plugin
