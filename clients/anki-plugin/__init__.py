@@ -14,7 +14,7 @@ __author__ = "Crossbill Contributors"
 
 
 def show_highlights_browser():
-    """Show the highlights browser dialog"""
+    """Show the highlights browser window"""
     # Import here to avoid circular dependencies and load UI only when needed
     from .ui.browser_dialog import HighlightsBrowserDialog
 
@@ -23,10 +23,10 @@ def show_highlights_browser():
         showInfo("Failed to load plugin configuration. Please reinstall the plugin.")
         return
 
-    # Show the browser dialog
-    # If connection fails, the dialog will show appropriate error messages
-    dialog = HighlightsBrowserDialog(mw, config)
-    dialog.exec()
+    # Show the browser window (non-modal for better tiling WM support)
+    # If connection fails, the window will show appropriate error messages
+    window = HighlightsBrowserDialog(mw, config)
+    window.show()
 
 
 def show_settings():

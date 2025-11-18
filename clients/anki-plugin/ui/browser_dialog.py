@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from aqt import mw
 from aqt.qt import (
-    QDialog, QVBoxLayout, QHBoxLayout, QSplitter, QFormLayout,
+    QDialog, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QFormLayout,
     QListWidget, QListWidgetItem, QTextEdit, QPushButton, QComboBox, QCheckBox, QLineEdit,
     QLabel, QMessageBox, QProgressDialog, Qt
 )
@@ -24,11 +24,13 @@ from models import BookWithHighlightCount, BookDetails, Highlight, PluginConfig
 from note_creator import NoteCreator
 
 
-class HighlightsBrowserDialog(QDialog):
-    """Dialog for browsing and selecting highlights from Crossbill"""
+class HighlightsBrowserDialog(QWidget):
+    """Window for browsing and selecting highlights from Crossbill"""
 
     def __init__(self, parent=None, config=None):
         super().__init__(parent)
+        # Set window flag to make it a proper window (not floating dialog)
+        self.setWindowFlags(Qt.WindowType.Window)
         self.config = config or mw.addonManager.getConfig(__name__.split('.')[0])
         self.plugin_config = PluginConfig.from_dict(self.config)
         self.api = CrossbillAPI(self.config.get('server_host', 'http://localhost:8000'))
@@ -212,7 +214,7 @@ class HighlightsBrowserDialog(QDialog):
         button_layout.addWidget(refresh_button)
 
         close_button = QPushButton("Close")
-        close_button.clicked.connect(self.accept)
+        close_button.clicked.connect(self.close)
         button_layout.addWidget(close_button)
 
         layout.addLayout(button_layout)
