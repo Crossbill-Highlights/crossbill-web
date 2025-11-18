@@ -134,46 +134,8 @@ class HighlightsBrowserDialog(QWidget):
         # Highlights list with checkboxes
         self.highlights_list = QListWidget()
         self.highlights_list.itemClicked.connect(self.on_highlight_clicked)
+        self.highlights_list.itemChanged.connect(self.update_import_button_states)
         highlights_layout.addWidget(self.highlights_list)
-
-        # Import controls
-        import_controls = QFormLayout()
-
-        # Deck selection
-        self.deck_combo = QComboBox()
-        self.populate_decks()
-        import_controls.addRow("Deck:", self.deck_combo)
-
-        # Note type selection
-        self.note_type_combo = QComboBox()
-        self.populate_note_types()
-        import_controls.addRow("Note Type:", self.note_type_combo)
-
-        highlights_layout.addLayout(import_controls)
-
-        # Import buttons
-        import_button_layout = QHBoxLayout()
-
-        # Batch import buttons
-        self.import_all_btn = QPushButton("Import All from Book")
-        self.import_all_btn.clicked.connect(self.import_all_from_book)
-        self.import_all_btn.setEnabled(False)
-        import_button_layout.addWidget(self.import_all_btn)
-
-        self.import_chapter_btn = QPushButton("Import All from Chapter")
-        self.import_chapter_btn.clicked.connect(self.import_all_from_chapter)
-        self.import_chapter_btn.setEnabled(False)
-        import_button_layout.addWidget(self.import_chapter_btn)
-
-        import_button_layout.addStretch()
-
-        # Selected import button
-        self.import_btn = QPushButton("Import Selected")
-        self.import_btn.clicked.connect(self.import_selected_highlights)
-        self.import_btn.setEnabled(False)  # Disabled until book is selected
-        import_button_layout.addWidget(self.import_btn)
-
-        highlights_layout.addLayout(import_button_layout)
 
         highlights_container.setLayout(highlights_layout)
         splitter.addWidget(highlights_container)
@@ -205,19 +167,52 @@ class HighlightsBrowserDialog(QWidget):
         self.status_label.setStyleSheet("color: gray; font-size: 10px;")
         layout.addWidget(self.status_label)
 
-        # Buttons
-        button_layout = QHBoxLayout()
-        button_layout.addStretch()
+        # Import controls at bottom
+        import_controls = QFormLayout()
 
+        # Deck selection
+        self.deck_combo = QComboBox()
+        self.populate_decks()
+        import_controls.addRow("Deck:", self.deck_combo)
+
+        # Note type selection
+        self.note_type_combo = QComboBox()
+        self.populate_note_types()
+        import_controls.addRow("Note Type:", self.note_type_combo)
+
+        layout.addLayout(import_controls)
+
+        # Import buttons at bottom
+        import_button_layout = QHBoxLayout()
+
+        # Batch import buttons
+        self.import_all_btn = QPushButton("Import All from Book")
+        self.import_all_btn.clicked.connect(self.import_all_from_book)
+        self.import_all_btn.setEnabled(False)
+        import_button_layout.addWidget(self.import_all_btn)
+
+        self.import_chapter_btn = QPushButton("Import All from Chapter")
+        self.import_chapter_btn.clicked.connect(self.import_all_from_chapter)
+        self.import_chapter_btn.setEnabled(False)
+        import_button_layout.addWidget(self.import_chapter_btn)
+
+        self.import_btn = QPushButton("Import Selected")
+        self.import_btn.clicked.connect(self.import_selected_highlights)
+        self.import_btn.setEnabled(False)
+        import_button_layout.addWidget(self.import_btn)
+
+        import_button_layout.addStretch()
+
+        # Refresh and Close buttons
         refresh_button = QPushButton("Refresh")
         refresh_button.clicked.connect(self.load_books)
-        button_layout.addWidget(refresh_button)
+        import_button_layout.addWidget(refresh_button)
 
         close_button = QPushButton("Close")
         close_button.clicked.connect(self.close)
-        button_layout.addWidget(close_button)
+        import_button_layout.addWidget(close_button)
 
-        layout.addLayout(button_layout)
+        layout.addLayout(import_button_layout)
 
         self.setLayout(layout)
 
@@ -294,10 +289,8 @@ class HighlightsBrowserDialog(QWidget):
             # Populate highlights list with checkboxes and import status
             self.refresh_highlights_list()
 
-            # Enable import buttons
-            self.import_btn.setEnabled(True)
-            self.import_all_btn.setEnabled(True)
-            self.import_chapter_btn.setEnabled(True)
+            # Update import button states based on current selections
+            self.update_import_button_states()
 
             count = len(self.all_highlights)
             self.status_label.setText(f"Loaded {count} highlights from {self.current_book.title}")
@@ -382,6 +375,7 @@ class HighlightsBrowserDialog(QWidget):
             item = self.highlights_list.item(i)
             if item.checkState() != Qt.CheckState.Checked:
                 item.setCheckState(Qt.CheckState.Checked)
+        self.update_import_button_states()
 
     def deselect_all_highlights(self):
         """Deselect all highlights in the list"""
@@ -389,6 +383,7 @@ class HighlightsBrowserDialog(QWidget):
             item = self.highlights_list.item(i)
             if item.checkState() == Qt.CheckState.Checked:
                 item.setCheckState(Qt.CheckState.Unchecked)
+        self.update_import_button_states()
 
     def on_highlight_clicked(self, item: QListWidgetItem):
         """Handle highlight click - show details"""
@@ -437,7 +432,8 @@ class HighlightsBrowserDialog(QWidget):
             self,
             "Confirm Import",
             f"Import {count} highlight(s) to deck '{deck_name}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes
         )
 
         if reply != QMessageBox.StandardButton.Yes:
@@ -482,6 +478,7 @@ class HighlightsBrowserDialog(QWidget):
             # Refresh the highlights list to show import status
             if self.current_book:
                 self.refresh_highlights_list()
+                self.update_import_button_states()
         else:
             QMessageBox.warning(self, "Import Results", result_msg)
 
@@ -598,6 +595,27 @@ class HighlightsBrowserDialog(QWidget):
     def on_filter_changed(self, index):
         """Handle filter dropdown change"""
         self.refresh_highlights_list()
+        self.update_import_button_states()
+
+    def update_import_button_states(self):
+        """Update the enabled/disabled state of import buttons based on current state"""
+        # Import All from Book: enabled if book is selected
+        has_book = self.current_book is not None and len(self.all_highlights) > 0
+        self.import_all_btn.setEnabled(has_book)
+
+        # Import All from Chapter: enabled if book is selected AND a specific chapter is selected
+        has_chapter = has_book and self.chapter_filter_combo.currentData() is not None
+        self.import_chapter_btn.setEnabled(has_chapter)
+
+        # Import Selected: enabled if book is selected AND at least one highlight is checked
+        has_selected = False
+        if has_book:
+            for i in range(self.highlights_list.count()):
+                item = self.highlights_list.item(i)
+                if item.checkState() == Qt.CheckState.Checked:
+                    has_selected = True
+                    break
+        self.import_btn.setEnabled(has_selected)
 
     def clear_filters(self):
         """Clear all filters and search"""
@@ -641,7 +659,8 @@ class HighlightsBrowserDialog(QWidget):
             f"Import all {total_count} highlights from '{self.current_book.title}'?\n"
             f"({new_count} new, {total_count - new_count} already imported)\n\n"
             f"Deck: {deck_name}",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes
         )
 
         if reply != QMessageBox.StandardButton.Yes:
@@ -711,7 +730,8 @@ class HighlightsBrowserDialog(QWidget):
             f"Import all {total_count} highlights from chapter '{selected_chapter_name}'?\n"
             f"({new_count} new, {total_count - new_count} already imported)\n\n"
             f"Deck: {deck_name}",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes
         )
 
         if reply != QMessageBox.StandardButton.Yes:
@@ -762,6 +782,7 @@ class HighlightsBrowserDialog(QWidget):
             self.load_imported_highlights()
             # Refresh the highlights list
             self.refresh_highlights_list()
+            self.update_import_button_states()
         else:
             QMessageBox.warning(self, "Batch Import Results", result_msg)
 
