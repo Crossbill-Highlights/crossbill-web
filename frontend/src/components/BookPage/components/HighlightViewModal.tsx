@@ -360,7 +360,6 @@ export const HighlightViewModal = ({
               fontWeight: 500,
               color: 'text.primary',
               lineHeight: 1.7,
-              fontSize: '1.25rem',
               margin: 0,
               marginBottom: index < paragraphs.length - 1 ? 2 : 0,
             }}
