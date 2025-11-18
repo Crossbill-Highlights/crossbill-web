@@ -16,6 +16,7 @@ class HighlightTag(HighlightTagBase):
 
     id: int
     book_id: int
+    tag_group_id: int | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -27,6 +28,7 @@ class HighlightTagInBook(BaseModel):
 
     id: int
     name: str
+    tag_group_id: int | None = None
 
     model_config = {"from_attributes": True}
 
@@ -49,4 +51,53 @@ class HighlightTagAssociationRequest(BaseModel):
     tag_id: int | None = Field(None, description="ID of existing tag to associate")
     name: str | None = Field(
         None, min_length=1, max_length=100, description="Name of tag to create/associate"
+    )
+
+
+class HighlightTagUpdateRequest(BaseModel):
+    """Schema for updating an existing highlight tag."""
+
+    name: str | None = Field(None, min_length=1, max_length=100, description="Tag name")
+    tag_group_id: int | None = Field(None, description="ID of tag group to associate with")
+
+
+class HighlightTagGroupBase(BaseModel):
+    """Base schema for HighlightTagGroup."""
+
+    name: str = Field(..., min_length=1, max_length=100, description="Tag group name")
+
+
+class HighlightTagGroup(HighlightTagGroupBase):
+    """Schema for HighlightTagGroup response."""
+
+    id: int
+    book_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class HighlightTagGroupInBook(BaseModel):
+    """Minimal highlight tag group schema for book responses."""
+
+    id: int
+    name: str
+
+    model_config = {"from_attributes": True}
+
+
+class HighlightTagGroupCreateRequest(BaseModel):
+    """Schema for creating or updating a highlight tag group."""
+
+    id: int | None = Field(None, description="ID of existing tag group to update (optional)")
+    book_id: int = Field(..., description="ID of the book this tag group belongs to")
+    name: str = Field(..., min_length=1, max_length=100, description="Tag group name")
+
+
+class HighlightTagGroupsResponse(BaseModel):
+    """Schema for list of highlight tag groups response."""
+
+    tag_groups: list[HighlightTagGroup] = Field(
+        default_factory=list, description="List of highlight tag groups"
     )
