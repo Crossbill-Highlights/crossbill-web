@@ -66,9 +66,16 @@ export const HighlightTagsModal = ({
           queryKey: [`/api/v1/book/${bookId}`],
         });
       },
-      onError: (error) => {
+      onError: (error: unknown) => {
         console.error('Failed to create/update tag group:', error);
-        alert('Failed to save tag group. Please try again.');
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : typeof error === 'object' && error !== null && 'response' in error
+              ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+                'Unknown error'
+              : 'Unknown error';
+        alert(`Failed to save tag group: ${errorMessage}`);
       },
     },
   });
@@ -192,7 +199,7 @@ export const HighlightTagsModal = ({
             <Controller
               name={`tagGroups.${index}.name`}
               control={control}
-              render={({ field: { onChange, onBlur, value } }) => (
+              render={({ field: { onChange, value } }) => (
                 <TextField
                   fullWidth
                   size="small"
