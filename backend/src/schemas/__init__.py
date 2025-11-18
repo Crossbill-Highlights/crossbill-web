@@ -29,8 +29,13 @@ from src.schemas.highlight_tag_schemas import (
     HighlightTagAssociationRequest,
     HighlightTagBase,
     HighlightTagCreateRequest,
+    HighlightTagGroup,
+    HighlightTagGroupCreateRequest,
+    HighlightTagGroupInBook,
+    HighlightTagGroupsResponse,
     HighlightTagInBook,
     HighlightTagsResponse,
+    HighlightTagUpdateRequest,
 )
 from src.schemas.tag_schemas import BookUpdateRequest, Tag
 
@@ -59,8 +64,13 @@ __all__ = [
     "HighlightTagAssociationRequest",
     "HighlightTagBase",
     "HighlightTagCreateRequest",
+    "HighlightTagGroup",
+    "HighlightTagGroupCreateRequest",
+    "HighlightTagGroupInBook",
+    "HighlightTagGroupsResponse",
     "HighlightTagInBook",
     "HighlightTagsResponse",
+    "HighlightTagUpdateRequest",
     "HighlightUploadRequest",
     "HighlightUploadResponse",
     "Tag",
