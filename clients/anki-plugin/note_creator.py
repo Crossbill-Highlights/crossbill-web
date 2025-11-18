@@ -332,6 +332,13 @@ class NoteCreator:
                 if note:
                     # Add the note to the collection
                     mw.col.add_note(note, deck_id=mw.col.decks.id(deck_name))
+
+                    # Suspend cards if configured to do so
+                    if self.config.suspend_on_import:
+                        card_ids = [card.id for card in note.cards()]
+                        if card_ids:
+                            mw.col.sched.suspend_cards(card_ids)
+
                     stats['created'] += 1
                 else:
                     stats['failed'] += 1

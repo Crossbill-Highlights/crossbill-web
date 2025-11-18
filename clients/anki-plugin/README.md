@@ -12,6 +12,7 @@ Import your reading highlights from Crossbill server into Anki as flashcards for
 - ✅ Duplicate detection and prevention ✓
 - 🎯 Custom deck and note type selection ✓
 - ⚡ Batch import entire books or chapters ✓
+- 💤 Suspend cards on import (review before studying) ✓
 
 ## Current Status
 
@@ -84,13 +85,14 @@ Once published to AnkiWeb:
 
 ### Configuration Options
 
-Edit configuration via **Tools → Add-ons → Crossbill → Config**:
+Edit configuration via **Tools → Add-ons → Crossbill → Config** or **Tools → Crossbill Settings**:
 
 - **server_host**: URL of your Crossbill server
 - **default_deck**: Default Anki deck for imported notes
 - **default_note_type**: Default note type to use (e.g., "Basic")
 - **auto_tag**: Automatically add tags to imported notes
 - **tag_prefix**: Prefix for auto-generated tags (default: "crossbill")
+- **suspend_on_import**: Suspend imported cards so they don't appear in reviews until you manually unsuspend them (default: true)
 
 See [config.md](config.md) for detailed configuration documentation.
 
@@ -160,6 +162,7 @@ Import many highlights at once without selecting them individually:
 - Tags are automatically added (book name, author, Crossbill tags)
 - You can import to any deck and use any note type in your collection
 - Batch import shows progress dialog and detailed statistics
+- **By default, imported cards are suspended** - they won't appear in your reviews until you unsuspend them. This lets you review and edit cards before studying. You can disable this in Settings.
 
 ## Prerequisites
 
@@ -301,6 +304,9 @@ For issues and feature requests, please visit the [Crossbill repository](https:/
 - ✅ **Smart batch import** - Shows new vs already imported counts before confirming
 - ✅ **Filter status** - Shows "Showing X of Y highlights (filtered)" in status bar
 - ✅ **Real-time filtering** - Filters update as you type/select
+- ✅ **Suspend on import** - Cards are suspended by default so they don't appear in reviews until you're ready (configurable)
+- ✅ **Smart button states** - Import buttons intelligently enable/disable based on current selection
+- ✅ **Improved UI layout** - Import controls moved to bottom, better window management for tiling WMs
 
 ### v0.2.0 (Stage 2)
 

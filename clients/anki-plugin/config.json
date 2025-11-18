@@ -4,6 +4,7 @@
   "default_note_type": "Basic",
   "auto_tag": true,
   "tag_prefix": "crossbill",
+  "suspend_on_import": true,
   "last_sync": null,
   "ui_preferences": {
     "dialog_width": 900,

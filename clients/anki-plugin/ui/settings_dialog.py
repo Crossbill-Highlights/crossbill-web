@@ -5,7 +5,7 @@ Settings dialog for Crossbill plugin configuration
 from aqt import mw
 from aqt.qt import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
-    QLineEdit, QPushButton, QLabel, QMessageBox
+    QLineEdit, QPushButton, QLabel, QMessageBox, QCheckBox
 )
 from aqt.utils import showInfo
 
@@ -46,12 +46,20 @@ class SettingsDialog(QDialog):
         self.default_note_type_input.setPlaceholderText("e.g., Basic")
         form_layout.addRow("Default Note Type:", self.default_note_type_input)
 
+        # Suspend on import
+        self.suspend_on_import_checkbox = QCheckBox()
+        self.suspend_on_import_checkbox.setChecked(self.config.get('suspend_on_import', True))
+        form_layout.addRow("Suspend cards on import:", self.suspend_on_import_checkbox)
+
         layout.addLayout(form_layout)
 
         # Help text
         help_label = QLabel(
             "<small>Configure your Crossbill server connection. "
-            "Make sure the server URL is accessible from this computer.</small>"
+            "Make sure the server URL is accessible from this computer.<br><br>"
+            "<b>Suspend on import:</b> When enabled, imported cards will be suspended "
+            "(not appear in reviews) until you manually unsuspend them. "
+            "This allows you to review and edit cards before studying them.</small>"
         )
         help_label.setWordWrap(True)
         layout.addWidget(help_label)
@@ -124,6 +132,7 @@ class SettingsDialog(QDialog):
         server_host = self.server_host_input.text().strip()
         default_deck = self.default_deck_input.text().strip()
         default_note_type = self.default_note_type_input.text().strip()
+        suspend_on_import = self.suspend_on_import_checkbox.isChecked()
 
         if not server_host:
             QMessageBox.warning(self, "Error", "Server URL is required")
@@ -139,6 +148,7 @@ class SettingsDialog(QDialog):
         self.config['server_host'] = server_host
         self.config['default_deck'] = default_deck
         self.config['default_note_type'] = default_note_type
+        self.config['suspend_on_import'] = suspend_on_import
 
         # Save config
         mw.addonManager.writeConfig(__name__.split('.')[0], self.config)

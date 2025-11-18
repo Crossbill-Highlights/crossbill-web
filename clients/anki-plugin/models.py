@@ -95,6 +95,7 @@ class PluginConfig:
     default_note_type: str
     auto_tag: bool
     tag_prefix: str
+    suspend_on_import: bool
     last_sync: Optional[str]
     ui_preferences: dict
 
@@ -107,6 +108,7 @@ class PluginConfig:
             default_note_type=data.get('default_note_type', 'Basic'),
             auto_tag=data.get('auto_tag', True),
             tag_prefix=data.get('tag_prefix', 'crossbill'),
+            suspend_on_import=data.get('suspend_on_import', True),
             last_sync=data.get('last_sync'),
             ui_preferences=data.get('ui_preferences', {
                 'dialog_width': 900,
@@ -123,6 +125,7 @@ class PluginConfig:
             'default_note_type': self.default_note_type,
             'auto_tag': self.auto_tag,
             'tag_prefix': self.tag_prefix,
+            'suspend_on_import': self.suspend_on_import,
             'last_sync': self.last_sync,
             'ui_preferences': self.ui_preferences
         }
