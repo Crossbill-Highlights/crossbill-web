@@ -111,12 +111,22 @@ export const HighlightTagsModal = ({
     setIsProcessing(true);
     try {
       // Create or update tag group
+      // Only include id if it exists (not undefined)
+      const requestData: {
+        book_id: number;
+        name: string;
+        id?: number | null;
+      } = {
+        book_id: bookId,
+        name: trimmedValue,
+      };
+
+      if (field.id !== undefined) {
+        requestData.id = field.id;
+      }
+
       await createTagGroupMutation.mutateAsync({
-        data: {
-          id: field.id,
-          book_id: bookId,
-          name: trimmedValue,
-        },
+        data: requestData,
       });
 
       // If this was the last "new" field, add another empty one
@@ -188,6 +198,12 @@ export const HighlightTagsModal = ({
                   value={value}
                   onChange={onChange}
                   onBlur={() => void handleFieldBlur(index, value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
                   disabled={isProcessing}
                   sx={{ flex: 1 }}
                 />
