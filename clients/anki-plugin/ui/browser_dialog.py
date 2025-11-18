@@ -9,7 +9,7 @@ from typing import List, Optional
 from aqt import mw
 from aqt.qt import (
     QDialog, QVBoxLayout, QHBoxLayout, QSplitter, QFormLayout,
-    QListWidget, QListWidgetItem, QTextEdit, QPushButton, QComboBox, QCheckBox,
+    QListWidget, QListWidgetItem, QTextEdit, QPushButton, QComboBox, QCheckBox, QLineEdit,
     QLabel, QMessageBox, QProgressDialog, Qt
 )
 from aqt.utils import showInfo, tooltip
@@ -98,6 +98,37 @@ class HighlightsBrowserDialog(QDialog):
 
         highlights_layout.addLayout(highlights_header)
 
+        # Search and filter controls
+        filter_layout = QHBoxLayout()
+
+        # Search box
+        filter_layout.addWidget(QLabel("Search:"))
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Search highlight text...")
+        self.search_input.textChanged.connect(self.on_search_changed)
+        filter_layout.addWidget(self.search_input)
+
+        # Tag filter
+        filter_layout.addWidget(QLabel("Tag:"))
+        self.tag_filter_combo = QComboBox()
+        self.tag_filter_combo.addItem("All Tags", None)
+        self.tag_filter_combo.currentIndexChanged.connect(self.on_filter_changed)
+        filter_layout.addWidget(self.tag_filter_combo)
+
+        # Chapter filter
+        filter_layout.addWidget(QLabel("Chapter:"))
+        self.chapter_filter_combo = QComboBox()
+        self.chapter_filter_combo.addItem("All Chapters", None)
+        self.chapter_filter_combo.currentIndexChanged.connect(self.on_filter_changed)
+        filter_layout.addWidget(self.chapter_filter_combo)
+
+        # Clear filters button
+        clear_btn = QPushButton("Clear Filters")
+        clear_btn.clicked.connect(self.clear_filters)
+        filter_layout.addWidget(clear_btn)
+
+        highlights_layout.addLayout(filter_layout)
+
         # Highlights list with checkboxes
         self.highlights_list = QListWidget()
         self.highlights_list.itemClicked.connect(self.on_highlight_clicked)
@@ -118,11 +149,24 @@ class HighlightsBrowserDialog(QDialog):
 
         highlights_layout.addLayout(import_controls)
 
-        # Import button
+        # Import buttons
         import_button_layout = QHBoxLayout()
+
+        # Batch import buttons
+        self.import_all_btn = QPushButton("Import All from Book")
+        self.import_all_btn.clicked.connect(self.import_all_from_book)
+        self.import_all_btn.setEnabled(False)
+        import_button_layout.addWidget(self.import_all_btn)
+
+        self.import_chapter_btn = QPushButton("Import All from Chapter")
+        self.import_chapter_btn.clicked.connect(self.import_all_from_chapter)
+        self.import_chapter_btn.setEnabled(False)
+        import_button_layout.addWidget(self.import_chapter_btn)
+
         import_button_layout.addStretch()
 
-        self.import_btn = QPushButton("Import Selected Highlights")
+        # Selected import button
+        self.import_btn = QPushButton("Import Selected")
         self.import_btn.clicked.connect(self.import_selected_highlights)
         self.import_btn.setEnabled(False)  # Disabled until book is selected
         import_button_layout.addWidget(self.import_btn)
@@ -238,11 +282,20 @@ class HighlightsBrowserDialog(QDialog):
             for chapter in self.current_book.chapters:
                 self.all_highlights.extend(chapter.highlights)
 
+            # Populate tag and chapter filters
+            self.populate_tag_filter()
+            self.populate_chapter_filter()
+
+            # Clear search and filters
+            self.search_input.clear()
+
             # Populate highlights list with checkboxes and import status
             self.refresh_highlights_list()
 
-            # Enable import button
+            # Enable import buttons
             self.import_btn.setEnabled(True)
+            self.import_all_btn.setEnabled(True)
+            self.import_chapter_btn.setEnabled(True)
 
             count = len(self.all_highlights)
             self.status_label.setText(f"Loaded {count} highlights from {self.current_book.title}")
@@ -431,7 +484,7 @@ class HighlightsBrowserDialog(QDialog):
             QMessageBox.warning(self, "Import Results", result_msg)
 
     def refresh_highlights_list(self):
-        """Refresh the highlights list to update import status"""
+        """Refresh the highlights list to update import status and apply filters"""
         if not self.all_highlights:
             return
 
@@ -442,9 +495,28 @@ class HighlightsBrowserDialog(QDialog):
             if item.checkState() == Qt.CheckState.Checked:
                 selected_ids.add(item.data(Qt.ItemDataRole.UserRole))
 
-        # Rebuild list
+        # Get filter values
+        search_text = self.search_input.text().lower()
+        selected_tag = self.tag_filter_combo.currentData()
+        selected_chapter = self.chapter_filter_combo.currentData()
+
+        # Rebuild list with filtering
         self.highlights_list.clear()
+        displayed_count = 0
+
         for highlight in self.all_highlights:
+            # Apply filters
+            if search_text and search_text not in highlight.text.lower():
+                if not highlight.note or search_text not in highlight.note.lower():
+                    continue
+
+            if selected_tag and selected_tag not in [tag.name for tag in highlight.highlight_tags]:
+                continue
+
+            if selected_chapter and highlight.chapter != selected_chapter:
+                continue
+
+            displayed_count += 1
             # Create preview text (first 100 chars)
             preview = highlight.text[:100]
             if len(highlight.text) > 100:
@@ -473,6 +545,220 @@ class HighlightsBrowserDialog(QDialog):
                 item.setForeground(Qt.GlobalColor.gray)
 
             self.highlights_list.addItem(item)
+
+        # Update status with filter info
+        if displayed_count < len(self.all_highlights):
+            self.status_label.setText(
+                f"Showing {displayed_count} of {len(self.all_highlights)} highlights (filtered)"
+            )
+        elif self.current_book:
+            self.status_label.setText(
+                f"Showing {displayed_count} highlights from {self.current_book.title}"
+            )
+
+    def populate_tag_filter(self):
+        """Populate the tag filter dropdown with all unique tags from current highlights"""
+        # Clear existing items except "All Tags"
+        self.tag_filter_combo.clear()
+        self.tag_filter_combo.addItem("All Tags", None)
+
+        if not self.all_highlights:
+            return
+
+        # Collect all unique tags
+        tags = set()
+        for highlight in self.all_highlights:
+            for tag in highlight.highlight_tags:
+                tags.add(tag.name)
+
+        # Add tags to dropdown
+        for tag in sorted(tags):
+            self.tag_filter_combo.addItem(tag, tag)
+
+    def populate_chapter_filter(self):
+        """Populate the chapter filter dropdown with all unique chapters"""
+        # Clear existing items except "All Chapters"
+        self.chapter_filter_combo.clear()
+        self.chapter_filter_combo.addItem("All Chapters", None)
+
+        if not self.current_book:
+            return
+
+        # Add chapters to dropdown
+        for chapter in self.current_book.chapters:
+            if chapter.highlights:  # Only show chapters with highlights
+                self.chapter_filter_combo.addItem(chapter.name, chapter.name)
+
+    def on_search_changed(self, text):
+        """Handle search text change"""
+        self.refresh_highlights_list()
+
+    def on_filter_changed(self, index):
+        """Handle filter dropdown change"""
+        self.refresh_highlights_list()
+
+    def clear_filters(self):
+        """Clear all filters and search"""
+        self.search_input.clear()
+        self.tag_filter_combo.setCurrentIndex(0)  # "All Tags"
+        self.chapter_filter_combo.setCurrentIndex(0)  # "All Chapters"
+        self.refresh_highlights_list()
+
+    def import_all_from_book(self):
+        """Import all highlights from the current book"""
+        if not self.current_book or not self.all_highlights:
+            QMessageBox.warning(
+                self,
+                "No Book Selected",
+                "Please select a book first."
+            )
+            return
+
+        # Get selected deck and note type
+        deck_name = self.deck_combo.currentText()
+        note_type_name = self.note_type_combo.currentText()
+
+        # Count highlights that haven't been imported yet
+        new_highlights = [hl for hl in self.all_highlights
+                         if hl.id not in self.imported_highlight_ids]
+        total_count = len(self.all_highlights)
+        new_count = len(new_highlights)
+
+        # Confirm import
+        if new_count == 0:
+            QMessageBox.information(
+                self,
+                "All Imported",
+                f"All {total_count} highlights from this book have already been imported."
+            )
+            return
+
+        reply = QMessageBox.question(
+            self,
+            "Confirm Batch Import",
+            f"Import all {total_count} highlights from '{self.current_book.title}'?\n"
+            f"({new_count} new, {total_count - new_count} already imported)\n\n"
+            f"Deck: {deck_name}",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        # Import all highlights
+        self._do_batch_import(self.all_highlights, deck_name, note_type_name)
+
+    def import_all_from_chapter(self):
+        """Import all highlights from the currently filtered chapter"""
+        if not self.current_book or not self.all_highlights:
+            QMessageBox.warning(
+                self,
+                "No Book Selected",
+                "Please select a book first."
+            )
+            return
+
+        # Get current chapter filter
+        selected_chapter = self.chapter_filter_combo.currentData()
+        if not selected_chapter:
+            QMessageBox.information(
+                self,
+                "No Chapter Selected",
+                "Please select a chapter from the Chapter filter dropdown first."
+            )
+            return
+
+        # Filter highlights by chapter
+        chapter_highlights = [hl for hl in self.all_highlights
+                            if hl.chapter == selected_chapter]
+
+        if not chapter_highlights:
+            QMessageBox.warning(
+                self,
+                "No Highlights",
+                f"No highlights found in chapter '{selected_chapter}'."
+            )
+            return
+
+        # Get selected deck and note type
+        deck_name = self.deck_combo.currentText()
+        note_type_name = self.note_type_combo.currentText()
+
+        # Count new highlights
+        new_highlights = [hl for hl in chapter_highlights
+                         if hl.id not in self.imported_highlight_ids]
+        total_count = len(chapter_highlights)
+        new_count = len(new_highlights)
+
+        # Confirm import
+        if new_count == 0:
+            QMessageBox.information(
+                self,
+                "All Imported",
+                f"All {total_count} highlights from chapter '{selected_chapter}' "
+                f"have already been imported."
+            )
+            return
+
+        reply = QMessageBox.question(
+            self,
+            "Confirm Batch Import",
+            f"Import all {total_count} highlights from chapter '{selected_chapter}'?\n"
+            f"({new_count} new, {total_count - new_count} already imported)\n\n"
+            f"Deck: {deck_name}",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        # Import chapter highlights
+        self._do_batch_import(chapter_highlights, deck_name, note_type_name)
+
+    def _do_batch_import(self, highlights: List[Highlight], deck_name: str, note_type_name: str):
+        """Execute batch import of highlights"""
+        count = len(highlights)
+
+        # Show progress dialog
+        progress = QProgressDialog("Importing highlights...", "Cancel", 0, count, self)
+        progress.setWindowTitle("Batch Import")
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.show()
+
+        # Import highlights
+        stats = self.note_creator.import_highlights(
+            highlights,
+            self.current_book,
+            deck_name,
+            note_type_name,
+            skip_duplicates=True
+        )
+
+        progress.close()
+
+        # Show results
+        result_msg = f"Batch import complete!\n\n"
+        result_msg += f"Created: {stats['created']} notes\n"
+        if stats['skipped'] > 0:
+            result_msg += f"Skipped (already imported): {stats['skipped']}\n"
+        if stats['failed'] > 0:
+            result_msg += f"Failed: {stats['failed']}\n"
+
+        if stats['errors']:
+            result_msg += f"\nErrors:\n"
+            for error in stats['errors'][:5]:
+                result_msg += f"- {error}\n"
+            if len(stats['errors']) > 5:
+                result_msg += f"... and {len(stats['errors']) - 5} more errors"
+
+        if stats['created'] > 0:
+            QMessageBox.information(self, "Batch Import Successful", result_msg)
+            # Reload imported highlights
+            self.load_imported_highlights()
+            # Refresh the highlights list
+            self.refresh_highlights_list()
+        else:
+            QMessageBox.warning(self, "Batch Import Results", result_msg)
 
     def closeEvent(self, event):
         """Save dialog size when closing"""
