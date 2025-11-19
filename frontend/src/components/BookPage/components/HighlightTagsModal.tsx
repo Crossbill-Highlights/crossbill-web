@@ -25,6 +25,17 @@ interface HighlightTagsModalProps {
   tagGroups: HighlightTagGroupInBook[];
 }
 
+const extractErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const response = (error as { response?: { data?: { detail?: string } } }).response;
+    return response?.data?.detail || 'Unknown error';
+  }
+  return 'Unknown error';
+};
+
 export const HighlightTagsModal = ({
   open,
   onClose,
@@ -68,14 +79,7 @@ export const HighlightTagsModal = ({
       },
       onError: (error: unknown) => {
         console.error('Failed to create/update tag group:', error);
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : typeof error === 'object' && error !== null && 'response' in error
-              ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-                'Unknown error'
-              : 'Unknown error';
-        alert(`Failed to save tag group: ${errorMessage}`);
+        alert(`Failed to save tag group: ${extractErrorMessage(error)}`);
       },
     },
   });
@@ -87,9 +91,9 @@ export const HighlightTagsModal = ({
           queryKey: [`/api/v1/book/${bookId}`],
         });
       },
-      onError: (error) => {
+      onError: (error: unknown) => {
         console.error('Failed to delete tag group:', error);
-        alert('Failed to delete tag group. Please try again.');
+        alert(`Failed to delete tag group: ${extractErrorMessage(error)}`);
       },
     },
   });

@@ -45,12 +45,13 @@ const DraggableTag = ({ tag, selectedTag, onTagClick, isDragOverlay }: Draggable
     data: { tag },
   });
 
-  const style = transform
-    ? {
-        transform: CSS.Translate.toString(transform),
-        zIndex: 1000,
-      }
-    : undefined;
+  const style =
+    transform && !isDragging
+      ? {
+          transform: CSS.Translate.toString(transform),
+          zIndex: 1000,
+        }
+      : undefined;
 
   return (
     <Box
@@ -93,9 +94,10 @@ interface DroppableGroupProps {
   id: string;
   children: React.ReactNode;
   isEmpty?: boolean;
+  emptyHeight?: number;
 }
 
-const DroppableGroup = ({ id, children, isEmpty }: DroppableGroupProps) => {
+const DroppableGroup = ({ id, children, isEmpty, emptyHeight }: DroppableGroupProps) => {
   const { isOver, setNodeRef } = useDroppable({
     id,
   });
@@ -104,25 +106,43 @@ const DroppableGroup = ({ id, children, isEmpty }: DroppableGroupProps) => {
     <motion.div
       ref={setNodeRef}
       animate={{
-        backgroundColor: isOver ? 'rgba(104, 90, 75, 0.08)' : 'rgba(104, 90, 75, 0)', // amber.600 with low opacity
+        backgroundColor: isOver ? 'rgba(104, 90, 75, 0.08)' : 'rgba(104, 90, 75, 0)',
         borderColor: isOver
           ? 'rgba(104, 90, 75, 0.4)'
           : isEmpty
             ? 'rgba(0, 0, 0, 0.12)'
-            : 'rgba(0, 0, 0, 0)', // amber.600
+            : 'rgba(0, 0, 0, 0)',
       }}
       transition={{ duration: 0.2 }}
       style={{
         border: isEmpty ? '1px dashed' : isOver ? '2px solid' : 'none',
         borderRadius: 4,
         padding: isEmpty ? 16 : isOver ? 8 : 0,
-        minHeight: isEmpty ? 60 : 'auto',
+        minHeight: isEmpty ? emptyHeight || 60 : 'auto',
       }}
     >
       {children}
     </motion.div>
   );
 };
+
+const EmptyGroupPlaceholder = ({ message }: { message: string }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <Typography
+      variant="body2"
+      color="text.secondary"
+      sx={{ textAlign: 'center', fontSize: '0.813rem' }}
+    >
+      {message}
+    </Typography>
+  </Box>
+);
 
 const HighlightTagsHeading = ({
   selectedTag,
@@ -220,22 +240,27 @@ export const HighlightTags = ({
         // Return a context object with the snapshotted value
         return { previousBook };
       },
+      onSuccess: (updatedTag) => {
+        // Update cache with actual server response to prevent drift
+        queryClient.setQueryData([`/api/v1/book/${bookId}`], (old: unknown) => {
+          if (!old || typeof old !== 'object') return old;
+          const bookData = old as { highlight_tags: HighlightTagInBook[] };
+
+          return {
+            ...bookData,
+            highlight_tags: bookData.highlight_tags.map((tag: HighlightTagInBook) =>
+              tag.id === updatedTag.id ? updatedTag : tag
+            ),
+          };
+        });
+      },
       onError: (error: unknown, _variables, context) => {
         // If the mutation fails, use the context to roll back
         if (context?.previousBook) {
           queryClient.setQueryData([`/api/v1/book/${bookId}`], context.previousBook);
         }
         console.error('Failed to update tag:', error);
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : typeof error === 'object' && error !== null && 'response' in error
-              ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-                'Unknown error'
-              : 'Unknown error';
-        alert(`Failed to update tag: ${errorMessage}`);
       },
-      // No onSettled - we trust the optimistic update and only rollback on error
     },
   });
 
@@ -316,14 +341,19 @@ export const HighlightTags = ({
             <motion.div
               initial={false}
               animate={{
-                height: ungroupedTags.length === 0 && activeTag === null ? 0 : 'auto',
-                marginBottom: ungroupedTags.length === 0 && activeTag === null ? 0 : 16,
-                opacity: ungroupedTags.length === 0 && activeTag === null ? 0 : 1,
+                height:
+                  ungroupedTags.length === 0 && activeTag === null && movingTagId === null
+                    ? 0
+                    : 'auto',
+                marginBottom:
+                  ungroupedTags.length === 0 && activeTag === null && movingTagId === null ? 0 : 16,
+                opacity:
+                  ungroupedTags.length === 0 && activeTag === null && movingTagId === null ? 0 : 1,
               }}
               transition={{ duration: 0.2 }}
               style={{ overflow: 'hidden' }}
             >
-              <DroppableGroup id="ungrouped" isEmpty={ungroupedTags.length === 0}>
+              <DroppableGroup id="ungrouped" isEmpty={ungroupedTags.length === 0} emptyHeight={30}>
                 {ungroupedTags.length > 0 ? (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {ungroupedTags.map((tag) => (
@@ -336,28 +366,14 @@ export const HighlightTags = ({
                     ))}
                   </Box>
                 ) : (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ textAlign: 'center', fontSize: '0.813rem' }}
-                    >
-                      Drop here to remove from groups
-                    </Typography>
-                  </Box>
+                  <EmptyGroupPlaceholder message="Drop here to remove from groups" />
                 )}
               </DroppableGroup>
             </motion.div>
 
             {/* Grouped tags */}
             {groupedTags.map(({ group, tags: groupTags }) => (
-              <Box key={group.id}>
+              <Box key={group.id} sx={{ mb: 1 }}>
                 <Typography
                   variant="subtitle2"
                   sx={{
@@ -382,21 +398,7 @@ export const HighlightTags = ({
                       ))}
                     </Box>
                   ) : (
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ textAlign: 'center', fontSize: '0.813rem' }}
-                      >
-                        No tags in this group. Drag tags here.
-                      </Typography>
-                    </Box>
+                    <EmptyGroupPlaceholder message="No tags in this group. Drag tags here." />
                   )}
                 </DroppableGroup>
               </Box>
