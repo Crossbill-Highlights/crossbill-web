@@ -84,7 +84,7 @@ class HighlightTagRepository:
         logger.info(f"Deleted highlight tag: {tag.name} (id={tag_id})")
         return True
 
-    def update(self, tag_id: int, **kwargs) -> models.HighlightTag | None:
+    def update(self, tag_id: int, **kwargs: str | int | None) -> models.HighlightTag | None:
         """Update a highlight tag with the provided fields."""
         tag = self.get_by_id(tag_id)
         if not tag:
@@ -139,26 +139,29 @@ class HighlightTagRepository:
             self.db.rollback()
             # Check if it's the unique constraint violation for tag group name
             error_msg = str(e).lower()
-            if "highlight_tag_groups.book_id" in error_msg and "highlight_tag_groups.name" in error_msg:
+            if (
+                "highlight_tag_groups.book_id" in error_msg
+                and "highlight_tag_groups.name" in error_msg
+            ):
                 raise CrossbillError(
                     f"A tag group with the name '{name}' already exists for this book",
-                    status_code=409
+                    status_code=409,
                 ) from e
             if "uq_highlight_tag_group_book_name" in error_msg:
                 raise CrossbillError(
                     f"A tag group with the name '{name}' already exists for this book",
-                    status_code=409
+                    status_code=409,
                 ) from e
             # Re-raise if it's a different integrity error
             raise
 
         self.db.refresh(tag_group)
-        logger.info(f"Created highlight tag group: {tag_group.name} (id={tag_group.id}, book_id={book_id})")
+        logger.info(
+            f"Created highlight tag group: {tag_group.name} (id={tag_group.id}, book_id={book_id})"
+        )
         return tag_group
 
-    def update_tag_group(
-        self, tag_group_id: int, name: str
-    ) -> models.HighlightTagGroup | None:
+    def update_tag_group(self, tag_group_id: int, name: str) -> models.HighlightTagGroup | None:
         """Update a highlight tag group's name.
 
         Raises:
@@ -175,15 +178,18 @@ class HighlightTagRepository:
             self.db.rollback()
             # Check if it's the unique constraint violation for tag group name
             error_msg = str(e).lower()
-            if "highlight_tag_groups.book_id" in error_msg and "highlight_tag_groups.name" in error_msg:
+            if (
+                "highlight_tag_groups.book_id" in error_msg
+                and "highlight_tag_groups.name" in error_msg
+            ):
                 raise CrossbillError(
                     f"A tag group with the name '{name}' already exists for this book",
-                    status_code=409
+                    status_code=409,
                 ) from e
             if "uq_highlight_tag_group_book_name" in error_msg:
                 raise CrossbillError(
                     f"A tag group with the name '{name}' already exists for this book",
-                    status_code=409
+                    status_code=409,
                 ) from e
             # Re-raise if it's a different integrity error
             raise
@@ -195,17 +201,24 @@ class HighlightTagRepository:
     def upsert_tag_group(
         self, book_id: int, name: str, tag_group_id: int | None = None
     ) -> models.HighlightTagGroup:
-        """Create a new tag group or update existing one."""
+        """Create a new tag group or update existing one.
+
+        Raises:
+            CrossbillError: If creating a new tag group and one with the same name already exists
+        """
         if tag_group_id:
             # Update existing tag group
             tag_group = self.update_tag_group(tag_group_id, name)
             if tag_group:
                 return tag_group
 
-        # Check if a tag group with this name already exists
+        # When creating a new tag group, check if one with this name already exists
+        # and raise an error instead of returning the existing one
         existing = self.get_tag_group_by_book_and_name(book_id, name)
         if existing:
-            return existing
+            raise CrossbillError(
+                f"A tag group with the name '{name}' already exists for this book", status_code=409
+            )
 
         # Create new tag group
         return self.create_tag_group(book_id, name)

@@ -67,10 +67,8 @@ class TestCreateTagGroup:
         db_session.refresh(tag_group)
         assert tag_group.name == "New Name"
 
-    def test_create_tag_group_duplicate_name(
-        self, client: TestClient, db_session: Session
-    ) -> None:
-        """Test creating tag group with duplicate name returns existing one."""
+    def test_create_tag_group_duplicate_name(self, client: TestClient, db_session: Session) -> None:
+        """Test creating tag group with duplicate name returns 409 error."""
         # Create a book and tag group
         book = models.Book(title="Test Book", author="Test Author")
         db_session.add(book)
@@ -88,10 +86,11 @@ class TestCreateTagGroup:
             json={"book_id": book.id, "name": "Themes"},
         )
 
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_409_CONFLICT
         data = response.json()
-        assert data["id"] == tag_group.id  # Should return existing one
-        assert data["name"] == "Themes"
+        assert "detail" in data
+        assert "already exists" in data["detail"].lower()
+        assert "Themes" in data["detail"]
 
     def test_create_tag_group_nonexistent_book(
         self, client: TestClient, db_session: Session
@@ -116,7 +115,10 @@ class TestCreateTagGroup:
             json={"book_id": book.id, "name": "   "},
         )
 
-        assert response.status_code == status.HTTP_400_BAD_REQUEST or response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code in {
+            status.HTTP_400_BAD_REQUEST,
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+        }
 
     def test_update_tag_group_to_duplicate_name(
         self, client: TestClient, db_session: Session
@@ -476,9 +478,7 @@ class TestBookDetailsWithTagGroups:
 class TestCascadeDelete:
     """Test suite for cascade delete behavior."""
 
-    def test_delete_book_deletes_tag_groups(
-        self, client: TestClient, db_session: Session
-    ) -> None:
+    def test_delete_book_deletes_tag_groups(self, client: TestClient, db_session: Session) -> None:
         """Test that deleting a book also deletes its tag groups."""
         # Create a book with tag groups
         book = models.Book(title="Test Book", author="Test Author")
