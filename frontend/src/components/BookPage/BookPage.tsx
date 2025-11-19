@@ -124,132 +124,134 @@ export const BookPage = () => {
         minHeight: '100vh',
       }}
     >
-      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, py: 4 }}>
-        {/* Book Info Card */}
-        <BookTitle book={book} highlightCount={totalHighlights} />
+      <FadeInOut ekey={'book-title'}>
+        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, py: 4 }}>
+          {/* Book Info Card */}
+          <BookTitle book={book} highlightCount={totalHighlights} />
 
-        {/* Tags (Mobile only - above search bar) */}
-        <Box sx={{ display: { xs: 'block', lg: 'none' }, mb: 3 }}>
-          <HighlightTags
-            tags={book.highlight_tags || []}
-            tagGroups={book.highlight_tag_groups || []}
-            bookId={book.id}
-            selectedTag={selectedTagId}
-            onTagClick={handleTagClick}
-          />
-        </Box>
-
-        {/* Search Bar - Aligned with content column on desktop */}
-        <Box
-          sx={{
-            maxWidth: { xs: '100%', lg: 'calc(100% - 300px - 32px)' }, // Subtract sidebar width + gap
-          }}
-        >
-          <SearchBar
-            onSearch={handleSearch}
-            placeholder="Search highlights..."
-            initialValue={searchText}
-          />
-        </Box>
-
-        {/* Search Results */}
-        {showSearchResults && (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', lg: '1fr 300px' },
-              gap: 4,
-              alignItems: 'start',
-            }}
-          >
-            <SearchResults
-              isSearching={isSearching}
-              highlights={filteredSearchResults}
-              searchText={searchText}
+          {/* Tags (Mobile only - above search bar) */}
+          <Box sx={{ display: { xs: 'block', lg: 'none' }, mb: 3 }}>
+            <HighlightTags
+              tags={book.highlight_tags || []}
+              tagGroups={book.highlight_tag_groups || []}
               bookId={book.id}
-              selectedTagId={selectedTagId}
+              selectedTag={selectedTagId}
+              onTagClick={handleTagClick}
             />
-
-            {/* Sidebar - Tags (Desktop only) */}
-            <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
-              <HighlightTags
-                tags={book.highlight_tags || []}
-                tagGroups={book.highlight_tag_groups || []}
-                bookId={book.id}
-                selectedTag={selectedTagId}
-                onTagClick={handleTagClick}
-              />
-            </Box>
           </Box>
-        )}
 
-        {/* Regular Chapter View (when not searching) */}
-        {!showSearchResults && (
+          {/* Search Bar - Aligned with content column on desktop */}
           <Box
             sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', lg: '1fr 300px' },
-              gap: 4,
-              alignItems: 'start',
+              maxWidth: { xs: '100%', lg: 'calc(100% - 300px - 32px)' }, // Subtract sidebar width + gap
             }}
           >
-            <FadeInOut ekey={`chapters-view-${selectedTagId ?? 'all'}`}>
-              {/* Main content - Highlights */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {filteredChapters && filteredChapters.length === 0 && (
-                  <Typography variant="body1" color="text.secondary">
-                    {selectedTagId
-                      ? 'No highlights found with the selected tag.'
-                      : 'No chapters found for this book.'}
-                  </Typography>
-                )}
-
-                {filteredChapters.map((chapter) => (
-                  <Box key={chapter.id}>
-                    {/* Chapter Header */}
-                    <SectionTitle showDivider>{chapter.name}</SectionTitle>
-
-                    {/* Highlights in this chapter */}
-                    {chapter.highlights && chapter.highlights.length > 0 ? (
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                        {chapter.highlights.map((highlight) => {
-                          const highlightIndex = allFilteredHighlights.findIndex(
-                            (h) => h.id === highlight.id
-                          );
-                          return (
-                            <HighlightCard
-                              key={highlight.id}
-                              highlight={highlight}
-                              bookId={book.id}
-                              allHighlights={allFilteredHighlights}
-                              currentIndex={highlightIndex}
-                            />
-                          );
-                        })}
-                      </Box>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary" sx={{ pl: 0.5 }}>
-                        No highlights found in this chapter.
-                      </Typography>
-                    )}
-                  </Box>
-                ))}
-              </Box>
-            </FadeInOut>
-
-            {/* Sidebar - Tags (Desktop only) */}
-            <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
-              <HighlightTags
-                tags={book.highlight_tags || []}
-                tagGroups={book.highlight_tag_groups || []}
-                bookId={book.id}
-                selectedTag={selectedTagId}
-                onTagClick={handleTagClick}
-              />
-            </Box>
+            <SearchBar
+              onSearch={handleSearch}
+              placeholder="Search highlights..."
+              initialValue={searchText}
+            />
           </Box>
-        )}
-      </Container>
+
+          {/* Search Results */}
+          {showSearchResults && (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', lg: '1fr 300px' },
+                gap: 4,
+                alignItems: 'start',
+              }}
+            >
+              <SearchResults
+                isSearching={isSearching}
+                highlights={filteredSearchResults}
+                searchText={searchText}
+                bookId={book.id}
+                selectedTagId={selectedTagId}
+              />
+
+              {/* Sidebar - Tags (Desktop only) */}
+              <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+                <HighlightTags
+                  tags={book.highlight_tags || []}
+                  tagGroups={book.highlight_tag_groups || []}
+                  bookId={book.id}
+                  selectedTag={selectedTagId}
+                  onTagClick={handleTagClick}
+                />
+              </Box>
+            </Box>
+          )}
+
+          {/* Regular Chapter View (when not searching) */}
+          {!showSearchResults && (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', lg: '1fr 300px' },
+                gap: 4,
+                alignItems: 'start',
+              }}
+            >
+              <FadeInOut ekey={`chapters-view-${selectedTagId ?? 'all'}`}>
+                {/* Main content - Highlights */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {filteredChapters && filteredChapters.length === 0 && (
+                    <Typography variant="body1" color="text.secondary">
+                      {selectedTagId
+                        ? 'No highlights found with the selected tag.'
+                        : 'No chapters found for this book.'}
+                    </Typography>
+                  )}
+
+                  {filteredChapters.map((chapter) => (
+                    <Box key={chapter.id}>
+                      {/* Chapter Header */}
+                      <SectionTitle showDivider>{chapter.name}</SectionTitle>
+
+                      {/* Highlights in this chapter */}
+                      {chapter.highlights && chapter.highlights.length > 0 ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                          {chapter.highlights.map((highlight) => {
+                            const highlightIndex = allFilteredHighlights.findIndex(
+                              (h) => h.id === highlight.id
+                            );
+                            return (
+                              <HighlightCard
+                                key={highlight.id}
+                                highlight={highlight}
+                                bookId={book.id}
+                                allHighlights={allFilteredHighlights}
+                                currentIndex={highlightIndex}
+                              />
+                            );
+                          })}
+                        </Box>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary" sx={{ pl: 0.5 }}>
+                          No highlights found in this chapter.
+                        </Typography>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              </FadeInOut>
+
+              {/* Sidebar - Tags (Desktop only) */}
+              <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+                <HighlightTags
+                  tags={book.highlight_tags || []}
+                  tagGroups={book.highlight_tag_groups || []}
+                  bookId={book.id}
+                  selectedTag={selectedTagId}
+                  onTagClick={handleTagClick}
+                />
+              </Box>
+            </Box>
+          )}
+        </Container>
+      </FadeInOut>
     </Box>
   );
 };
