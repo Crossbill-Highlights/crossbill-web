@@ -668,16 +668,6 @@ export const HighlightViewModal = ({
               </Box>
             </Box>
           </FadeInOut>
-          <Toolbar
-            highlightId={highlight.id}
-            bookId={bookId}
-            bookmark={bookmark}
-            hasNote={hasNote}
-            noteVisible={noteVisible}
-            onNoteToggle={handleNoteToggle}
-            onDelete={handleDelete}
-            disabled={isLoading}
-          />
           <TagInput
             highlightId={highlight.id}
             bookId={bookId}
@@ -690,6 +680,16 @@ export const HighlightViewModal = ({
             bookId={bookId}
             initialNote={highlight.note}
             visible={noteVisible}
+            disabled={isLoading}
+          />
+          <Toolbar
+            highlightId={highlight.id}
+            bookId={bookId}
+            bookmark={bookmark}
+            hasNote={hasNote}
+            noteVisible={noteVisible}
+            onNoteToggle={handleNoteToggle}
+            onDelete={handleDelete}
             disabled={isLoading}
           />
         </Box>
@@ -746,16 +746,6 @@ export const HighlightViewModal = ({
           </Typography>
         </Box>
 
-        <Toolbar
-          highlightId={highlight.id}
-          bookId={bookId}
-          bookmark={bookmark}
-          hasNote={hasNote}
-          noteVisible={noteVisible}
-          onNoteToggle={handleNoteToggle}
-          onDelete={handleDelete}
-          disabled={isLoading}
-        />
         <TagInput
           highlightId={highlight.id}
           bookId={bookId}
@@ -770,7 +760,16 @@ export const HighlightViewModal = ({
           visible={noteVisible}
           disabled={isLoading}
         />
-
+        <Toolbar
+          highlightId={highlight.id}
+          bookId={bookId}
+          bookmark={bookmark}
+          hasNote={hasNote}
+          noteVisible={noteVisible}
+          onNoteToggle={handleNoteToggle}
+          onDelete={handleDelete}
+          disabled={isLoading}
+        />
         {/* Navigation Buttons (Mobile) */}
         {hasNavigation && (
           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, pt: 1 }}>
