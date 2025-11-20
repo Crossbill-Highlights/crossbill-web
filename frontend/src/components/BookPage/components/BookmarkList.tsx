@@ -18,14 +18,18 @@ export const BookmarkList = ({ bookmarks, allHighlights, onBookmarkClick }: Book
   // Create a map of highlight IDs to highlights for quick lookup
   const highlightMap = new Map(allHighlights.map((h) => [h.id, h]));
 
-  // Get highlights for bookmarks and sort by bookmark creation date (newest first)
+  // Get highlights for bookmarks and sort by page number
   const bookmarkedHighlights = bookmarks
     .map((bookmark) => ({
       bookmark,
       highlight: highlightMap.get(bookmark.highlight_id),
     }))
     .filter((item) => item.highlight !== undefined)
-    .sort((a, b) => new Date(b.bookmark.created_at).getTime() - new Date(a.bookmark.created_at).getTime());
+    .sort((a, b) => {
+      const pageA = a.highlight?.page ?? Infinity;
+      const pageB = b.highlight?.page ?? Infinity;
+      return pageA - pageB;
+    });
 
   // Truncate highlight text to first few words
   const truncateText = (text: string, wordCount: number = 5): string => {
@@ -39,7 +43,7 @@ export const BookmarkList = ({ bookmarks, allHighlights, onBookmarkClick }: Book
   return (
     <Box>
       <SectionTitle>Bookmarks</SectionTitle>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
         {bookmarkedHighlights.map(({ bookmark, highlight }) => {
           if (!highlight) return null;
 
@@ -59,35 +63,33 @@ export const BookmarkList = ({ bookmarks, allHighlights, onBookmarkClick }: Book
                 display: 'flex',
                 alignItems: 'start',
                 gap: 1,
-                p: 1.5,
-                borderRadius: 1,
+                py: 0.75,
+                px: 0.5,
+                borderRadius: 0.5,
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                bgcolor: 'background.paper',
-                border: 1,
-                borderColor: 'divider',
+                transition: 'background-color 0.2s ease',
                 '@media (hover: hover)': {
                   '&:hover': {
                     bgcolor: 'action.hover',
-                    borderColor: 'primary.main',
                   },
                 },
               }}
             >
               <BookmarkIcon
                 sx={{
-                  fontSize: 16,
+                  fontSize: 14,
                   color: 'primary.main',
                   flexShrink: 0,
-                  mt: 0.25,
+                  mt: 0.1,
                 }}
               />
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography
                   variant="body2"
                   sx={{
+                    fontSize: '0.875rem',
                     color: 'text.primary',
-                    lineHeight: 1.5,
+                    lineHeight: 1.4,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}
@@ -98,7 +100,7 @@ export const BookmarkList = ({ bookmarks, allHighlights, onBookmarkClick }: Book
                   <Typography
                     variant="caption"
                     color="text.secondary"
-                    sx={{ mt: 0.5, display: 'block' }}
+                    sx={{ fontSize: '0.75rem', mt: 0.25, display: 'block' }}
                   >
                     Page {highlight.page}
                   </Typography>
