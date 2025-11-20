@@ -25,6 +25,9 @@ import type {
   BookDetails,
   BookUpdateRequest,
   BookWithHighlightCount,
+  Bookmark,
+  BookmarkCreateRequest,
+  BookmarksResponse,
   CoverUploadResponse,
   HTTPValidationError,
   Highlight,
@@ -1227,3 +1230,354 @@ export const useRemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagI
 
   return useMutation(mutationOptions, queryClient);
 };
+/**
+ * Create a bookmark for a highlight in a book.
+
+Bookmarks allow users to track their reading progress by marking specific
+highlights they want to return to later.
+
+Args:
+    book_id: ID of the book
+    request: Request containing the highlight_id to bookmark
+    db: Database session
+
+Returns:
+    Created Bookmark
+
+Raises:
+    HTTPException: If book or highlight not found, or creation fails
+ * @summary Create Bookmark
+ */
+export const createBookmarkApiV1BookBookIdBookmarkPost = (
+  bookId: number,
+  bookmarkCreateRequest: BookmarkCreateRequest,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<Bookmark>({
+    url: `/api/v1/book/${bookId}/bookmark`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: bookmarkCreateRequest,
+    signal,
+  });
+};
+
+export const getCreateBookmarkApiV1BookBookIdBookmarkPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBookmarkApiV1BookBookIdBookmarkPost>>,
+    TError,
+    { bookId: number; data: BookmarkCreateRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBookmarkApiV1BookBookIdBookmarkPost>>,
+  TError,
+  { bookId: number; data: BookmarkCreateRequest },
+  TContext
+> => {
+  const mutationKey = ['createBookmarkApiV1BookBookIdBookmarkPost'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBookmarkApiV1BookBookIdBookmarkPost>>,
+    { bookId: number; data: BookmarkCreateRequest }
+  > = (props) => {
+    const { bookId, data } = props ?? {};
+
+    return createBookmarkApiV1BookBookIdBookmarkPost(bookId, data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBookmarkApiV1BookBookIdBookmarkPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBookmarkApiV1BookBookIdBookmarkPost>>
+>;
+export type CreateBookmarkApiV1BookBookIdBookmarkPostMutationBody = BookmarkCreateRequest;
+export type CreateBookmarkApiV1BookBookIdBookmarkPostMutationError = HTTPValidationError;
+
+/**
+ * @summary Create Bookmark
+ */
+export const useCreateBookmarkApiV1BookBookIdBookmarkPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createBookmarkApiV1BookBookIdBookmarkPost>>,
+      TError,
+      { bookId: number; data: BookmarkCreateRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof createBookmarkApiV1BookBookIdBookmarkPost>>,
+  TError,
+  { bookId: number; data: BookmarkCreateRequest },
+  TContext
+> => {
+  const mutationOptions = getCreateBookmarkApiV1BookBookIdBookmarkPostMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+/**
+ * Delete a bookmark from a book.
+
+This operation is idempotent - calling it on a non-existent bookmark
+will succeed and return 200 without error.
+
+Args:
+    book_id: ID of the book
+    bookmark_id: ID of the bookmark to delete
+    db: Database session
+
+Raises:
+    HTTPException: If book not found or deletion fails
+ * @summary Delete Bookmark
+ */
+export const deleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDelete = (
+  bookId: number,
+  bookmarkId: number
+) => {
+  return axiosInstance<unknown>({
+    url: `/api/v1/book/${bookId}/bookmark/${bookmarkId}`,
+    method: 'DELETE',
+  });
+};
+
+export const getDeleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDeleteMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDelete>>,
+    TError,
+    { bookId: number; bookmarkId: number },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDelete>>,
+  TError,
+  { bookId: number; bookmarkId: number },
+  TContext
+> => {
+  const mutationKey = ['deleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDelete'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDelete>>,
+    { bookId: number; bookmarkId: number }
+  > = (props) => {
+    const { bookId, bookmarkId } = props ?? {};
+
+    return deleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDelete(bookId, bookmarkId);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDelete>>
+>;
+
+export type DeleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDeleteMutationError =
+  HTTPValidationError;
+
+/**
+ * @summary Delete Bookmark
+ */
+export const useDeleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDelete = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDelete>>,
+      TError,
+      { bookId: number; bookmarkId: number },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDelete>>,
+  TError,
+  { bookId: number; bookmarkId: number },
+  TContext
+> => {
+  const mutationOptions =
+    getDeleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDeleteMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+/**
+ * Get all bookmarks for a book.
+
+Returns all bookmarks ordered by creation date (newest first).
+
+Args:
+    book_id: ID of the book
+    db: Database session
+
+Returns:
+    List of bookmarks for the book
+
+Raises:
+    HTTPException: If book not found or fetching fails
+ * @summary Get Bookmarks
+ */
+export const getBookmarksApiV1BookBookIdBookmarksGet = (bookId: number, signal?: AbortSignal) => {
+  return axiosInstance<BookmarksResponse>({
+    url: `/api/v1/book/${bookId}/bookmarks`,
+    method: 'GET',
+    signal,
+  });
+};
+
+export const getGetBookmarksApiV1BookBookIdBookmarksGetQueryKey = (bookId?: number) => {
+  return [`/api/v1/book/${bookId}/bookmarks`] as const;
+};
+
+export const getGetBookmarksApiV1BookBookIdBookmarksGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetBookmarksApiV1BookBookIdBookmarksGetQueryKey(bookId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>
+  > = ({ signal }) => getBookmarksApiV1BookBookIdBookmarksGet(bookId, signal);
+
+  return { queryKey, queryFn, enabled: !!bookId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetBookmarksApiV1BookBookIdBookmarksGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>
+>;
+export type GetBookmarksApiV1BookBookIdBookmarksGetQueryError = HTTPValidationError;
+
+export function useGetBookmarksApiV1BookBookIdBookmarksGet<
+  TData = Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetBookmarksApiV1BookBookIdBookmarksGet<
+  TData = Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetBookmarksApiV1BookBookIdBookmarksGet<
+  TData = Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Bookmarks
+ */
+
+export function useGetBookmarksApiV1BookBookIdBookmarksGet<
+  TData = Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookmarksApiV1BookBookIdBookmarksGet>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetBookmarksApiV1BookBookIdBookmarksGetQueryOptions(bookId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}

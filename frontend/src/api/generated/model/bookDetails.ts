@@ -7,6 +7,7 @@
 import type { BookDetailsAuthor } from './bookDetailsAuthor';
 import type { BookDetailsCover } from './bookDetailsCover';
 import type { BookDetailsIsbn } from './bookDetailsIsbn';
+import type { Bookmark } from './bookmark';
 import type { ChapterWithHighlights } from './chapterWithHighlights';
 import type { HighlightTagGroupInBook } from './highlightTagGroupInBook';
 import type { HighlightTagInBook } from './highlightTagInBook';
@@ -27,6 +28,8 @@ export interface BookDetails {
   highlight_tags?: HighlightTagInBook[];
   /** List of highlight tag groups for this book */
   highlight_tag_groups?: HighlightTagGroupInBook[];
+  /** List of bookmarks for this book */
+  bookmarks?: Bookmark[];
   /** List of chapters with highlights */
   chapters?: ChapterWithHighlights[];
   created_at: string;
