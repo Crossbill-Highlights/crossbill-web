@@ -327,12 +327,7 @@ export const HighlightTags = ({
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <Box
-        sx={{
-          position: 'sticky',
-          top: 24,
-        }}
-      >
+      <Box>
         <HighlightTagsHeading
           selectedTag={selectedTag}
           onTagClick={onTagClick}
