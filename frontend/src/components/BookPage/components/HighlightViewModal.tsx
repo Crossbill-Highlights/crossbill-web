@@ -546,13 +546,31 @@ export const HighlightViewModal = ({
   const isDeleting = deleteHighlightMutation.isPending;
   const isLoading = isDeleting;
 
+  // Create title with chapter name if available
+  const titleText = highlight.chapter ? `${highlight.chapter}` : 'Highlight';
+  const title = (
+    <Typography
+      variant="h6"
+      component="span"
+      sx={{
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        maxWidth: { xs: 'calc(100vw - 120px)', sm: 'calc(100vw - 200px)', md: '600px' },
+        display: 'block',
+      }}
+    >
+      {titleText}
+    </Typography>
+  );
+
   return (
     <CommonDialog
       open={open}
       onClose={handleClose}
       maxWidth="md"
       isLoading={isLoading}
-      title="View Highlight"
+      title={title}
       footerActions={
         <Button onClick={handleClose} disabled={isLoading}>
           Close

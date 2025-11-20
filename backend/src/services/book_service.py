@@ -65,7 +65,8 @@ class BookService:
                     book_id=h.book_id,
                     chapter_id=h.chapter_id,
                     text=h.text,
-                    chapter=None,  # Not needed in response
+                    chapter=chapter.name,  # Include chapter name for display
+                    chapter_number=chapter.chapter_number,  # Include chapter number
                     page=h.page,
                     note=h.note,
                     datetime=h.datetime,
