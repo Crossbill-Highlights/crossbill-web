@@ -15,7 +15,53 @@ const colors = {
   },
 };
 
+/**
+ * Custom colors used throughout the application.
+ * These are consolidated from various rgba() calls in components.
+ */
+const customColors = {
+  // Highlight colors for scroll-to-highlight effects
+  highlightBlue: {
+    light: 'rgba(25, 118, 210, 0.08)', // Light blue for highlight effect (BookPage)
+  },
+
+  // Hover and interaction colors
+  whiteOverlay: {
+    light: 'rgba(255, 255, 255, 0.1)', // White overlay for hover effects (AppBar)
+  },
+
+  // Shadow colors
+  shadows: {
+    light: 'rgba(0, 0, 0, 0.04)', // Very light shadow (HighlightCard)
+    medium: 'rgba(0, 0, 0, 0.15)', // Medium shadow (BookCard)
+  },
+
+  // Drag and drop colors (using amber[600] as base: #685A4B)
+  dragDrop: {
+    hoverBg: 'rgba(104, 90, 75, 0.08)', // Light amber for hover background
+    hoverBorder: 'rgba(104, 90, 75, 0.4)', // Medium amber for border when dragging over
+    transparent: 'rgba(104, 90, 75, 0)', // Transparent amber for transitions
+  },
+
+  // Border colors
+  borders: {
+    light: 'rgba(0, 0, 0, 0.12)', // Light border for empty states
+    transparent: 'rgba(0, 0, 0, 0)', // Transparent border
+  },
+};
+
+// Extend the MUI Theme interface to include custom colors
+declare module '@mui/material/styles' {
+  interface Theme {
+    customColors: typeof customColors;
+  }
+  interface ThemeOptions {
+    customColors?: typeof customColors;
+  }
+}
+
 export const theme = createTheme({
+  customColors,
   palette: {
     mode: 'light',
     primary: {
