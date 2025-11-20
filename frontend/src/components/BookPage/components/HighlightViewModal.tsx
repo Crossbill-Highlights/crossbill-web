@@ -609,9 +609,11 @@ export const HighlightViewModal = ({
         ) : undefined
       }
       footerActions={
-        <Button onClick={handleClose} disabled={isLoading}>
-          Close
-        </Button>
+        <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
+          <Button onClick={handleClose} disabled={isLoading}>
+            Close
+          </Button>
+        </Box>
       }
     >
       {/* Desktop Layout: Navigation buttons on sides */}
