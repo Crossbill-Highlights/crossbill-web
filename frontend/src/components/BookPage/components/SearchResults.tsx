@@ -11,7 +11,7 @@ interface SearchResultsProps {
   highlights: HighlightSearchResult[] | undefined;
   searchText: string;
   bookId: number;
-  bookmarks?: Bookmark[];
+  bookmarksByHighlightId?: Record<number, Bookmark>;
   selectedTagId?: number | null;
 }
 
@@ -20,7 +20,7 @@ export const SearchResults = ({
   highlights,
   searchText,
   bookId,
-  bookmarks = [],
+  bookmarksByHighlightId = {},
   selectedTagId,
 }: SearchResultsProps) => {
   // Loading state
@@ -86,7 +86,7 @@ export const SearchResults = ({
                               key={highlight.id}
                               highlight={highlight}
                               bookId={bookId}
-                              bookmarks={bookmarks}
+                              bookmark={bookmarksByHighlightId[highlight.id]}
                               allHighlights={allHighlights}
                               currentIndex={highlightIndex}
                             />

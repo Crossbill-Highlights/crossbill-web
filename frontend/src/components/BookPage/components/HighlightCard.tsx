@@ -14,18 +14,18 @@ import { HighlightViewModal } from './HighlightViewModal';
 export interface HighlightCardProps {
   highlight: Highlight;
   bookId: number;
-  bookmarks?: Bookmark[];
+  bookmark?: Bookmark;
   allHighlights?: Highlight[];
   currentIndex?: number;
 }
 
 interface FooterProps {
   highlight: Highlight;
-  bookmarks: Bookmark[];
+  bookmark?: Bookmark;
 }
 
-const Footer = ({ highlight, bookmarks }: FooterProps) => {
-  const hasBookmark = bookmarks.some((b) => b.highlight_id === highlight.id);
+const Footer = ({ highlight, bookmark }: FooterProps) => {
+  const hasBookmark = !!bookmark;
 
   return (
     <Box
@@ -94,7 +94,7 @@ const previewWordCount = 40;
 export const HighlightCard = ({
   highlight,
   bookId,
-  bookmarks = [],
+  bookmark,
   allHighlights,
   currentIndex,
 }: HighlightCardProps) => {
@@ -180,7 +180,7 @@ export const HighlightCard = ({
             </Typography>
           </Box>
 
-          <Footer highlight={highlight} bookmarks={bookmarks} />
+          <Footer highlight={highlight} bookmark={bookmark} />
         </Box>
       </Box>
 
@@ -191,7 +191,7 @@ export const HighlightCard = ({
         open={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
         availableTags={tagsResponse?.tags || []}
-        bookmarks={bookmarks}
+        bookmark={bookmark}
         allHighlights={allHighlights}
         currentIndex={currentHighlightIndex}
         onNavigate={handleNavigate}

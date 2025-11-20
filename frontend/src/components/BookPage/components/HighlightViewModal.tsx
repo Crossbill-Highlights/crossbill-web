@@ -292,7 +292,7 @@ const TagInput = ({
 interface ToolbarProps {
   highlightId: number;
   bookId: number;
-  bookmarks: Bookmark[];
+  bookmark?: Bookmark;
   hasNote: boolean;
   noteVisible: boolean;
   onNoteToggle: () => void;
@@ -303,7 +303,7 @@ interface ToolbarProps {
 const Toolbar = ({
   highlightId,
   bookId,
-  bookmarks,
+  bookmark,
   hasNote,
   noteVisible,
   onNoteToggle,
@@ -312,9 +312,6 @@ const Toolbar = ({
 }: ToolbarProps) => {
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Find if there's a bookmark for this highlight
-  const currentBookmark = bookmarks.find((b) => b.highlight_id === highlightId);
 
   const createBookmarkMutation = useCreateBookmarkApiV1BookBookIdBookmarkPost({
     mutation: {
@@ -347,11 +344,11 @@ const Toolbar = ({
   const handleBookmarkToggle = async () => {
     setIsProcessing(true);
     try {
-      if (currentBookmark) {
+      if (bookmark) {
         // Remove bookmark
         await deleteBookmarkMutation.mutateAsync({
           bookId,
-          bookmarkId: currentBookmark.id,
+          bookmarkId: bookmark.id,
         });
       } else {
         // Create bookmark
@@ -372,10 +369,10 @@ const Toolbar = ({
       <IconButton
         onClick={handleBookmarkToggle}
         disabled={isLoading}
-        aria-label={currentBookmark ? 'Remove bookmark' : 'Add bookmark'}
+        aria-label={bookmark ? 'Remove bookmark' : 'Add bookmark'}
         size="small"
       >
-        {currentBookmark ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+        {bookmark ? <BookmarkIcon /> : <BookmarkBorderIcon />}
       </IconButton>
       <IconButton
         onClick={onNoteToggle}
@@ -406,7 +403,7 @@ interface HighlightViewModalProps {
   open: boolean;
   onClose: () => void;
   availableTags: HighlightTagInBook[];
-  bookmarks?: Bookmark[];
+  bookmark?: Bookmark;
   allHighlights?: Highlight[];
   currentIndex?: number;
   onNavigate?: (newIndex: number) => void;
@@ -418,7 +415,7 @@ export const HighlightViewModal = ({
   open,
   onClose,
   availableTags,
-  bookmarks = [],
+  bookmark,
   allHighlights,
   currentIndex = 0,
   onNavigate,
@@ -630,7 +627,7 @@ export const HighlightViewModal = ({
           <Toolbar
             highlightId={highlight.id}
             bookId={bookId}
-            bookmarks={bookmarks}
+            bookmark={bookmark}
             hasNote={hasNote}
             noteVisible={noteVisible}
             onNoteToggle={handleNoteToggle}
@@ -708,7 +705,7 @@ export const HighlightViewModal = ({
         <Toolbar
           highlightId={highlight.id}
           bookId={bookId}
-          bookmarks={bookmarks}
+          bookmark={bookmark}
           hasNote={hasNote}
           noteVisible={noteVisible}
           onNoteToggle={handleNoteToggle}

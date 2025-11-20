@@ -3,6 +3,7 @@ import { useSearchHighlightsApiV1HighlightsSearchGet } from '@/api/generated/hig
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { Alert, Box, Container, Typography } from '@mui/material';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { keyBy } from 'lodash';
 import { useState } from 'react';
 import { SearchBar } from '../common/SearchBar';
 import { SectionTitle } from '../common/SectionTitle';
@@ -117,6 +118,9 @@ export const BookPage = () => {
     );
   }
 
+  // Create a map of highlight_id -> bookmark for efficient lookup
+  const bookmarksByHighlightId = keyBy(book.bookmarks || [], 'highlight_id');
+
   const chapters = (book?.chapters || []).filter(
     (chapter) => chapter.highlights && chapter.highlights.length > 0
   );
@@ -203,7 +207,7 @@ export const BookPage = () => {
                 highlights={filteredSearchResults}
                 searchText={searchText}
                 bookId={book.id}
-                bookmarks={book.bookmarks}
+                bookmarksByHighlightId={bookmarksByHighlightId}
                 selectedTagId={selectedTagId}
               />
 
@@ -265,7 +269,7 @@ export const BookPage = () => {
                                 key={highlight.id}
                                 highlight={highlight}
                                 bookId={book.id}
-                                bookmarks={book.bookmarks}
+                                bookmark={bookmarksByHighlightId[highlight.id]}
                                 allHighlights={allFilteredHighlights}
                                 currentIndex={highlightIndex}
                               />
