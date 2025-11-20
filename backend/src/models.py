@@ -100,6 +100,9 @@ class Book(Base):
     highlight_tag_groups: Mapped[list["HighlightTagGroup"]] = relationship(
         back_populates="book", cascade="all, delete-orphan", lazy="selectin"
     )
+    bookmarks: Mapped[list["Bookmark"]] = relationship(
+        back_populates="book", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         """String representation of Book."""
@@ -176,6 +179,9 @@ class Highlight(Base):
     chapter: Mapped["Chapter | None"] = relationship(back_populates="highlights")
     highlight_tags: Mapped[list["HighlightTag"]] = relationship(
         secondary=highlight_highlight_tags, back_populates="highlights", lazy="selectin"
+    )
+    bookmarks: Mapped[list["Bookmark"]] = relationship(
+        back_populates="highlight", cascade="all, delete-orphan"
     )
 
     # Unique constraint for deduplication: same text at same time in same book
@@ -281,3 +287,28 @@ class HighlightTag(Base):
     def __repr__(self) -> str:
         """String representation of HighlightTag."""
         return f"<HighlightTag(id={self.id}, name='{self.name}', book_id={self.book_id})>"
+
+
+class Bookmark(Base):
+    """Bookmark model for tracking reading progress within a book."""
+
+    __tablename__ = "bookmarks"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    book_id: Mapped[int] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    highlight_id: Mapped[int] = mapped_column(
+        ForeignKey("highlights.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    # Relationships
+    book: Mapped["Book"] = relationship(back_populates="bookmarks")
+    highlight: Mapped["Highlight"] = relationship(back_populates="bookmarks")
+
+    def __repr__(self) -> str:
+        """String representation of Bookmark."""
+        return f"<Bookmark(id={self.id}, book_id={self.book_id}, highlight_id={self.highlight_id})>"

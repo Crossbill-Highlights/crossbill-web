@@ -8,7 +8,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from src import schemas
 from src.database import DatabaseSession
 from src.exceptions import CrossbillError
-from src.services import BookService, HighlightTagService
+from src.services import BookService, BookmarkService, HighlightTagService
 
 logger = logging.getLogger(__name__)
 
@@ -498,4 +498,122 @@ def remove_tag_from_highlight(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to remove tag from highlight: {e!s}",
+        ) from e
+
+
+@router.post(
+    "/{book_id}/bookmark",
+    response_model=schemas.Bookmark,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_bookmark(
+    book_id: int,
+    request: schemas.BookmarkCreateRequest,
+    db: DatabaseSession,
+) -> schemas.Bookmark:
+    """
+    Create a bookmark for a highlight in a book.
+
+    Bookmarks allow users to track their reading progress by marking specific
+    highlights they want to return to later.
+
+    Args:
+        book_id: ID of the book
+        request: Request containing the highlight_id to bookmark
+        db: Database session
+
+    Returns:
+        Created Bookmark
+
+    Raises:
+        HTTPException: If book or highlight not found, or creation fails
+    """
+    try:
+        service = BookmarkService(db)
+        return service.create_bookmark(book_id, request.highlight_id)
+    except CrossbillError:
+        # Re-raise custom exceptions - handled by exception handlers
+        raise
+    except Exception as e:
+        logger.error(f"Failed to create bookmark for book {book_id}: {e!s}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create bookmark: {e!s}",
+        ) from e
+
+
+@router.delete(
+    "/{book_id}/bookmark/{bookmark_id}",
+    status_code=status.HTTP_200_OK,
+)
+def delete_bookmark(
+    book_id: int,
+    bookmark_id: int,
+    db: DatabaseSession,
+) -> None:
+    """
+    Delete a bookmark from a book.
+
+    This operation is idempotent - calling it on a non-existent bookmark
+    will succeed and return 200 without error.
+
+    Args:
+        book_id: ID of the book
+        bookmark_id: ID of the bookmark to delete
+        db: Database session
+
+    Raises:
+        HTTPException: If book not found or deletion fails
+    """
+    try:
+        service = BookmarkService(db)
+        service.delete_bookmark(book_id, bookmark_id)
+    except CrossbillError:
+        # Re-raise custom exceptions - handled by exception handlers
+        raise
+    except Exception as e:
+        logger.error(
+            f"Failed to delete bookmark {bookmark_id} for book {book_id}: {e!s}", exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete bookmark: {e!s}",
+        ) from e
+
+
+@router.get(
+    "/{book_id}/bookmarks",
+    response_model=schemas.BookmarksResponse,
+    status_code=status.HTTP_200_OK,
+)
+def get_bookmarks(
+    book_id: int,
+    db: DatabaseSession,
+) -> schemas.BookmarksResponse:
+    """
+    Get all bookmarks for a book.
+
+    Returns all bookmarks ordered by creation date (newest first).
+
+    Args:
+        book_id: ID of the book
+        db: Database session
+
+    Returns:
+        List of bookmarks for the book
+
+    Raises:
+        HTTPException: If book not found or fetching fails
+    """
+    try:
+        service = BookmarkService(db)
+        return service.get_bookmarks_by_book(book_id)
+    except CrossbillError:
+        # Re-raise custom exceptions - handled by exception handlers
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get bookmarks for book {book_id}: {e!s}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get bookmarks: {e!s}",
         ) from e

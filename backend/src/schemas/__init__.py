@@ -8,6 +8,12 @@ from src.schemas.book_schemas import (
     BookWithHighlightCount,
     CoverUploadResponse,
 )
+from src.schemas.bookmark_schemas import (
+    Bookmark,
+    BookmarkBase,
+    BookmarkCreateRequest,
+    BookmarksResponse,
+)
 from src.schemas.chapter_schemas import Chapter, ChapterBase
 from src.schemas.highlight_schemas import (
     BookDetails,
@@ -42,6 +48,10 @@ from src.schemas.tag_schemas import BookUpdateRequest, Tag
 __all__ = [
     "Book",
     "BookBase",
+    "Bookmark",
+    "BookmarkBase",
+    "BookmarkCreateRequest",
+    "BookmarksResponse",
     "BookCreate",
     "BookDetails",
     "BooksListResponse",
