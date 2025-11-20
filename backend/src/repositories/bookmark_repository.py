@@ -31,9 +31,7 @@ class BookmarkRepository:
         )
         return list(self.db.execute(stmt).scalars().all())
 
-    def get_by_book_and_highlight(
-        self, book_id: int, highlight_id: int
-    ) -> models.Bookmark | None:
+    def get_by_book_and_highlight(self, book_id: int, highlight_id: int) -> models.Bookmark | None:
         """Get a bookmark by book_id and highlight_id."""
         stmt = select(models.Bookmark).where(
             models.Bookmark.book_id == book_id, models.Bookmark.highlight_id == highlight_id

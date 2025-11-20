@@ -1,9 +1,8 @@
 import type { Bookmark, Highlight } from '@/api/generated/model';
-import { SectionTitle } from '@/components/common/SectionTitle';
-import { Bookmark as BookmarkIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+  import { Bookmark as BookmarkIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import { Box, IconButton, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface BookmarkListProps {
   bookmarks: Bookmark[];
@@ -14,12 +13,7 @@ interface BookmarkListProps {
 export const BookmarkList = ({ bookmarks, allHighlights, onBookmarkClick }: BookmarkListProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
-  const [isExpanded, setIsExpanded] = useState(true);
-
-  // Collapse by default on mobile
-  useEffect(() => {
-    setIsExpanded(!isMobile);
-  }, [isMobile]);
+  const [isExpanded, setIsExpanded] = useState(() => !isMobile);
 
   // If no bookmarks, don't render anything
   if (!bookmarks || bookmarks.length === 0) {

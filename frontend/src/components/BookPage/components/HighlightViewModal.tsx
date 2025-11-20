@@ -421,23 +421,18 @@ export const HighlightViewModal = ({
   onNavigate,
 }: HighlightViewModalProps) => {
   const queryClient = useQueryClient();
-  const [noteVisible, setNoteVisible] = useState(false);
+  const [noteVisibleWhenEmpty, setNoteVisibleWhenEmpty] = useState(false);
 
   const hasNavigation = allHighlights && allHighlights.length > 1 && onNavigate;
   const hasPrevious = hasNavigation && currentIndex > 0;
   const hasNext = hasNavigation && currentIndex < allHighlights.length - 1;
 
   const hasNote = !!highlight.note;
-
-  // Update note visibility when highlight changes
-  useEffect(() => {
-    // If the highlight has a note, always show it
-    // Otherwise, keep the current visibility state
-    setNoteVisible(!!highlight.note);
-  }, [highlight.id, highlight.note]);
+  // If note exists, always show it; otherwise use the toggle state
+  const noteVisible = hasNote || noteVisibleWhenEmpty;
 
   const handleNoteToggle = () => {
-    setNoteVisible((prev) => !prev);
+    setNoteVisibleWhenEmpty((prev) => !prev);
   };
 
   const startsWithLowercase =

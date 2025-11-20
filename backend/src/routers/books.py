@@ -8,7 +8,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from src import schemas
 from src.database import DatabaseSession
 from src.exceptions import CrossbillError
-from src.services import BookService, BookmarkService, HighlightTagService
+from src.services import BookmarkService, BookService, HighlightTagService
 
 logger = logging.getLogger(__name__)
 

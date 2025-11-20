@@ -90,9 +90,7 @@ class TestCreateBookmark:
         bookmarks = db_session.query(models.Bookmark).filter_by(book_id=book.id).all()
         assert len(bookmarks) == 1
 
-    def test_create_bookmark_book_not_found(
-        self, client: TestClient, db_session: Session
-    ) -> None:
+    def test_create_bookmark_book_not_found(self, client: TestClient, db_session: Session) -> None:
         """Test creating a bookmark for non-existent book."""
         response = client.post(
             "/api/v1/book/99999/bookmark",
@@ -182,9 +180,7 @@ class TestDeleteBookmark:
         assert response.status_code == status.HTTP_200_OK
 
         # Verify bookmark was deleted
-        deleted_bookmark = (
-            db_session.query(models.Bookmark).filter_by(id=bookmark.id).first()
-        )
+        deleted_bookmark = db_session.query(models.Bookmark).filter_by(id=bookmark.id).first()
         assert deleted_bookmark is None
 
     def test_delete_bookmark_idempotent(self, client: TestClient, db_session: Session) -> None:
@@ -201,9 +197,7 @@ class TestDeleteBookmark:
         # Should succeed (idempotent operation)
         assert response.status_code == status.HTTP_200_OK
 
-    def test_delete_bookmark_book_not_found(
-        self, client: TestClient, db_session: Session
-    ) -> None:
+    def test_delete_bookmark_book_not_found(self, client: TestClient, db_session: Session) -> None:
         """Test deleting a bookmark for non-existent book."""
         response = client.delete("/api/v1/book/99999/bookmark/1")
 
@@ -271,9 +265,7 @@ class TestGetBookmarks:
         assert "bookmarks" in data
         assert len(data["bookmarks"]) == 0
 
-    def test_get_bookmarks_book_not_found(
-        self, client: TestClient, db_session: Session
-    ) -> None:
+    def test_get_bookmarks_book_not_found(self, client: TestClient, db_session: Session) -> None:
         """Test getting bookmarks for non-existent book."""
         response = client.get("/api/v1/book/99999/bookmarks")
 
@@ -283,9 +275,7 @@ class TestGetBookmarks:
 class TestBookDetailsWithBookmarks:
     """Test suite for bookmarks in book details endpoint."""
 
-    def test_book_details_includes_bookmarks(
-        self, client: TestClient, db_session: Session
-    ) -> None:
+    def test_book_details_includes_bookmarks(self, client: TestClient, db_session: Session) -> None:
         """Test that GET /book/:id includes bookmarks in the response."""
         # Create a book with highlights and bookmarks
         book = models.Book(title="Test Book", author="Test Author")
@@ -348,9 +338,7 @@ class TestBookDetailsWithBookmarks:
             assert "created_at" in bookmark
             assert bookmark["book_id"] == book.id
 
-    def test_book_details_empty_bookmarks(
-        self, client: TestClient, db_session: Session
-    ) -> None:
+    def test_book_details_empty_bookmarks(self, client: TestClient, db_session: Session) -> None:
         """Test that GET /book/:id returns empty bookmarks list when no bookmarks exist."""
         # Create a book without bookmarks
         book = models.Book(title="Test Book", author="Test Author")
@@ -404,9 +392,7 @@ class TestBookmarkCascadeDelete:
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
         # Verify bookmark was cascade deleted
-        deleted_bookmark = (
-            db_session.query(models.Bookmark).filter_by(id=bookmark_id).first()
-        )
+        deleted_bookmark = db_session.query(models.Bookmark).filter_by(id=bookmark_id).first()
         assert deleted_bookmark is None
 
     def test_bookmark_deleted_when_highlight_deleted(
@@ -444,7 +430,5 @@ class TestBookmarkCascadeDelete:
         assert response.status_code == status.HTTP_200_OK
 
         # Verify bookmark was deleted when highlight was soft deleted
-        deleted_bookmark = (
-            db_session.query(models.Bookmark).filter_by(id=bookmark_id).first()
-        )
+        deleted_bookmark = db_session.query(models.Bookmark).filter_by(id=bookmark_id).first()
         assert deleted_bookmark is None

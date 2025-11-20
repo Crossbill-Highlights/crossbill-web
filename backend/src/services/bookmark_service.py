@@ -4,7 +4,7 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from src import models, repositories, schemas
+from src import repositories, schemas
 from src.exceptions import BookNotFoundError, ValidationError
 
 logger = logging.getLogger(__name__)
@@ -43,9 +43,7 @@ class BookmarkService:
         # Validate highlight exists and belongs to the book
         highlight = self.highlight_repo.get_by_id(highlight_id)
         if not highlight:
-            raise ValidationError(
-                f"Highlight with id {highlight_id} not found", status_code=404
-            )
+            raise ValidationError(f"Highlight with id {highlight_id} not found", status_code=404)
 
         if highlight.book_id != book_id:
             raise ValidationError(
@@ -91,9 +89,7 @@ class BookmarkService:
         if deleted:
             logger.info(f"Deleted bookmark {bookmark_id} from book {book_id}")
         else:
-            logger.info(
-                f"Bookmark {bookmark_id} not found for deletion (idempotent operation)"
-            )
+            logger.info(f"Bookmark {bookmark_id} not found for deletion (idempotent operation)")
 
     def get_bookmarks_by_book(self, book_id: int) -> schemas.BookmarksResponse:
         """
