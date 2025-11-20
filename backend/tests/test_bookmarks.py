@@ -1,5 +1,7 @@
 """Tests for bookmarks API endpoints."""
 
+import json
+
 from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -435,12 +437,14 @@ class TestBookmarkCascadeDelete:
         bookmark_id = bookmark.id
 
         # Soft delete the highlight
-        response = client.delete(
-            f"/api/v1/book/{book.id}/highlight",
-            json={"highlight_ids": [highlight.id]},
+        payload = {"highlight_ids": [highlight.id]}
+        response = client.request(
+            "DELETE", f"/api/v1/book/{book.id}/highlight", content=json.dumps(payload)
         )
         assert response.status_code == status.HTTP_200_OK
 
-        # Note: This depends on whether soft delete also cascades bookmarks
-        # If highlights are soft-deleted, bookmarks might still exist
-        # This test documents the expected behavior
+        # Verify bookmark was deleted when highlight was soft deleted
+        deleted_bookmark = (
+            db_session.query(models.Bookmark).filter_by(id=bookmark_id).first()
+        )
+        assert deleted_bookmark is None

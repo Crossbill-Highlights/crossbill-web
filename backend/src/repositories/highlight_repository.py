@@ -4,7 +4,7 @@ import logging
 from collections.abc import Sequence
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -177,6 +177,9 @@ class HighlightRepository:
         """
         Soft delete highlights by their IDs for a specific book.
 
+        Also deletes all bookmarks associated with the deleted highlights,
+        as soft-deleted highlights should not have active bookmarks.
+
         Args:
             book_id: ID of the book (for validation)
             highlight_ids: List of highlight IDs to soft delete
@@ -192,6 +195,19 @@ class HighlightRepository:
         )
         highlights = self.db.execute(stmt).scalars().all()
 
+        if not highlights:
+            return 0
+
+        # Get IDs of highlights to be deleted
+        highlight_ids_to_delete = [h.id for h in highlights]
+
+        # Bulk delete all bookmarks for these highlights in a single query
+        stmt_delete_bookmarks = delete(models.Bookmark).where(
+            models.Bookmark.highlight_id.in_(highlight_ids_to_delete)
+        )
+        result = self.db.execute(stmt_delete_bookmarks)
+        bookmarks_deleted = result.rowcount
+
         # Soft delete each highlight
         count = 0
         for highlight in highlights:
@@ -199,7 +215,9 @@ class HighlightRepository:
             count += 1
 
         self.db.flush()
-        logger.info(f"Soft deleted {count} highlights for book_id={book_id}")
+        logger.info(
+            f"Soft deleted {count} highlights and {bookmarks_deleted} associated bookmarks for book_id={book_id}"
+        )
         return count
 
     def update_note(self, highlight_id: int, note: str | None) -> models.Highlight | None:

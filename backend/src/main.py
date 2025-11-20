@@ -125,7 +125,7 @@ async def crossbill_exception_handler(request: Request, exc: CrossbillError) -> 
     """Handle all custom Crossbill exceptions."""
     logger.error("crossbill_exception", message=str(exc), exception_type=type(exc).__name__)
     return JSONResponse(
-        status_code=500,
+        status_code=exc.status_code,
         content={
             "error": "internal_error",
             "message": str(exc),
@@ -147,6 +147,12 @@ app.mount("/media/covers", StaticFiles(directory=str(COVERS_DIR)), name="covers"
 async def health() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy"}
+
+
+@app.get("/")
+async def root() -> dict[str, str]:
+    """Root endpoint."""
+    return {"message": "Welcome to crossbill API"}
 
 
 @app.get(f"{settings.API_V1_PREFIX}/")
