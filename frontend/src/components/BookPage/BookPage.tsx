@@ -1,6 +1,7 @@
 import { useGetBookDetailsApiV1BookBookIdGet } from '@/api/generated/books/books.ts';
 import { useSearchHighlightsApiV1HighlightsSearchGet } from '@/api/generated/highlights/highlights.ts';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
+import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils';
 import { Alert, Box, Container, Typography } from '@mui/material';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';
@@ -58,18 +59,7 @@ export const BookPage = () => {
     }
 
     // Scroll to the highlight after a short delay to ensure DOM is ready
-    setTimeout(() => {
-      const element = document.getElementById(`highlight-${highlightId}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Add a brief highlight effect
-        element.style.transition = 'background-color 0.3s ease';
-        element.style.backgroundColor = 'rgba(25, 118, 210, 0.08)';
-        setTimeout(() => {
-          element.style.backgroundColor = '';
-        }, 2000);
-      }
-    }, 100);
+    scrollToElementWithHighlight(`highlight-${highlightId}`, { behavior: 'smooth' });
   };
 
   const { data: searchResults, isLoading: isSearching } =

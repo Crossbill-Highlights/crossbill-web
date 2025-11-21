@@ -1,13 +1,14 @@
 import { useGetHighlightTagsApiV1BookBookIdHighlightTagsGet } from '@/api/generated/books/books.ts';
 import type { Bookmark, Highlight } from '@/api/generated/model';
 import { TagList } from '@/components/BookPage/components/TagList.tsx';
+import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils';
 import {
   Bookmark as BookmarkIcon,
   CalendarMonth as CalendarIcon,
   Notes as NotesIcon,
   FormatQuote as QuoteIcon,
 } from '@mui/icons-material';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useState } from 'react';
 import { HighlightViewModal } from './HighlightViewModal';
 
@@ -100,6 +101,9 @@ export const HighlightCard = ({
   allHighlights,
   currentIndex,
 }: HighlightCardProps) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const startsWithLowercase =
     highlight.text.length > 0 &&
     highlight.text[0] === highlight.text[0].toLowerCase() &&
@@ -126,6 +130,15 @@ export const HighlightCard = ({
 
   const handleNavigate = (newIndex: number) => {
     setCurrentHighlightIndex(newIndex);
+  };
+
+  const handleCloseModal = (lastViewedHighlightId?: number) => {
+    setViewModalOpen(false);
+
+    // Scroll to the last viewed highlight (mobile only)
+    if (lastViewedHighlightId && isMobile) {
+      scrollToElementWithHighlight(`highlight-${lastViewedHighlightId}`);
+    }
   };
 
   const currentHighlight = allHighlights?.[currentHighlightIndex] ?? highlight;
@@ -191,7 +204,7 @@ export const HighlightCard = ({
         highlight={currentHighlight}
         bookId={bookId}
         open={viewModalOpen}
-        onClose={() => setViewModalOpen(false)}
+        onClose={handleCloseModal}
         availableTags={tagsResponse?.tags || []}
         bookmarksByHighlightId={bookmarksByHighlightId}
         allHighlights={allHighlights}

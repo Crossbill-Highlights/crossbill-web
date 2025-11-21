@@ -427,7 +427,7 @@ interface HighlightViewModalProps {
   highlight: Highlight;
   bookId: number;
   open: boolean;
-  onClose: () => void;
+  onClose: (lastViewedHighlightId?: number) => void;
   availableTags: HighlightTagInBook[];
   bookmarksByHighlightId: Record<number, Bookmark>;
   allHighlights?: Highlight[];
@@ -575,11 +575,10 @@ export const HighlightViewModal = ({
     void queryClient.invalidateQueries({
       queryKey: [`/api/v1/book/${bookId}/highlight_tags`],
     });
-    onClose();
+    onClose(highlight.id);
   };
 
-  const isDeleting = deleteHighlightMutation.isPending;
-  const isLoading = isDeleting;
+  const isLoading = deleteHighlightMutation.isPending;
 
   // Create title with chapter name if available
   const titleText = highlight.chapter ? `${highlight.chapter}` : 'Highlight';
