@@ -450,7 +450,7 @@ export const HighlightViewModal = ({
   const [noteVisibleWhenEmpty, setNoteVisibleWhenEmpty] = useState(false);
 
   // Use bookmarksByHighlightId if available, otherwise fall back to bookmark prop
-  const currentBookmark = bookmarksByHighlightId[highlight.id] ?? 'undefined';
+  const currentBookmark = bookmarksByHighlightId[highlight.id] ?? undefined;
 
   const hasNavigation = allHighlights && allHighlights.length > 1 && onNavigate;
   const hasPrevious = hasNavigation && currentIndex > 0;
