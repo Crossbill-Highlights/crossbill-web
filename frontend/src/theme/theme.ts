@@ -48,6 +48,11 @@ const customColors = {
     light: 'rgba(0, 0, 0, 0.12)', // Light border for empty states
     transparent: 'rgba(0, 0, 0, 0)', // Transparent border
   },
+
+  // Background colors
+  backgrounds: {
+    subtle: 'rgba(0, 0, 0, 0.05)', // Very subtle background (HighlightViewModal progress bar)
+  },
 };
 
 // Extend the MUI Theme interface to include custom colors
