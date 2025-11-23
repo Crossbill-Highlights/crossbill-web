@@ -1,7 +1,7 @@
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
-local InputDialog = require("ui/widget/inputdialog")
+local MultiInputDialog = require("ui/widget/multiinputdialog")
 local DocSettings = require("docsettings")
 local NetworkMgr = require("ui/network/manager")
 local socket = require("socket")
@@ -54,18 +54,6 @@ function CrossbillSync:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Configure Username"),
-                callback = function()
-                    self:configureUsername()
-                end,
-            },
-            {
-                text = _("Configure Password"),
-                callback = function()
-                    self:configurePassword()
-                end,
-            },
-            {
                 text = _("Auto-sync"),
                 checked_func = function()
                     return self.settings.autosync_enabled
@@ -85,107 +73,53 @@ function CrossbillSync:addToMainMenu(menu_items)
 end
 
 function CrossbillSync:configureServer()
-    local input_dialog
-    input_dialog = InputDialog:new{
-        title = _("Crossbill Server Host"),
-        input = self.settings.base_url,
-        input_type = "text",
-        hint = _("e.g., https://example.com or http://example.com:8000"),
+    local settings_dialog
+    settings_dialog = MultiInputDialog:new{
+        title = _("Crossbill Settings"),
+        fields = {
+            {
+                text = self.settings.base_url or "",
+                hint = _("Server URL (e.g., https://example.com)"),
+            },
+            {
+                text = self.settings.username or "",
+                hint = _("Username"),
+            },
+            {
+                text = self.settings.password or "",
+                hint = _("Password"),
+                text_type = "password",
+            },
+        },
         buttons = {
             {
                 {
                     text = _("Cancel"),
                     callback = function()
-                        UIManager:close(input_dialog)
+                        UIManager:close(settings_dialog)
                     end,
                 },
                 {
                     text = _("Save"),
                     is_enter_default = true,
                     callback = function()
-                        -- Remove trailing slash if present
-                        local host = input_dialog:getInputText():gsub("/$", "")
-                        self.settings.base_url = host
+                        local fields = settings_dialog:getFields()
+                        -- Remove trailing slash from URL if present
+                        self.settings.base_url = fields[1]:gsub("/$", "")
+                        self.settings.username = fields[2]
+                        self.settings.password = fields[3]
                         G_reader_settings:saveSetting("crossbill_sync", self.settings)
-                        UIManager:close(input_dialog)
+                        UIManager:close(settings_dialog)
                         UIManager:show(InfoMessage:new{
-                            text = _("Server host saved"),
+                            text = _("Settings saved"),
                         })
                     end,
                 },
             },
         },
     }
-    UIManager:show(input_dialog)
-    input_dialog:onShowKeyboard()
-end
-
-function CrossbillSync:configureUsername()
-    local input_dialog
-    input_dialog = InputDialog:new{
-        title = _("Crossbill Username"),
-        input = self.settings.username or "",
-        input_type = "text",
-        hint = _("Enter your username"),
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    callback = function()
-                        UIManager:close(input_dialog)
-                    end,
-                },
-                {
-                    text = _("Save"),
-                    is_enter_default = true,
-                    callback = function()
-                        self.settings.username = input_dialog:getInputText()
-                        G_reader_settings:saveSetting("crossbill_sync", self.settings)
-                        UIManager:close(input_dialog)
-                        UIManager:show(InfoMessage:new{
-                            text = _("Username saved"),
-                        })
-                    end,
-                },
-            },
-        },
-    }
-    UIManager:show(input_dialog)
-    input_dialog:onShowKeyboard()
-end
-
-function CrossbillSync:configurePassword()
-    local input_dialog
-    input_dialog = InputDialog:new{
-        title = _("Crossbill Password"),
-        input = self.settings.password or "",
-        text_type = "password",
-        hint = _("Enter your password"),
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    callback = function()
-                        UIManager:close(input_dialog)
-                    end,
-                },
-                {
-                    text = _("Save"),
-                    is_enter_default = true,
-                    callback = function()
-                        self.settings.password = input_dialog:getInputText()
-                        G_reader_settings:saveSetting("crossbill_sync", self.settings)
-                        UIManager:close(input_dialog)
-                        UIManager:show(InfoMessage:new{
-                            text = _("Password saved"),
-                        })
-                    end,
-                },
-            },
-        },
-    }
-    UIManager:show(input_dialog)
-    input_dialog:onShowKeyboard()
+    UIManager:show(settings_dialog)
+    settings_dialog:onShowKeyboard()
 end
 
 function CrossbillSync:urlEncode(str)
