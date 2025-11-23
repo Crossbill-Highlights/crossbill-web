@@ -23,6 +23,8 @@ function CrossbillSync:init()
     -- Load settings
     self.settings = G_reader_settings:readSetting("crossbill_sync") or {
         base_url = "http://localhost:8000",
+        username = "",
+        password = "",
         autosync_enabled = false,
     }
 
@@ -49,6 +51,18 @@ function CrossbillSync:addToMainMenu(menu_items)
                 text = _("Configure Server"),
                 callback = function()
                     self:configureServer()
+                end,
+            },
+            {
+                text = _("Configure Username"),
+                callback = function()
+                    self:configureUsername()
+                end,
+            },
+            {
+                text = _("Configure Password"),
+                callback = function()
+                    self:configurePassword()
                 end,
             },
             {
@@ -104,6 +118,140 @@ function CrossbillSync:configureServer()
     }
     UIManager:show(input_dialog)
     input_dialog:onShowKeyboard()
+end
+
+function CrossbillSync:configureUsername()
+    local input_dialog
+    input_dialog = InputDialog:new{
+        title = _("Crossbill Username"),
+        input = self.settings.username or "",
+        input_type = "text",
+        hint = _("Enter your username"),
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    is_enter_default = true,
+                    callback = function()
+                        self.settings.username = input_dialog:getInputText()
+                        G_reader_settings:saveSetting("crossbill_sync", self.settings)
+                        UIManager:close(input_dialog)
+                        UIManager:show(InfoMessage:new{
+                            text = _("Username saved"),
+                        })
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
+end
+
+function CrossbillSync:configurePassword()
+    local input_dialog
+    input_dialog = InputDialog:new{
+        title = _("Crossbill Password"),
+        input = self.settings.password or "",
+        text_type = "password",
+        hint = _("Enter your password"),
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    is_enter_default = true,
+                    callback = function()
+                        self.settings.password = input_dialog:getInputText()
+                        G_reader_settings:saveSetting("crossbill_sync", self.settings)
+                        UIManager:close(input_dialog)
+                        UIManager:show(InfoMessage:new{
+                            text = _("Password saved"),
+                        })
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
+end
+
+function CrossbillSync:urlEncode(str)
+    -- URL encode a string for use in form-urlencoded data
+    if str then
+        str = string.gsub(str, "\n", "\r\n")
+        str = string.gsub(str, "([^%w _%%%-%.~])", function(c)
+            return string.format("%%%02X", string.byte(c))
+        end)
+        str = string.gsub(str, " ", "+")
+    end
+    return str
+end
+
+function CrossbillSync:login()
+    -- Authenticate with the server and return an access token
+    -- Returns token string on success, nil on failure
+    local username = self.settings.username or ""
+    local password = self.settings.password or ""
+
+    if username == "" or password == "" then
+        logger.warn("Crossbill: Username or password not configured")
+        return nil, "Username or password not configured"
+    end
+
+    local api_url = self.settings.base_url .. "/api/v1/auth/login"
+    logger.dbg("Crossbill: Logging in to", api_url)
+
+    -- Prepare form-urlencoded body
+    local body = "username=" .. self:urlEncode(username) .. "&password=" .. self:urlEncode(password)
+
+    local response_body = {}
+    local request = {
+        url = api_url,
+        method = "POST",
+        headers = {
+            ["Content-Type"] = "application/x-www-form-urlencoded",
+            ["Accept"] = "application/json",
+            ["Content-Length"] = tostring(#body),
+        },
+        source = ltn12.source.string(body),
+        sink = ltn12.sink.table(response_body),
+    }
+
+    local code
+    if api_url:match("^https://") then
+        code = socket.skip(1, https.request(request))
+    else
+        code = socket.skip(1, http.request(request))
+    end
+    socketutil:reset_timeout()
+
+    if code == 200 then
+        local response_text = table.concat(response_body)
+        local ok, response_data = pcall(JSON.decode, response_text)
+        if ok and response_data.access_token then
+            logger.dbg("Crossbill: Login successful")
+            return response_data.access_token
+        else
+            logger.err("Crossbill: Invalid login response:", response_text)
+            return nil, "Invalid server response"
+        end
+    else
+        logger.err("Crossbill: Login failed with code:", code)
+        return nil, "Login failed: " .. tostring(code)
+    end
 end
 
 function CrossbillSync:ensureWifiEnabled(callback)
@@ -349,6 +497,18 @@ function CrossbillSync:sendToServer(book_data, highlights, is_autosync)
     -- Wrap everything in pcall for error handling
     -- is_autosync: if true, don't show result popup (silent mode)
     local success, result = pcall(function()
+        -- Login first to get auth token
+        local token, login_err = self:login()
+        if not token then
+            if not is_autosync then
+                UIManager:show(InfoMessage:new{
+                    text = _("Authentication failed: ") .. (login_err or "unknown error"),
+                    timeout = 5,
+                })
+            end
+            return false, login_err
+        end
+
         local payload = {
             book = book_data,
             highlights = highlights,
@@ -370,19 +530,20 @@ function CrossbillSync:sendToServer(book_data, highlights, is_autosync)
                 ["Content-Type"] = "application/json",
                 ["Accept"] = "application/json",
                 ["Content-Length"] = tostring(#body_json),
+                ["Authorization"] = "Bearer " .. token,
             },
             source = ltn12.source.string(body_json),
             sink = ltn12.sink.table(response_body),
         }
 
         -- Use HTTP or HTTPS based on URL scheme
-        local code, headers, status
+        local code
         if api_url:match("^https://") then
             logger.dbg("Crossbill: Using HTTPS")
-            code, headers, status = socket.skip(1, https.request(request))
+            code = socket.skip(1, https.request(request))
         else
             logger.dbg("Crossbill: Using HTTP")
-            code, headers, status = socket.skip(1, http.request(request))
+            code = socket.skip(1, http.request(request))
         end
         socketutil:reset_timeout()
 
@@ -400,7 +561,7 @@ function CrossbillSync:sendToServer(book_data, highlights, is_autosync)
 
             -- Upload cover image if available
             if response_data.book_id then
-                self:uploadCoverImage(response_data.book_id)
+                self:uploadCoverImage(response_data.book_id, token)
             end
 
             -- Only show success popup for manual syncs
@@ -444,7 +605,7 @@ function CrossbillSync:getFilename(path)
     return path:match("^.+/(.+)$") or path
 end
 
-function CrossbillSync:uploadCoverImage(book_id)
+function CrossbillSync:uploadCoverImage(book_id, token)
     -- Extract and upload the book cover image
     -- This function is called after successful highlights sync
     local success, err = pcall(function()
@@ -504,6 +665,7 @@ function CrossbillSync:uploadCoverImage(book_id)
             headers = {
                 ["Content-Type"] = "multipart/form-data; boundary=" .. boundary,
                 ["Content-Length"] = tostring(#body),
+                ["Authorization"] = "Bearer " .. token,
             },
             source = ltn12.source.string(body),
             sink = ltn12.sink.table(response_body),
