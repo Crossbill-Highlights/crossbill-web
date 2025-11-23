@@ -7,6 +7,10 @@ from functools import lru_cache
 from typing import ClassVar, Literal
 
 import structlog
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 class Settings:
@@ -33,6 +37,10 @@ class Settings:
     CORS_ORIGINS: ClassVar[list[str]] = (
         os.getenv("CORS_ORIGINS", "*").split(",") if os.getenv("CORS_ORIGINS") != "*" else ["*"]
     )
+
+    # Admin setup (for first-time initialization)
+    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
 
 
 def configure_logging(environment: str = "development") -> None:

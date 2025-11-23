@@ -2,6 +2,8 @@
 
 import time
 import uuid
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -10,10 +12,14 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
+from pwdlib import PasswordHash
+from sqlalchemy.orm import sessionmaker
 from starlette.middleware.base import RequestResponseEndpoint
 
 from src.config import configure_logging, get_settings
+from src.database import get_engine
 from src.exceptions import BookNotFoundError, CrossbillError, NotFoundError
+from src.repositories import UserRepository
 from src.routers import auth, books, highlights, users
 
 settings = get_settings()
@@ -29,12 +35,62 @@ COVERS_DIR = Path(__file__).parent.parent / "book-covers"
 # Directory for frontend static files
 STATIC_DIR = Path(__file__).parent.parent / "static"
 
+
+def _initialize_admin_password() -> None:
+    """Initialize admin user password from environment variable if not set."""
+    if not settings.ADMIN_PASSWORD:
+        logger.info("admin_password_skip", reason="ADMIN_PASSWORD not set")
+        return
+
+    engine = get_engine(settings)
+    session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db = session_factory()
+
+    try:
+        user_repo = UserRepository(db)
+        admin_user = user_repo.get_by_name(settings.ADMIN_USERNAME)
+
+        if not admin_user:
+            logger.warning(
+                "admin_user_not_found",
+                username=settings.ADMIN_USERNAME,
+            )
+            return
+
+        if admin_user.hashed_password:
+            logger.info(
+                "admin_password_skip",
+                reason="password already set",
+                username=settings.ADMIN_USERNAME,
+            )
+            return
+
+        password_hash = PasswordHash.recommended()
+        admin_user.hashed_password = password_hash.hash(settings.ADMIN_PASSWORD)
+        db.commit()
+
+        logger.info(
+            "admin_password_initialized",
+            username=settings.ADMIN_USERNAME,
+        )
+    finally:
+        db.close()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Application lifespan context manager."""
+    _initialize_admin_password()
+    yield
+
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     docs_url=f"{settings.API_V1_PREFIX}/docs",
     redoc_url=f"{settings.API_V1_PREFIX}/redoc",
     openapi_url=f"{settings.API_V1_PREFIX}/openapi.json",
+    lifespan=lifespan,
 )
 
 
