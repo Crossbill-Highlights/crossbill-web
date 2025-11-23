@@ -3,12 +3,14 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from src import schemas
 from src.database import DatabaseSession
 from src.exceptions import CrossbillError
+from src.models import User
 from src.services import BookmarkService, BookService, HighlightTagService
+from src.services.auth_service import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +19,7 @@ router = APIRouter(prefix="/book", tags=["books"])
 
 @router.get("/{book_id}", response_model=schemas.BookDetails, status_code=status.HTTP_200_OK)
 def get_book_details(
-    book_id: int,
-    db: DatabaseSession,
+    book_id: int, db: DatabaseSession, current_user: Annotated[User, Depends(get_current_user)]
 ) -> schemas.BookDetails:
     """
     Get detailed information about a book including its chapters and highlights.
@@ -35,7 +36,7 @@ def get_book_details(
     """
     try:
         service = BookService(db)
-        return service.get_book_details(book_id)
+        return service.get_book_details(book_id, current_user.id)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -49,8 +50,7 @@ def get_book_details(
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_book(
-    book_id: int,
-    db: DatabaseSession,
+    book_id: int, db: DatabaseSession, current_user: Annotated[User, Depends(get_current_user)]
 ) -> None:
     """
     Delete a book and all its contents (hard delete).
@@ -68,7 +68,7 @@ def delete_book(
     """
     try:
         service = BookService(db)
-        service.delete_book(book_id)
+        service.delete_book(book_id, current_user.id)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -89,6 +89,7 @@ def delete_highlights(
     book_id: int,
     request: schemas.HighlightDeleteRequest,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.HighlightDeleteResponse:
     """
     Soft delete highlights from a book.
@@ -110,7 +111,7 @@ def delete_highlights(
     """
     try:
         service = BookService(db)
-        return service.delete_highlights(book_id, request.highlight_ids)
+        return service.delete_highlights(book_id, request.highlight_ids, current_user.id)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -130,7 +131,8 @@ def delete_highlights(
 def upload_book_cover(
     book_id: int,
     cover: Annotated[UploadFile, File(...)],
-    db: DatabaseSession = None,
+    db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.CoverUploadResponse:
     """
     Upload a book cover image.
@@ -152,7 +154,7 @@ def upload_book_cover(
     """
     try:
         service = BookService(db)
-        return service.upload_cover(book_id, cover)
+        return service.upload_cover(book_id, cover, current_user.id)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -173,6 +175,7 @@ def update_book(
     book_id: int,
     request: schemas.BookUpdateRequest,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.BookWithHighlightCount:
     """
     Update book information.
@@ -192,7 +195,7 @@ def update_book(
     """
     try:
         service = BookService(db)
-        return service.update_book(book_id, request)
+        return service.update_book(book_id, request, current_user.id)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -210,9 +213,8 @@ def update_book(
     status_code=status.HTTP_200_OK,
 )
 def get_highlight_tags(
-    book_id: int,
-    db: DatabaseSession,
-) -> schemas.HighlightTag:
+    book_id: int, db: DatabaseSession, current_user: Annotated[User, Depends(get_current_user)]
+) -> schemas.HighlightTagsResponse:
     """
     Get all highlight tags for a book.
 
@@ -228,7 +230,7 @@ def get_highlight_tags(
     """
     try:
         service = HighlightTagService(db)
-        tags = service.get_tags_for_book(book_id)
+        tags = service.get_tags_for_book(book_id, current_user.id)
         return schemas.HighlightTagsResponse(tags=tags)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
@@ -249,6 +251,7 @@ def create_highlight_tag(
     book_id: int,
     request: schemas.HighlightTagCreateRequest,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.HighlightTag:
     """
     Create a new highlight tag for a book.
@@ -266,7 +269,7 @@ def create_highlight_tag(
     """
     try:
         service = HighlightTagService(db)
-        return service.create_tag_for_book(book_id, request.name)
+        return service.create_tag_for_book(book_id, request.name, user_id=current_user.id)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -291,6 +294,7 @@ def delete_highlight_tag(
     book_id: int,
     tag_id: int,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> None:
     """
     Delete a highlight tag from a book.
@@ -307,7 +311,7 @@ def delete_highlight_tag(
     """
     try:
         service = HighlightTagService(db)
-        deleted = service.delete_tag(book_id, tag_id)
+        deleted = service.delete_tag(book_id, tag_id, current_user.id)
         if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -344,6 +348,7 @@ def update_highlight_tag(
     tag_id: int,
     request: schemas.HighlightTagUpdateRequest,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.HighlightTag:
     """
     Update a highlight tag's name and/or tag group association.
@@ -365,6 +370,7 @@ def update_highlight_tag(
         return service.update_tag(
             book_id=book_id,
             tag_id=tag_id,
+            user_id=current_user.id,
             name=request.name,
             tag_group_id=request.tag_group_id,
         )
@@ -400,6 +406,7 @@ def add_tag_to_highlight(
     highlight_id: int,
     request: schemas.HighlightTagAssociationRequest,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.Highlight:
     """
     Add a tag to a highlight.
@@ -424,9 +431,11 @@ def add_tag_to_highlight(
 
         # Add tag by ID or by name (with get_or_create)
         if request.tag_id is not None:
-            highlight = service.add_tag_to_highlight(highlight_id, request.tag_id)
+            highlight = service.add_tag_to_highlight(highlight_id, request.tag_id, current_user.id)
         elif request.name is not None:
-            highlight = service.add_tag_to_highlight_by_name(book_id, highlight_id, request.name)
+            highlight = service.add_tag_to_highlight_by_name(
+                book_id, highlight_id, request.name, current_user.id
+            )
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -463,6 +472,7 @@ def remove_tag_from_highlight(
     highlight_id: int,
     tag_id: int,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.Highlight:
     """
     Remove a tag from a highlight.
@@ -481,7 +491,7 @@ def remove_tag_from_highlight(
     """
     try:
         service = HighlightTagService(db)
-        return service.remove_tag_from_highlight(highlight_id, tag_id)
+        return service.remove_tag_from_highlight(highlight_id, tag_id, current_user.id)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -510,6 +520,7 @@ def create_bookmark(
     book_id: int,
     request: schemas.BookmarkCreateRequest,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.Bookmark:
     """
     Create a bookmark for a highlight in a book.
@@ -530,7 +541,7 @@ def create_bookmark(
     """
     try:
         service = BookmarkService(db)
-        return service.create_bookmark(book_id, request.highlight_id)
+        return service.create_bookmark(book_id, request.highlight_id, current_user.id)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -550,6 +561,7 @@ def delete_bookmark(
     book_id: int,
     bookmark_id: int,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> None:
     """
     Delete a bookmark from a book.
@@ -567,7 +579,7 @@ def delete_bookmark(
     """
     try:
         service = BookmarkService(db)
-        service.delete_bookmark(book_id, bookmark_id)
+        service.delete_bookmark(book_id, bookmark_id, current_user.id)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -589,6 +601,7 @@ def delete_bookmark(
 def get_bookmarks(
     book_id: int,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.BookmarksResponse:
     """
     Get all bookmarks for a book.
@@ -607,7 +620,7 @@ def get_bookmarks(
     """
     try:
         service = BookmarkService(db)
-        return service.get_bookmarks_by_book(book_id)
+        return service.get_bookmarks_by_book(book_id, current_user.id)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise

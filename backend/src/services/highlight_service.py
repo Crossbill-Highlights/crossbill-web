@@ -5,7 +5,6 @@ from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
 
 from src import repositories, schemas
-from src.constants import DEFAULT_USER_ID
 from src.services import cover_service
 
 logger = structlog.get_logger(__name__)
@@ -24,6 +23,7 @@ class HighlightService:
     def upload_highlights(
         self,
         request: schemas.HighlightUploadRequest,
+        user_id: int,
         background_tasks: BackgroundTasks | None = None,
     ) -> schemas.HighlightUploadResponse:
         """
@@ -36,6 +36,7 @@ class HighlightService:
 
         Args:
             request: Upload request containing book metadata and highlights
+            user_id: ID of the user
 
         Returns:
             HighlightUploadResponse with upload statistics
@@ -48,7 +49,7 @@ class HighlightService:
         )
 
         # Step 1: Get or create book
-        book = self.book_repo.get_or_create(request.book, DEFAULT_USER_ID)
+        book = self.book_repo.get_or_create(request.book, user_id)
 
         # Step 1.5: Schedule cover fetching as background task (non-blocking)
         # Cover is fetched asynchronously and won't block the response
@@ -75,7 +76,7 @@ class HighlightService:
 
                 # Get or create chapter with the chapter number
                 chapter = self.chapter_repo.get_or_create(
-                    book.id, DEFAULT_USER_ID, highlight_data.chapter, chapter_number
+                    book.id, user_id, highlight_data.chapter, chapter_number
                 )
                 chapter_id = chapter.id
 
@@ -83,7 +84,7 @@ class HighlightService:
 
         # Step 3: Bulk create highlights
         created, skipped = self.highlight_repo.bulk_create(
-            book.id, DEFAULT_USER_ID, highlights_with_chapters
+            book.id, user_id, highlights_with_chapters
         )
 
         # Commit all changes (book, chapters, highlights)
@@ -107,7 +108,7 @@ class HighlightService:
         )
 
     def search_highlights(
-        self, search_text: str, book_id: int | None = None, limit: int = 100
+        self, search_text: str, user_id: int, book_id: int | None = None, limit: int = 100
     ) -> schemas.HighlightSearchResponse:
         """
         Search for highlights using full-text search.
@@ -118,6 +119,7 @@ class HighlightService:
 
         Args:
             search_text: Text to search for
+            user_id: ID of the user
             book_id: Optional book ID to filter by specific book
             limit: Maximum number of results to return
 
@@ -125,7 +127,7 @@ class HighlightService:
             HighlightSearchResponse with matching highlights and their book/chapter data
         """
         # Search using repository
-        highlights = self.highlight_repo.search(search_text, DEFAULT_USER_ID, book_id, limit)
+        highlights = self.highlight_repo.search(search_text, user_id, book_id, limit)
 
         # Convert to response schema with book and chapter data
         search_results = [
@@ -151,12 +153,13 @@ class HighlightService:
         return schemas.HighlightSearchResponse(highlights=search_results, total=len(search_results))
 
     def get_books_with_counts(
-        self, offset: int = 0, limit: int = 100, search_text: str | None = None
+        self, user_id: int, offset: int = 0, limit: int = 100, search_text: str | None = None
     ) -> schemas.BooksListResponse:
         """
         Get all books with their highlight counts, sorted alphabetically by title.
 
         Args:
+            user_id: ID of the user
             offset: Number of books to skip (for pagination)
             limit: Maximum number of books to return (for pagination)
             search_text: Optional text to search for in book title or author
@@ -165,7 +168,7 @@ class HighlightService:
             BooksListResponse with list of books and pagination info
         """
         books_with_counts, total = self.book_repo.get_books_with_highlight_count(
-            DEFAULT_USER_ID, offset, limit, search_text
+            user_id, offset, limit, search_text
         )
 
         # Convert to response schema
@@ -187,20 +190,21 @@ class HighlightService:
         return schemas.BooksListResponse(books=books_list, total=total, offset=offset, limit=limit)
 
     def update_highlight_note(
-        self, highlight_id: int, note_data: schemas.HighlightNoteUpdate
+        self, highlight_id: int, user_id: int, note_data: schemas.HighlightNoteUpdate
     ) -> schemas.Highlight | None:
         """
         Update the note field of a highlight.
 
         Args:
             highlight_id: ID of the highlight to update
+            user_id: ID of the user
             note_data: Note update data
 
         Returns:
             Updated highlight or None if not found
         """
         # Update the note using repository
-        highlight = self.highlight_repo.update_note(highlight_id, DEFAULT_USER_ID, note_data.note)
+        highlight = self.highlight_repo.update_note(highlight_id, user_id, note_data.note)
 
         if highlight is None:
             return None

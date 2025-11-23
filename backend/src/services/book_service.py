@@ -7,7 +7,6 @@ from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from src import repositories, schemas
-from src.constants import DEFAULT_USER_ID
 from src.exceptions import BookNotFoundError
 from src.services.tag_service import TagService
 
@@ -29,7 +28,7 @@ class BookService:
         self.highlight_tag_repo = repositories.HighlightTagRepository(db)
         self.bookmark_repo = repositories.BookmarkRepository(db)
 
-    def get_book_details(self, book_id: int) -> schemas.BookDetails:
+    def get_book_details(self, book_id: int, user_id: int) -> schemas.BookDetails:
         """
         Get detailed information about a book including its chapters and highlights.
 
@@ -43,21 +42,21 @@ class BookService:
             HTTPException: If book is not found
         """
         # Get the book
-        book = self.book_repo.get_by_id(book_id, DEFAULT_USER_ID)
+        book = self.book_repo.get_by_id(book_id, user_id)
 
         if not book:
             raise BookNotFoundError(book_id)
 
         # Get chapters for the book
-        chapters = self.chapter_repo.get_by_book_id(book_id, DEFAULT_USER_ID)
+        chapters = self.chapter_repo.get_by_book_id(book_id, user_id)
 
         # Get highlight tags with active associations only
-        highlight_tags = self.highlight_tag_repo.get_by_book_id(book_id, DEFAULT_USER_ID)
+        highlight_tags = self.highlight_tag_repo.get_by_book_id(book_id, user_id)
 
         # Get highlights for each chapter and build response
         chapters_with_highlights = []
         for chapter in chapters:
-            highlights = self.highlight_repo.find_by_chapter(chapter.id, DEFAULT_USER_ID)
+            highlights = self.highlight_repo.find_by_chapter(chapter.id, user_id)
 
             # Convert highlights to schema
             highlight_schemas = [
@@ -89,7 +88,7 @@ class BookService:
             chapters_with_highlights.append(chapter_with_highlights)
 
         # Get bookmarks for the book
-        bookmarks = self.bookmark_repo.get_by_book_id(book_id, DEFAULT_USER_ID)
+        bookmarks = self.bookmark_repo.get_by_book_id(book_id, user_id)
         bookmark_schemas = [schemas.Bookmark.model_validate(b) for b in bookmarks]
 
         # Create and return the response
@@ -108,7 +107,7 @@ class BookService:
             updated_at=book.updated_at,
         )
 
-    def delete_book(self, book_id: int) -> bool:
+    def delete_book(self, book_id: int, user_id: int) -> bool:
         """
         Delete a book and all its contents (hard delete).
 
@@ -123,7 +122,7 @@ class BookService:
         Raises:
             HTTPException: If book is not found
         """
-        deleted = self.book_repo.delete(book_id, DEFAULT_USER_ID)
+        deleted = self.book_repo.delete(book_id, user_id)
 
         if not deleted:
             raise BookNotFoundError(book_id)
@@ -135,7 +134,7 @@ class BookService:
         return True
 
     def delete_highlights(
-        self, book_id: int, highlight_ids: list[int]
+        self, book_id: int, highlight_ids: list[int], user_id: int
     ) -> schemas.HighlightDeleteResponse:
         """
         Soft delete highlights from a book.
@@ -155,15 +154,13 @@ class BookService:
             HTTPException: If book is not found
         """
         # Verify book exists
-        book = self.book_repo.get_by_id(book_id, DEFAULT_USER_ID)
+        book = self.book_repo.get_by_id(book_id, user_id)
 
         if not book:
             raise BookNotFoundError(book_id)
 
         # Soft delete highlights
-        deleted_count = self.highlight_repo.soft_delete_by_ids(
-            book_id, DEFAULT_USER_ID, highlight_ids
-        )
+        deleted_count = self.highlight_repo.soft_delete_by_ids(book_id, user_id, highlight_ids)
 
         # Commit the changes
         self.db.commit()
@@ -174,7 +171,9 @@ class BookService:
             deleted_count=deleted_count,
         )
 
-    def upload_cover(self, book_id: int, cover: UploadFile) -> schemas.CoverUploadResponse:
+    def upload_cover(
+        self, book_id: int, cover: UploadFile, user_id: int
+    ) -> schemas.CoverUploadResponse:
         """
         Upload a book cover image.
 
@@ -193,7 +192,7 @@ class BookService:
             HTTPException: If book is not found or upload fails
         """
         # Verify book exists
-        book = self.book_repo.get_by_id(book_id, DEFAULT_USER_ID)
+        book = self.book_repo.get_by_id(book_id, user_id)
 
         if not book:
             raise BookNotFoundError(book_id)
@@ -223,7 +222,7 @@ class BookService:
         )
 
     def update_book(
-        self, book_id: int, update_data: schemas.BookUpdateRequest
+        self, book_id: int, update_data: schemas.BookUpdateRequest, user_id: int
     ) -> schemas.BookWithHighlightCount:
         """
         Update book information.
@@ -241,20 +240,20 @@ class BookService:
             HTTPException: If book is not found
         """
         # Verify book exists
-        book = self.book_repo.get_by_id(book_id, DEFAULT_USER_ID)
+        book = self.book_repo.get_by_id(book_id, user_id)
 
         if not book:
             raise BookNotFoundError(book_id)
 
         # Update tags using TagService
         tag_service = TagService(self.db)
-        updated_book = tag_service.update_book_tags(book_id, update_data.tags)
+        updated_book = tag_service.update_book_tags(book_id, update_data.tags, user_id)
 
         # Commit the changes
         self.db.commit()
 
         # Get highlight count for the response
-        highlight_count = self.highlight_repo.count_by_book_id(book_id, DEFAULT_USER_ID)
+        highlight_count = self.highlight_repo.count_by_book_id(book_id, user_id)
 
         logger.info(f"Successfully updated book {book_id}")
 

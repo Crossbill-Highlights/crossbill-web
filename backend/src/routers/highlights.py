@@ -1,13 +1,16 @@
 """API routes for highlights management."""
 
 import logging
+from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 
 from src import schemas
 from src.database import DatabaseSession
 from src.exceptions import CrossbillError
+from src.models import User
 from src.services import HighlightService, HighlightTagService
+from src.services.auth_service import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +20,7 @@ router = APIRouter(prefix="/highlights", tags=["highlights"])
 @router.get("/books", response_model=schemas.BooksListResponse, status_code=status.HTTP_200_OK)
 def get_books(
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
     offset: int = Query(0, ge=0, description="Number of books to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of books to return"),
     search: str | None = Query(None, description="Search text to filter books by title or author"),
@@ -38,7 +42,7 @@ def get_books(
     """
     try:
         service = HighlightService(db)
-        return service.get_books_with_counts(offset, limit, search)
+        return service.get_books_with_counts(current_user.id, offset, limit, search)
     except Exception as e:
         logger.error(f"Failed to fetch books: {e!s}", exc_info=True)
         raise HTTPException(
@@ -54,6 +58,7 @@ async def upload_highlights(
     request: schemas.HighlightUploadRequest,
     background_tasks: BackgroundTasks,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.HighlightUploadResponse:
     """
     Upload highlights from KOReader.
@@ -73,7 +78,7 @@ async def upload_highlights(
     """
     try:
         service = HighlightService(db)
-        return service.upload_highlights(request, background_tasks)
+        return service.upload_highlights(request, current_user.id, background_tasks)
     except Exception as e:
         logger.error(f"Failed to upload highlights: {e!s}", exc_info=True)
         raise HTTPException(
@@ -87,6 +92,7 @@ async def upload_highlights(
 )
 def search_highlights(
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
     search_text: str = Query(
         ..., alias="searchText", min_length=1, description="Text to search for in highlights"
     ),
@@ -115,7 +121,7 @@ def search_highlights(
     """
     try:
         service = HighlightService(db)
-        return service.search_highlights(search_text, book_id, limit)
+        return service.search_highlights(search_text, current_user.id, book_id, limit)
     except Exception as e:
         logger.error(f"Failed to search highlights: {e!s}", exc_info=True)
         raise HTTPException(
@@ -133,6 +139,7 @@ def update_highlight_note(
     highlight_id: int,
     request: schemas.HighlightNoteUpdate,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.HighlightNoteUpdateResponse:
     """
     Update the note field of a highlight.
@@ -150,7 +157,7 @@ def update_highlight_note(
     """
     try:
         service = HighlightService(db)
-        highlight = service.update_highlight_note(highlight_id, request)
+        highlight = service.update_highlight_note(highlight_id, current_user.id, request)
 
         if highlight is None:
             raise HTTPException(
@@ -181,6 +188,7 @@ def update_highlight_note(
 def create_or_update_tag_group(
     request: schemas.HighlightTagGroupCreateRequest,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.HighlightTagGroup:
     """
     Create a new tag group or update an existing one.
@@ -200,6 +208,7 @@ def create_or_update_tag_group(
         return service.upsert_tag_group(
             book_id=request.book_id,
             name=request.name,
+            user_id=current_user.id,
             tag_group_id=request.id,
         )
     except ValueError as e:
@@ -233,6 +242,7 @@ def create_or_update_tag_group(
 def delete_tag_group(
     tag_group_id: int,
     db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> None:
     """
     Delete a tag group.
@@ -246,7 +256,7 @@ def delete_tag_group(
     """
     try:
         service = HighlightTagService(db)
-        success = service.delete_tag_group(tag_group_id)
+        success = service.delete_tag_group(tag_group_id, current_user.id)
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

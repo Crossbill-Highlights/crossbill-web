@@ -2,9 +2,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from services.auth_service import get_current_user
 from src.models import User
 from src.schemas.user_schemas import UserDetailsResponse
+from src.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/users", tags=["users"])
 
