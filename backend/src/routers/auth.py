@@ -6,7 +6,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette import status
 
-from src.auth import ACCESS_TOKEN_EXPIRE_MINUTES, Token, authenticate_user, create_access_token
+from services.auth_service import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    Token,
+    authenticate_user,
+    create_access_token,
+)
 from src.database import DatabaseSession
 
 logger = logging.getLogger(__name__)
@@ -29,4 +34,4 @@ async def login(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
 
-    return Token(access_token=access_token, token_type="bearer") # noqa: S106
+    return Token(access_token=access_token, token_type="bearer")  # noqa: S106

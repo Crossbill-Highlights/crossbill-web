@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from src.auth import get_current_user
+from services.auth_service import get_current_user
 from src.models import User
 from src.schemas.user_schemas import UserDetailsResponse
 
