@@ -20,10 +20,14 @@ class HighlightRepository:
         """Initialize repository with database session."""
         self.db = db
 
-    def create(self, book_id: int, highlight_data: schemas.HighlightCreate) -> models.Highlight:
+    def create(
+        self, book_id: int, user_id: int, highlight_data: schemas.HighlightCreate
+    ) -> models.Highlight:
         """Create a new highlight."""
         highlight = models.Highlight(
-            book_id=book_id, **highlight_data.model_dump(exclude={"chapter", "chapter_number"})
+            book_id=book_id,
+            user_id=user_id,
+            **highlight_data.model_dump(exclude={"chapter", "chapter_number"}),
         )
         self.db.add(highlight)
         self.db.flush()
@@ -31,11 +35,16 @@ class HighlightRepository:
         return highlight
 
     def create_with_chapter(
-        self, book_id: int, chapter_id: int | None, highlight_data: schemas.HighlightCreate
+        self,
+        book_id: int,
+        user_id: int,
+        chapter_id: int | None,
+        highlight_data: schemas.HighlightCreate,
     ) -> models.Highlight:
         """Create a new highlight with chapter association."""
         highlight = models.Highlight(
             book_id=book_id,
+            user_id=user_id,
             chapter_id=chapter_id,
             **highlight_data.model_dump(exclude={"chapter", "chapter_number"}),
         )
@@ -45,7 +54,11 @@ class HighlightRepository:
         return highlight
 
     def try_create(
-        self, book_id: int, chapter_id: int | None, highlight_data: schemas.HighlightCreate
+        self,
+        book_id: int,
+        user_id: int,
+        chapter_id: int | None,
+        highlight_data: schemas.HighlightCreate,
     ) -> tuple[models.Highlight | None, bool]:
         """
         Try to create a highlight.
@@ -55,7 +68,7 @@ class HighlightRepository:
             If duplicate (including soft-deleted), returns (None, False)
         """
         try:
-            highlight = self.create_with_chapter(book_id, chapter_id, highlight_data)
+            highlight = self.create_with_chapter(book_id, user_id, chapter_id, highlight_data)
             return highlight, True
         except IntegrityError:
             # Duplicate - unique constraint violated (active or soft-deleted)
@@ -67,13 +80,17 @@ class HighlightRepository:
             return None, False
 
     def bulk_create(
-        self, book_id: int, highlights_data: list[tuple[int | None, schemas.HighlightCreate]]
+        self,
+        book_id: int,
+        user_id: int,
+        highlights_data: list[tuple[int | None, schemas.HighlightCreate]],
     ) -> tuple[int, int]:
         """
         Bulk create highlights with deduplication.
 
         Args:
             book_id: ID of the book
+            user_id: ID of the user
             highlights_data: List of (chapter_id, highlight_data) tuples
 
         Returns:
@@ -83,7 +100,7 @@ class HighlightRepository:
         skipped = 0
 
         for chapter_id, highlight_data in highlights_data:
-            _, was_created = self.try_create(book_id, chapter_id, highlight_data)
+            _, was_created = self.try_create(book_id, user_id, chapter_id, highlight_data)
             if was_created:
                 created += 1
             else:
@@ -94,42 +111,54 @@ class HighlightRepository:
         )
         return created, skipped
 
-    def get_by_id(self, highlight_id: int) -> models.Highlight | None:
-        """Get a highlight by its ID (including soft-deleted ones)."""
-        stmt = select(models.Highlight).where(models.Highlight.id == highlight_id)
+    def get_by_id(self, highlight_id: int, user_id: int) -> models.Highlight | None:
+        """Get a highlight by its ID for a specific user (including soft-deleted ones)."""
+        stmt = select(models.Highlight).where(
+            models.Highlight.id == highlight_id,
+            models.Highlight.user_id == user_id,
+        )
         return self.db.execute(stmt).scalar_one_or_none()
 
-    def find_by_book(self, book_id: int) -> Sequence[models.Highlight]:
-        """Find all non-deleted highlights for a book."""
+    def find_by_book(self, book_id: int, user_id: int) -> Sequence[models.Highlight]:
+        """Find all non-deleted highlights for a book owned by the user."""
         stmt = select(models.Highlight).where(
-            models.Highlight.book_id == book_id, models.Highlight.deleted_at.is_(None)
+            models.Highlight.book_id == book_id,
+            models.Highlight.user_id == user_id,
+            models.Highlight.deleted_at.is_(None),
         )
         return self.db.execute(stmt).scalars().all()
 
-    def find_by_chapter(self, chapter_id: int) -> Sequence[models.Highlight]:
+    def find_by_chapter(self, chapter_id: int, user_id: int) -> Sequence[models.Highlight]:
         """Find all non-deleted highlights for a chapter, ordered by datetime."""
         stmt = (
             select(models.Highlight)
-            .where(models.Highlight.chapter_id == chapter_id, models.Highlight.deleted_at.is_(None))
+            .where(
+                models.Highlight.chapter_id == chapter_id,
+                models.Highlight.user_id == user_id,
+                models.Highlight.deleted_at.is_(None),
+            )
             .order_by(models.Highlight.datetime)
         )
         return self.db.execute(stmt).scalars().all()
 
-    def count_by_book_id(self, book_id: int) -> int:
-        """Count all non-deleted highlights for a book."""
+    def count_by_book_id(self, book_id: int, user_id: int) -> int:
+        """Count all non-deleted highlights for a book owned by the user."""
         stmt = select(func.count(models.Highlight.id)).where(
-            models.Highlight.book_id == book_id, models.Highlight.deleted_at.is_(None)
+            models.Highlight.book_id == book_id,
+            models.Highlight.user_id == user_id,
+            models.Highlight.deleted_at.is_(None),
         )
         return self.db.execute(stmt).scalar() or 0
 
     def search(
-        self, search_text: str, book_id: int | None = None, limit: int = 100
+        self, search_text: str, user_id: int, book_id: int | None = None, limit: int = 100
     ) -> Sequence[models.Highlight]:
         """
         Search for highlights using full-text search (PostgreSQL) or LIKE (SQLite).
 
         Args:
             search_text: Text to search for
+            user_id: ID of the user whose highlights to search
             book_id: Optional book ID to filter by
             limit: Maximum number of results to return (default 100)
 
@@ -144,7 +173,10 @@ class HighlightRepository:
             select(models.Highlight)
             .join(models.Book)
             .outerjoin(models.Chapter, models.Highlight.chapter_id == models.Chapter.id)
-            .where(models.Highlight.deleted_at.is_(None))
+            .where(
+                models.Highlight.user_id == user_id,
+                models.Highlight.deleted_at.is_(None),
+            )
         )
 
         if is_postgresql:
@@ -173,24 +205,26 @@ class HighlightRepository:
 
         return self.db.execute(stmt).scalars().all()
 
-    def soft_delete_by_ids(self, book_id: int, highlight_ids: list[int]) -> int:
+    def soft_delete_by_ids(self, book_id: int, user_id: int, highlight_ids: list[int]) -> int:
         """
-        Soft delete highlights by their IDs for a specific book.
+        Soft delete highlights by their IDs for a specific book and user.
 
         Also deletes all bookmarks associated with the deleted highlights,
         as soft-deleted highlights should not have active bookmarks.
 
         Args:
             book_id: ID of the book (for validation)
+            user_id: ID of the user who owns the highlights
             highlight_ids: List of highlight IDs to soft delete
 
         Returns:
             int: Number of highlights soft deleted
         """
-        # Find highlights that belong to the book and are not already deleted
+        # Find highlights that belong to the book/user and are not already deleted
         stmt = select(models.Highlight).where(
             models.Highlight.id.in_(highlight_ids),
             models.Highlight.book_id == book_id,
+            models.Highlight.user_id == user_id,
             models.Highlight.deleted_at.is_(None),
         )
         highlights = self.db.execute(stmt).scalars().all()
@@ -216,16 +250,20 @@ class HighlightRepository:
 
         self.db.flush()
         logger.info(
-            f"Soft deleted {count} highlights and {bookmarks_deleted} associated bookmarks for book_id={book_id}"
+            f"Soft deleted {count} highlights and {bookmarks_deleted} associated bookmarks "
+            f"for book_id={book_id}, user_id={user_id}"
         )
         return count
 
-    def update_note(self, highlight_id: int, note: str | None) -> models.Highlight | None:
+    def update_note(
+        self, highlight_id: int, user_id: int, note: str | None
+    ) -> models.Highlight | None:
         """
         Update the note field of a highlight.
 
         Args:
             highlight_id: ID of the highlight to update
+            user_id: ID of the user who owns the highlight
             note: New note text (or None to clear)
 
         Returns:
@@ -233,7 +271,9 @@ class HighlightRepository:
         """
         # Get the highlight (excluding soft-deleted ones)
         stmt = select(models.Highlight).where(
-            models.Highlight.id == highlight_id, models.Highlight.deleted_at.is_(None)
+            models.Highlight.id == highlight_id,
+            models.Highlight.user_id == user_id,
+            models.Highlight.deleted_at.is_(None),
         )
         highlight = self.db.execute(stmt).scalar_one_or_none()
 

@@ -13,21 +13,38 @@ logger = logging.getLogger(__name__)
 
 
 class ChapterRepository:
-    """Repository for Chapter database operations."""
+    """Repository for Chapter database operations.
+
+    Note: Chapters don't have direct user_id. User ownership is verified
+    through the book relationship where necessary.
+    """
 
     def __init__(self, db: Session) -> None:
         """Initialize repository with database session."""
         self.db = db
 
-    def find_by_name_and_book(self, book_id: int, name: str) -> models.Chapter | None:
-        """Find a chapter by name and book ID."""
-        stmt = select(models.Chapter).where(
-            models.Chapter.book_id == book_id, models.Chapter.name == name
+    def find_by_name_and_book(
+        self, book_id: int, name: str, user_id: int
+    ) -> models.Chapter | None:
+        """Find a chapter by name and book ID, verifying user ownership."""
+        stmt = (
+            select(models.Chapter)
+            .join(models.Book, models.Chapter.book_id == models.Book.id)
+            .where(
+                models.Chapter.book_id == book_id,
+                models.Chapter.name == name,
+                models.Book.user_id == user_id,
+            )
         )
         return self.db.execute(stmt).scalar_one_or_none()
 
-    def create(self, book_id: int, name: str, chapter_number: int | None = None) -> models.Chapter:
-        """Create a new chapter."""
+    def create(
+        self, book_id: int, user_id: int, name: str, chapter_number: int | None = None
+    ) -> models.Chapter:
+        """Create a new chapter.
+
+        Note: Assumes book ownership has been verified by the caller.
+        """
         chapter = models.Chapter(book_id=book_id, name=name, chapter_number=chapter_number)
         self.db.add(chapter)
         self.db.flush()
@@ -35,9 +52,18 @@ class ChapterRepository:
         logger.info(f"Created chapter: {name} for book_id={book_id} (number={chapter_number})")
         return chapter
 
-    def update_chapter_number(self, chapter_id: int, chapter_number: int | None) -> models.Chapter:
-        """Update the chapter number for an existing chapter."""
-        stmt = select(models.Chapter).where(models.Chapter.id == chapter_id)
+    def update_chapter_number(
+        self, chapter_id: int, user_id: int, chapter_number: int | None
+    ) -> models.Chapter | None:
+        """Update the chapter number for an existing chapter, verifying user ownership."""
+        stmt = (
+            select(models.Chapter)
+            .join(models.Book, models.Chapter.book_id == models.Book.id)
+            .where(
+                models.Chapter.id == chapter_id,
+                models.Book.user_id == user_id,
+            )
+        )
         chapter = self.db.execute(stmt).scalar_one_or_none()
         if chapter:
             chapter.chapter_number = chapter_number
@@ -47,10 +73,10 @@ class ChapterRepository:
         return chapter
 
     def get_or_create(
-        self, book_id: int, name: str, chapter_number: int | None = None
+        self, book_id: int, user_id: int, name: str, chapter_number: int | None = None
     ) -> models.Chapter:
         """Get existing chapter by name and book or create a new one."""
-        chapter = self.find_by_name_and_book(book_id, name)
+        chapter = self.find_by_name_and_book(book_id, name, user_id)
 
         if chapter:
             # Update chapter number if it's different
@@ -64,11 +90,11 @@ class ChapterRepository:
             return chapter
 
         try:
-            return self.create(book_id, name, chapter_number)
+            return self.create(book_id, user_id, name, chapter_number)
         except IntegrityError:
             # Handle race condition: another request created the chapter
             self.db.rollback()
-            chapter = self.find_by_name_and_book(book_id, name)
+            chapter = self.find_by_name_and_book(book_id, name, user_id)
             if chapter:
                 # Update chapter number if it's different
                 if chapter_number is not None and chapter.chapter_number != chapter_number:
@@ -78,11 +104,15 @@ class ChapterRepository:
                 return chapter
             raise
 
-    def get_by_book_id(self, book_id: int) -> Sequence[models.Chapter]:
+    def get_by_book_id(self, book_id: int, user_id: int) -> Sequence[models.Chapter]:
         """Get all chapters for a book, ordered by chapter_number if available."""
         stmt = (
             select(models.Chapter)
-            .where(models.Chapter.book_id == book_id)
+            .join(models.Book, models.Chapter.book_id == models.Book.id)
+            .where(
+                models.Chapter.book_id == book_id,
+                models.Book.user_id == user_id,
+            )
             .order_by(
                 # Order by chapter_number if available, otherwise by name
                 # NULL chapter_numbers go to the end
