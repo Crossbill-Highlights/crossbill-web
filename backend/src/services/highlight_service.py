@@ -5,7 +5,6 @@ from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
 
 from src import repositories, schemas
-from src.services import cover_service
 
 logger = structlog.get_logger(__name__)
 
@@ -50,18 +49,6 @@ class HighlightService:
 
         # Step 1: Get or create book
         book = self.book_repo.get_or_create(request.book, user_id)
-
-        # Step 1.5: Schedule cover fetching as background task (non-blocking)
-        # Cover is fetched asynchronously and won't block the response
-        if book.isbn and not book.cover and background_tasks:
-            # Create a new session for the background task
-            background_tasks.add_task(
-                cover_service.fetch_and_save_book_cover,
-                book.isbn,
-                book.id,
-                self.db,
-            )
-            logger.info("scheduled_cover_fetch", book_id=book.id, isbn=book.isbn)
 
         # Step 2: Process chapters and prepare highlights
         highlights_with_chapters: list[tuple[int | None, schemas.HighlightCreate]] = []
