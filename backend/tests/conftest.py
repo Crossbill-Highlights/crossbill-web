@@ -19,6 +19,7 @@ from src.models import (  # noqa: F401 - Import to register models
     HighlightTagGroup,
     User,
 )
+from src.services.auth_service import get_current_user
 
 # Test database URL (in-memory SQLite)
 TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -54,8 +55,14 @@ def db_session() -> Generator[Session, None, None]:
 
 
 @pytest.fixture
-def client(db_session: Session) -> Generator[TestClient, Any, None]:
-    """Create a test client with database session."""
+def test_user(db_session: Session) -> User:
+    """Get the default test user."""
+    return db_session.query(User).filter_by(id=1).first()
+
+
+@pytest.fixture
+def client(db_session: Session, test_user: User) -> Generator[TestClient, Any, None]:
+    """Create a test client with database session and mocked authentication."""
 
     def override_get_db() -> Generator[Session, None, None]:
         try:
@@ -63,7 +70,11 @@ def client(db_session: Session) -> Generator[TestClient, Any, None]:
         finally:
             pass
 
+    async def override_get_current_user() -> User:
+        return test_user
+
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = override_get_current_user
 
     with TestClient(app) as test_client:
         yield test_client
