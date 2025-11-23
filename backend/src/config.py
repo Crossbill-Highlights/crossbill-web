@@ -40,7 +40,7 @@ class Settings:
 
     # Admin setup (for first-time initialization)
     ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
-    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "admin").strip()
 
     # Auth
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
