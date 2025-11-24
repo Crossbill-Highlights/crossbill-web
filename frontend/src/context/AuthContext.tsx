@@ -13,6 +13,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -31,6 +32,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     navigate({ to: '/login' });
   }, [navigate]);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const userData = await getMeApiV1UsersMeGet();
+      setUser(userData);
+    } catch {
+      // If refresh fails, user might be logged out
+      logout();
+    }
+  }, [logout]);
 
   // Validate token and fetch user on mount
   useEffect(() => {
@@ -80,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         logout,
+        refreshUser,
       }}
     >
       {children}

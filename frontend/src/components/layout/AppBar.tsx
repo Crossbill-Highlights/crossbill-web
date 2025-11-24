@@ -74,15 +74,23 @@ export function AppBar() {
           {/* User info and logout */}
           {user && (
             <>
-              <Typography
-                variant="body2"
+              <Button
+                component={Link}
+                to="/settings"
+                color="inherit"
                 sx={{
+                  fontWeight: 500,
                   color: 'primary.contrastText',
                   opacity: 0.9,
+                  textTransform: 'none',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    opacity: 1,
+                  },
                 }}
               >
                 {user.name}
-              </Typography>
+              </Button>
               <Button
                 color="inherit"
                 onClick={logout}
