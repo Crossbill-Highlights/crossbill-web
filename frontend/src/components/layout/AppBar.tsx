@@ -1,9 +1,37 @@
-import { Box, Button, Container, AppBar as MuiAppBar, Toolbar, Typography } from '@mui/material';
+import { Logout, Menu as MenuIcon, Settings } from '@mui/icons-material';
+import {
+  Box,
+  Button,
+  Container,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  AppBar as MuiAppBar,
+  Toolbar,
+  Typography,
+} from '@mui/material';
 import { Link } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 export function AppBar() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    handleMenuClose();
+    logout();
+  };
 
   return (
     <MuiAppBar
@@ -71,41 +99,43 @@ export function AppBar() {
           {/* Spacer */}
           <Box sx={{ flexGrow: 1 }} />
 
-          {/* User info and logout */}
-          {user && (
-            <>
-              <Button
-                component={Link}
-                to="/settings"
-                color="inherit"
-                sx={{
-                  fontWeight: 500,
-                  color: 'primary.contrastText',
-                  opacity: 0.9,
-                  textTransform: 'none',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    opacity: 1,
-                  },
-                }}
-              >
-                {user.name}
-              </Button>
-              <Button
-                color="inherit"
-                onClick={logout}
-                sx={{
-                  fontWeight: 500,
-                  color: 'primary.contrastText',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  },
-                }}
-              >
-                Logout
-              </Button>
-            </>
-          )}
+          {/* Hamburger menu */}
+          <IconButton
+            color="inherit"
+            onClick={handleMenuOpen}
+            sx={{
+              color: 'primary.contrastText',
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem component={Link} to="/settings" onClick={handleMenuClose}>
+              <ListItemIcon>
+                <Settings fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Preferences</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={handleLogout}>
+              <ListItemIcon>
+                <Logout fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Logout</ListItemText>
+            </MenuItem>
+          </Menu>
         </Toolbar>
       </Container>
     </MuiAppBar>
