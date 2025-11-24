@@ -1,8 +1,10 @@
+import { getMeApiV1UsersMeGet } from '@/api/generated/users/users.ts';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { useLoginApiV1AuthLoginPost } from '../api/generated/auth/auth';
 import type { UserDetailsResponse } from '../api/generated/model';
-import { getMeApiV1UsersMeGet } from '@/api/generated/users/users.ts';
+import { getRegisterApiV1UsersRegisterPostMutationOptions } from '../api/generated/users/users';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
@@ -12,6 +14,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
+  register: (username: string, password: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -23,15 +26,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserDetailsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const loginMutation = useLoginApiV1AuthLoginPost();
+  const registerMutation = useMutation(getRegisterApiV1UsersRegisterPostMutationOptions());
 
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     setToken(null);
     setUser(null);
+    queryClient.clear();
     navigate({ to: '/login' });
-  }, [navigate]);
+  }, [navigate, queryClient]);
 
   const refreshUser = useCallback(async () => {
     try {
@@ -82,6 +88,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
   };
 
+  const register = async (username: string, password: string) => {
+    const response = await registerMutation.mutateAsync({
+      data: { username, password },
+    });
+
+    localStorage.setItem(AUTH_TOKEN_KEY, response.access_token);
+    setToken(response.access_token);
+
+    // Fetch user details after registration
+    const userData = await getMeApiV1UsersMeGet();
+    setUser(userData);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -90,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!token && !!user,
         isLoading,
         login,
+        register,
         logout,
         refreshUser,
       }}

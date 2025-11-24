@@ -80,6 +80,7 @@ export * from './searchHighlightsApiV1HighlightsSearchGetParams';
 export * from './tagInBook';
 export * from './token';
 export * from './userDetailsResponse';
+export * from './userRegisterRequest';
 export * from './userUpdateRequest';
 export * from './userUpdateRequestCurrentPassword';
 export * from './userUpdateRequestName';

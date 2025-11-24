@@ -20,10 +20,100 @@ import type {
 } from '@tanstack/react-query';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
-import type { HTTPValidationError, UserDetailsResponse, UserUpdateRequest } from '.././model';
+import type {
+  HTTPValidationError,
+  Token,
+  UserDetailsResponse,
+  UserRegisterRequest,
+  UserUpdateRequest,
+} from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
 
+/**
+ * Register a new user account.
+
+Creates a new user with the provided username and password.
+Returns an access token for immediate login after registration.
+ * @summary Register
+ */
+export const registerApiV1UsersRegisterPost = (
+  userRegisterRequest: UserRegisterRequest,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<Token>({
+    url: `/api/v1/users/register`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: userRegisterRequest,
+    signal,
+  });
+};
+
+export const getRegisterApiV1UsersRegisterPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerApiV1UsersRegisterPost>>,
+    TError,
+    { data: UserRegisterRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof registerApiV1UsersRegisterPost>>,
+  TError,
+  { data: UserRegisterRequest },
+  TContext
+> => {
+  const mutationKey = ['registerApiV1UsersRegisterPost'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof registerApiV1UsersRegisterPost>>,
+    { data: UserRegisterRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return registerApiV1UsersRegisterPost(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RegisterApiV1UsersRegisterPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof registerApiV1UsersRegisterPost>>
+>;
+export type RegisterApiV1UsersRegisterPostMutationBody = UserRegisterRequest;
+export type RegisterApiV1UsersRegisterPostMutationError = HTTPValidationError;
+
+/**
+ * @summary Register
+ */
+export const useRegisterApiV1UsersRegisterPost = <TError = HTTPValidationError, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof registerApiV1UsersRegisterPost>>,
+      TError,
+      { data: UserRegisterRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof registerApiV1UsersRegisterPost>>,
+  TError,
+  { data: UserRegisterRequest },
+  TContext
+> => {
+  const mutationOptions = getRegisterApiV1UsersRegisterPostMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 /**
  * Get the current user's profile information.
  * @summary Get Me

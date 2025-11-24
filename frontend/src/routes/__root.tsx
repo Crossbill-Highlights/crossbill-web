@@ -8,7 +8,7 @@ function RootComponent() {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  const isLoginPage = location.pathname === '/login';
+  const isPublicPage = location.pathname === '/login' || location.pathname === '/register';
 
   // Show loading spinner while checking auth
   if (isLoading) {
@@ -21,19 +21,19 @@ function RootComponent() {
     );
   }
 
-  // Redirect to login if not authenticated (except on login page)
-  if (!isAuthenticated && !isLoginPage) {
+  // Redirect to login if not authenticated (except on public pages)
+  if (!isAuthenticated && !isPublicPage) {
     return <Navigate to="/login" />;
   }
 
-  // Redirect to home if already authenticated and on login page
-  if (isAuthenticated && isLoginPage) {
+  // Redirect to home if already authenticated and on public page
+  if (isAuthenticated && isPublicPage) {
     return <Navigate to="/" />;
   }
 
   return (
     <Box>
-      {!isLoginPage && <AppBar />}
+      {!isPublicPage && <AppBar />}
       <Outlet />
       <TanStackRouterDevtools />
     </Box>

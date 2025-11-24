@@ -36,6 +36,15 @@ class UserRepository:
         logger.info(f"Created user: {user.name} (id={user.id})")
         return user
 
+    def create_with_password(self, name: str, hashed_password: str) -> models.User:
+        """Create a new user with a hashed password."""
+        user = models.User(name=name, hashed_password=hashed_password)
+        self.db.add(user)
+        self.db.flush()
+        self.db.refresh(user)
+        logger.info(f"Created user with password: {user.name} (id={user.id})")
+        return user
+
     def get_or_create(self, name: str) -> models.User:
         """Get existing user by name or create a new one."""
         user = self.get_by_name(name)
