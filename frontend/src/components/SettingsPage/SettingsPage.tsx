@@ -1,15 +1,6 @@
 import { useUpdateMeApiV1UsersMePost } from '@/api/generated/users/users';
 import { useAuth } from '@/context/AuthContext';
-import {
-  Alert,
-  Box,
-  Button,
-  Container,
-  Divider,
-  Paper,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, Container, Divider, TextField, Typography } from '@mui/material';
 import { FormEvent, useState } from 'react';
 
 export const SettingsPage = () => {
@@ -106,11 +97,9 @@ export const SettingsPage = () => {
       </Typography>
 
       {/* Profile Section */}
-      <Paper
-        elevation={2}
+      <Box
         sx={{
-          p: 4,
-          mb: 3,
+          mb: 6,
         }}
       >
         <Typography
@@ -122,6 +111,8 @@ export const SettingsPage = () => {
         >
           Profile
         </Typography>
+
+        <Divider sx={{ mb: 3 }} />
 
         {nameSuccess && (
           <Alert severity="success" sx={{ mb: 2 }}>
@@ -156,15 +147,10 @@ export const SettingsPage = () => {
             {updateMutation.isPending ? 'Saving...' : 'Update Name'}
           </Button>
         </Box>
-      </Paper>
+      </Box>
 
       {/* Password Section */}
-      <Paper
-        elevation={2}
-        sx={{
-          p: 4,
-        }}
-      >
+      <Box>
         <Typography
           variant="h3"
           sx={{
@@ -239,13 +225,15 @@ export const SettingsPage = () => {
           <Button
             type="submit"
             variant="contained"
-            disabled={updateMutation.isPending || !currentPassword || !newPassword || !confirmPassword}
+            disabled={
+              updateMutation.isPending || !currentPassword || !newPassword || !confirmPassword
+            }
             sx={{ mt: 2 }}
           >
             {updateMutation.isPending ? 'Updating...' : 'Update Password'}
           </Button>
         </Box>
-      </Paper>
+      </Box>
     </Container>
   );
 };
