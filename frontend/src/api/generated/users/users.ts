@@ -5,70 +5,218 @@
  * OpenAPI spec version: 0.1.0
  */
 import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
   MutationFunction,
   QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
   UseMutationOptions,
   UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult,
 } from '@tanstack/react-query';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
-import type { UserDetailsResponse } from '.././model';
+import type { HTTPValidationError, UserDetailsResponse, UserUpdateRequest } from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
 
 /**
- * @summary Me
+ * Get the current user's profile information.
+ * @summary Get Me
  */
-export const meApiV1UsersMePost = (signal?: AbortSignal) => {
-  return axiosInstance<UserDetailsResponse>({ url: `/api/v1/users/me`, method: 'POST', signal });
+export const getMeApiV1UsersMeGet = (signal?: AbortSignal) => {
+  return axiosInstance<UserDetailsResponse>({ url: `/api/v1/users/me`, method: 'GET', signal });
 };
 
-export const getMeApiV1UsersMePostMutationOptions = <
+export const getGetMeApiV1UsersMeGetQueryKey = () => {
+  return [`/api/v1/users/me`] as const;
+};
+
+export const getGetMeApiV1UsersMeGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>,
   TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>, TError, TData>>;
+}) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMeApiV1UsersMeGetQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>> = ({ signal }) =>
+    getMeApiV1UsersMeGet(signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetMeApiV1UsersMeGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>
+>;
+export type GetMeApiV1UsersMeGetQueryError = unknown;
+
+export function useGetMeApiV1UsersMeGet<
+  TData = Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>,
+          TError,
+          Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetMeApiV1UsersMeGet<
+  TData = Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>,
+          TError,
+          Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetMeApiV1UsersMeGet<
+  TData = Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Me
+ */
+
+export function useGetMeApiV1UsersMeGet<
+  TData = Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getMeApiV1UsersMeGet>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetMeApiV1UsersMeGetQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Update the current user's profile.
+
+- To change name: provide `name` field
+- To change password: provide both `current_password` and `new_password` fields
+ * @summary Update Me
+ */
+export const updateMeApiV1UsersMePost = (
+  userUpdateRequest: UserUpdateRequest,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<UserDetailsResponse>({
+    url: `/api/v1/users/me`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: userUpdateRequest,
+    signal,
+  });
+};
+
+export const getUpdateMeApiV1UsersMePostMutationOptions = <
+  TError = HTTPValidationError,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof meApiV1UsersMePost>>,
+    Awaited<ReturnType<typeof updateMeApiV1UsersMePost>>,
     TError,
-    void,
+    { data: UserUpdateRequest },
     TContext
   >;
-}): UseMutationOptions<Awaited<ReturnType<typeof meApiV1UsersMePost>>, TError, void, TContext> => {
-  const mutationKey = ['meApiV1UsersMePost'];
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateMeApiV1UsersMePost>>,
+  TError,
+  { data: UserUpdateRequest },
+  TContext
+> => {
+  const mutationKey = ['updateMeApiV1UsersMePost'];
   const { mutation: mutationOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
     : { mutation: { mutationKey } };
 
-  const mutationFn: MutationFunction<Awaited<ReturnType<typeof meApiV1UsersMePost>>, void> = () => {
-    return meApiV1UsersMePost();
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateMeApiV1UsersMePost>>,
+    { data: UserUpdateRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateMeApiV1UsersMePost(data);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type MeApiV1UsersMePostMutationResult = NonNullable<
-  Awaited<ReturnType<typeof meApiV1UsersMePost>>
+export type UpdateMeApiV1UsersMePostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateMeApiV1UsersMePost>>
 >;
-
-export type MeApiV1UsersMePostMutationError = unknown;
+export type UpdateMeApiV1UsersMePostMutationBody = UserUpdateRequest;
+export type UpdateMeApiV1UsersMePostMutationError = HTTPValidationError;
 
 /**
- * @summary Me
+ * @summary Update Me
  */
-export const useMeApiV1UsersMePost = <TError = unknown, TContext = unknown>(
+export const useUpdateMeApiV1UsersMePost = <TError = HTTPValidationError, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof meApiV1UsersMePost>>,
+      Awaited<ReturnType<typeof updateMeApiV1UsersMePost>>,
       TError,
-      void,
+      { data: UserUpdateRequest },
       TContext
     >;
   },
   queryClient?: QueryClient
-): UseMutationResult<Awaited<ReturnType<typeof meApiV1UsersMePost>>, TError, void, TContext> => {
-  const mutationOptions = getMeApiV1UsersMePostMutationOptions(options);
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateMeApiV1UsersMePost>>,
+  TError,
+  { data: UserUpdateRequest },
+  TContext
+> => {
+  const mutationOptions = getUpdateMeApiV1UsersMePostMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

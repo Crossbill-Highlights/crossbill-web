@@ -2,7 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { useLoginApiV1AuthLoginPost } from '../api/generated/auth/auth';
 import type { UserDetailsResponse } from '../api/generated/model';
-import { meApiV1UsersMePost } from '../api/generated/users/users';
+import { getMeApiV1UsersMeGet } from '@/api/generated/users/users.ts';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const userData = await meApiV1UsersMePost();
+        const userData = await getMeApiV1UsersMeGet();
         setUser(userData);
         setToken(storedToken);
       } catch {
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(response.access_token);
 
     // Fetch user details after login
-    const userData = await meApiV1UsersMePost();
+    const userData = await getMeApiV1UsersMeGet();
     setUser(userData);
   };
 
