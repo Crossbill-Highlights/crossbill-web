@@ -2,9 +2,9 @@ import { Box, CircularProgress } from '@mui/material';
 import { Navigate, Outlet, createRootRoute, useLocation } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { AppBar } from '../components/layout/AppBar';
-import { useAuth } from '../context/AuthContext';
+import { AuthProvider, useAuth } from '../context/AuthContext';
 
-function RootComponent() {
+function AuthenticatedRoutes() {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
@@ -37,6 +37,14 @@ function RootComponent() {
       <Outlet />
       <TanStackRouterDevtools />
     </Box>
+  );
+}
+
+function RootComponent() {
+  return (
+    <AuthProvider>
+      <AuthenticatedRoutes />
+    </AuthProvider>
   );
 }
 
