@@ -25,7 +25,5 @@ class UserUpdateRequest(BaseModel):
 class UserRegisterRequest(BaseModel):
     """Schema for user registration."""
 
-    email: str = Field(
-        ..., min_length=1, max_length=100, description="Email for the new account"
-    )
+    email: str = Field(..., min_length=1, max_length=100, description="Email for the new account")
     password: str = Field(..., min_length=8, description="Password (min 8 characters)")

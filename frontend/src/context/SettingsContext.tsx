@@ -1,5 +1,5 @@
-import { getAppSettingsApiV1SettingsGet } from '@/api/generated/settings/settings';
 import type { AppSettingsResponse } from '@/api/generated/model';
+import { getAppSettingsApiV1SettingsGet } from '@/api/generated/settings/settings';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface SettingsContextType {
