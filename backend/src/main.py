@@ -21,6 +21,7 @@ from src.database import get_engine
 from src.exceptions import BookNotFoundError, CrossbillError, NotFoundError
 from src.repositories import UserRepository
 from src.routers import auth, books, highlights, users
+from src.routers import settings as settings_router
 
 settings = get_settings()
 
@@ -194,6 +195,7 @@ app.include_router(highlights.router, prefix=settings.API_V1_PREFIX)
 app.include_router(books.router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(users.router, prefix=settings.API_V1_PREFIX)
+app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)
 
 # Mount static files for book covers
 # Ensure directory exists before mounting

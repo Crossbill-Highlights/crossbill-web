@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from src.config import get_settings
 from src.database import DatabaseSession
 from src.models import User
 from src.repositories import UserRepository
@@ -28,6 +29,15 @@ async def register(register_data: UserRegisterRequest, db: DatabaseSession) -> T
     Creates a new user with the provided email and password.
     Returns an access token for immediate login after registration.
     """
+    settings = get_settings()
+
+    # Check if user registration is enabled
+    if not settings.ALLOW_USER_REGISTRATIONS:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User registration is currently disabled",
+        )
+
     user_repository = UserRepository(db)
 
     # Check if email already exists

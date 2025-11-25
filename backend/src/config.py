@@ -45,6 +45,13 @@ class Settings:
     # Auth
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
+    # Registration
+    ALLOW_USER_REGISTRATIONS: bool = os.getenv("ALLOW_USER_REGISTRATIONS", "true").lower() in (
+        "true",
+        "1",
+        "yes",
+    )
+
 
 def configure_logging(environment: str = "development") -> None:
     """Configure structured logging with structlog."""
