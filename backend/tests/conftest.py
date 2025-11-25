@@ -44,7 +44,7 @@ def db_session() -> Generator[Session, None, None]:
     session = TestSessionLocal()
     try:
         # Create the default user that services expect
-        default_user = User(id=1, name="admin")
+        default_user = User(id=1, email="admin@test.com")
         session.add(default_user)
         session.commit()
         yield session
