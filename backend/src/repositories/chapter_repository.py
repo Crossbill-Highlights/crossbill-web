@@ -4,7 +4,6 @@ import logging
 from collections.abc import Sequence
 
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from src import models
@@ -87,20 +86,9 @@ class ChapterRepository:
                 )
             return chapter
 
-        try:
-            return self.create(book_id, user_id, name, chapter_number)
-        except IntegrityError:
-            # Handle race condition: another request created the chapter
-            self.db.rollback()
-            chapter = self.find_by_name_and_book(book_id, name, user_id)
-            if chapter:
-                # Update chapter number if it's different
-                if chapter_number is not None and chapter.chapter_number != chapter_number:
-                    chapter.chapter_number = chapter_number
-                    self.db.flush()
-                    self.db.refresh(chapter)
-                return chapter
-            raise
+        # Create the chapter without handling IntegrityError here
+        # Any integrity errors will propagate up and be handled by the caller
+        return self.create(book_id, user_id, name, chapter_number)
 
     def get_by_book_id(self, book_id: int, user_id: int) -> Sequence[models.Chapter]:
         """Get all chapters for a book, ordered by chapter_number if available."""

@@ -370,3 +370,99 @@ class TestHighlightsUpload:
         highlights = db_session.query(models.Highlight).filter_by(book_id=book.id).all()
         assert len(highlights) == 3
         assert all(h.chapter_id == chapters[0].id for h in highlights)
+
+    def test_upload_with_duplicates_and_new_chapters(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """Test that duplicate highlights don't cause rollback of chapter creation.
+
+        This is a regression test for a bug where:
+        1. Chapters are created and flushed
+        2. Highlights are created, some are duplicates causing IntegrityError
+        3. The rollback from duplicate detection rolled back chapter creation
+        4. Subsequent highlights failed due to missing chapter foreign keys
+        """
+        # First upload with some highlights in Chapter 1
+        payload1 = {
+            "book": {
+                "title": "Rollback Bug Test Book",
+                "author": "Test Author",
+            },
+            "highlights": [
+                {
+                    "text": "First highlight in Chapter 1",
+                    "chapter": "Chapter 1",
+                    "datetime": "2024-01-15 14:00:00",
+                },
+                {
+                    "text": "Second highlight in Chapter 1",
+                    "chapter": "Chapter 1",
+                    "datetime": "2024-01-15 14:30:00",
+                },
+            ],
+        }
+
+        response1 = client.post("/api/v1/highlights/upload", json=payload1)
+        assert response1.status_code == status.HTTP_200_OK
+        assert response1.json()["highlights_created"] == 2
+
+        # Second upload with mix of duplicates and new highlights in new chapters
+        # This tests that when a duplicate is encountered, it doesn't roll back
+        # the creation of new chapters for subsequent highlights
+        payload2 = {
+            "book": {
+                "title": "Rollback Bug Test Book",
+                "author": "Test Author",
+            },
+            "highlights": [
+                {
+                    "text": "First highlight in Chapter 1",  # Duplicate
+                    "chapter": "Chapter 1",
+                    "datetime": "2024-01-15 14:00:00",
+                },
+                {
+                    "text": "New highlight in Chapter 2",  # New chapter
+                    "chapter": "Chapter 2",
+                    "datetime": "2024-01-15 15:00:00",
+                },
+                {
+                    "text": "Second highlight in Chapter 1",  # Duplicate
+                    "chapter": "Chapter 1",
+                    "datetime": "2024-01-15 14:30:00",
+                },
+                {
+                    "text": "Another new highlight in Chapter 3",  # New chapter
+                    "chapter": "Chapter 3",
+                    "datetime": "2024-01-15 16:00:00",
+                },
+            ],
+        }
+
+        response2 = client.post("/api/v1/highlights/upload", json=payload2)
+        assert response2.status_code == status.HTTP_200_OK
+        data2 = response2.json()
+        assert data2["highlights_created"] == 2  # Chapter 2 and Chapter 3 highlights
+        assert data2["highlights_skipped"] == 2  # Both duplicates
+
+        # Verify all chapters were created correctly
+        book = (
+            db_session.query(models.Book)
+            .filter_by(title="Rollback Bug Test Book", author="Test Author")
+            .first()
+        )
+        chapters = db_session.query(models.Chapter).filter_by(book_id=book.id).all()
+        assert len(chapters) == 3
+        chapter_names = {c.name for c in chapters}
+        assert chapter_names == {"Chapter 1", "Chapter 2", "Chapter 3"}
+
+        # Verify all 4 highlights exist (2 from first upload, 2 new from second)
+        highlights = db_session.query(models.Highlight).filter_by(book_id=book.id).all()
+        assert len(highlights) == 4
+
+        # Verify highlights are correctly associated with chapters
+        chapter_map = {c.name: c.id for c in chapters}
+        highlight_texts = {h.text: h.chapter_id for h in highlights}
+        assert highlight_texts["First highlight in Chapter 1"] == chapter_map["Chapter 1"]
+        assert highlight_texts["Second highlight in Chapter 1"] == chapter_map["Chapter 1"]
+        assert highlight_texts["New highlight in Chapter 2"] == chapter_map["Chapter 2"]
+        assert highlight_texts["Another new highlight in Chapter 3"] == chapter_map["Chapter 3"]

@@ -69,12 +69,16 @@ class HighlightService:
 
             highlights_with_chapters.append((chapter_id, highlight_data))
 
+        # Commit chapters before creating highlights to avoid rollback issues
+        # This ensures chapter foreign keys exist before highlights reference them
+        self.db.commit()
+
         # Step 3: Bulk create highlights
         created, skipped = self.highlight_repo.bulk_create(
             book.id, user_id, highlights_with_chapters
         )
 
-        # Commit all changes (book, chapters, highlights)
+        # Commit highlights
         self.db.commit()
 
         message = f"Successfully synced highlights for '{book.title}'"

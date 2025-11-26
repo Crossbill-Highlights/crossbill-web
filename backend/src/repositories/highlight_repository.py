@@ -67,12 +67,17 @@ class HighlightRepository:
             tuple[Highlight | None, bool]: (highlight, was_created)
             If duplicate (including soft-deleted), returns (None, False)
         """
+        # Use a savepoint to isolate this insert
+        # This way, if it fails, we only rollback this specific insert
+        # and not all previous work in the transaction
+        savepoint = self.db.begin_nested()
         try:
             highlight = self.create_with_chapter(book_id, user_id, chapter_id, highlight_data)
             return highlight, True
         except IntegrityError:
             # Duplicate - unique constraint violated (active or soft-deleted)
-            self.db.rollback()
+            # Rollback only to the savepoint, not the entire transaction
+            savepoint.rollback()
             logger.debug(
                 f"Skipped duplicate highlight for book_id={book_id}, "
                 f"text='{highlight_data.text[:50]}...'"
