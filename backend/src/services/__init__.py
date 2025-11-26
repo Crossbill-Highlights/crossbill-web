@@ -6,6 +6,7 @@ from src.services.bookmark_service import BookmarkService
 from src.services.highlight_service import HighlightService, HighlightUploadService
 from src.services.highlight_tag_service import HighlightTagService
 from src.services.tag_service import TagService
+from src.services.users_service import UserService
 
 __all__ = [
     "BookService",
@@ -14,5 +15,6 @@ __all__ = [
     "HighlightTagService",
     "HighlightUploadService",
     "TagService",
+    "UserService",
     "auth_service",
 ]

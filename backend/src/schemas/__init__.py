@@ -44,6 +44,7 @@ from src.schemas.highlight_tag_schemas import (
     HighlightTagUpdateRequest,
 )
 from src.schemas.tag_schemas import BookUpdateRequest, Tag
+from src.schemas.user_schemas import UserDetailsResponse, UserRegisterRequest, UserUpdateRequest
 
 __all__ = [
     "Book",
@@ -84,4 +85,7 @@ __all__ = [
     "HighlightUploadRequest",
     "HighlightUploadResponse",
     "Tag",
+    "UserDetailsResponse",
+    "UserRegisterRequest",
+    "UserUpdateRequest",
 ]
