@@ -5,9 +5,10 @@ This plugin allows you to import highlights from your Crossbill server directly 
 ## Features
 
 - Browse books from your Crossbill library
-- Select chapters from your books
-- Import all highlights from a chapter into your current note
-- Configurable server host
+- Import highlights from books.
+  - Individual highlights
+  - All highlights from a chapter
+  - All highlights from a book
 
 ## Installation
 
@@ -38,6 +39,7 @@ This plugin allows you to import highlights from your Crossbill server directly 
    - Disable "Safe Mode" if it's enabled
    - Click "Browse" and find "Crossbill" in the list
    - Enable the plugin
+   - In plugin settings fill in server login details.
 
 ### From Release (Future)
 
@@ -75,85 +77,7 @@ Before using the plugin, you need to configure your Crossbill server:
 
 ## Usage
 
-The plugin provides two commands for importing highlights:
-
-### Import highlights from a chapter
-
-Import highlights from a single chapter of a book:
-
-1. Open a note where you want to import highlights
-2. Open the Command Palette (Ctrl/Cmd + P)
-3. Search for "Import highlights from a chapter"
-4. Choose a book from the list
-5. Choose a chapter from the book
-6. The highlights will be inserted at your cursor position
-
-### Import all highlights from a book
-
-Import all highlights from all chapters of a book:
-
-1. Open a note where you want to import highlights
-2. Open the Command Palette (Ctrl/Cmd + P)
-3. Search for "Import all highlights from a book"
-4. Choose a book from the list
-5. All chapters and their highlights will be inserted at your cursor position
-
-## Highlight Format
-
-Highlights are imported in the following format:
-
-```markdown
-## Book Title
-
-**Author:** Author Name
-
-### Chapter Name
-
-> Highlighted text here
-
-**Note:** Any notes you made on the highlight
-
-_Page 42_
-
----
-
-> Another highlight...
-
----
-```
-
-When importing all chapters, each chapter is formatted as a level 3 heading (###) with all its highlights below.
-
-## Development
-
-### Building
-
-```bash
-# Development build with watch mode
-npm run dev
-
-# Production build
-npm run build
-```
-
-### Project Structure
-
-- `main.ts` - Main plugin code including API client, modals, and settings
-- `manifest.json` - Plugin metadata
-- `styles.css` - Plugin styles
-- `esbuild.config.mjs` - Build configuration
-- `tsconfig.json` - TypeScript configuration
-
-## API Reference
-
-This plugin uses the following Crossbill API endpoints:
-
-- `GET /api/v1/highlights/books` - Fetch list of books with highlight counts
-- `GET /api/v1/book/{book_id}` - Fetch book details including chapters and highlights
-
-## License
-
-MIT
+The plugin provides commands to import highlights into your notes. Search them from command palette with "Crossbill" search word.
 
 ## Support
 

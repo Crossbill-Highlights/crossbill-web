@@ -12,7 +12,7 @@ Syncs your KOReader highlights to your crossbill server.
 
 3. Open any book and go to: Menu → crossbill Sync → Configure Server
 
-4. Enter your crossbill server URL (e.g., `http://192.168.1.100:8000/api/v1/highlights/upload`)
+4. Enter your crossbill server host URL (e.g., `http://192.168.1.100:8000`)
 
 ## Usage
 
@@ -24,8 +24,8 @@ Syncs your KOReader highlights to your crossbill server.
 
 - Syncs highlights from the currently open book
 - Automatic deduplication - re-syncing won't create duplicates
-- Supports both modern and legacy KOReader annotation formats
 - Extracts ISBN from book metadata when available
+- Uploads book cover from ebook to the Crossbill
 - Works with any book format supported by KOReader (EPUB, PDF, etc.)
 
 ## Requirements
@@ -33,33 +33,15 @@ Syncs your KOReader highlights to your crossbill server.
 - KOReader version 2021.04 or later
 - Network connection to your crossbill server
 
+## Tested devices
+While the plugin *should* work on any device running KOReader, it has been specifically tested on:
+* Pocketbook Era
+
 ## Server Configuration
 
-The default server URL is `http://localhost:8000/api/v1/highlights/upload`. You'll need to change this to your actual crossbill server address.
+The default server URL is `http://localhost:8000`. You'll need to change this to your actual crossbill server host address.
 
-For testing on the same device where KOReader is running:
-- Use `http://localhost:8000/api/v1/highlights/upload`
-
-For syncing to a server on your local network:
-- Use `http://<server-ip>:8000/api/v1/highlights/upload`
-- Example: `http://192.168.1.100:8000/api/v1/highlights/upload`
-
-## Troubleshooting
-
-### "No highlights found in this book"
-- Make sure you've actually highlighted some text in the current book
-- Try creating a new highlight to verify the feature is working
-
-### "Sync failed: XXX"
-- Check that the server URL is correct
-- Verify the crossbill server is running and accessible
-- Check your network connection
-- Look at the error code:
-  - `nil` or timeout errors: Network/connection issue
-  - `404`: Incorrect URL
-  - `500`: Server error (check server logs)
-
-### Changes not appearing on server
-- The plugin only syncs when you explicitly trigger it
-- If highlights show as "duplicates", they were already synced previously
-- Check the success message for the count of new vs duplicate highlights
+## Development
+You can use `copy_to_pocketbook.sh` script to copy the plugin to a connected Pocketbook device for testing by creating `.env`file
+with your unique path to the device's koreader plugins folder. The script copies the plugin both as a "production" version and
+as a  "development" version letting you to use different server configuration for local testing and production.
