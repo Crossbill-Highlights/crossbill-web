@@ -7,7 +7,7 @@
     "frontend"
   ],
   "scripts": {
-    "prepare": "husky",
+    "prepare": "node -e \"if (process.env.CI !== 'true') try { require('child_process').execSync('husky', { stdio: 'inherit' }) } catch {}\"",
     "lint": "npm run lint --workspace=frontend",
     "format": "npm run format --workspace=frontend"
   },
