@@ -1,4 +1,4 @@
-import { Alert, Box, Container, Typography } from '@mui/material';
+import { Alert, Box, Container, Pagination, Typography } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useGetBooksApiV1HighlightsBooksGet } from '../../api/generated/highlights/highlights';
 import { SearchBar } from '../common/SearchBar';
@@ -6,13 +6,21 @@ import { SectionTitle } from '../common/SectionTitle';
 import { Spinner } from '../common/Spinner';
 import { BookList } from './components/BookList';
 
+const BOOKS_PER_PAGE = 30;
+
 export const LandingPage = () => {
   const navigate = useNavigate({ from: '/' });
-  const { search } = useSearch({ from: '/' });
+  const { search, page } = useSearch({ from: '/' });
   const searchText = search || '';
+  const currentPage = page || 1;
+
+  // Calculate offset for pagination
+  const offset = (currentPage - 1) * BOOKS_PER_PAGE;
 
   const { data, isLoading, isError } = useGetBooksApiV1HighlightsBooksGet({
     search: searchText || undefined,
+    offset,
+    limit: BOOKS_PER_PAGE,
   });
 
   const handleSearch = (value: string) => {
@@ -20,10 +28,24 @@ export const LandingPage = () => {
       search: (prev) => ({
         ...prev,
         search: value || undefined,
+        page: 1, // Reset to first page when searching
       }),
       replace: true,
     });
   };
+
+  const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        page: value,
+      }),
+      replace: true,
+    });
+  };
+
+  // Calculate total pages
+  const totalPages = data?.total ? Math.ceil(data.total / BOOKS_PER_PAGE) : 0;
 
   return (
     <Container maxWidth="lg">
@@ -63,7 +85,24 @@ export const LandingPage = () => {
           </Box>
         )}
 
-        {data?.books && data.books.length > 0 && <BookList books={data.books} />}
+        {data?.books && data.books.length > 0 && (
+          <>
+            <BookList books={data.books} />
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={handlePageChange}
+                  color="primary"
+                  size="large"
+                  showFirstButton
+                  showLastButton
+                />
+              </Box>
+            )}
+          </>
+        )}
       </Box>
     </Container>
   );
