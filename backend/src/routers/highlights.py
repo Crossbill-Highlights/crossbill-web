@@ -205,12 +205,13 @@ def create_or_update_tag_group(
     """
     try:
         service = HighlightTagService(db)
-        return service.upsert_tag_group(
+        tag_group = service.upsert_tag_group(
             book_id=request.book_id,
             name=request.name,
             user_id=current_user.id,
             tag_group_id=request.id,
         )
+        return schemas.HighlightTagGroup.model_validate(tag_group)
     except ValueError as e:
         # Check if it's a "not found" error or a validation error
         error_msg = str(e)

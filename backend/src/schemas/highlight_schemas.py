@@ -1,6 +1,6 @@
 """Pydantic schemas for Highlight API request/response validation."""
 
-from datetime import datetime
+from datetime import datetime as dt
 from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
@@ -34,8 +34,8 @@ class Highlight(HighlightBase):
     highlight_tags: list[HighlightTagInBook] = Field(
         default_factory=list, description="List of highlight tags for this highlight"
     )
-    created_at: datetime
-    updated_at: datetime
+    created_at: dt
+    updated_at: dt
 
     model_config = {"from_attributes": True}
 
@@ -103,8 +103,8 @@ class ChapterWithHighlights(BaseModel):
     highlights: list[Highlight] = Field(
         default_factory=list, description="List of highlights in this chapter"
     )
-    created_at: datetime
-    updated_at: datetime
+    created_at: dt
+    updated_at: dt
 
     model_config = {"from_attributes": True}
 
@@ -130,8 +130,8 @@ class BookDetails(BaseModel):
     chapters: list[ChapterWithHighlights] = Field(
         default_factory=list, description="List of chapters with highlights"
     )
-    created_at: datetime
-    updated_at: datetime
+    created_at: dt
+    updated_at: dt
 
     model_config = {"from_attributes": True}
 
@@ -169,8 +169,8 @@ class HighlightSearchResult(BaseModel):
     highlight_tags: list[HighlightTagInBook] = Field(
         default_factory=list, description="List of highlight tags for this highlight"
     )
-    created_at: datetime
-    updated_at: datetime
+    created_at: dt
+    updated_at: dt
 
     model_config = {"from_attributes": True}
 

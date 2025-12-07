@@ -171,7 +171,7 @@ class HighlightRepository:
             Sequence of matching highlights with their relationships loaded
         """
         # Check database type
-        is_postgresql = self.db.bind.dialect.name == "postgresql"
+        is_postgresql = self.db.bind is not None and self.db.bind.dialect.name == "postgresql"
 
         # Build the base query with eager loading of relationships
         stmt = (
@@ -245,7 +245,7 @@ class HighlightRepository:
             models.Bookmark.highlight_id.in_(highlight_ids_to_delete)
         )
         result = self.db.execute(stmt_delete_bookmarks)
-        bookmarks_deleted = result.rowcount
+        bookmarks_deleted = getattr(result, "rowcount", 0) or 0
 
         # Soft delete each highlight
         count = 0

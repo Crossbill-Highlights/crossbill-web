@@ -4,6 +4,7 @@ import logging
 from collections.abc import Sequence
 
 from sqlalchemy import func, select
+from sqlalchemy.engine import Row
 from sqlalchemy.orm import Session
 
 from src import models, schemas
@@ -61,7 +62,7 @@ class BookRepository:
 
     def get_books_with_highlight_count(
         self, user_id: int, offset: int = 0, limit: int = 100, search_text: str | None = None
-    ) -> tuple[Sequence[tuple[models.Book, int]], int]:
+    ) -> tuple[Sequence[Row[tuple[models.Book, int]]], int]:
         """
         Get books with their highlight counts for a specific user, sorted alphabetically by title.
 

@@ -134,7 +134,10 @@ class HighlightService:
                 chapter_id=highlight.chapter_id,
                 chapter_name=highlight.chapter.name if highlight.chapter else None,
                 chapter_number=highlight.chapter.chapter_number if highlight.chapter else None,
-                highlight_tags=highlight.highlight_tags,  # Tags are automatically loaded via lazy="selectin"
+                highlight_tags=[
+                    schemas.HighlightTagInBook.model_validate(tag)
+                    for tag in highlight.highlight_tags
+                ],
                 created_at=highlight.created_at,
                 updated_at=highlight.updated_at,
             )
@@ -171,7 +174,7 @@ class HighlightService:
                 isbn=book.isbn,
                 cover=book.cover,
                 highlight_count=count,
-                tags=book.tags,  # Tags are automatically loaded via lazy="selectin"
+                tags=[schemas.TagInBook.model_validate(tag) for tag in book.tags],
                 created_at=book.created_at,
                 updated_at=book.updated_at,
             )

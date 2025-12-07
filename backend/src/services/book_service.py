@@ -70,7 +70,9 @@ class BookService:
                     page=h.page,
                     note=h.note,
                     datetime=h.datetime,
-                    highlight_tags=h.highlight_tags,  # Tags are automatically loaded via lazy="selectin"
+                    highlight_tags=[
+                        schemas.HighlightTagInBook.model_validate(tag) for tag in h.highlight_tags
+                    ],
                     created_at=h.created_at,
                     updated_at=h.updated_at,
                 )
@@ -98,9 +100,14 @@ class BookService:
             author=book.author,
             isbn=book.isbn,
             cover=book.cover,
-            tags=book.tags,  # Tags are automatically loaded via lazy="selectin"
-            highlight_tags=highlight_tags,  # Only tags with active highlight associations
-            highlight_tag_groups=book.highlight_tag_groups,  # Tag groups are automatically loaded via lazy="selectin"
+            tags=[schemas.TagInBook.model_validate(tag) for tag in book.tags],
+            highlight_tags=[
+                schemas.HighlightTagInBook.model_validate(tag) for tag in highlight_tags
+            ],
+            highlight_tag_groups=[
+                schemas.HighlightTagGroupInBook.model_validate(group)
+                for group in book.highlight_tag_groups
+            ],
             bookmarks=bookmark_schemas,
             chapters=chapters_with_highlights,
             created_at=book.created_at,
@@ -265,7 +272,7 @@ class BookService:
             isbn=updated_book.isbn,
             cover=updated_book.cover,
             highlight_count=highlight_count,
-            tags=updated_book.tags,
+            tags=[schemas.TagInBook.model_validate(tag) for tag in updated_book.tags],
             created_at=updated_book.created_at,
             updated_at=updated_book.updated_at,
         )

@@ -1,6 +1,6 @@
 """Database models."""
 
-from datetime import datetime
+from datetime import datetime as dt
 
 from sqlalchemy import (
     Column,
@@ -72,10 +72,10 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     email: Mapped[str] = mapped_column(String(100), nullable=False)
     hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    updated_at: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
@@ -110,10 +110,10 @@ class Book(Base):
     author: Mapped[str | None] = mapped_column(String(500), nullable=True)
     isbn: Mapped[str | None] = mapped_column(String(20), nullable=True)
     cover: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    updated_at: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
@@ -157,10 +157,10 @@ class Chapter(Base):
     )
     name: Mapped[str] = mapped_column(String(500), nullable=False)
     chapter_number: Mapped[int | None] = mapped_column(nullable=True, index=True)
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    updated_at: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
@@ -198,16 +198,16 @@ class Highlight(Base):
     page: Mapped[int | None] = mapped_column(nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     datetime: Mapped[str] = mapped_column(String(50), nullable=False)  # KOReader datetime string
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    updated_at: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
     )
-    deleted_at: Mapped[datetime | None] = mapped_column(
+    deleted_at: Mapped[dt | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
     text_search_vector: Mapped[str | None] = mapped_column(
@@ -243,10 +243,10 @@ class Tag(Base):
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    updated_at: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
@@ -277,10 +277,10 @@ class HighlightTagGroup(Base):
         ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    updated_at: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
@@ -315,10 +315,10 @@ class HighlightTag(Base):
         ForeignKey("highlight_tag_groups.id", ondelete="SET NULL"), index=True, nullable=True
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    updated_at: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
@@ -355,7 +355,7 @@ class Bookmark(Base):
     highlight_id: Mapped[int] = mapped_column(
         ForeignKey("highlights.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 

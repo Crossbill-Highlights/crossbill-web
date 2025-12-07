@@ -7,6 +7,7 @@ from src.schemas.book_schemas import (
     BooksListResponse,
     BookWithHighlightCount,
     CoverUploadResponse,
+    TagInBook,
 )
 from src.schemas.bookmark_schemas import (
     Bookmark,
@@ -85,6 +86,7 @@ __all__ = [
     "HighlightUploadRequest",
     "HighlightUploadResponse",
     "Tag",
+    "TagInBook",
     "UserDetailsResponse",
     "UserRegisterRequest",
     "UserUpdateRequest",

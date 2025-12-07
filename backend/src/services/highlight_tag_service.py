@@ -284,7 +284,7 @@ class HighlightTagService:
                 raise ValueError(f"Tag group {tag_group_id} does not belong to book {book_id}")
 
         # Prepare update data
-        update_data = {}
+        update_data: dict[str, str | int | None] = {}
         if name is not None:
             name = name.strip()
             if not name:

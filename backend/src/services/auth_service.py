@@ -57,17 +57,17 @@ def _get_user_by_id(db: DatabaseSession, id: int) -> User | None:
     return user_repository.get_by_id(id)
 
 
-def authenticate_user(email: str, password: str, db: DatabaseSession) -> User | bool:
+def authenticate_user(email: str, password: str, db: DatabaseSession) -> User | None:
     user = _get_user_by_email(db, email)
     if not user:
-        return False
-    if not _verify_password(password, user.hashed_password):
-        return False
+        return None
+    if not user.hashed_password or not _verify_password(password, user.hashed_password):
+        return None
     return user
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
-    to_encode = data.copy()
+def create_access_token(data: dict[str, str], expires_delta: timedelta | None = None) -> str:
+    to_encode: dict[str, str | datetime] = dict(data)
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta
     else:
@@ -88,6 +88,8 @@ async def get_current_user(
     except InvalidTokenError:
         raise CredentialsException from InvalidTokenError
 
+    if token_data.user_id is None:
+        raise CredentialsException
     user = _get_user_by_id(db, int(token_data.user_id))
     if user is None:
         raise CredentialsException

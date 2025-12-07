@@ -3,8 +3,9 @@
 import logging
 import os
 import sys
+from collections.abc import Callable
 from functools import lru_cache
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 import structlog
 from dotenv import load_dotenv
@@ -18,7 +19,8 @@ class Settings:
 
     # Database
     DATABASE_URL: str = os.getenv(
-        "DATABASE_URL", "postgresql://crossbill:crossbill_dev_password@localhost:5432/crossbill"
+        "DATABASE_URL",
+        "postgresql://crossbill:crossbill_dev_password@localhost:5432/crossbill",
     )
 
     SECRET_KEY: str = os.getenv("SECRET_KEY", "")
@@ -35,7 +37,9 @@ class Settings:
 
     # CORS
     CORS_ORIGINS: ClassVar[list[str]] = (
-        os.getenv("CORS_ORIGINS", "*").split(",") if os.getenv("CORS_ORIGINS") != "*" else ["*"]
+        os.getenv("CORS_ORIGINS", "*").split(",")
+        if os.getenv("CORS_ORIGINS") != "*"
+        else ["*"]
     )
 
     # Admin setup (for first-time initialization)
@@ -43,10 +47,14 @@ class Settings:
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "admin").strip()
 
     # Auth
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(
+        os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
+    )
 
     # Registration
-    ALLOW_USER_REGISTRATIONS: bool = os.getenv("ALLOW_USER_REGISTRATIONS", "true").lower() in (
+    ALLOW_USER_REGISTRATIONS: bool = os.getenv(
+        "ALLOW_USER_REGISTRATIONS", "true"
+    ).lower() in (
         "true",
         "1",
         "yes",
@@ -66,7 +74,7 @@ def configure_logging(environment: str = "development") -> None:
     )
 
     # Configure structlog
-    processors = [
+    processors: list[Callable[..., Any]] = [
         structlog.stdlib.filter_by_level,
         structlog.stdlib.add_logger_name,
         structlog.stdlib.add_log_level,

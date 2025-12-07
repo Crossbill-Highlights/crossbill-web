@@ -231,7 +231,9 @@ def get_highlight_tags(
     try:
         service = HighlightTagService(db)
         tags = service.get_tags_for_book(book_id, current_user.id)
-        return schemas.HighlightTagsResponse(tags=tags)
+        return schemas.HighlightTagsResponse(
+            tags=[schemas.HighlightTag.model_validate(tag) for tag in tags]
+        )
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -269,7 +271,8 @@ def create_highlight_tag(
     """
     try:
         service = HighlightTagService(db)
-        return service.create_tag_for_book(book_id, request.name, user_id=current_user.id)
+        tag = service.create_tag_for_book(book_id, request.name, user_id=current_user.id)
+        return schemas.HighlightTag.model_validate(tag)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -367,13 +370,14 @@ def update_highlight_tag(
     """
     try:
         service = HighlightTagService(db)
-        return service.update_tag(
+        tag = service.update_tag(
             book_id=book_id,
             tag_id=tag_id,
             user_id=current_user.id,
             name=request.name,
             tag_group_id=request.tag_group_id,
         )
+        return schemas.HighlightTag.model_validate(tag)
     except CrossbillError as e:
         raise HTTPException(
             status_code=e.status_code,
@@ -442,7 +446,7 @@ def add_tag_to_highlight(
                 detail="Either tag_id or name must be provided",
             )
 
-        return highlight
+        return schemas.Highlight.model_validate(highlight)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -491,7 +495,8 @@ def remove_tag_from_highlight(
     """
     try:
         service = HighlightTagService(db)
-        return service.remove_tag_from_highlight(highlight_id, tag_id, current_user.id)
+        highlight = service.remove_tag_from_highlight(highlight_id, tag_id, current_user.id)
+        return schemas.Highlight.model_validate(highlight)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
