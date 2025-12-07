@@ -24,8 +24,7 @@
       "bash -c 'cd frontend && prettier --write \"$0\"'"
     ],
     "backend/**/*.py": [
-      "bash -c 'cd backend && poetry run ruff check --fix \"$0\"'",
-      "bash -c 'cd backend && poetry run black \"$0\"'"
+      "bash -c 'cd backend && poetry run ruff check --fix \"$0\"'"
     ]
   }
 }
