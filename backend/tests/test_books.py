@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from src import models
+from tests.conftest import create_test_highlight
 
 # Default user ID used by services (matches conftest default user)
 DEFAULT_USER_ID = 1
@@ -31,16 +32,15 @@ class TestDeleteBook:
         db_session.commit()
         db_session.refresh(chapter)
 
-        highlight = models.Highlight(
-            book_id=book.id,
+        highlight = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             chapter_id=chapter.id,
             text="Test highlight",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        db_session.add(highlight)
-        db_session.commit()
 
         # Delete the book
         response = client.delete(f"/api/v1/book/{book.id}")
@@ -86,24 +86,22 @@ class TestDeleteHighlights:
         db_session.commit()
         db_session.refresh(book)
 
-        highlight1 = models.Highlight(
-            book_id=book.id,
+        highlight1 = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Highlight 1",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        highlight2 = models.Highlight(
-            book_id=book.id,
+        highlight2 = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Highlight 2",
             page=20,
-            datetime="2024-01-15 15:00:00",
+            datetime_str="2024-01-15 15:00:00",
         )
-        db_session.add_all([highlight1, highlight2])
-        db_session.commit()
-        db_session.refresh(highlight1)
-        db_session.refresh(highlight2)
 
         # Delete highlights
         payload = {"highlight_ids": [highlight1.id, highlight2.id]}
@@ -131,24 +129,22 @@ class TestDeleteHighlights:
         db_session.commit()
         db_session.refresh(book)
 
-        highlight1 = models.Highlight(
-            book_id=book.id,
+        highlight1 = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Highlight 1",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        highlight2 = models.Highlight(
-            book_id=book.id,
+        highlight2 = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Highlight 2",
             page=20,
-            datetime="2024-01-15 15:00:00",
+            datetime_str="2024-01-15 15:00:00",
         )
-        db_session.add_all([highlight1, highlight2])
-        db_session.commit()
-        db_session.refresh(highlight1)
-        db_session.refresh(highlight2)
 
         # Delete only first highlight
         payload = {"highlight_ids": [highlight1.id]}
@@ -177,17 +173,15 @@ class TestDeleteHighlights:
         db_session.refresh(book)
 
         # Create a highlight and soft-delete it
-        highlight = models.Highlight(
-            book_id=book.id,
+        highlight = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Deleted Highlight",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
             deleted_at=datetime.now(UTC),
         )
-        db_session.add(highlight)
-        db_session.commit()
-        db_session.refresh(highlight)
 
         # Try to delete it again
         payload = {"highlight_ids": [highlight.id]}
@@ -209,16 +203,14 @@ class TestDeleteHighlights:
         db_session.refresh(book1)
         db_session.refresh(book2)
 
-        highlight1 = models.Highlight(
-            book_id=book1.id,
+        highlight1 = create_test_highlight(
+            db_session=db_session,
+            book=book1,
             user_id=DEFAULT_USER_ID,
             text="Highlight from Book 1",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        db_session.add(highlight1)
-        db_session.commit()
-        db_session.refresh(highlight1)
 
         # Try to delete book1's highlight using book2's ID
         payload = {"highlight_ids": [highlight1.id]}
@@ -281,16 +273,15 @@ class TestHighlightSyncWithSoftDelete:
         db_session.commit()
         db_session.refresh(book)
 
-        highlight = models.Highlight(
-            book_id=book.id,
+        create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Deleted Highlight",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
             deleted_at=datetime.now(UTC),
         )
-        db_session.add(highlight)
-        db_session.commit()
 
         # Try to sync the same highlight again
         payload = {
@@ -330,16 +321,15 @@ class TestHighlightSyncWithSoftDelete:
         db_session.commit()
         db_session.refresh(book)
 
-        deleted_highlight = models.Highlight(
-            book_id=book.id,
+        create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Deleted Highlight",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
             deleted_at=datetime.now(UTC),
         )
-        db_session.add(deleted_highlight)
-        db_session.commit()
 
         # Sync with the deleted highlight and a new one
         payload = {
@@ -399,25 +389,25 @@ class TestGetBookDetails:
         db_session.commit()
         db_session.refresh(chapter)
 
-        active_highlight = models.Highlight(
-            book_id=book.id,
+        active_highlight = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             chapter_id=chapter.id,
             text="Active Highlight",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        deleted_highlight = models.Highlight(
-            book_id=book.id,
+        deleted_highlight = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             chapter_id=chapter.id,
             text="Deleted Highlight",
             page=20,
-            datetime="2024-01-15 15:00:00",
+            datetime_str="2024-01-15 15:00:00",
             deleted_at=datetime.now(UTC),
         )
-        db_session.add_all([active_highlight, deleted_highlight])
-        db_session.commit()
 
         # Get book details
         response = client.get(f"/api/v1/book/{book.id}")

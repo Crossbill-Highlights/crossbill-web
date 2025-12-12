@@ -2,6 +2,7 @@
 
 import os
 from collections.abc import Generator
+from datetime import datetime as dt
 from typing import Any
 
 import pytest
@@ -21,6 +22,44 @@ from src.models import (  # noqa: F401 - Import to register models
     User,
 )
 from src.services.auth_service import get_current_user
+from src.utils import compute_highlight_hash
+
+
+def create_test_highlight(
+    db_session: Session,
+    book: Book,
+    user_id: int,
+    text: str,
+    datetime_str: str,
+    page: int | None = None,
+    note: str | None = None,
+    chapter_id: int | None = None,
+    deleted_at: dt | None = None,
+) -> Highlight:
+    """Create a test highlight with properly computed content_hash.
+
+    This helper ensures all test highlights have valid content_hash values.
+    """
+    content_hash = compute_highlight_hash(
+        text=text,
+        book_title=book.title,
+        book_author=book.author,
+    )
+    highlight = Highlight(
+        book_id=book.id,
+        user_id=user_id,
+        chapter_id=chapter_id,
+        text=text,
+        page=page,
+        note=note,
+        datetime=datetime_str,
+        content_hash=content_hash,
+        deleted_at=deleted_at,
+    )
+    db_session.add(highlight)
+    db_session.commit()
+    db_session.refresh(highlight)
+    return highlight
 
 # Set TESTING environment variable to skip database initialization in main.py
 os.environ["TESTING"] = "1"

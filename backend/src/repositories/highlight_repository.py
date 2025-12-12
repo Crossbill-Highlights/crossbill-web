@@ -21,12 +21,17 @@ class HighlightRepository:
         self.db = db
 
     def create(
-        self, book_id: int, user_id: int, highlight_data: schemas.HighlightCreate
+        self,
+        book_id: int,
+        user_id: int,
+        content_hash: str,
+        highlight_data: schemas.HighlightCreate,
     ) -> models.Highlight:
         """Create a new highlight."""
         highlight = models.Highlight(
             book_id=book_id,
             user_id=user_id,
+            content_hash=content_hash,
             **highlight_data.model_dump(exclude={"chapter", "chapter_number"}),
         )
         self.db.add(highlight)
@@ -39,6 +44,7 @@ class HighlightRepository:
         book_id: int,
         user_id: int,
         chapter_id: int | None,
+        content_hash: str,
         highlight_data: schemas.HighlightCreate,
     ) -> models.Highlight:
         """Create a new highlight with chapter association."""
@@ -46,6 +52,7 @@ class HighlightRepository:
             book_id=book_id,
             user_id=user_id,
             chapter_id=chapter_id,
+            content_hash=content_hash,
             **highlight_data.model_dump(exclude={"chapter", "chapter_number"}),
         )
         self.db.add(highlight)
@@ -58,6 +65,7 @@ class HighlightRepository:
         book_id: int,
         user_id: int,
         chapter_id: int | None,
+        content_hash: str,
         highlight_data: schemas.HighlightCreate,
     ) -> tuple[models.Highlight | None, bool]:
         """
@@ -72,7 +80,9 @@ class HighlightRepository:
         # and not all previous work in the transaction
         savepoint = self.db.begin_nested()
         try:
-            highlight = self.create_with_chapter(book_id, user_id, chapter_id, highlight_data)
+            highlight = self.create_with_chapter(
+                book_id, user_id, chapter_id, content_hash, highlight_data
+            )
             return highlight, True
         except IntegrityError:
             # Duplicate - unique constraint violated (active or soft-deleted)
@@ -80,7 +90,7 @@ class HighlightRepository:
             savepoint.rollback()
             logger.debug(
                 f"Skipped duplicate highlight for book_id={book_id}, "
-                f"text='{highlight_data.text[:50]}...'"
+                f"content_hash='{content_hash}'"
             )
             return None, False
 
@@ -88,7 +98,7 @@ class HighlightRepository:
         self,
         book_id: int,
         user_id: int,
-        highlights_data: list[tuple[int | None, schemas.HighlightCreate]],
+        highlights_data: list[tuple[int | None, str, schemas.HighlightCreate]],
     ) -> tuple[int, int]:
         """
         Bulk create highlights with deduplication.
@@ -96,7 +106,7 @@ class HighlightRepository:
         Args:
             book_id: ID of the book
             user_id: ID of the user
-            highlights_data: List of (chapter_id, highlight_data) tuples
+            highlights_data: List of (chapter_id, content_hash, highlight_data) tuples
 
         Returns:
             tuple[int, int]: (created_count, skipped_count)
@@ -104,8 +114,10 @@ class HighlightRepository:
         created = 0
         skipped = 0
 
-        for chapter_id, highlight_data in highlights_data:
-            _, was_created = self.try_create(book_id, user_id, chapter_id, highlight_data)
+        for chapter_id, content_hash, highlight_data in highlights_data:
+            _, was_created = self.try_create(
+                book_id, user_id, chapter_id, content_hash, highlight_data
+            )
             if was_created:
                 created += 1
             else:

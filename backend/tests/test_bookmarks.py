@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from src import models
+from tests.conftest import create_test_highlight
 
 # Default user ID used by services (matches conftest default user)
 DEFAULT_USER_ID = 1
@@ -23,16 +24,14 @@ class TestCreateBookmark:
         db_session.commit()
         db_session.refresh(book)
 
-        highlight = models.Highlight(
-            book_id=book.id,
+        highlight = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Test highlight",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        db_session.add(highlight)
-        db_session.commit()
-        db_session.refresh(highlight)
 
         # Create a bookmark
         response = client.post(
@@ -61,16 +60,14 @@ class TestCreateBookmark:
         db_session.commit()
         db_session.refresh(book)
 
-        highlight = models.Highlight(
-            book_id=book.id,
+        highlight = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Test highlight",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        db_session.add(highlight)
-        db_session.commit()
-        db_session.refresh(highlight)
 
         # Create first bookmark
         response1 = client.post(
@@ -134,16 +131,14 @@ class TestCreateBookmark:
         db_session.refresh(book2)
 
         # Create highlight for book2
-        highlight = models.Highlight(
-            book_id=book2.id,
+        highlight = create_test_highlight(
+            db_session=db_session,
+            book=book2,
             user_id=DEFAULT_USER_ID,
             text="Test highlight",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        db_session.add(highlight)
-        db_session.commit()
-        db_session.refresh(highlight)
 
         # Try to create bookmark for book1 with highlight from book2
         response = client.post(
@@ -165,16 +160,14 @@ class TestDeleteBookmark:
         db_session.commit()
         db_session.refresh(book)
 
-        highlight = models.Highlight(
-            book_id=book.id,
+        highlight = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Test highlight",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        db_session.add(highlight)
-        db_session.commit()
-        db_session.refresh(highlight)
 
         bookmark = models.Bookmark(book_id=book.id, highlight_id=highlight.id)
         db_session.add(bookmark)
@@ -222,24 +215,22 @@ class TestGetBookmarks:
         db_session.commit()
         db_session.refresh(book)
 
-        highlight1 = models.Highlight(
-            book_id=book.id,
+        highlight1 = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Highlight 1",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        highlight2 = models.Highlight(
-            book_id=book.id,
+        highlight2 = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Highlight 2",
             page=20,
-            datetime="2024-01-15 15:00:00",
+            datetime_str="2024-01-15 15:00:00",
         )
-        db_session.add_all([highlight1, highlight2])
-        db_session.commit()
-        db_session.refresh(highlight1)
-        db_session.refresh(highlight2)
 
         bookmark1 = models.Bookmark(book_id=book.id, highlight_id=highlight1.id)
         bookmark2 = models.Bookmark(book_id=book.id, highlight_id=highlight2.id)
@@ -297,26 +288,24 @@ class TestBookDetailsWithBookmarks:
         db_session.commit()
         db_session.refresh(chapter)
 
-        highlight1 = models.Highlight(
-            book_id=book.id,
+        highlight1 = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             chapter_id=chapter.id,
             text="Highlight 1",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        highlight2 = models.Highlight(
-            book_id=book.id,
+        highlight2 = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             chapter_id=chapter.id,
             text="Highlight 2",
             page=20,
-            datetime="2024-01-15 15:00:00",
+            datetime_str="2024-01-15 15:00:00",
         )
-        db_session.add_all([highlight1, highlight2])
-        db_session.commit()
-        db_session.refresh(highlight1)
-        db_session.refresh(highlight2)
 
         # Create bookmarks for both highlights
         bookmark1 = models.Bookmark(book_id=book.id, highlight_id=highlight1.id)
@@ -381,16 +370,14 @@ class TestBookmarkCascadeDelete:
         db_session.commit()
         db_session.refresh(book)
 
-        highlight = models.Highlight(
-            book_id=book.id,
+        highlight = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Test highlight",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        db_session.add(highlight)
-        db_session.commit()
-        db_session.refresh(highlight)
 
         bookmark = models.Bookmark(book_id=book.id, highlight_id=highlight.id)
         db_session.add(bookmark)
@@ -417,16 +404,14 @@ class TestBookmarkCascadeDelete:
         db_session.commit()
         db_session.refresh(book)
 
-        highlight = models.Highlight(
-            book_id=book.id,
+        highlight = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Test highlight",
             page=10,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        db_session.add(highlight)
-        db_session.commit()
-        db_session.refresh(highlight)
 
         bookmark = models.Bookmark(book_id=book.id, highlight_id=highlight.id)
         db_session.add(bookmark)

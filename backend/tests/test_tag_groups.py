@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from src import models
+from tests.conftest import create_test_highlight
 
 # Default user ID used by services (matches conftest default user)
 DEFAULT_USER_ID = 1
@@ -459,16 +460,14 @@ class TestBookDetailsWithTagGroups:
         db_session.commit()
 
         # Create a highlight with tags to ensure they appear
-        highlight = models.Highlight(
-            book_id=book.id,
+        highlight = create_test_highlight(
+            db_session=db_session,
+            book=book,
             user_id=DEFAULT_USER_ID,
             text="Test highlight",
             page=1,
-            datetime="2024-01-15 14:30:22",
+            datetime_str="2024-01-15 14:30:22",
         )
-        db_session.add(highlight)
-        db_session.commit()
-        db_session.refresh(highlight)
 
         highlight.highlight_tags.extend([tag1, tag2])
         db_session.commit()

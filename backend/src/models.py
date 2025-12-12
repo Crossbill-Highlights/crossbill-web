@@ -198,6 +198,9 @@ class Highlight(Base):
     page: Mapped[int | None] = mapped_column(nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     datetime: Mapped[str] = mapped_column(String(50), nullable=False)  # KOReader datetime string
+    content_hash: Mapped[str] = mapped_column(
+        String(64), nullable=False, index=True
+    )  # SHA-256 hash for deduplication
     created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -225,8 +228,8 @@ class Highlight(Base):
         back_populates="highlight", cascade="all, delete-orphan"
     )
 
-    # Unique constraint for deduplication: same text at same time in same book
-    __table_args__ = (UniqueConstraint("book_id", "text", "datetime", name="uq_highlight_dedup"),)
+    # Unique constraint for deduplication: same content hash for same user
+    __table_args__ = (UniqueConstraint("user_id", "content_hash", name="uq_highlight_content_hash"),)
 
     def __repr__(self) -> str:
         """String representation of Highlight."""

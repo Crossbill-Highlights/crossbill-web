@@ -260,10 +260,14 @@ class TestHighlightsUpload:
         assert data["highlights_created"] == 0
         assert data["highlights_skipped"] == 0
 
-    def test_upload_same_text_different_datetime(
+    def test_upload_same_text_different_datetime_is_duplicate(
         self, client: TestClient, db_session: Session
     ) -> None:
-        """Test that same text at different times creates separate highlights."""
+        """Test that same text at different times is considered duplicate (hash-based dedup).
+
+        With hash-based deduplication, the hash is computed from text + book_title + author.
+        Datetime is NOT part of the hash, so same text in the same book is a duplicate.
+        """
         payload = {
             "book": {
                 "title": "Same Text Test Book",
@@ -276,7 +280,7 @@ class TestHighlightsUpload:
                 },
                 {
                     "text": "Same text",
-                    "datetime": "2024-01-15 15:00:00",  # Different datetime
+                    "datetime": "2024-01-15 15:00:00",  # Different datetime, same hash
                 },
             ],
         }
@@ -285,8 +289,84 @@ class TestHighlightsUpload:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["highlights_created"] == 2  # Both should be created
-        assert data["highlights_skipped"] == 0
+        # With hash-based dedup, only 1 is created (same text = same hash)
+        assert data["highlights_created"] == 1
+        assert data["highlights_skipped"] == 1
+
+    def test_upload_same_text_different_book_not_duplicate(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """Test that same text in different books creates separate highlights.
+
+        The hash includes book_title and author, so same text in different books
+        will have different hashes and create separate highlights.
+        """
+        # First book
+        payload1 = {
+            "book": {
+                "title": "First Book",
+                "author": "Author A",
+            },
+            "highlights": [
+                {
+                    "text": "Same highlight text",
+                    "datetime": "2024-01-15 14:00:00",
+                },
+            ],
+        }
+
+        response1 = client.post("/api/v1/highlights/upload", json=payload1)
+        assert response1.status_code == status.HTTP_200_OK
+        assert response1.json()["highlights_created"] == 1
+
+        # Second book with same text
+        payload2 = {
+            "book": {
+                "title": "Second Book",
+                "author": "Author B",
+            },
+            "highlights": [
+                {
+                    "text": "Same highlight text",
+                    "datetime": "2024-01-15 14:00:00",
+                },
+            ],
+        }
+
+        response2 = client.post("/api/v1/highlights/upload", json=payload2)
+        assert response2.status_code == status.HTTP_200_OK
+        # Different book means different hash, so it's created
+        assert response2.json()["highlights_created"] == 1
+        assert response2.json()["highlights_skipped"] == 0
+
+    def test_highlight_has_content_hash(self, client: TestClient, db_session: Session) -> None:
+        """Test that created highlights have a content_hash field populated."""
+        payload = {
+            "book": {
+                "title": "Hash Test Book",
+                "author": "Test Author",
+            },
+            "highlights": [
+                {
+                    "text": "Test highlight for hash",
+                    "datetime": "2024-01-15 14:00:00",
+                },
+            ],
+        }
+
+        response = client.post("/api/v1/highlights/upload", json=payload)
+        assert response.status_code == status.HTTP_200_OK
+
+        # Verify highlight has content_hash
+        book = (
+            db_session.query(models.Book)
+            .filter_by(title="Hash Test Book", author="Test Author")
+            .first()
+        )
+        highlight = db_session.query(models.Highlight).filter_by(book_id=book.id).first()
+        assert highlight is not None
+        assert highlight.content_hash is not None
+        assert len(highlight.content_hash) == 64  # SHA-256 hex string length
 
     def test_upload_invalid_payload_missing_book(self, client: TestClient) -> None:
         """Test upload with missing book data."""

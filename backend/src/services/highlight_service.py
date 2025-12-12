@@ -5,6 +5,7 @@ from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
 
 from src import repositories, schemas
+from src.utils import compute_highlight_hash
 
 logger = structlog.get_logger(__name__)
 
@@ -50,8 +51,8 @@ class HighlightService:
         # Step 1: Get or create book
         book = self.book_repo.get_or_create(request.book, user_id)
 
-        # Step 2: Process chapters and prepare highlights
-        highlights_with_chapters: list[tuple[int | None, schemas.HighlightCreate]] = []
+        # Step 2: Process chapters and prepare highlights with content hashes
+        highlights_with_chapters: list[tuple[int | None, str, schemas.HighlightCreate]] = []
 
         for highlight_data in request.highlights:
             chapter_id = None
@@ -67,7 +68,14 @@ class HighlightService:
                 )
                 chapter_id = chapter.id
 
-            highlights_with_chapters.append((chapter_id, highlight_data))
+            # Compute content hash for deduplication
+            content_hash = compute_highlight_hash(
+                text=highlight_data.text,
+                book_title=request.book.title,
+                book_author=request.book.author,
+            )
+
+            highlights_with_chapters.append((chapter_id, content_hash, highlight_data))
 
         # Commit chapters before creating highlights to avoid rollback issues
         # This ensures chapter foreign keys exist before highlights reference them
