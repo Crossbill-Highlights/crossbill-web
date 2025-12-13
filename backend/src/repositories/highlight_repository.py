@@ -89,8 +89,7 @@ class HighlightRepository:
             # Rollback only to the savepoint, not the entire transaction
             savepoint.rollback()
             logger.debug(
-                f"Skipped duplicate highlight for book_id={book_id}, "
-                f"content_hash='{content_hash}'"
+                f"Skipped duplicate highlight for book_id={book_id}, content_hash='{content_hash}'"
             )
             return None, False
 

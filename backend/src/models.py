@@ -229,7 +229,9 @@ class Highlight(Base):
     )
 
     # Unique constraint for deduplication: same content hash for same user
-    __table_args__ = (UniqueConstraint("user_id", "content_hash", name="uq_highlight_content_hash"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "content_hash", name="uq_highlight_content_hash"),
+    )
 
     def __repr__(self) -> str:
         """String representation of Highlight."""

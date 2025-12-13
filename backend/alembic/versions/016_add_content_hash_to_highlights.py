@@ -143,9 +143,7 @@ def downgrade() -> None:
     op.drop_index("ix_highlights_content_hash", table_name="highlights")
 
     # Step 3: Recreate the old unique constraint
-    op.create_unique_constraint(
-        "uq_highlight_dedup", "highlights", ["book_id", "text", "datetime"]
-    )
+    op.create_unique_constraint("uq_highlight_dedup", "highlights", ["book_id", "text", "datetime"])
 
     # Step 4: Drop the content_hash column
     op.drop_column("highlights", "content_hash")

@@ -61,6 +61,7 @@ def create_test_highlight(
     db_session.refresh(highlight)
     return highlight
 
+
 # Set TESTING environment variable to skip database initialization in main.py
 os.environ["TESTING"] = "1"
 
