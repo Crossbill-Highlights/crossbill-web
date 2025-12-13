@@ -1,7 +1,5 @@
 """Tests for utility functions."""
 
-import pytest
-
 from src.utils import compute_highlight_hash
 
 

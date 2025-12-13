@@ -25,7 +25,7 @@ from src.services.auth_service import get_current_user
 from src.utils import compute_highlight_hash
 
 
-def create_test_highlight(
+def create_test_highlight(  # noqa: PLR0913
     db_session: Session,
     book: Book,
     user_id: int,
