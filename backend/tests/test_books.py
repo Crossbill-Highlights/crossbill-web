@@ -32,7 +32,7 @@ class TestDeleteBook:
         db_session.commit()
         db_session.refresh(chapter)
 
-        highlight = create_test_highlight(
+        create_test_highlight(
             db_session=db_session,
             book=book,
             user_id=DEFAULT_USER_ID,
@@ -389,7 +389,7 @@ class TestGetBookDetails:
         db_session.commit()
         db_session.refresh(chapter)
 
-        active_highlight = create_test_highlight(
+        create_test_highlight(
             db_session=db_session,
             book=book,
             user_id=DEFAULT_USER_ID,
@@ -398,7 +398,7 @@ class TestGetBookDetails:
             page=10,
             datetime_str="2024-01-15 14:30:22",
         )
-        deleted_highlight = create_test_highlight(
+        create_test_highlight(
             db_session=db_session,
             book=book,
             user_id=DEFAULT_USER_ID,
