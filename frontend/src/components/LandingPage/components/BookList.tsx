@@ -22,7 +22,7 @@ export const BookList = ({ books }: BookListProps) => {
         justifyItems: 'start',
       }}
     >
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {books.map((book) => (
           <BookCard key={book.id} book={book} />
         ))}
