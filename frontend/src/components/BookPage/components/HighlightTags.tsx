@@ -333,61 +333,49 @@ export const HighlightTags = ({
           onTagClick={onTagClick}
           onManageClick={() => setIsModalOpen(true)}
         />
-
-        {tags && tags.length > 0 ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Ungrouped tags - always present to avoid layout shift */}
-            <motion.div
-              initial={false}
-              animate={{
-                height:
-                  ungroupedTags.length === 0 && activeTag === null && movingTagId === null
-                    ? 0
-                    : 'auto',
-                marginBottom:
-                  ungroupedTags.length === 0 && activeTag === null && movingTagId === null ? 0 : 16,
-                opacity:
-                  ungroupedTags.length === 0 && activeTag === null && movingTagId === null ? 0 : 1,
+        <Box
+          sx={{
+            maxHeight: 'calc(65vh)',
+            overflow: 'visible',
+            overflowY: 'auto',
+          }}
+        >
+          {tags && tags.length > 0 ? (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
               }}
-              transition={{ duration: 0.2 }}
-              style={{ overflow: 'hidden' }}
             >
-              <DroppableGroup id="ungrouped" isEmpty={ungroupedTags.length === 0} emptyHeight={30}>
-                {ungroupedTags.length > 0 ? (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {ungroupedTags.map((tag) => (
-                      <DraggableTag
-                        key={tag.id}
-                        tag={tag}
-                        selectedTag={selectedTag}
-                        onTagClick={onTagClick}
-                      />
-                    ))}
-                  </Box>
-                ) : (
-                  <EmptyGroupPlaceholder message="Drop here to remove from groups" />
-                )}
-              </DroppableGroup>
-            </motion.div>
-
-            {/* Grouped tags */}
-            {groupedTags.map(({ group, tags: groupTags }) => (
-              <Box key={group.id} sx={{ mb: 1 }}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    color: 'text.secondary',
-                    mb: 1,
-                  }}
+              {/* Ungrouped tags - always present to avoid layout shift */}
+              <motion.div
+                initial={false}
+                animate={{
+                  height:
+                    ungroupedTags.length === 0 && activeTag === null && movingTagId === null
+                      ? 0
+                      : 'auto',
+                  marginBottom:
+                    ungroupedTags.length === 0 && activeTag === null && movingTagId === null
+                      ? 0
+                      : 16,
+                  opacity:
+                    ungroupedTags.length === 0 && activeTag === null && movingTagId === null
+                      ? 0
+                      : 1,
+                }}
+                transition={{ duration: 0.2 }}
+                style={{ overflow: 'hidden' }}
+              >
+                <DroppableGroup
+                  id="ungrouped"
+                  isEmpty={ungroupedTags.length === 0}
+                  emptyHeight={30}
                 >
-                  {group.name}
-                </Typography>
-                <DroppableGroup id={`group-${group.id}`} isEmpty={groupTags.length === 0}>
-                  {groupTags.length > 0 ? (
+                  {ungroupedTags.length > 0 ? (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      {groupTags.map((tag) => (
+                      {ungroupedTags.map((tag) => (
                         <DraggableTag
                           key={tag.id}
                           tag={tag}
@@ -397,19 +385,51 @@ export const HighlightTags = ({
                       ))}
                     </Box>
                   ) : (
-                    <EmptyGroupPlaceholder message="No tags in this group. Drag tags here." />
+                    <EmptyGroupPlaceholder message="Drop here to remove from groups" />
                   )}
                 </DroppableGroup>
-              </Box>
-            ))}
-          </Box>
-        ) : (
-          <Typography variant="body1" color="text.secondary">
-            No tagged highlights.
-          </Typography>
-        )}
-      </Box>
+              </motion.div>
 
+              {/* Grouped tags */}
+              {groupedTags.map(({ group, tags: groupTags }) => (
+                <Box key={group.id} sx={{ mb: 1 }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                      mb: 1,
+                    }}
+                  >
+                    {group.name}
+                  </Typography>
+                  <DroppableGroup id={`group-${group.id}`} isEmpty={groupTags.length === 0}>
+                    {groupTags.length > 0 ? (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {groupTags.map((tag) => (
+                          <DraggableTag
+                            key={tag.id}
+                            tag={tag}
+                            selectedTag={selectedTag}
+                            onTagClick={onTagClick}
+                          />
+                        ))}
+                      </Box>
+                    ) : (
+                      <EmptyGroupPlaceholder message="No tags in this group. Drag tags here." />
+                    )}
+                  </DroppableGroup>
+                </Box>
+              ))}
+            </Box>
+          ) : (
+            <Typography variant="body1" color="text.secondary">
+              No tagged highlights.
+            </Typography>
+          )}
+        </Box>
+      </Box>
       <DragOverlay>
         {activeTag ? (
           <DraggableTag
