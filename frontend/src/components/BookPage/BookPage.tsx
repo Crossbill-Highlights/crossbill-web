@@ -179,20 +179,14 @@ export const BookPage = () => {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-      }}
-    >
+    <Box sx={{ minHeight: '100vh' }}>
       <ScrollToTopButton />
       <FadeInOut ekey={'book-title'}>
-        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, py: 4 }}>
-          {/* Book Info Card */}
-          <BookTitle book={book} highlightCount={totalHighlights} />
-
-          {/* Tags (Mobile only - above search bar) */}
-          <Box sx={{ display: { xs: 'block', lg: 'none' }, mb: 3 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3 }, py: 4 }}>
+          {/* Mobile Layout */}
+          <Box sx={{ display: { xs: 'block', lg: 'none' } }}>
+            <BookTitle book={book} highlightCount={totalHighlights} />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 3 }}>
               <HighlightTags
                 tags={book.highlight_tags || []}
                 tagGroups={book.highlight_tag_groups || []}
@@ -206,30 +200,11 @@ export const BookPage = () => {
                 onBookmarkClick={handleBookmarkClick}
               />
             </Box>
-          </Box>
-
-          {/* Search Bar - Aligned with content column on desktop */}
-          <Box
-            sx={{
-              maxWidth: { xs: '100%', lg: 'calc(100% - 300px - 32px)' }, // Subtract sidebar width + gap
-            }}
-          >
             <SearchBar
               onSearch={handleSearch}
               placeholder="Search highlights..."
               initialValue={searchText}
             />
-          </Box>
-
-          {/* Chapter List with Highlights */}
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', lg: '1fr 300px' },
-              gap: 4,
-              alignItems: 'start',
-            }}
-          >
             <ChapterList
               chapters={chapters}
               bookId={book.id}
@@ -239,10 +214,41 @@ export const BookPage = () => {
               emptyMessage={emptyMessage}
               animationKey={`chapters-${showSearchResults ? 'search' : 'view'}-${selectedTagId ?? 'all'}`}
             />
+          </Box>
 
-            {/* Sidebar - Tags (Desktop only) */}
-            <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* Desktop 3-Column Layout */}
+          <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+            {/* Book Details + Search Bar - Centered with middle column */}
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '250px 1fr 250px',
+                gap: 4,
+              }}
+            >
+              <Box /> {/* Empty left spacer */}
+              <Box>
+                <BookTitle book={book} highlightCount={totalHighlights} />
+                <SearchBar
+                  onSearch={handleSearch}
+                  placeholder="Search highlights..."
+                  initialValue={searchText}
+                />
+              </Box>
+              <Box /> {/* Empty right spacer */}
+            </Box>
+
+            {/* 3-Column Content Grid */}
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '250px 1fr 250px',
+                gap: 4,
+                alignItems: 'start',
+              }}
+            >
+              {/* Left Column - Tags */}
+              <Box sx={{ position: 'sticky', top: 80 }}>
                 <HighlightTags
                   tags={book.highlight_tags || []}
                   tagGroups={book.highlight_tag_groups || []}
@@ -250,6 +256,21 @@ export const BookPage = () => {
                   selectedTag={selectedTagId}
                   onTagClick={handleTagClick}
                 />
+              </Box>
+
+              {/* Middle Column - Chapter List */}
+              <ChapterList
+                chapters={chapters}
+                bookId={book.id}
+                bookmarksByHighlightId={bookmarksByHighlightId}
+                allHighlights={allHighlights}
+                isLoading={showSearchResults && isSearching}
+                emptyMessage={emptyMessage}
+                animationKey={`chapters-${showSearchResults ? 'search' : 'view'}-${selectedTagId ?? 'all'}`}
+              />
+
+              {/* Right Column - Bookmarks */}
+              <Box sx={{ position: 'sticky', top: 80 }}>
                 <BookmarkList
                   bookmarks={book.bookmarks || []}
                   allHighlights={allHighlights}
