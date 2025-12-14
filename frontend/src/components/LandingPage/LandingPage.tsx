@@ -87,7 +87,7 @@ export const LandingPage = () => {
 
         {data?.books && data.books.length > 0 && (
           <>
-            <BookList books={data.books} />
+            <BookList books={data.books} pageKey={`${currentPage}-${searchText}`} />
             {totalPages > 1 && (
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                 <Pagination
