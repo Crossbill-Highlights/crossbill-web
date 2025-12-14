@@ -1,4 +1,4 @@
-import { HighlightSearchResult } from '@/api/generated/model';
+import type { Highlight, HighlightSearchResult } from '@/api/generated/model';
 import { chain, sortBy } from 'lodash';
 
 /**
