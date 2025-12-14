@@ -5,7 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type GetBooksApiV1BookBooksGetParams = {
+export type GetBooksApiV1BooksGetParams = {
   /**
    * Number of books to skip
    * @minimum 0

@@ -5,6 +5,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface BodyUploadBookCoverApiV1BookBookIdMetadataCoverPost {
+export interface BodyUploadBookCoverApiV1BooksBookIdMetadataCoverPost {
   cover: Blob;
 }

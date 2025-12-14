@@ -1,4 +1,4 @@
-import { useUpdateHighlightTagApiV1BookBookIdHighlightTagTagIdPost } from '@/api/generated/books/books';
+import { useUpdateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost } from '@/api/generated/books/books';
 import { HighlightTagGroupInBook, HighlightTagInBook } from '@/api/generated/model';
 import {
   DndContext,
@@ -212,7 +212,7 @@ export const HighlightTags = ({
   );
 
   // Update tag mutation with optimistic updates
-  const updateTagMutation = useUpdateHighlightTagApiV1BookBookIdHighlightTagTagIdPost({
+  const updateTagMutation = useUpdateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost({
     mutation: {
       onMutate: async (variables) => {
         // Cancel any outgoing refetches

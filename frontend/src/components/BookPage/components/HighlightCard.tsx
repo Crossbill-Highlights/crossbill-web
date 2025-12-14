@@ -1,4 +1,4 @@
-import { useGetHighlightTagsApiV1BookBookIdHighlightTagsGet } from '@/api/generated/books/books.ts';
+import { useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet } from '@/api/generated/books/books.ts';
 import type { Bookmark, Highlight } from '@/api/generated/model';
 import { TagList } from '@/components/BookPage/components/TagList.tsx';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils';
@@ -121,7 +121,7 @@ export const HighlightCard = ({
   const [currentHighlightIndex, setCurrentHighlightIndex] = useState(currentIndex ?? 0);
 
   // Fetch available tags for the book
-  const { data: tagsResponse } = useGetHighlightTagsApiV1BookBookIdHighlightTagsGet(bookId);
+  const { data: tagsResponse } = useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet(bookId);
 
   const handleOpenModal = () => {
     setCurrentHighlightIndex(currentIndex ?? 0);

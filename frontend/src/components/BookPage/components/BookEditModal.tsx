@@ -1,6 +1,6 @@
 import {
-  useDeleteBookApiV1BookBookIdDelete,
-  useUpdateBookApiV1BookBookIdPost,
+  useDeleteBookApiV1BooksBookIdDelete,
+  useUpdateBookApiV1BooksBookIdPost,
 } from '@/api/generated/books/books.ts';
 import { BookWithHighlightCount } from '@/api/generated/model';
 import { Delete as DeleteIcon } from '@mui/icons-material';
@@ -32,13 +32,13 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
     },
   });
 
-  const updateBookMutation = useUpdateBookApiV1BookBookIdPost({
+  const updateBookMutation = useUpdateBookApiV1BooksBookIdPost({
     mutation: {
       onSuccess: async () => {
         // Invalidate and refetch both the books list and the specific book details
         await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['/api/v1/highlights/books'] }),
-          queryClient.invalidateQueries({ queryKey: [`/api/v1/book/${book.id}`] }),
+          queryClient.invalidateQueries({ queryKey: ['/api/v1/books/'] }),
+          queryClient.invalidateQueries({ queryKey: [`/api/v1/books/${book.id}`] }),
         ]);
         onClose();
       },
@@ -48,12 +48,12 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
     },
   });
 
-  const deleteBookMutation = useDeleteBookApiV1BookBookIdDelete({
+  const deleteBookMutation = useDeleteBookApiV1BooksBookIdDelete({
     mutation: {
       onSuccess: async () => {
         // Refetch the books list query and wait for it to complete
         await queryClient.refetchQueries({
-          queryKey: ['/api/v1/highlights/books'],
+          queryKey: ['/api/v1/books'],
           exact: true,
         });
         // Close modal and navigate to landing page after refetch is complete

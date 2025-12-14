@@ -209,10 +209,16 @@ class TestDeleteTagGroup:
         db_session.refresh(tag_group)
 
         tag1 = models.HighlightTag(
-            book_id=book.id, user_id=DEFAULT_USER_ID, name="Tag 1", tag_group_id=tag_group.id
+            book_id=book.id,
+            user_id=DEFAULT_USER_ID,
+            name="Tag 1",
+            tag_group_id=tag_group.id,
         )
         tag2 = models.HighlightTag(
-            book_id=book.id, user_id=DEFAULT_USER_ID, name="Tag 2", tag_group_id=tag_group.id
+            book_id=book.id,
+            user_id=DEFAULT_USER_ID,
+            name="Tag 2",
+            tag_group_id=tag_group.id,
         )
         db_session.add_all([tag1, tag2])
         db_session.commit()
@@ -238,7 +244,7 @@ class TestDeleteTagGroup:
 
 
 class TestUpdateTag:
-    """Test suite for POST /book/:id/highlight_tag/:id endpoint."""
+    """Test suite for POST /books/:id/highlight_tag/:id endpoint."""
 
     def test_update_tag_add_to_group(self, client: TestClient, db_session: Session) -> None:
         """Test adding a tag to a tag group."""
@@ -262,7 +268,7 @@ class TestUpdateTag:
 
         # Update tag to add to group
         response = client.post(
-            f"/api/v1/book/{book.id}/highlight_tag/{tag.id}",
+            f"/api/v1/books/{book.id}/highlight_tag/{tag.id}",
             json={"tag_group_id": tag_group.id},
         )
 
@@ -291,7 +297,10 @@ class TestUpdateTag:
         db_session.refresh(tag_group)
 
         tag = models.HighlightTag(
-            book_id=book.id, user_id=DEFAULT_USER_ID, name="Important", tag_group_id=tag_group.id
+            book_id=book.id,
+            user_id=DEFAULT_USER_ID,
+            name="Important",
+            tag_group_id=tag_group.id,
         )
         db_session.add(tag)
         db_session.commit()
@@ -299,7 +308,7 @@ class TestUpdateTag:
 
         # Update tag to remove from group
         response = client.post(
-            f"/api/v1/book/{book.id}/highlight_tag/{tag.id}",
+            f"/api/v1/books/{book.id}/highlight_tag/{tag.id}",
             json={"tag_group_id": None},
         )
 
@@ -329,7 +338,7 @@ class TestUpdateTag:
 
         # Update tag name
         response = client.post(
-            f"/api/v1/book/{book.id}/highlight_tag/{tag.id}",
+            f"/api/v1/books/{book.id}/highlight_tag/{tag.id}",
             json={"name": "New Name"},
         )
 
@@ -366,7 +375,7 @@ class TestUpdateTag:
 
         # Update both name and group
         response = client.post(
-            f"/api/v1/book/{book.id}/highlight_tag/{tag.id}",
+            f"/api/v1/books/{book.id}/highlight_tag/{tag.id}",
             json={"name": "New Name", "tag_group_id": tag_group.id},
         )
 
@@ -404,7 +413,7 @@ class TestUpdateTag:
 
         # Try to update with wrong book_id
         response = client.post(
-            f"/api/v1/book/{book2.id}/highlight_tag/{tag.id}",
+            f"/api/v1/books/{book2.id}/highlight_tag/{tag.id}",
             json={"name": "New Name"},
         )
 
@@ -427,7 +436,7 @@ class TestUpdateTag:
 
         # Try to update with non-existent group
         response = client.post(
-            f"/api/v1/book/{book.id}/highlight_tag/{tag.id}",
+            f"/api/v1/books/{book.id}/highlight_tag/{tag.id}",
             json={"tag_group_id": 99999},
         )
 
@@ -435,7 +444,7 @@ class TestUpdateTag:
 
 
 class TestBookDetailsWithTagGroups:
-    """Test suite for GET /book/:id endpoint with tag groups."""
+    """Test suite for GET /books/:id endpoint with tag groups."""
 
     def test_get_book_details_includes_tag_groups(
         self, client: TestClient, db_session: Session
@@ -455,7 +464,7 @@ class TestBookDetailsWithTagGroups:
         db_session.commit()
 
         # Get book details
-        response = client.get(f"/api/v1/book/{book.id}")
+        response = client.get(f"/api/v1/books/{book.id}")
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -485,7 +494,10 @@ class TestBookDetailsWithTagGroups:
         db_session.refresh(tag_group)
 
         tag1 = models.HighlightTag(
-            book_id=book.id, user_id=DEFAULT_USER_ID, name="Tag 1", tag_group_id=tag_group.id
+            book_id=book.id,
+            user_id=DEFAULT_USER_ID,
+            name="Tag 1",
+            tag_group_id=tag_group.id,
         )
         tag2 = models.HighlightTag(
             book_id=book.id, user_id=DEFAULT_USER_ID, name="Tag 2", tag_group_id=None
@@ -507,7 +519,7 @@ class TestBookDetailsWithTagGroups:
         db_session.commit()
 
         # Get book details
-        response = client.get(f"/api/v1/book/{book.id}")
+        response = client.get(f"/api/v1/books/{book.id}")
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -541,7 +553,7 @@ class TestCascadeDelete:
         db_session.refresh(tag_group)
 
         # Delete book
-        response = client.delete(f"/api/v1/book/{book.id}")
+        response = client.delete(f"/api/v1/books/{book.id}")
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
 

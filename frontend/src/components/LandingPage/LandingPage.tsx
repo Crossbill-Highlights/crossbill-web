@@ -1,4 +1,4 @@
-import { useGetBooksApiV1BookBooksGet } from '@/api/generated/books/books';
+import { useGetBooksApiV1BooksGet } from '@/api/generated/books/books';
 import { Alert, Box, Container, Pagination, Typography } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { SearchBar } from '../common/SearchBar';
@@ -17,7 +17,7 @@ export const LandingPage = () => {
   // Calculate offset for pagination
   const offset = (currentPage - 1) * BOOKS_PER_PAGE;
 
-  const { data, isLoading, isError } = useGetBooksApiV1BookBooksGet({
+  const { data, isLoading, isError } = useGetBooksApiV1BooksGet({
     search: searchText || undefined,
     offset,
     limit: BOOKS_PER_PAGE,

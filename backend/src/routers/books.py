@@ -15,10 +15,10 @@ from src.services.highlight_service import HighlightService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/book", tags=["books"])
+router = APIRouter(prefix="/books", tags=["books"])
 
 
-@router.get("/books", response_model=schemas.BooksListResponse, status_code=status.HTTP_200_OK)
+@router.get("/", response_model=schemas.BooksListResponse, status_code=status.HTTP_200_OK)
 def get_books(
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],

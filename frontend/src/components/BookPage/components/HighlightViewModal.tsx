@@ -1,9 +1,9 @@
 import {
-  useAddTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost,
-  useCreateBookmarkApiV1BookBookIdBookmarkPost,
-  useDeleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDelete,
-  useDeleteHighlightsApiV1BookBookIdHighlightDelete,
-  useRemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete,
+  useAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost,
+  useCreateBookmarkApiV1BooksBookIdBookmarkPost,
+  useDeleteBookmarkApiV1BooksBookIdBookmarkBookmarkIdDelete,
+  useDeleteHighlightsApiV1BooksBookIdHighlightDelete,
+  useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete,
 } from '@/api/generated/books/books';
 import { useUpdateHighlightNoteApiV1HighlightsHighlightIdNotePost } from '@/api/generated/highlights/highlights';
 import type { Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
@@ -53,7 +53,7 @@ const HighlightNote = ({
     mutation: {
       onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: [`/api/v1/book/${bookId}`],
+          queryKey: [`/api/v1/books/${bookId}`],
         });
       },
       onError: (error) => {
@@ -149,15 +149,15 @@ const TagInput = ({
   }, [initialTags]);
 
   // Mutation hooks
-  const addTagMutation = useAddTagToHighlightApiV1BookBookIdHighlightHighlightIdTagPost({
+  const addTagMutation = useAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost({
     mutation: {
       onSuccess: (data) => {
         setCurrentTags(data.highlight_tags || []);
         void queryClient.invalidateQueries({
-          queryKey: [`/api/v1/book/${bookId}`],
+          queryKey: [`/api/v1/books/${bookId}`],
         });
         void queryClient.invalidateQueries({
-          queryKey: [`/api/v1/book/${bookId}/highlight_tags`],
+          queryKey: [`/api/v1/books/${bookId}/highlight_tags`],
         });
       },
       onError: (error) => {
@@ -168,15 +168,15 @@ const TagInput = ({
   });
 
   const removeTagMutation =
-    useRemoveTagFromHighlightApiV1BookBookIdHighlightHighlightIdTagTagIdDelete({
+    useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete({
       mutation: {
         onSuccess: (data) => {
           setCurrentTags(data.highlight_tags || []);
           void queryClient.invalidateQueries({
-            queryKey: [`/api/v1/book/${bookId}`],
+            queryKey: [`/api/v1/books/${bookId}`],
           });
           void queryClient.invalidateQueries({
-            queryKey: [`/api/v1/book/${bookId}/highlight_tags`],
+            queryKey: [`/api/v1/books/${bookId}/highlight_tags`],
           });
         },
         onError: (error) => {
@@ -339,11 +339,11 @@ const Toolbar = ({
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const createBookmarkMutation = useCreateBookmarkApiV1BookBookIdBookmarkPost({
+  const createBookmarkMutation = useCreateBookmarkApiV1BooksBookIdBookmarkPost({
     mutation: {
       onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: [`/api/v1/book/${bookId}`],
+          queryKey: [`/api/v1/books/${bookId}`],
         });
       },
       onError: (error) => {
@@ -353,11 +353,11 @@ const Toolbar = ({
     },
   });
 
-  const deleteBookmarkMutation = useDeleteBookmarkApiV1BookBookIdBookmarkBookmarkIdDelete({
+  const deleteBookmarkMutation = useDeleteBookmarkApiV1BooksBookIdBookmarkBookmarkIdDelete({
     mutation: {
       onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: [`/api/v1/book/${bookId}`],
+          queryKey: [`/api/v1/books/${bookId}`],
         });
       },
       onError: (error) => {
@@ -539,11 +539,11 @@ export const HighlightViewModal = ({
     preventScrollOnSwipe: false,
   });
 
-  const deleteHighlightMutation = useDeleteHighlightsApiV1BookBookIdHighlightDelete({
+  const deleteHighlightMutation = useDeleteHighlightsApiV1BooksBookIdHighlightDelete({
     mutation: {
       onSuccess: () => {
         void queryClient.refetchQueries({
-          queryKey: [`/api/v1/book/${bookId}`],
+          queryKey: [`/api/v1/books/${bookId}`],
           exact: true,
         });
         onClose();
@@ -570,10 +570,10 @@ export const HighlightViewModal = ({
 
   const handleClose = () => {
     void queryClient.invalidateQueries({
-      queryKey: [`/api/v1/book/${bookId}`],
+      queryKey: [`/api/v1/books/${bookId}`],
     });
     void queryClient.invalidateQueries({
-      queryKey: [`/api/v1/book/${bookId}/highlight_tags`],
+      queryKey: [`/api/v1/books/${bookId}/highlight_tags`],
     });
     onClose(highlight.id);
   };

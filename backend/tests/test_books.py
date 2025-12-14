@@ -15,7 +15,7 @@ DEFAULT_USER_ID = 1
 
 
 class TestDeleteBook:
-    """Test suite for DELETE /book/:id endpoint."""
+    """Test suite for DELETE /books/:id endpoint."""
 
     def test_delete_book_success(self, client: TestClient, db_session: Session) -> None:
         """Test successful deletion of a book."""
@@ -44,7 +44,7 @@ class TestDeleteBook:
         )
 
         # Delete the book
-        response = client.delete(f"/api/v1/book/{book.id}")
+        response = client.delete(f"/api/v1/books/{book.id}")
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -62,7 +62,7 @@ class TestDeleteBook:
 
     def test_delete_book_not_found(self, client: TestClient, db_session: Session) -> None:
         """Test deletion of non-existent book."""
-        response = client.delete("/api/v1/book/99999")
+        response = client.delete("/api/v1/books/99999")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         data = response.json()
@@ -71,13 +71,13 @@ class TestDeleteBook:
 
     def test_delete_book_empty_database(self, client: TestClient, db_session: Session) -> None:
         """Test deletion when database is empty."""
-        response = client.delete("/api/v1/book/1")
+        response = client.delete("/api/v1/books/1")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 class TestDeleteHighlights:
-    """Test suite for DELETE /book/:id/highlight endpoint."""
+    """Test suite for DELETE /books/:id/highlight endpoint."""
 
     def test_delete_highlights_success(self, client: TestClient, db_session: Session) -> None:
         """Test successful soft deletion of highlights."""
@@ -109,7 +109,7 @@ class TestDeleteHighlights:
         # Delete highlights
         payload = {"highlight_ids": [highlight1.id, highlight2.id]}
         response = client.request(
-            "DELETE", f"/api/v1/book/{book.id}/highlight", content=json.dumps(payload)
+            "DELETE", f"/api/v1/books/{book.id}/highlight", content=json.dumps(payload)
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -154,7 +154,7 @@ class TestDeleteHighlights:
         # Delete only first highlight
         payload = {"highlight_ids": [highlight1.id]}
         response = client.request(
-            "DELETE", f"/api/v1/book/{book.id}/highlight", content=json.dumps(payload)
+            "DELETE", f"/api/v1/books/{book.id}/highlight", content=json.dumps(payload)
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -193,7 +193,7 @@ class TestDeleteHighlights:
         # Try to delete it again
         payload = {"highlight_ids": [highlight.id]}
         response = client.request(
-            "DELETE", f"/api/v1/book/{book.id}/highlight", content=json.dumps(payload)
+            "DELETE", f"/api/v1/books/{book.id}/highlight", content=json.dumps(payload)
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -228,7 +228,7 @@ class TestDeleteHighlights:
         # Try to delete book1's highlight using book2's ID
         payload = {"highlight_ids": [highlight1.id]}
         response = client.request(
-            "DELETE", f"/api/v1/book/{book2.id}/highlight", content=json.dumps(payload)
+            "DELETE", f"/api/v1/books/{book2.id}/highlight", content=json.dumps(payload)
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -245,7 +245,7 @@ class TestDeleteHighlights:
         """Test deletion of highlights for non-existent book."""
         payload = {"highlight_ids": [1, 2, 3]}
         response = client.request(
-            "DELETE", "/api/v1/book/99999/highlight", content=json.dumps(payload)
+            "DELETE", "/api/v1/books/99999/highlight", content=json.dumps(payload)
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -266,7 +266,7 @@ class TestDeleteHighlights:
         # Try to delete with empty list
         payload = {"highlight_ids": []}
         response = client.request(
-            "DELETE", f"/api/v1/book/{book.id}/highlight", content=json.dumps(payload)
+            "DELETE", f"/api/v1/books/{book.id}/highlight", content=json.dumps(payload)
         )
 
         # Should fail validation because of min_length=1
@@ -390,7 +390,7 @@ class TestHighlightSyncWithSoftDelete:
 
 
 class TestGetBookDetails:
-    """Test suite for GET /book/:id endpoint to verify soft-delete filtering."""
+    """Test suite for GET /books/:id endpoint to verify soft-delete filtering."""
 
     def test_get_book_details_excludes_deleted_highlights(
         self, client: TestClient, db_session: Session
@@ -430,7 +430,7 @@ class TestGetBookDetails:
         )
 
         # Get book details
-        response = client.get(f"/api/v1/book/{book.id}")
+        response = client.get(f"/api/v1/books/{book.id}")
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()

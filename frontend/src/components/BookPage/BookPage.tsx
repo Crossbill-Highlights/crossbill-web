@@ -1,4 +1,4 @@
-import { useGetBookDetailsApiV1BookBookIdGet } from '@/api/generated/books/books.ts';
+import { useGetBookDetailsApiV1BooksBookIdGet } from '@/api/generated/books/books';
 import { useSearchHighlightsApiV1HighlightsSearchGet } from '@/api/generated/highlights/highlights.ts';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils';
@@ -19,7 +19,7 @@ import { SearchResults } from './components/SearchResults';
 export const BookPage = () => {
   const { bookId } = useParams({ from: '/book/$bookId' });
   const { search, tagId } = useSearch({ from: '/book/$bookId' });
-  const { data: book, isLoading, isError } = useGetBookDetailsApiV1BookBookIdGet(Number(bookId));
+  const { data: book, isLoading, isError } = useGetBookDetailsApiV1BooksBookIdGet(Number(bookId));
 
   const navigate = useNavigate({ from: '/book/$bookId' });
   const searchText = search || '';
