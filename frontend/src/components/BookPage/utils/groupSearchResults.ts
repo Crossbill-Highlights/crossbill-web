@@ -6,9 +6,7 @@ import { chain, sortBy } from 'lodash';
  * Converts HighlightSearchResult[] to ChapterData[] format.
  * TODO: maybe this can be removed if we just returned highlights grouped by chapter from the backend?
  */
-export function groupSearchResultsIntoChapters(
-  highlights: HighlightSearchResult[] | undefined
-): {
+export function groupSearchResultsIntoChapters(highlights: HighlightSearchResult[] | undefined): {
   id: string | number;
   name: string;
   chapterNumber: number | undefined;
