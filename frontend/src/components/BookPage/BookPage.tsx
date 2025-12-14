@@ -301,6 +301,8 @@ export const BookPage = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 3,
+                    maxHeight: 'calc(100vh - 80px - 32px)',
+                    overflow: 'hidden',
                   }}
                 >
                   <BookmarkList

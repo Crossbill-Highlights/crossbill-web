@@ -20,7 +20,15 @@ export const ChapterNav = ({ chapters, onChapterClick }: ChapterNavProps) => {
   }
 
   return (
-    <Box>
+    <Box
+      sx={{
+        flex: isMobile ? 'none' : '1 1 auto',
+        minHeight: isMobile ? 'auto' : 0,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: isMobile ? 'visible' : 'hidden',
+      }}
+    >
       <Box
         sx={{
           display: 'flex',
@@ -28,6 +36,7 @@ export const ChapterNav = ({ chapters, onChapterClick }: ChapterNavProps) => {
           justifyContent: 'space-between',
           mb: 2,
           cursor: 'pointer',
+          flexShrink: 0,
         }}
         onClick={() => setIsExpanded((prev) => !prev)}
       >
@@ -55,14 +64,21 @@ export const ChapterNav = ({ chapters, onChapterClick }: ChapterNavProps) => {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
-            style={{ overflow: 'hidden' }}
+            style={{
+              overflow: 'hidden',
+              flex: '1 1 auto',
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
           >
             <Box
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 0.5,
-                maxHeight: isMobile ? 'none' : 'calc(30vh)',
+                flex: '1 1 auto',
+                minHeight: 0,
                 overflowY: isMobile ? 'visible' : 'auto',
               }}
             >
