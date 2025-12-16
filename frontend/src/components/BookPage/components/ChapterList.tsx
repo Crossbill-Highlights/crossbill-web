@@ -13,30 +13,20 @@ export interface ChapterData {
 
 interface ChapterListProps {
   chapters: ChapterData[];
-  bookId: number;
   bookmarksByHighlightId: Record<number, Bookmark>;
-  allHighlights: Highlight[];
   isLoading?: boolean;
   emptyMessage?: string;
   animationKey?: string;
-  openHighlightId?: number;
   onOpenHighlight?: (highlightId: number) => void;
-  onCloseHighlight?: (lastViewedHighlightId?: number) => void;
-  onNavigateHighlight?: (newHighlightId: number) => void;
 }
 
 export const ChapterList = ({
   chapters,
-  bookId,
   bookmarksByHighlightId,
-  allHighlights,
   isLoading,
   emptyMessage = 'No chapters found.',
   animationKey = 'chapters',
-  openHighlightId,
   onOpenHighlight,
-  onCloseHighlight,
-  onNavigateHighlight,
 }: ChapterListProps) => {
   if (isLoading) {
     return (
@@ -62,24 +52,14 @@ export const ChapterList = ({
 
               {chapter.highlights.length > 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                  {chapter.highlights.map((highlight) => {
-                    const highlightIndex = allHighlights.findIndex((h) => h.id === highlight.id);
-                    return (
-                      <HighlightCard
-                        key={highlight.id}
-                        highlight={highlight}
-                        bookId={bookId}
-                        bookmark={bookmarksByHighlightId[highlight.id]}
-                        bookmarksByHighlightId={bookmarksByHighlightId}
-                        allHighlights={allHighlights}
-                        currentIndex={highlightIndex}
-                        isModalOpen={openHighlightId === highlight.id}
-                        onOpenModal={onOpenHighlight}
-                        onCloseModal={onCloseHighlight}
-                        onNavigate={onNavigateHighlight}
-                      />
-                    );
-                  })}
+                  {chapter.highlights.map((highlight) => (
+                    <HighlightCard
+                      key={highlight.id}
+                      highlight={highlight}
+                      bookmark={bookmarksByHighlightId[highlight.id]}
+                      onOpenModal={onOpenHighlight}
+                    />
+                  ))}
                 </Box>
               ) : (
                 <Typography variant="body2" color="text.secondary" sx={{ pl: 0.5 }}>

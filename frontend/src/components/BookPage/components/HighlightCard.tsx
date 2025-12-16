@@ -10,15 +10,8 @@ import { Box, Typography } from '@mui/material';
 
 export interface HighlightCardProps {
   highlight: Highlight;
-  bookId: number;
   bookmark?: Bookmark;
-  bookmarksByHighlightId: Record<number, Bookmark>;
-  allHighlights?: Highlight[];
-  currentIndex?: number;
-  isModalOpen?: boolean;
   onOpenModal?: (highlightId: number) => void;
-  onCloseModal?: (lastViewedHighlightId?: number) => void;
-  onNavigate?: (newHighlightId: number) => void;
 }
 
 interface FooterProps {
