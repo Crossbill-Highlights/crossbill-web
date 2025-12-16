@@ -236,7 +236,7 @@ export const BookPage = () => {
                 />
                 <ChapterNav chapters={chapters} onChapterClick={handleChapterClick} />
               </Box>
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
                 <Box sx={{ flexGrow: 1 }}>
                   <SearchBar
                     onSearch={handleSearch}
@@ -283,7 +283,7 @@ export const BookPage = () => {
                 <Box /> {/* Empty left spacer */}
                 <Box>
                   <BookTitle book={book} highlightCount={totalHighlights} />
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
                     <Box sx={{ flexGrow: 1 }}>
                       <SearchBar
                         onSearch={handleSearch}

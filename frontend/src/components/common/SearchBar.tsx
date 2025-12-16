@@ -48,7 +48,7 @@ export const SearchBar = ({
   };
 
   return (
-    <Box sx={{ mb: 3 }}>
+    <Box>
       <TextField
         fullWidth
         placeholder={placeholder}
