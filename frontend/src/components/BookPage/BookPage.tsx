@@ -3,7 +3,8 @@ import { useSearchHighlightsApiV1HighlightsSearchGet } from '@/api/generated/hig
 import type { Highlight } from '@/api/generated/model';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils';
-import { Alert, Box, Container, useMediaQuery, useTheme } from '@mui/material';
+import { SwapVert as SwapVertIcon } from '@mui/icons-material';
+import { Alert, Box, Container, IconButton, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';
 import { useMemo, useState } from 'react';
@@ -29,6 +30,7 @@ export const BookPage = () => {
   const searchText = search || '';
 
   const [selectedTagId, setSelectedTagId] = useState<number | undefined>(tagId);
+  const [isReversed, setIsReversed] = useState(false);
 
   const handleSearch = (value: string) => {
     navigate({
@@ -140,16 +142,28 @@ export const BookPage = () => {
 
   // Unified chapter data for both search and regular views
   const chapters = useMemo(() => {
+    let result;
     if (showSearchResults) {
-      return groupSearchResultsIntoChapters(filteredSearchResults);
+      result = groupSearchResultsIntoChapters(filteredSearchResults);
+    } else {
+      result = filteredChapters.map((chapter) => ({
+        id: chapter.id,
+        name: chapter.name || 'Unknown Chapter',
+        chapterNumber: chapter.chapter_number ?? undefined,
+        highlights: (chapter.highlights || []) as Highlight[],
+      }));
     }
-    return filteredChapters.map((chapter) => ({
-      id: chapter.id,
-      name: chapter.name || 'Unknown Chapter',
-      chapterNumber: chapter.chapter_number ?? undefined,
-      highlights: (chapter.highlights || []) as Highlight[],
-    }));
-  }, [showSearchResults, filteredSearchResults, filteredChapters]);
+
+    // Apply reverse order if enabled
+    if (isReversed) {
+      return [...result].reverse().map((chapter) => ({
+        ...chapter,
+        highlights: [...chapter.highlights].reverse(),
+      }));
+    }
+
+    return result;
+  }, [showSearchResults, filteredSearchResults, filteredChapters, isReversed]);
 
   // Flat array of all highlights for navigation
   const allHighlights = useMemo(() => {
@@ -222,11 +236,27 @@ export const BookPage = () => {
                 />
                 <ChapterNav chapters={chapters} onChapterClick={handleChapterClick} />
               </Box>
-              <SearchBar
-                onSearch={handleSearch}
-                placeholder="Search highlights..."
-                initialValue={searchText}
-              />
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                <Box sx={{ flexGrow: 1 }}>
+                  <SearchBar
+                    onSearch={handleSearch}
+                    placeholder="Search highlights..."
+                    initialValue={searchText}
+                  />
+                </Box>
+                <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
+                  <IconButton
+                    onClick={() => setIsReversed(!isReversed)}
+                    sx={{
+                      mt: '1px',
+                      color: isReversed ? 'primary.main' : 'text.secondary',
+                      '&:hover': { color: 'primary.main' },
+                    }}
+                  >
+                    <SwapVertIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
               <ChapterList
                 chapters={chapters}
                 bookId={book.id}
@@ -253,11 +283,27 @@ export const BookPage = () => {
                 <Box /> {/* Empty left spacer */}
                 <Box>
                   <BookTitle book={book} highlightCount={totalHighlights} />
-                  <SearchBar
-                    onSearch={handleSearch}
-                    placeholder="Search highlights..."
-                    initialValue={searchText}
-                  />
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <SearchBar
+                        onSearch={handleSearch}
+                        placeholder="Search highlights..."
+                        initialValue={searchText}
+                      />
+                    </Box>
+                    <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
+                      <IconButton
+                        onClick={() => setIsReversed(!isReversed)}
+                        sx={{
+                          mt: '1px',
+                          color: isReversed ? 'primary.main' : 'text.secondary',
+                          '&:hover': { color: 'primary.main' },
+                        }}
+                      >
+                        <SwapVertIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </Box>
                 <Box /> {/* Empty right spacer */}
               </Box>
