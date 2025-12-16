@@ -273,9 +273,6 @@ function CrossbillSync:performSync(is_autosync)
 		local highlights = self:getHighlightsFromMemory() or self:getHighlights(doc_path)
 
 		if not highlights or #highlights == 0 then
-			UIManager:show(InfoMessage:new({
-				text = _("No highlights found in this book"),
-			}))
 			return
 		end
 
