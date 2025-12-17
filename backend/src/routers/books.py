@@ -52,6 +52,42 @@ def get_books(
         ) from e
 
 
+@router.get(
+    "/recently-viewed",
+    response_model=schemas.RecentlyViewedBooksResponse,
+    status_code=status.HTTP_200_OK,
+)
+def get_recently_viewed_books(
+    db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
+    limit: int = Query(10, ge=1, le=50, description="Maximum number of books to return"),
+) -> schemas.RecentlyViewedBooksResponse:
+    """
+    Get recently viewed books with their highlight counts.
+
+    Returns books that have been viewed at least once, ordered by most recently viewed.
+
+    Args:
+        db: Database session
+        limit: Maximum number of books to return (default: 10, max: 50)
+
+    Returns:
+        RecentlyViewedBooksResponse with list of recently viewed books
+
+    Raises:
+        HTTPException: If fetching books fails due to server error
+    """
+    try:
+        service = HighlightService(db)
+        return service.get_recently_viewed_books(current_user.id, limit)
+    except Exception as e:
+        logger.error(f"Failed to fetch recently viewed books: {e!s}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch recently viewed books: {e!s}",
+        ) from e
+
+
 @router.get("/{book_id}", response_model=schemas.BookDetails, status_code=status.HTTP_200_OK)
 def get_book_details(
     book_id: int,

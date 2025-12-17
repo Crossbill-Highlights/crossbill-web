@@ -122,6 +122,9 @@ class Book(Base):
         onupdate=func.now(),
         nullable=False,
     )
+    last_viewed: Mapped[dt | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="books")

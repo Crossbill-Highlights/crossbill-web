@@ -24,6 +24,7 @@ class Book(BookBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    last_viewed: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -49,6 +50,7 @@ class BookWithHighlightCount(BaseModel):
     tags: list[TagInBook] = Field(default_factory=list, description="List of tags for this book")
     created_at: datetime
     updated_at: datetime
+    last_viewed: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -62,6 +64,14 @@ class BooksListResponse(BaseModel):
     total: int = Field(..., ge=0, description="Total number of books")
     offset: int = Field(..., ge=0, description="Current offset")
     limit: int = Field(..., ge=1, description="Current limit")
+
+
+class RecentlyViewedBooksResponse(BaseModel):
+    """Schema for recently viewed books response."""
+
+    books: list[BookWithHighlightCount] = Field(
+        ..., description="List of recently viewed books with highlight counts"
+    )
 
 
 class CoverUploadResponse(BaseModel):

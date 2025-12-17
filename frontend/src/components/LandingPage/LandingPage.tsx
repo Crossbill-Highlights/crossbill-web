@@ -5,6 +5,7 @@ import { SearchBar } from '../common/SearchBar';
 import { SectionTitle } from '../common/SectionTitle';
 import { Spinner } from '../common/Spinner';
 import { BookList } from './components/BookList';
+import { RecentlyViewedBooks } from './components/RecentlyViewedBooks';
 
 const BOOKS_PER_PAGE = 30;
 
@@ -57,6 +58,9 @@ export const LandingPage = () => {
           Your highlights management application
         </Typography>
       </Box>
+
+      {/* Only show recently viewed when not searching */}
+      {!searchText && <RecentlyViewedBooks />}
 
       <Box sx={{ mb: 4 }}>
         <SectionTitle showDivider>Books</SectionTitle>

@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import Sequence
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.engine import Row
@@ -153,3 +154,56 @@ class BookRepository:
         self.db.flush()
         logger.info(f"Deleted book: {book.title} (id={book.id}, user_id={user_id})")
         return True
+
+    def update_last_viewed(self, book_id: int, user_id: int) -> models.Book | None:
+        """
+        Update the last_viewed timestamp for a book.
+
+        Args:
+            book_id: ID of the book to update
+            user_id: ID of the user who owns the book
+
+        Returns:
+            Updated book or None if not found
+        """
+        book = self.get_by_id(book_id, user_id)
+        if not book:
+            return None
+
+        book.last_viewed = datetime.now(timezone.utc)
+        self.db.flush()
+        logger.debug(f"Updated last_viewed for book: {book.title} (id={book.id})")
+        return book
+
+    def get_recently_viewed_books(
+        self, user_id: int, limit: int = 10
+    ) -> Sequence[Row[tuple[models.Book, int]]]:
+        """
+        Get recently viewed books with their highlight counts for a specific user.
+
+        Only returns books that have been viewed (last_viewed is not NULL).
+
+        Args:
+            user_id: ID of the user whose books to retrieve
+            limit: Maximum number of books to return (default: 10)
+
+        Returns:
+            Sequence of (book, highlight_count) tuples ordered by last_viewed DESC
+        """
+        stmt = (
+            select(models.Book, func.count(models.Highlight.id).label("highlight_count"))
+            .outerjoin(
+                models.Highlight,
+                (models.Book.id == models.Highlight.book_id)
+                & (models.Highlight.deleted_at.is_(None)),
+            )
+            .where(
+                models.Book.user_id == user_id,
+                models.Book.last_viewed.isnot(None),
+            )
+            .group_by(models.Book.id)
+            .order_by(models.Book.last_viewed.desc())
+            .limit(limit)
+        )
+
+        return self.db.execute(stmt).all()

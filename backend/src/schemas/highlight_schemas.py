@@ -132,6 +132,7 @@ class BookDetails(BaseModel):
     )
     created_at: dt
     updated_at: dt
+    last_viewed: dt | None = None
 
     model_config = {"from_attributes": True}
 

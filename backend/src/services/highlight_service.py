@@ -189,11 +189,48 @@ class HighlightService:
                 tags=[schemas.TagInBook.model_validate(tag) for tag in book.tags],
                 created_at=book.created_at,
                 updated_at=book.updated_at,
+                last_viewed=book.last_viewed,
             )
             for book, count in books_with_counts
         ]
 
         return schemas.BooksListResponse(books=books_list, total=total, offset=offset, limit=limit)
+
+    def get_recently_viewed_books(
+        self, user_id: int, limit: int = 10
+    ) -> schemas.RecentlyViewedBooksResponse:
+        """
+        Get recently viewed books with their highlight counts.
+
+        Only returns books that have been viewed at least once.
+
+        Args:
+            user_id: ID of the user
+            limit: Maximum number of books to return (default: 10)
+
+        Returns:
+            RecentlyViewedBooksResponse with list of recently viewed books
+        """
+        books_with_counts = self.book_repo.get_recently_viewed_books(user_id, limit)
+
+        # Convert to response schema
+        books_list = [
+            schemas.BookWithHighlightCount(
+                id=book.id,
+                title=book.title,
+                author=book.author,
+                isbn=book.isbn,
+                cover=book.cover,
+                highlight_count=count,
+                tags=[schemas.TagInBook.model_validate(tag) for tag in book.tags],
+                created_at=book.created_at,
+                updated_at=book.updated_at,
+                last_viewed=book.last_viewed,
+            )
+            for book, count in books_with_counts
+        ]
+
+        return schemas.RecentlyViewedBooksResponse(books=books_list)
 
     def update_highlight_note(
         self, highlight_id: int, user_id: int, note_data: schemas.HighlightNoteUpdate

@@ -7,6 +7,7 @@ from src.schemas.book_schemas import (
     BooksListResponse,
     BookWithHighlightCount,
     CoverUploadResponse,
+    RecentlyViewedBooksResponse,
     TagInBook,
 )
 from src.schemas.bookmark_schemas import (
@@ -59,6 +60,7 @@ __all__ = [
     "BookmarkCreateRequest",
     "BookmarksResponse",
     "BooksListResponse",
+    "RecentlyViewedBooksResponse",
     "Chapter",
     "ChapterBase",
     "ChapterWithHighlights",

@@ -32,6 +32,8 @@ class BookService:
         """
         Get detailed information about a book including its chapters and highlights.
 
+        Also updates the book's last_viewed timestamp.
+
         Args:
             book_id: ID of the book to retrieve
 
@@ -41,8 +43,8 @@ class BookService:
         Raises:
             HTTPException: If book is not found
         """
-        # Get the book
-        book = self.book_repo.get_by_id(book_id, user_id)
+        # Get the book and update last_viewed timestamp
+        book = self.book_repo.update_last_viewed(book_id, user_id)
 
         if not book:
             raise BookNotFoundError(book_id)
@@ -112,6 +114,7 @@ class BookService:
             chapters=chapters_with_highlights,
             created_at=book.created_at,
             updated_at=book.updated_at,
+            last_viewed=book.last_viewed,
         )
 
     def delete_book(self, book_id: int, user_id: int) -> bool:
@@ -275,4 +278,5 @@ class BookService:
             tags=[schemas.TagInBook.model_validate(tag) for tag in updated_book.tags],
             created_at=updated_book.created_at,
             updated_at=updated_book.updated_at,
+            last_viewed=updated_book.last_viewed,
         )
