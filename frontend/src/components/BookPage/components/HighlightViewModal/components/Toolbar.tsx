@@ -11,7 +11,7 @@ import {
   Link as LinkIcon,
   Notes as NotesIcon,
 } from '@mui/icons-material';
-import { Box, IconButton } from '@mui/material';
+import { Box, IconButton, Tooltip } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -104,49 +104,59 @@ export const Toolbar = ({
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-      <IconButton
-        onClick={handleCopyLink}
-        disabled={isLoading}
-        aria-label="Copy link to highlight"
-        size="small"
-      >
-        <LinkIcon />
-      </IconButton>
-      <IconButton
-        onClick={handleCopyContent}
-        disabled={isLoading}
-        aria-label="Copy highlight text"
-        size="small"
-      >
-        <ContentCopyIcon />
-      </IconButton>
-      <IconButton
-        onClick={handleBookmarkToggle}
-        disabled={isLoading}
-        aria-label={bookmark ? 'Remove bookmark' : 'Add bookmark'}
-        size="small"
-      >
-        {bookmark ? <BookmarkIcon /> : <BookmarkBorderIcon />}
-      </IconButton>
-      <IconButton
-        onClick={onNoteToggle}
-        disabled={isLoading}
-        aria-label={noteVisible ? 'Hide note' : 'Show note'}
-        size="small"
-        sx={{
-          color: hasNote || noteVisible ? 'primary.main' : 'inherit',
-        }}
-      >
-        <NotesIcon />
-      </IconButton>
-      <IconButton
-        onClick={onDelete}
-        disabled={isLoading}
-        aria-label="Delete highlight"
-        size="small"
-      >
-        <DeleteIcon />
-      </IconButton>
+      <Tooltip title="Copy link">
+        <IconButton
+          onClick={handleCopyLink}
+          disabled={isLoading}
+          aria-label="Copy link to highlight"
+          size="small"
+        >
+          <LinkIcon />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Copy highlight content">
+        <IconButton
+          onClick={handleCopyContent}
+          disabled={isLoading}
+          aria-label="Copy highlight text"
+          size="small"
+        >
+          <ContentCopyIcon />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title={bookmark ? 'Remove bookmark' : 'Add bookmark'}>
+        <IconButton
+          onClick={handleBookmarkToggle}
+          disabled={isLoading}
+          aria-label={bookmark ? 'Remove bookmark' : 'Add bookmark'}
+          size="small"
+        >
+          {bookmark ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+        </IconButton>
+      </Tooltip>
+      <Tooltip title={noteVisible ? 'Hide note' : 'Show note'}>
+        <IconButton
+          onClick={onNoteToggle}
+          disabled={isLoading}
+          aria-label={noteVisible ? 'Hide note' : 'Show note'}
+          size="small"
+          sx={{
+            color: hasNote || noteVisible ? 'primary.main' : 'inherit',
+          }}
+        >
+          <NotesIcon />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Delete highlight">
+        <IconButton
+          onClick={onDelete}
+          disabled={isLoading}
+          aria-label="Delete highlight"
+          size="small"
+        >
+          <DeleteIcon />
+        </IconButton>
+      </Tooltip>
     </Box>
   );
 };
