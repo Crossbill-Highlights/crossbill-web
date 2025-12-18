@@ -63,7 +63,7 @@ export const LandingPage = () => {
       {!searchText && <RecentlyViewedBooks />}
 
       <Box sx={{ mb: 4 }}>
-        <SectionTitle showDivider>Books</SectionTitle>
+        <SectionTitle showDivider>All books</SectionTitle>
 
         <Box sx={{ mb: 3 }}>
           <SearchBar
