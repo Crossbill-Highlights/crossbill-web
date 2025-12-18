@@ -31,9 +31,7 @@ class BookRepository:
         )
         return self.db.execute(stmt).scalar_one_or_none()
 
-    def find_by_content_hash(
-        self, content_hash: str, user_id: int
-    ) -> models.Book | None:
+    def find_by_content_hash(self, content_hash: str, user_id: int) -> models.Book | None:
         """Find a book by its content hash and user."""
         stmt = select(models.Book).where(
             models.Book.content_hash == content_hash,
@@ -41,13 +39,9 @@ class BookRepository:
         )
         return self.db.execute(stmt).scalar_one_or_none()
 
-    def create(
-        self, book_data: schemas.BookCreate, content_hash: str, user_id: int
-    ) -> models.Book:
+    def create(self, book_data: schemas.BookCreate, content_hash: str, user_id: int) -> models.Book:
         """Create a new book."""
-        book = models.Book(
-            **book_data.model_dump(), content_hash=content_hash, user_id=user_id
-        )
+        book = models.Book(**book_data.model_dump(), content_hash=content_hash, user_id=user_id)
         self.db.add(book)
         self.db.flush()
         self.db.refresh(book)
@@ -121,9 +115,7 @@ class BookRepository:
 
         # Main query for books with highlight counts (excluding soft-deleted highlights)
         stmt = (
-            select(
-                models.Book, func.count(models.Highlight.id).label("highlight_count")
-            )
+            select(models.Book, func.count(models.Highlight.id).label("highlight_count"))
             .outerjoin(
                 models.Highlight,
                 (models.Book.id == models.Highlight.book_id)
@@ -203,9 +195,7 @@ class BookRepository:
             Sequence of (book, highlight_count) tuples ordered by last_viewed DESC
         """
         stmt = (
-            select(
-                models.Book, func.count(models.Highlight.id).label("highlight_count")
-            )
+            select(models.Book, func.count(models.Highlight.id).label("highlight_count"))
             .outerjoin(
                 models.Highlight,
                 (models.Book.id == models.Highlight.book_id)
