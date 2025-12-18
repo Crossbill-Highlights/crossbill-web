@@ -1,3 +1,4 @@
+import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books';
 import {
   useCreateOrUpdateTagGroupApiV1HighlightsTagGroupPost,
   useDeleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete,
@@ -112,7 +113,7 @@ export const HighlightTagsModal = ({
     mutation: {
       onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: [`/api/v1/books/${bookId}`],
+          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
         // Clear any previous errors on success
         setErrorDialogOpen(false);
@@ -131,7 +132,7 @@ export const HighlightTagsModal = ({
     mutation: {
       onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: [`/api/v1/books/${bookId}`],
+          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
       },
       onError: (error: unknown) => {

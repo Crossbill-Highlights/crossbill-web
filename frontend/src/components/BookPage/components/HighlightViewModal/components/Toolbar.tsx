@@ -1,4 +1,5 @@
 import {
+  getGetBookDetailsApiV1BooksBookIdGetQueryKey,
   useCreateBookmarkApiV1BooksBookIdBookmarkPost,
   useDeleteBookmarkApiV1BooksBookIdBookmarkBookmarkIdDelete,
 } from '@/api/generated/books/books';
@@ -45,7 +46,7 @@ export const Toolbar = ({
     mutation: {
       onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: [`/api/v1/books/${bookId}`],
+          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
       },
       onError: (error) => {
@@ -59,7 +60,7 @@ export const Toolbar = ({
     mutation: {
       onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: [`/api/v1/books/${bookId}`],
+          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
       },
       onError: (error) => {

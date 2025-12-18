@@ -1,4 +1,6 @@
 import {
+  getGetBookDetailsApiV1BooksBookIdGetQueryKey,
+  getGetBooksApiV1BooksGetQueryKey,
   useDeleteBookApiV1BooksBookIdDelete,
   useUpdateBookApiV1BooksBookIdPost,
 } from '@/api/generated/books/books.ts';
@@ -37,8 +39,10 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
       onSuccess: async () => {
         // Invalidate and refetch both the books list and the specific book details
         await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['/api/v1/books/'] }),
-          queryClient.invalidateQueries({ queryKey: [`/api/v1/books/${book.id}`] }),
+          queryClient.invalidateQueries({ queryKey: getGetBooksApiV1BooksGetQueryKey() }),
+          queryClient.invalidateQueries({
+            queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(book.id),
+          }),
         ]);
         onClose();
       },
