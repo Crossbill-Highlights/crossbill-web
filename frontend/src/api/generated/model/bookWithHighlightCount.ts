@@ -7,6 +7,7 @@
 import type { BookWithHighlightCountAuthor } from './bookWithHighlightCountAuthor';
 import type { BookWithHighlightCountCover } from './bookWithHighlightCountCover';
 import type { BookWithHighlightCountIsbn } from './bookWithHighlightCountIsbn';
+import type { BookWithHighlightCountLastViewed } from './bookWithHighlightCountLastViewed';
 import type { TagInBook } from './tagInBook';
 
 /**
@@ -27,4 +28,5 @@ export interface BookWithHighlightCount {
   tags?: TagInBook[];
   created_at: string;
   updated_at: string;
+  last_viewed?: BookWithHighlightCountLastViewed;
 }

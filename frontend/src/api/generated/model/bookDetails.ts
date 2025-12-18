@@ -7,6 +7,7 @@
 import type { BookDetailsAuthor } from './bookDetailsAuthor';
 import type { BookDetailsCover } from './bookDetailsCover';
 import type { BookDetailsIsbn } from './bookDetailsIsbn';
+import type { BookDetailsLastViewed } from './bookDetailsLastViewed';
 import type { Bookmark } from './bookmark';
 import type { ChapterWithHighlights } from './chapterWithHighlights';
 import type { HighlightTagGroupInBook } from './highlightTagGroupInBook';
@@ -34,4 +35,5 @@ export interface BookDetails {
   chapters?: ChapterWithHighlights[];
   created_at: string;
   updated_at: string;
+  last_viewed?: BookDetailsLastViewed;
 }

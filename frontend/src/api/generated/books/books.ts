@@ -31,6 +31,7 @@ import type {
   BooksListResponse,
   CoverUploadResponse,
   GetBooksApiV1BooksGetParams,
+  GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams,
   HTTPValidationError,
   Highlight,
   HighlightDeleteRequest,
@@ -40,6 +41,7 @@ import type {
   HighlightTagCreateRequest,
   HighlightTagUpdateRequest,
   HighlightTagsResponse,
+  RecentlyViewedBooksResponse,
 } from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
@@ -170,6 +172,174 @@ export function useGetBooksApiV1BooksGet<
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getGetBooksApiV1BooksGetQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Get recently viewed books with their highlight counts.
+
+Returns books that have been viewed at least once, ordered by most recently viewed.
+
+Args:
+    db: Database session
+    limit: Maximum number of books to return (default: 10, max: 50)
+
+Returns:
+    RecentlyViewedBooksResponse with list of recently viewed books
+
+Raises:
+    HTTPException: If fetching books fails due to server error
+ * @summary Get Recently Viewed Books
+ */
+export const getRecentlyViewedBooksApiV1BooksRecentlyViewedGet = (
+  params?: GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<RecentlyViewedBooksResponse>({
+    url: `/api/v1/books/recently-viewed`,
+    method: 'GET',
+    params,
+    signal,
+  });
+};
+
+export const getGetRecentlyViewedBooksApiV1BooksRecentlyViewedGetQueryKey = (
+  params?: GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams
+) => {
+  return [`/api/v1/books/recently-viewed`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetRecentlyViewedBooksApiV1BooksRecentlyViewedGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>,
+  TError = HTTPValidationError,
+>(
+  params?: GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetRecentlyViewedBooksApiV1BooksRecentlyViewedGetQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>
+  > = ({ signal }) => getRecentlyViewedBooksApiV1BooksRecentlyViewedGet(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>
+>;
+export type GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetQueryError = HTTPValidationError;
+
+export function useGetRecentlyViewedBooksApiV1BooksRecentlyViewedGet<
+  TData = Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>,
+  TError = HTTPValidationError,
+>(
+  params: undefined | GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>,
+          TError,
+          Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetRecentlyViewedBooksApiV1BooksRecentlyViewedGet<
+  TData = Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>,
+  TError = HTTPValidationError,
+>(
+  params?: GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>,
+          TError,
+          Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetRecentlyViewedBooksApiV1BooksRecentlyViewedGet<
+  TData = Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>,
+  TError = HTTPValidationError,
+>(
+  params?: GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Recently Viewed Books
+ */
+
+export function useGetRecentlyViewedBooksApiV1BooksRecentlyViewedGet<
+  TData = Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>,
+  TError = HTTPValidationError,
+>(
+  params?: GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getRecentlyViewedBooksApiV1BooksRecentlyViewedGet>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetRecentlyViewedBooksApiV1BooksRecentlyViewedGetQueryOptions(
+    params,
+    options
+  );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
