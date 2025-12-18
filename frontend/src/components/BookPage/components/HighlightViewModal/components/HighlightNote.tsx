@@ -1,3 +1,4 @@
+import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books';
 import { useUpdateHighlightNoteApiV1HighlightsHighlightIdNotePost } from '@/api/generated/highlights/highlights';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
@@ -32,7 +33,7 @@ export const HighlightNote = ({
     mutation: {
       onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: [`/api/v1/books/${bookId}`],
+          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
       },
       onError: (error) => {

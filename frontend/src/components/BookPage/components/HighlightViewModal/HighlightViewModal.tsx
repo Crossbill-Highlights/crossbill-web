@@ -1,4 +1,8 @@
-import { useDeleteHighlightsApiV1BooksBookIdHighlightDelete } from '@/api/generated/books/books';
+import {
+  getGetBookDetailsApiV1BooksBookIdGetQueryKey,
+  getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey,
+  useDeleteHighlightsApiV1BooksBookIdHighlightDelete,
+} from '@/api/generated/books/books';
 import type { Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { ArrowBack as ArrowBackIcon, ArrowForward as ArrowForwardIcon } from '@mui/icons-material';
@@ -60,7 +64,7 @@ export const HighlightViewModal = ({
     mutation: {
       onSuccess: () => {
         void queryClient.refetchQueries({
-          queryKey: [`/api/v1/books/${bookId}`],
+          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
           exact: true,
         });
         onClose();
@@ -87,10 +91,10 @@ export const HighlightViewModal = ({
 
   const handleClose = () => {
     void queryClient.invalidateQueries({
-      queryKey: [`/api/v1/books/${bookId}`],
+      queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
     });
     void queryClient.invalidateQueries({
-      queryKey: [`/api/v1/books/${bookId}/highlight_tags`],
+      queryKey: getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey(bookId),
     });
     onClose(highlight.id);
   };

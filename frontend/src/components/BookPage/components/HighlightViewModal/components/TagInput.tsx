@@ -1,4 +1,6 @@
 import {
+  getGetBookDetailsApiV1BooksBookIdGetQueryKey,
+  getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey,
   useAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost,
   useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete,
 } from '@/api/generated/books/books';
@@ -37,10 +39,10 @@ export const TagInput = ({
       onSuccess: (data) => {
         setCurrentTags(data.highlight_tags || []);
         void queryClient.invalidateQueries({
-          queryKey: [`/api/v1/books/${bookId}`],
+          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
         void queryClient.invalidateQueries({
-          queryKey: [`/api/v1/books/${bookId}/highlight_tags`],
+          queryKey: getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey(bookId),
         });
       },
       onError: (error) => {
@@ -56,10 +58,10 @@ export const TagInput = ({
         onSuccess: (data) => {
           setCurrentTags(data.highlight_tags || []);
           void queryClient.invalidateQueries({
-            queryKey: [`/api/v1/books/${bookId}`],
+            queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
           });
           void queryClient.invalidateQueries({
-            queryKey: [`/api/v1/books/${bookId}/highlight_tags`],
+            queryKey: getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey(bookId),
           });
         },
         onError: (error) => {
