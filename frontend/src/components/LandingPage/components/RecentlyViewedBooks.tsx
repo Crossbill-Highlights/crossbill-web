@@ -1,5 +1,5 @@
+import { useGetRecentlyViewedBooksApiV1BooksRecentlyViewedGet } from '@/api/generated/books/books';
 import { Alert, Box } from '@mui/material';
-import { useGetRecentlyViewedBooks } from '../../../api/hooks/useRecentlyViewedBooks';
 import { SectionTitle } from '../../common/SectionTitle';
 import { Spinner } from '../../common/Spinner';
 import { BookList } from './BookList';
@@ -7,7 +7,7 @@ import { BookList } from './BookList';
 const RECENTLY_VIEWED_LIMIT = 10;
 
 export const RecentlyViewedBooks = () => {
-  const { data, isLoading, isError } = useGetRecentlyViewedBooks({
+  const { data, isLoading, isError } = useGetRecentlyViewedBooksApiV1BooksRecentlyViewedGet({
     limit: RECENTLY_VIEWED_LIMIT,
   });
 
