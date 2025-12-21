@@ -9,7 +9,7 @@ import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils';
 import { queryClient } from '@/lib/queryClient';
 import { SwapVert as SwapVertIcon } from '@mui/icons-material';
-import { Alert, Box, Container, IconButton, Tooltip, useMediaQuery, useTheme } from '@mui/material';
+import { Alert, Box, IconButton, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';
 import { useEffect, useMemo, useState } from 'react';
@@ -220,9 +220,9 @@ export const BookPage = () => {
           minHeight: '100vh',
         }}
       >
-        <Container maxWidth="lg">
+        <Box sx={{ px: { xs: 2, sm: 3, lg: 4 }, maxWidth: '1400px', mx: 'auto' }}>
           <Spinner />
-        </Container>
+        </Box>
       </Box>
     );
   }
@@ -234,11 +234,11 @@ export const BookPage = () => {
           minHeight: '100vh',
         }}
       >
-        <Container maxWidth="lg">
+        <Box sx={{ px: { xs: 2, sm: 3, lg: 4 }, maxWidth: '1400px', mx: 'auto' }}>
           <Box sx={{ pt: 4 }}>
             <Alert severity="error">Failed to load book details. Please try again later.</Alert>
           </Box>
-        </Container>
+        </Box>
       </Box>
     );
   }
@@ -247,12 +247,90 @@ export const BookPage = () => {
     <Box sx={{ minHeight: '100vh' }}>
       <ScrollToTopButton />
       <FadeInOut ekey={'book-title'}>
-        <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3 }, py: 4 }}>
-          {/* Mobile Layout */}
-          {!isDesktop && (
-            <>
+        {/* Mobile Layout */}
+        {!isDesktop && (
+          <Box sx={{ px: { xs: 2, sm: 3 }, py: 4, maxWidth: '800px', mx: 'auto' }}>
+            <BookTitle book={book} highlightCount={totalHighlights} />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 3 }}>
+              <HighlightTags
+                tags={book.highlight_tags || []}
+                tagGroups={book.highlight_tag_groups || []}
+                bookId={book.id}
+                selectedTag={selectedTagId}
+                onTagClick={handleTagClick}
+              />
+              <BookmarkList
+                bookmarks={book.bookmarks || []}
+                allHighlights={allHighlights}
+                onBookmarkClick={handleBookmarkClick}
+              />
+              <ChapterNav chapters={chapters} onChapterClick={handleChapterClick} />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
+              <Box sx={{ flexGrow: 1 }}>
+                <SearchBar
+                  onSearch={handleSearch}
+                  placeholder="Search highlights..."
+                  initialValue={searchText}
+                />
+              </Box>
+              <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
+                <IconButton
+                  onClick={() => setIsReversed(!isReversed)}
+                  sx={{
+                    mt: '1px',
+                    color: isReversed ? 'primary.main' : 'text.secondary',
+                    '&:hover': { color: 'primary.main' },
+                  }}
+                >
+                  <SwapVertIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+            <ChapterList
+              chapters={chapters}
+              bookmarksByHighlightId={bookmarksByHighlightId}
+              isLoading={showSearchResults && isSearching}
+              emptyMessage={emptyMessage}
+              animationKey={`chapters-${showSearchResults ? 'search' : 'view'}-${selectedTagId ?? 'all'}`}
+              onOpenHighlight={handleOpenHighlight}
+            />
+          </Box>
+        )}
+
+        {/* Desktop Full-Width Layout */}
+        {isDesktop && (
+          <Box sx={{ px: 4, py: 4 }}>
+            {/* Book Header - Centered with max-width */}
+            <Box
+              sx={{
+                maxWidth: '900px',
+                mx: 'auto',
+                mb: 4,
+              }}
+            >
               <BookTitle book={book} highlightCount={totalHighlights} />
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 3 }}>
+            </Box>
+
+            {/* 3-Column Content Grid - Full Width */}
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '280px 1fr 280px',
+                gap: 4,
+                alignItems: 'start',
+              }}
+            >
+              {/* Left Column - Tags */}
+              <Box
+                sx={{
+                  bgcolor: 'rgba(255, 255, 255, 0.5)',
+                  borderRadius: 3,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  p: 2.5,
+                }}
+              >
                 <HighlightTags
                   tags={book.highlight_tags || []}
                   tagGroups={book.highlight_tag_groups || []}
@@ -260,105 +338,31 @@ export const BookPage = () => {
                   selectedTag={selectedTagId}
                   onTagClick={handleTagClick}
                 />
-                <BookmarkList
-                  bookmarks={book.bookmarks || []}
-                  allHighlights={allHighlights}
-                  onBookmarkClick={handleBookmarkClick}
-                />
-                <ChapterNav chapters={chapters} onChapterClick={handleChapterClick} />
               </Box>
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
-                <Box sx={{ flexGrow: 1 }}>
-                  <SearchBar
-                    onSearch={handleSearch}
-                    placeholder="Search highlights..."
-                    initialValue={searchText}
-                  />
-                </Box>
-                <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
-                  <IconButton
-                    onClick={() => setIsReversed(!isReversed)}
-                    sx={{
-                      mt: '1px',
-                      color: isReversed ? 'primary.main' : 'text.secondary',
-                      '&:hover': { color: 'primary.main' },
-                    }}
-                  >
-                    <SwapVertIcon />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-              <ChapterList
-                chapters={chapters}
-                bookmarksByHighlightId={bookmarksByHighlightId}
-                isLoading={showSearchResults && isSearching}
-                emptyMessage={emptyMessage}
-                animationKey={`chapters-${showSearchResults ? 'search' : 'view'}-${selectedTagId ?? 'all'}`}
-                onOpenHighlight={handleOpenHighlight}
-              />
-            </>
-          )}
 
-          {/* Desktop 3-Column Layout */}
-          {isDesktop && (
-            <>
-              {/* Book Details + Search Bar - Centered with middle column */}
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: '250px 1fr 250px',
-                  gap: 4,
-                }}
-              >
-                <Box /> {/* Empty left spacer */}
-                <Box>
-                  <BookTitle book={book} highlightCount={totalHighlights} />
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
-                    <Box sx={{ flexGrow: 1 }}>
-                      <SearchBar
-                        onSearch={handleSearch}
-                        placeholder="Search highlights..."
-                        initialValue={searchText}
-                      />
-                    </Box>
-                    <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
-                      <IconButton
-                        onClick={() => setIsReversed(!isReversed)}
-                        sx={{
-                          mt: '1px',
-                          color: isReversed ? 'primary.main' : 'text.secondary',
-                          '&:hover': { color: 'primary.main' },
-                        }}
-                      >
-                        <SwapVertIcon />
-                      </IconButton>
-                    </Tooltip>
+              {/* Middle Column - Search + Chapter List */}
+              <Box>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
+                  <Box sx={{ flexGrow: 1 }}>
+                    <SearchBar
+                      onSearch={handleSearch}
+                      placeholder="Search highlights..."
+                      initialValue={searchText}
+                    />
                   </Box>
+                  <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
+                    <IconButton
+                      onClick={() => setIsReversed(!isReversed)}
+                      sx={{
+                        mt: '1px',
+                        color: isReversed ? 'primary.main' : 'text.secondary',
+                        '&:hover': { color: 'primary.main' },
+                      }}
+                    >
+                      <SwapVertIcon />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
-                <Box /> {/* Empty right spacer */}
-              </Box>
-
-              {/* 3-Column Content Grid */}
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: '250px 1fr 250px',
-                  gap: 4,
-                  alignItems: 'start',
-                }}
-              >
-                {/* Left Column - Tags */}
-                <Box sx={{ position: 'sticky', top: 80 }}>
-                  <HighlightTags
-                    tags={book.highlight_tags || []}
-                    tagGroups={book.highlight_tag_groups || []}
-                    bookId={book.id}
-                    selectedTag={selectedTagId}
-                    onTagClick={handleTagClick}
-                  />
-                </Box>
-
-                {/* Middle Column - Chapter List */}
                 <ChapterList
                   chapters={chapters}
                   bookmarksByHighlightId={bookmarksByHighlightId}
@@ -367,30 +371,26 @@ export const BookPage = () => {
                   animationKey={`chapters-${showSearchResults ? 'search' : 'view'}-${selectedTagId ?? 'all'}`}
                   onOpenHighlight={handleOpenHighlight}
                 />
-
-                {/* Right Column - Bookmarks + Chapters */}
-                <Box
-                  sx={{
-                    position: 'sticky',
-                    top: 80,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 3,
-                    maxHeight: 'calc(100vh - 80px - 32px)',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <BookmarkList
-                    bookmarks={book.bookmarks || []}
-                    allHighlights={allHighlights}
-                    onBookmarkClick={handleBookmarkClick}
-                  />
-                  <ChapterNav chapters={chapters} onChapterClick={handleChapterClick} />
-                </Box>
               </Box>
-            </>
-          )}
-        </Container>
+
+              {/* Right Column - Bookmarks + Chapters */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 3,
+                }}
+              >
+                <BookmarkList
+                  bookmarks={book.bookmarks || []}
+                  allHighlights={allHighlights}
+                  onBookmarkClick={handleBookmarkClick}
+                />
+                <ChapterNav chapters={chapters} onChapterClick={handleChapterClick} />
+              </Box>
+            </Box>
+          </Box>
+        )}
       </FadeInOut>
 
       {/* Highlight Modal - rendered at page level for URL sync */}
