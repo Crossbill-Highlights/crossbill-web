@@ -1,6 +1,5 @@
 import { Box, CircularProgress } from '@mui/material';
 import { Navigate, Outlet, createRootRoute, useLocation } from '@tanstack/react-router';
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { AppBar } from '../components/layout/AppBar';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { SettingsProvider, useSettings } from '../context/SettingsContext';
@@ -42,7 +41,6 @@ function AuthenticatedRoutes() {
     <Box>
       {!isPublicPage && <AppBar />}
       <Outlet />
-      <TanStackRouterDevtools />
     </Box>
   );
 }
