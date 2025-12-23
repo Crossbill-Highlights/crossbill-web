@@ -33,6 +33,7 @@ const BottomDrawer = ({
       <Box
         sx={{
           padding: 2,
+          paddingBottom: 6,
         }}
       >
         <Box display="flex" alignItems="center" justifyContent="end" sx={{ mt: -1, mb: 2 }}>
