@@ -7,6 +7,7 @@ import {
   useDeleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete,
 } from '@/api/generated/highlights/highlights';
 import { HighlightTagGroupInBook, HighlightTagInBook } from '@/api/generated/model';
+import { createAdaptiveHoverStyles, createAdaptiveTouchTarget } from '@/utils/adaptiveHover';
 import {
   DndContext,
   DragEndEvent,
@@ -536,6 +537,13 @@ const TagGroupHeader = ({
 }: TagGroupHeaderProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Use adaptive hover pattern: actions visible on touch, hover-based on desktop
+  const adaptiveStyles = createAdaptiveHoverStyles({
+    actionsClassName: 'group-actions',
+    transitionDuration: 0.15,
+  });
+  const touchTarget = createAdaptiveTouchTarget();
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -553,9 +561,7 @@ const TagGroupHeader = ({
         justifyContent: 'space-between',
         mb: isCollapsed ? 0 : 1,
         cursor: 'pointer',
-        '&:hover .group-actions': {
-          opacity: 1,
-        },
+        ...adaptiveStyles.container,
       }}
     >
       {isEditing ? (
@@ -598,11 +604,8 @@ const TagGroupHeader = ({
         <Box
           className="group-actions"
           sx={{
-            display: 'flex',
-            alignItems: 'center',
+            ...adaptiveStyles.actions,
             gap: 0.25,
-            opacity: 0,
-            transition: 'opacity 0.15s',
           }}
         >
           <Tooltip title="Rename group">
@@ -612,7 +615,7 @@ const TagGroupHeader = ({
                 e.stopPropagation();
                 onStartEdit();
               }}
-              sx={{ padding: 0.25, color: 'text.disabled' }}
+              sx={{ ...touchTarget, color: 'text.disabled' }}
             >
               <EditIcon sx={{ fontSize: 14 }} />
             </IconButton>
@@ -625,7 +628,7 @@ const TagGroupHeader = ({
                 onDelete();
               }}
               disabled={isProcessing}
-              sx={{ padding: 0.25, color: 'text.disabled' }}
+              sx={{ ...touchTarget, color: 'text.disabled' }}
             >
               <DeleteIcon sx={{ fontSize: 14 }} />
             </IconButton>
