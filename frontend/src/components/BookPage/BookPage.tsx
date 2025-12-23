@@ -9,7 +9,7 @@ import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils';
 import { queryClient } from '@/lib/queryClient';
 import { SwapVert as SwapVertIcon } from '@mui/icons-material';
-import { Alert, Box, IconButton, Tooltip, useMediaQuery, useTheme } from '@mui/material';
+import { Alert, Box, Container, IconButton, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';
 import { useEffect, useMemo, useState } from 'react';
@@ -244,7 +244,7 @@ export const BookPage = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh' }}>
+    <Container sx={{ minHeight: '100vh' }} maxWidth="xl">
       <ScrollToTopButton />
       <FadeInOut ekey={'book-title'}>
         {/* Mobile Layout */}
@@ -388,6 +388,6 @@ export const BookPage = () => {
           onNavigate={handleModalNavigate}
         />
       )}
-    </Box>
+    </Container>
   );
 };
