@@ -322,23 +322,13 @@ export const BookPage = () => {
               }}
             >
               {/* Left Column - Tags */}
-              <Box
-                sx={{
-                  bgcolor: 'rgba(255, 255, 255, 0.5)',
-                  borderRadius: 3,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  p: 2.5,
-                }}
-              >
-                <HighlightTags
-                  tags={book.highlight_tags || []}
-                  tagGroups={book.highlight_tag_groups || []}
-                  bookId={book.id}
-                  selectedTag={selectedTagId}
-                  onTagClick={handleTagClick}
-                />
-              </Box>
+              <HighlightTags
+                tags={book.highlight_tags || []}
+                tagGroups={book.highlight_tag_groups || []}
+                bookId={book.id}
+                selectedTag={selectedTagId}
+                onTagClick={handleTagClick}
+              />
 
               {/* Middle Column - Search + Chapter List */}
               <Box>

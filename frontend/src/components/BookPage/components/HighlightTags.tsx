@@ -583,8 +583,6 @@ export const HighlightTags = ({
             justifyContent: 'space-between',
             mb: 2,
             pb: 1.5,
-            borderBottom: '1px solid',
-            borderColor: 'divider',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -619,7 +617,7 @@ export const HighlightTags = ({
                   mb: 2,
                   p: 1.5,
                   bgcolor: 'action.hover',
-                  borderRadius: 2,
+                  borderRadius: 1,
                   border: '1px dashed',
                   borderColor: 'divider',
                 }}
@@ -708,7 +706,7 @@ export const HighlightTags = ({
                 sx={{
                   p: 1.5,
                   bgcolor: 'rgba(255, 255, 255, 0.6)',
-                  borderRadius: 2,
+                  borderRadius: 1,
                   border: '1px solid',
                   borderColor: 'divider',
                   transition: 'all 0.15s',
@@ -767,8 +765,6 @@ export const HighlightTags = ({
                   ungroupedTags.length === 0 && activeTag === null && movingTagId === null
                     ? 0
                     : 'auto',
-                marginTop:
-                  ungroupedTags.length === 0 && activeTag === null && movingTagId === null ? 0 : 8,
                 opacity:
                   ungroupedTags.length === 0 && activeTag === null && movingTagId === null ? 0 : 1,
               }}
@@ -779,7 +775,7 @@ export const HighlightTags = ({
                 sx={{
                   p: 1.5,
                   bgcolor: 'rgba(255, 255, 255, 0.4)',
-                  borderRadius: 2,
+                  borderRadius: 1,
                   border: '1px dashed',
                   borderColor: 'divider',
                 }}
@@ -846,7 +842,7 @@ export const HighlightTags = ({
               mt: 2,
               p: 1.5,
               bgcolor: 'action.hover',
-              borderRadius: 2,
+              borderRadius: 1,
               fontSize: '0.7rem',
               color: 'text.secondary',
               lineHeight: 1.5,
