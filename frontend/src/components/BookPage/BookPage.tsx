@@ -305,6 +305,8 @@ export const BookPage = () => {
               bookmarks={book.bookmarks || []}
               allHighlights={allHighlights}
               onBookmarkClick={handleBookmarkClick}
+              chapters={chapters}
+              onChapterClick={handleChapterClick}
             />
           </>
         )}

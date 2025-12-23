@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { BookmarkList } from '../BookmarkList';
+import { ChapterData } from '../ChapterList';
+import { ChapterNav } from '../ChapterNav';
 import { HighlightTags } from '../HighlightTags';
 
 const BottomDrawer = ({
@@ -86,8 +88,23 @@ const BookmarksDrawerContent = ({
   );
 };
 
-type MobileNavigationProps = TagsDrawerContentProps & BookmarksDrawerContentProps;
-type DrawerContentType = 'tags' | 'bookmarks';
+interface ChaptersDrawerContentProps {
+  chapters: ChapterData[];
+  onChapterClick: (chapterId: number | string) => void;
+}
+
+const ChaptersDrawerContent = ({ chapters, onChapterClick }: ChaptersDrawerContentProps) => {
+  return (
+    <Box>
+      <ChapterNav chapters={chapters} onChapterClick={onChapterClick} />
+    </Box>
+  );
+};
+
+type MobileNavigationProps = TagsDrawerContentProps &
+  BookmarksDrawerContentProps &
+  ChaptersDrawerContentProps;
+type DrawerContentType = 'tags' | 'bookmarks' | 'chapters';
 
 export const MobileNavigation = ({
   book,
@@ -96,6 +113,8 @@ export const MobileNavigation = ({
   bookmarks,
   allHighlights,
   onBookmarkClick,
+  chapters,
+  onChapterClick,
 }: MobileNavigationProps) => {
   const [drawerIsOpen, setDrawerState] = useState(false);
   const [drawerContent, setDrawerContent] = useState<DrawerContentType>('tags');
@@ -125,6 +144,17 @@ export const MobileNavigation = ({
         />
       );
     }
+    if (type === 'chapters') {
+      return (
+        <ChaptersDrawerContent
+          chapters={chapters}
+          onChapterClick={(data) => {
+            setDrawerState(false);
+            onChapterClick(data);
+          }}
+        />
+      );
+    }
   };
 
   return (
@@ -150,7 +180,13 @@ export const MobileNavigation = ({
               setDrawerContent('bookmarks');
             }}
           />
-          <BottomNavigationAction label="Chapters" icon={<ListIcon />} />
+          <BottomNavigationAction
+            label="Chapters"
+            icon={<ListIcon />}
+            onClick={() => {
+              setDrawerContent('chapters');
+            }}
+          />
         </BottomNavigation>
       </Paper>
       <BottomDrawer

@@ -1,5 +1,5 @@
 import { ExpandMore as ExpandMoreIcon, List as ListIcon } from '@mui/icons-material';
-import { Box, IconButton, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { Box, IconButton, Typography } from '@mui/material';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import type { ChapterData } from './ChapterList';
@@ -10,9 +10,7 @@ interface ChapterNavProps {
 }
 
 export const ChapterNav = ({ chapters, onChapterClick }: ChapterNavProps) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
-  const [isExpanded, setIsExpanded] = useState(() => !isMobile);
+  const [isExpanded, setIsExpanded] = useState(() => true);
 
   // If no chapters, don't render anything
   if (!chapters || chapters.length === 0) {
@@ -22,11 +20,9 @@ export const ChapterNav = ({ chapters, onChapterClick }: ChapterNavProps) => {
   return (
     <Box
       sx={{
-        flex: isMobile ? 'none' : '1 1 auto',
-        minHeight: isMobile ? 'auto' : 0,
+        flex: '1 1 auto',
         display: 'flex',
         flexDirection: 'column',
-        overflow: isMobile ? 'visible' : 'hidden',
       }}
     >
       <Box
@@ -51,6 +47,7 @@ export const ChapterNav = ({ chapters, onChapterClick }: ChapterNavProps) => {
           sx={{
             transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.2s',
+            display: { xs: 'none', lg: 'block' },
           }}
         >
           <ExpandMoreIcon fontSize="small" />
@@ -79,7 +76,6 @@ export const ChapterNav = ({ chapters, onChapterClick }: ChapterNavProps) => {
                 gap: 0.5,
                 flex: '1 1 auto',
                 minHeight: 0,
-                overflowY: isMobile ? 'visible' : 'auto',
               }}
             >
               {chapters.map((chapter) => (
