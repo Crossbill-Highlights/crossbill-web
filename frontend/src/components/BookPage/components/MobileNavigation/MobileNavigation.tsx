@@ -1,4 +1,4 @@
-import { BookDetails } from '@/api/generated/model';
+import { BookDetails, Bookmark, Highlight } from '@/api/generated/model';
 import {
   Bookmark as BookmarkIcon,
   Close as CloseIcon,
@@ -14,6 +14,7 @@ import {
   Paper,
 } from '@mui/material';
 import { useState } from 'react';
+import { BookmarkList } from '../BookmarkList';
 import { HighlightTags } from '../HighlightTags';
 
 const BottomDrawer = ({
@@ -63,10 +64,57 @@ const TagsDrawerContent = ({ book, selectedTag, onTagClick }: TagsDrawerContentP
   );
 };
 
-type MobileNavigationProps = {} & TagsDrawerContentProps;
+interface BookmarksDrawerContentProps {
+  bookmarks: Bookmark[];
+  allHighlights: Highlight[];
+  onBookmarkClick: (highlightId: number) => void;
+}
 
-export const MobileNavigation = ({ book, selectedTag, onTagClick }: MobileNavigationProps) => {
+const BookmarksDrawerContent = ({
+  bookmarks,
+  allHighlights,
+  onBookmarkClick,
+}: BookmarksDrawerContentProps) => {
+  return (
+    <Box>
+      <BookmarkList
+        bookmarks={bookmarks || []}
+        allHighlights={allHighlights}
+        onBookmarkClick={onBookmarkClick}
+      />
+    </Box>
+  );
+};
+
+type MobileNavigationProps = TagsDrawerContentProps & BookmarksDrawerContentProps;
+type DrawerContentType = 'tags' | 'bookmarks';
+
+export const MobileNavigation = ({
+  book,
+  selectedTag,
+  onTagClick,
+  bookmarks,
+  allHighlights,
+  onBookmarkClick,
+}: MobileNavigationProps) => {
   const [drawerIsOpen, setDrawerState] = useState(false);
+  const [drawerContent, setDrawerContent] = useState<DrawerContentType>('tags');
+
+  const getDrawerContent = (type: DrawerContentType) => {
+    if (type === 'tags') {
+      return <TagsDrawerContent book={book} selectedTag={selectedTag} onTagClick={onTagClick} />;
+    }
+    if (type === 'bookmarks') {
+      return (
+        <BookmarksDrawerContent
+          bookmarks={bookmarks}
+          allHighlights={allHighlights}
+          onBookmarkClick={onBookmarkClick}
+        />
+      );
+    }
+  };
+
   return (
     <>
       <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
@@ -76,17 +124,27 @@ export const MobileNavigation = ({ book, selectedTag, onTagClick }: MobileNaviga
             setDrawerState(true);
           }}
         >
-          <BottomNavigationAction label="Tags" icon={<TagIcon />} />
-          <BottomNavigationAction label="Bookmarks" icon={<BookmarkIcon />} />
+          <BottomNavigationAction
+            label="Tags"
+            icon={<TagIcon />}
+            onClick={() => {
+              setDrawerContent('tags');
+            }}
+          />
+          <BottomNavigationAction
+            label="Bookmarks"
+            icon={<BookmarkIcon />}
+            onClick={() => {
+              setDrawerContent('bookmarks');
+            }}
+          />
           <BottomNavigationAction label="Chapters" icon={<ListIcon />} />
         </BottomNavigation>
       </Paper>
       <BottomDrawer
         isOpen={drawerIsOpen}
         onClose={() => setDrawerState(false)}
-        content={
-          <TagsDrawerContent book={book} selectedTag={selectedTag} onTagClick={onTagClick} />
-        }
+        content={getDrawerContent(drawerContent)}
       />
     </>
   );
