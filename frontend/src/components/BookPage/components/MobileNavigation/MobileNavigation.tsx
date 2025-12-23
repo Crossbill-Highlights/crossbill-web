@@ -102,14 +102,26 @@ export const MobileNavigation = ({
 
   const getDrawerContent = (type: DrawerContentType) => {
     if (type === 'tags') {
-      return <TagsDrawerContent book={book} selectedTag={selectedTag} onTagClick={onTagClick} />;
+      return (
+        <TagsDrawerContent
+          book={book}
+          selectedTag={selectedTag}
+          onTagClick={(data) => {
+            onTagClick(data);
+            setDrawerState(false);
+          }}
+        />
+      );
     }
     if (type === 'bookmarks') {
       return (
         <BookmarksDrawerContent
           bookmarks={bookmarks}
           allHighlights={allHighlights}
-          onBookmarkClick={onBookmarkClick}
+          onBookmarkClick={(data) => {
+            setDrawerState(false);
+            onBookmarkClick(data);
+          }}
         />
       );
     }
