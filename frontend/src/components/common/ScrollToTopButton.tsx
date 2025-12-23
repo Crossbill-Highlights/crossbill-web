@@ -50,7 +50,7 @@ export const ScrollToTopButton = ({
         onClick={handleClick}
         sx={{
           position: 'fixed',
-          bottom: 24,
+          bottom: { xs: 80, lg: 24 },
           right: 24,
           zIndex: 1000,
         }}

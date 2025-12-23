@@ -22,6 +22,7 @@ import { ChapterList } from './components/ChapterList';
 import { ChapterNav } from './components/ChapterNav';
 import { HighlightTags } from './components/HighlightTags';
 import { HighlightViewModal } from './components/HighlightViewModal';
+import { MobileNavigation } from './components/MobileNavigation/MobileNavigation';
 import { useHighlightModal } from './hooks/useHighlightModal';
 import { groupSearchResultsIntoChapters } from './utils/groupSearchResults';
 
@@ -249,53 +250,56 @@ export const BookPage = () => {
       <FadeInOut ekey={'book-title'}>
         {/* Mobile Layout */}
         {!isDesktop && (
-          <Box sx={{ px: { xs: 2, sm: 3 }, py: 4, maxWidth: '800px', mx: 'auto' }}>
-            <BookTitle book={book} highlightCount={totalHighlights} />
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 3 }}>
-              <HighlightTags
-                tags={book.highlight_tags || []}
-                tagGroups={book.highlight_tag_groups || []}
-                bookId={book.id}
-                selectedTag={selectedTagId}
-                onTagClick={handleTagClick}
-              />
-              <BookmarkList
-                bookmarks={book.bookmarks || []}
-                allHighlights={allHighlights}
-                onBookmarkClick={handleBookmarkClick}
-              />
-              <ChapterNav chapters={chapters} onChapterClick={handleChapterClick} />
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
-              <Box sx={{ flexGrow: 1 }}>
-                <SearchBar
-                  onSearch={handleSearch}
-                  placeholder="Search highlights..."
-                  initialValue={searchText}
+          <>
+            <Box sx={{ px: { xs: 2, sm: 3 }, py: 4, maxWidth: '800px', mx: 'auto' }}>
+              <BookTitle book={book} highlightCount={totalHighlights} />
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 3 }}>
+                <HighlightTags
+                  tags={book.highlight_tags || []}
+                  tagGroups={book.highlight_tag_groups || []}
+                  bookId={book.id}
+                  selectedTag={selectedTagId}
+                  onTagClick={handleTagClick}
                 />
+                <BookmarkList
+                  bookmarks={book.bookmarks || []}
+                  allHighlights={allHighlights}
+                  onBookmarkClick={handleBookmarkClick}
+                />
+                <ChapterNav chapters={chapters} onChapterClick={handleChapterClick} />
               </Box>
-              <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
-                <IconButton
-                  onClick={() => setIsReversed(!isReversed)}
-                  sx={{
-                    mt: '1px',
-                    color: isReversed ? 'primary.main' : 'text.secondary',
-                    '&:hover': { color: 'primary.main' },
-                  }}
-                >
-                  <SwapVertIcon />
-                </IconButton>
-              </Tooltip>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
+                <Box sx={{ flexGrow: 1 }}>
+                  <SearchBar
+                    onSearch={handleSearch}
+                    placeholder="Search highlights..."
+                    initialValue={searchText}
+                  />
+                </Box>
+                <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
+                  <IconButton
+                    onClick={() => setIsReversed(!isReversed)}
+                    sx={{
+                      mt: '1px',
+                      color: isReversed ? 'primary.main' : 'text.secondary',
+                      '&:hover': { color: 'primary.main' },
+                    }}
+                  >
+                    <SwapVertIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              <ChapterList
+                chapters={chapters}
+                bookmarksByHighlightId={bookmarksByHighlightId}
+                isLoading={showSearchResults && isSearching}
+                emptyMessage={emptyMessage}
+                animationKey={`chapters-${showSearchResults ? 'search' : 'view'}-${selectedTagId ?? 'all'}`}
+                onOpenHighlight={handleOpenHighlight}
+              />
             </Box>
-            <ChapterList
-              chapters={chapters}
-              bookmarksByHighlightId={bookmarksByHighlightId}
-              isLoading={showSearchResults && isSearching}
-              emptyMessage={emptyMessage}
-              animationKey={`chapters-${showSearchResults ? 'search' : 'view'}-${selectedTagId ?? 'all'}`}
-              onOpenHighlight={handleOpenHighlight}
-            />
-          </Box>
+            <MobileNavigation />
+          </>
         )}
 
         {/* Desktop Full-Width Layout */}
