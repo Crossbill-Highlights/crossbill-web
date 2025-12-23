@@ -72,7 +72,6 @@ export const BookTitle = ({ book, highlightCount }: BookTitleProps) => {
             position: 'relative',
           }}
         >
-          {/* Title with Edit Button (Desktop only) */}
           <Typography
             variant="h1"
             component="h1"
