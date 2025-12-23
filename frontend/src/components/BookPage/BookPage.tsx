@@ -298,7 +298,7 @@ export const BookPage = () => {
                 onOpenHighlight={handleOpenHighlight}
               />
             </Box>
-            <MobileNavigation />
+            <MobileNavigation book={book} onTagClick={handleTagClick} selectedTag={selectedTagId} />
           </>
         )}
 
