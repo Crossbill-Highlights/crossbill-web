@@ -53,6 +53,7 @@ class BookRepository:
         book.title = book_data.title
         book.author = book_data.author
         book.isbn = book_data.isbn
+        book.description = book_data.description
         self.db.flush()
         self.db.refresh(book)
         logger.info(f"Updated book: {book.title} (id={book.id})")
