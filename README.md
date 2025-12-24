@@ -24,8 +24,9 @@ Crossbill helps you centralize and manage your ebook highlights by providing:
 - Sync highlights from KOReader with automatic deduplication
 - Web interface for viewing and managing highlights by book
 - Organize highlights with notes and metadata
-- Export highlights to various formats
+- Export highlights to various apps
 - Self-hosted - your data stays on your server
+- Multi-user support
 
 ## Screenshots
 
@@ -34,24 +35,7 @@ Crossbill helps you centralize and manage your ebook highlights by providing:
 <img width="250" alt="image" src="https://github.com/user-attachments/assets/de548aa4-c721-4ff7-b008-3c6aa8de0bdd" />
 
 ## Installation
-
-Each component has its own installation instructions:
-
-- **Backend**: See [backend/README.md](backend/README.md)
-- **Frontend**: See [frontend/README.md](frontend/README.md)
-- **KOReader Plugin**: See [clients/koreader-plugin/crossbill.koplugin/README.md](clients/koreader-plugin/crossbill.koplugin/README.md)
-- **Obsidian Plugin**: See [clients/obsidian-plugin/README.md](clients/obsidian-plugin/README.md)
-
-## Quick Start
-
-1. Set up the backend (requires Python 3.11+ and Docker)
-2. Set up the frontend (requires Node.js 18+)
-3. Install the KOReader plugin on your e-reader device
-4. Start syncing your highlights!
-
-## Example docker-compose
-
-An example `docker-compose.yml` for running Crossbill with PostgreSQL:
+Easiest way to install and run Crossbill is by using  `docker-compose.yml` with PostgreSQL:
 
 ```yaml
 services:
@@ -109,3 +93,15 @@ networks:
   crossbill-network:
     driver: bridge
 ```
+
+Then install the Koreader [plugin on your e-reader](clients/koreader-plugin/crossbill.koplugin/README.md).
+
+## Development
+Each component has its own installation instructions for development:
+
+- **Backend**: See [backend/README.md](backend/README.md)
+- **Frontend**: See [frontend/README.md](frontend/README.md)
+- **KOReader Plugin**: See [clients/koreader-plugin/crossbill.koplugin/README.md](clients/koreader-plugin/crossbill.koplugin/README.md)
+- **Obsidian Plugin**: See [clients/obsidian-plugin/README.md](clients/obsidian-plugin/README.md)
+
+API documentation can be found from URL `<backend host>/api/v1/docs` when running the backend server.
