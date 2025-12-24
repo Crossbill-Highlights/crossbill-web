@@ -62,7 +62,7 @@ class TagService:
         Add tags to a book without removing existing tags.
 
         This method will:
-        - Create new tags if they don't exist
+        - Create new tags if they don't exist (using bulk operations)
         - Add new tags to the book's existing tags
         - Skip tags that are already associated with the book
         - Reuse existing tags if they already exist
@@ -82,21 +82,19 @@ class TagService:
         if not book:
             raise ValueError(f"Book with id {book_id} not found")
 
-        # Get existing tag names for this book
-        existing_tag_names = {tag.name for tag in book.tags}
+        # Get existing tag IDs for this book to avoid duplicates
+        existing_tag_ids = {tag.id for tag in book.tags}
 
-        # Get or create tags and add new ones
-        new_tags_added = []
-        for tag_name in tag_names:
-            name = tag_name.strip()
-            if name and name not in existing_tag_names:
-                tag = self.tag_repo.get_or_create(name, user_id)
-                book.tags.append(tag)
-                new_tags_added.append(name)
+        # Bulk get or create all tags (2 queries max: 1 SELECT, 1 INSERT)
+        all_tags = self.tag_repo.get_or_create_many(tag_names, user_id)
 
-        if new_tags_added:
+        # Filter to only tags not already on the book
+        new_tags = [tag for tag in all_tags if tag.id not in existing_tag_ids]
+
+        if new_tags:
+            book.tags.extend(new_tags)
             self.db.flush()
             self.db.refresh(book)
-            logger.info(f"Added tags to book {book_id}: {new_tags_added}")
+            logger.info(f"Added tags to book {book_id}: {[t.name for t in new_tags]}")
 
         return book
