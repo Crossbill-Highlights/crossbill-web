@@ -118,6 +118,8 @@ class BookDetails(BaseModel):
     isbn: str | None
     cover: str | None
     description: str | None = None
+    language: str | None = None
+    page_count: int | None = None
     tags: list[TagInBook] = Field(default_factory=list, description="List of tags for this book")
     highlight_tags: list[HighlightTagInBook] = Field(
         default_factory=list, description="List of highlight tags for this book"

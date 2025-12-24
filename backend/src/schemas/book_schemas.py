@@ -13,10 +13,16 @@ class BookBase(BaseModel):
     isbn: str | None = Field(None, max_length=20, description="Book ISBN")
     cover: str | None = Field(None, max_length=500, description="Book cover image path")
     description: str | None = Field(None, description="Book description from ebook metadata")
+    language: str | None = Field(None, max_length=10, description="Language code from ebook metadata")
+    page_count: int | None = Field(None, ge=1, description="Total page count from ebook metadata")
 
 
 class BookCreate(BookBase):
     """Schema for creating a Book."""
+
+    keywords: list[str] | None = Field(
+        None, description="Keywords from ebook metadata (will be converted to tags)"
+    )
 
 
 class Book(BookBase):
@@ -48,6 +54,8 @@ class BookWithHighlightCount(BaseModel):
     isbn: str | None
     cover: str | None
     description: str | None = None
+    language: str | None = None
+    page_count: int | None = None
     highlight_count: int = Field(..., ge=0, description="Number of highlights for this book")
     tags: list[TagInBook] = Field(default_factory=list, description="List of tags for this book")
     created_at: datetime
