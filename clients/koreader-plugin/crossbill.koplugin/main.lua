@@ -266,6 +266,7 @@ function CrossbillSync:performSync(is_autosync)
 			title = book_props.display_title or book_props.title or self:getFilename(doc_path),
 			author = book_props.authors or nil,
 			isbn = isbn,
+			description = metadata_props.description or nil,
 		}
 
 		-- Get highlights from memory (ReaderAnnotation) if available,
