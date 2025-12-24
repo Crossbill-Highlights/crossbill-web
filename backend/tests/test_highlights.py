@@ -1,6 +1,5 @@
 """Tests for highlights API endpoints."""
 
-import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -194,7 +193,6 @@ class TestHighlightsUpload:
         assert data2["highlights_created"] == 1
         assert data2["highlights_skipped"] == 1
 
-    @pytest.mark.skip
     def test_upload_preserves_edited_book_metadata(
         self, client: TestClient, db_session: Session
     ) -> None:
@@ -692,14 +690,17 @@ class TestHighlightsUpload:
         for name in ["Tag1", "Tag2"]:
             assert tag_counts.get(name) == 1
 
-    def test_upload_keywords_adds_to_existing_tags(
+    def test_upload_keywords_only_on_first_upload(
         self, client: TestClient, db_session: Session
     ) -> None:
-        """Test that uploading with new keywords adds them without removing existing tags."""
-        # First upload with initial keywords
+        """Test that keywords are only added on first upload, not subsequent syncs.
+
+        This ensures user's tag edits are preserved across re-syncs from the device.
+        """
+        # First upload with initial keywords - these should be added
         payload1 = {
             "book": {
-                "title": "Additive Keywords Test Book",
+                "title": "Keywords First Upload Test Book",
                 "author": "Test Author",
                 "keywords": ["Original1", "Original2"],
             },
@@ -713,12 +714,22 @@ class TestHighlightsUpload:
         response1 = client.post("/api/v1/highlights/upload", json=payload1)
         assert response1.status_code == status.HTTP_200_OK
 
-        # Second upload with different keywords
+        # Verify initial tags were added
+        book = (
+            db_session.query(models.Book)
+            .filter_by(title="Keywords First Upload Test Book", author="Test Author")
+            .first()
+        )
+        assert book is not None
+        tag_names = {tag.name for tag in book.tags}
+        assert tag_names == {"Original1", "Original2"}
+
+        # Second upload with different keywords - these should NOT be added
         payload2 = {
             "book": {
-                "title": "Additive Keywords Test Book",
+                "title": "Keywords First Upload Test Book",
                 "author": "Test Author",
-                "keywords": ["Original1", "NewTag"],  # Original1 is repeated, NewTag is new
+                "keywords": ["NewTag1", "NewTag2"],  # Different keywords
             },
             "highlights": [
                 {
@@ -730,15 +741,10 @@ class TestHighlightsUpload:
         response2 = client.post("/api/v1/highlights/upload", json=payload2)
         assert response2.status_code == status.HTTP_200_OK
 
-        # Verify book has all 3 tags
-        book = (
-            db_session.query(models.Book)
-            .filter_by(title="Additive Keywords Test Book", author="Test Author")
-            .first()
-        )
-        assert book is not None
+        # Verify book still has only original tags (new keywords not added)
+        db_session.refresh(book)
         tag_names = {tag.name for tag in book.tags}
-        assert tag_names == {"Original1", "Original2", "NewTag"}
+        assert tag_names == {"Original1", "Original2"}
 
     def test_books_response_includes_language_and_page_count(
         self, client: TestClient, db_session: Session, test_user: models.User

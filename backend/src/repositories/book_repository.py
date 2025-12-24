@@ -65,7 +65,7 @@ class BookRepository:
 
     def get_or_create(
         self, book_data: schemas.BookCreate, content_hash: str, user_id: int
-    ) -> models.Book:
+    ) -> tuple[models.Book, bool]:
         """Get existing book by content hash and user or create a new one.
 
         The content_hash is computed from the original title and author at upload time.
@@ -74,6 +74,9 @@ class BookRepository:
 
         Note: When an existing book is found, its metadata is NOT updated. This preserves
         any edits the user has made to the book's title/author in the app.
+
+        Returns:
+            tuple[Book, bool]: (book, created) where created is True if a new book was created
         """
         book = self.find_by_content_hash(content_hash, user_id)
 
@@ -81,10 +84,10 @@ class BookRepository:
             # Return existing book without updating metadata
             # This preserves any user edits to the book's title/author
             logger.debug(f"Found existing book by hash: {book.title} (id={book.id})")
-            return book
+            return book, False
 
         # Create new book with the computed hash
-        return self.create(book_data, content_hash, user_id)
+        return self.create(book_data, content_hash, user_id), True
 
     def get_books_with_highlight_count(
         self,

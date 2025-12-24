@@ -54,15 +54,11 @@ class HighlightService:
             title=request.book.title,
             author=request.book.author,
         )
-        book = self.book_repo.get_or_create(request.book, book_hash, user_id)
+        book, created = self.book_repo.get_or_create(request.book, book_hash, user_id)
 
-        # Update book metadata. Note this will overwrite database changes!
-        # TODO: When book details are editable, make this smarter so that these are
-        # set on first upload and otherwise perhaps set if missing...?
-        self.book_repo.update(book, request.book)
-
-        # Add keywords as tags (without removing existing user-added tags)
-        if request.book.keywords:
+        # Only add keywords as tags on first upload (book creation)
+        # This preserves user's tag edits on subsequent syncs
+        if created and request.book.keywords:
             tag_service = TagService(self.db)
             tag_service.add_book_tags(book.id, request.book.keywords, user_id)
 
