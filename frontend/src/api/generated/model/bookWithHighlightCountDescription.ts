@@ -5,7 +5,4 @@
  * OpenAPI spec version: 0.1.0
  */
 
-/**
- * Chapter order number from TOC
- */
-export type ChapterWithHighlightsChapterNumber = number | null;
+export type BookWithHighlightCountDescription = string | null;

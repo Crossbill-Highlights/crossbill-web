@@ -6,6 +6,6 @@
  */
 
 /**
- * Chapter order number from TOC
+ * Book description from ebook metadata
  */
-export type ChapterWithHighlightsChapterNumber = number | null;
+export type BookCreateDescription = string | null;
