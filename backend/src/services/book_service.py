@@ -104,6 +104,8 @@ class BookService:
             isbn=book.isbn,
             cover=book.cover,
             description=book.description,
+            language=book.language,
+            page_count=book.page_count,
             tags=[schemas.TagInBook.model_validate(tag) for tag in book.tags],
             highlight_tags=[
                 schemas.HighlightTagInBook.model_validate(tag) for tag in highlight_tags
@@ -277,6 +279,8 @@ class BookService:
             isbn=updated_book.isbn,
             cover=updated_book.cover,
             description=updated_book.description,
+            language=updated_book.language,
+            page_count=updated_book.page_count,
             highlight_count=highlight_count,
             tags=[schemas.TagInBook.model_validate(tag) for tag in updated_book.tags],
             created_at=updated_book.created_at,

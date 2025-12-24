@@ -5,6 +5,7 @@ from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
 
 from src import repositories, schemas
+from src.services.tag_service import TagService
 from src.utils import compute_book_hash, compute_highlight_hash
 
 logger = structlog.get_logger(__name__)
@@ -59,6 +60,11 @@ class HighlightService:
         # TODO: When book details are editable, make this smarter so that these are
         # set on first upload and otherwise perhaps set if missing...?
         self.book_repo.update(book, request.book)
+
+        # Add keywords as tags (without removing existing user-added tags)
+        if request.book.keywords:
+            tag_service = TagService(self.db)
+            tag_service.add_book_tags(book.id, request.book.keywords, user_id)
 
         # Step 2: Process chapters and prepare highlights with content hashes
         highlights_with_chapters: list[tuple[int | None, str, schemas.HighlightCreate]] = []
@@ -199,6 +205,8 @@ class HighlightService:
                 isbn=book.isbn,
                 cover=book.cover,
                 description=book.description,
+                language=book.language,
+                page_count=book.page_count,
                 highlight_count=count,
                 tags=[schemas.TagInBook.model_validate(tag) for tag in book.tags],
                 created_at=book.created_at,
@@ -236,6 +244,8 @@ class HighlightService:
                 isbn=book.isbn,
                 cover=book.cover,
                 description=book.description,
+                language=book.language,
+                page_count=book.page_count,
                 highlight_count=count,
                 tags=[schemas.TagInBook.model_validate(tag) for tag in book.tags],
                 created_at=book.created_at,
