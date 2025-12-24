@@ -177,6 +177,7 @@ export const BookTitle = ({ book, highlightCount }: BookTitleProps) => {
             sx={{
               display: 'flex',
               justifyContent: { xs: 'center', lg: 'flex-start' },
+              alignItems: 'center',
               gap: 1,
               mb: book.tags && book.tags.length > 0 ? 2 : 0,
               width: '100%',
