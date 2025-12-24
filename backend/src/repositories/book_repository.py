@@ -41,7 +41,9 @@ class BookRepository:
 
     def create(self, book_data: schemas.BookCreate, content_hash: str, user_id: int) -> models.Book:
         """Create a new book."""
-        book = models.Book(**book_data.model_dump(), content_hash=content_hash, user_id=user_id)
+        # Exclude keywords as they are handled separately via TagService
+        book_dict = book_data.model_dump(exclude={"keywords"})
+        book = models.Book(**book_dict, content_hash=content_hash, user_id=user_id)
         self.db.add(book)
         self.db.flush()
         self.db.refresh(book)
@@ -54,6 +56,8 @@ class BookRepository:
         book.author = book_data.author
         book.isbn = book_data.isbn
         book.description = book_data.description
+        book.language = book_data.language
+        book.page_count = book_data.page_count
         self.db.flush()
         self.db.refresh(book)
         logger.info(f"Updated book: {book.title} (id={book.id})")

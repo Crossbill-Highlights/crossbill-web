@@ -56,3 +56,47 @@ class TagService:
 
         logger.info(f"Updated tags for book {book_id}: {[tag.name for tag in tags]}")
         return book
+
+    def add_book_tags(self, book_id: int, tag_names: list[str], user_id: int) -> models.Book:
+        """
+        Add tags to a book without removing existing tags.
+
+        This method will:
+        - Create new tags if they don't exist
+        - Add new tags to the book's existing tags
+        - Skip tags that are already associated with the book
+        - Reuse existing tags if they already exist
+
+        Args:
+            book_id: ID of the book to update
+            tag_names: List of tag names to add to the book
+            user_id: ID of the user
+
+        Returns:
+            Updated book with new tags
+
+        Raises:
+            ValueError: If book is not found
+        """
+        book = self.book_repo.get_by_id(book_id, user_id)
+        if not book:
+            raise ValueError(f"Book with id {book_id} not found")
+
+        # Get existing tag names for this book
+        existing_tag_names = {tag.name for tag in book.tags}
+
+        # Get or create tags and add new ones
+        new_tags_added = []
+        for tag_name in tag_names:
+            name = tag_name.strip()
+            if name and name not in existing_tag_names:
+                tag = self.tag_repo.get_or_create(name, user_id)
+                book.tags.append(tag)
+                new_tags_added.append(name)
+
+        if new_tags_added:
+            self.db.flush()
+            self.db.refresh(book)
+            logger.info(f"Added tags to book {book_id}: {new_tags_added}")
+
+        return book
