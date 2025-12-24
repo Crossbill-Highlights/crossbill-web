@@ -7,14 +7,23 @@ import {
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
-import { useState } from 'react';
+import DOMPurify from 'dompurify';
+import { useMemo, useState } from 'react';
 import { BookCover } from '../../common/BookCover';
 import { BookEditModal } from './BookEditModal';
 
-// Strip HTML tags from description for display
+// Strip HTML tags from description for plain text preview
 const stripHtml = (html: string): string => {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   return doc.body.textContent || '';
+};
+
+// Sanitize HTML for safe rendering
+const sanitizeHtml = (html: string): string => {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'ul', 'ol', 'li', 'div', 'span'],
+    ALLOWED_ATTR: [],
+  });
 };
 
 export interface BookTitleProps {
@@ -30,13 +39,24 @@ export const BookTitle = ({ book, highlightCount }: BookTitleProps) => {
     setEditModalOpen(true);
   };
 
-  // Process description - strip HTML and check if it's long
-  const plainDescription = book.description ? stripHtml(book.description) : null;
-  const isLongDescription = plainDescription && plainDescription.length > 300;
+  // Process description - create plain text for preview and sanitized HTML for expanded view
+  const { plainDescription, sanitizedHtml, isLongDescription } = useMemo(() => {
+    if (!book.description) {
+      return { plainDescription: null, sanitizedHtml: null, isLongDescription: false };
+    }
+    const plain = stripHtml(book.description);
+    const sanitized = sanitizeHtml(book.description);
+    return {
+      plainDescription: plain,
+      sanitizedHtml: sanitized,
+      isLongDescription: plain.length > 300,
+    };
+  }, [book.description]);
+
   const truncatedDescription =
     isLongDescription && !descriptionExpanded
-      ? plainDescription.slice(0, 300) + '...'
-      : plainDescription;
+      ? plainDescription!.slice(0, 300) + '...'
+      : null;
 
   return (
     <>
@@ -114,17 +134,34 @@ export const BookTitle = ({ book, highlightCount }: BookTitleProps) => {
             {book.author || 'Unknown Author'}
           </Typography>
 
-          {plainDescription && (
+          {sanitizedHtml && (
             <Box sx={{ mb: 2, width: '100%' }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: 'text.secondary',
-                  lineHeight: 1.6,
-                }}
-              >
-                {truncatedDescription}
-              </Typography>
+              {/* Show truncated plain text when collapsed, or full HTML when expanded */}
+              {truncatedDescription ? (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: 'text.secondary',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {truncatedDescription}
+                </Typography>
+              ) : (
+                <Box
+                  sx={{
+                    color: 'text.secondary',
+                    lineHeight: 1.6,
+                    fontSize: '0.875rem',
+                    '& p': { my: 1 },
+                    '& p:first-of-type': { mt: 0 },
+                    '& p:last-of-type': { mb: 0 },
+                    '& ul, & ol': { pl: 2, my: 1 },
+                    '& li': { mb: 0.5 },
+                  }}
+                  dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+                />
+              )}
               {isLongDescription && (
                 <Button
                   size="small"
