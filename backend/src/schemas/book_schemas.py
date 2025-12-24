@@ -13,7 +13,9 @@ class BookBase(BaseModel):
     isbn: str | None = Field(None, max_length=20, description="Book ISBN")
     cover: str | None = Field(None, max_length=500, description="Book cover image path")
     description: str | None = Field(None, description="Book description from ebook metadata")
-    language: str | None = Field(None, max_length=10, description="Language code from ebook metadata")
+    language: str | None = Field(
+        None, max_length=10, description="Language code from ebook metadata"
+    )
     page_count: int | None = Field(None, ge=1, description="Total page count from ebook metadata")
 
 
