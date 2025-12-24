@@ -38,7 +38,7 @@ def create_test_book(  # noqa: PLR0913
 
     This helper ensures all test books have valid content_hash values.
     """
-    content_hash = compute_book_hash(title=title, author=author, description=description)
+    content_hash = compute_book_hash(title=title, author=author)
     book = Book(
         user_id=user_id,
         title=title,

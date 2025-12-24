@@ -52,7 +52,6 @@ class HighlightService:
         book_hash = compute_book_hash(
             title=request.book.title,
             author=request.book.author,
-            description=request.book.description,
         )
         book = self.book_repo.get_or_create(request.book, book_hash, user_id)
 
