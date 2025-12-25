@@ -19,14 +19,10 @@ class HighlightBase(BaseModel):
 
     text: str = Field(..., min_length=1, description="Highlighted text")
     chapter: str | None = Field(None, max_length=500, description="Chapter name")
-    chapter_number: int | None = Field(
-        None, ge=1, description="Chapter order number from TOC"
-    )
+    chapter_number: int | None = Field(None, ge=1, description="Chapter order number from TOC")
     page: int | None = Field(None, ge=0, description="Page number")
     note: str | None = Field(None, description="Note/annotation")
-    datetime: str = Field(
-        ..., min_length=1, max_length=50, description="KOReader datetime format"
-    )
+    datetime: str = Field(..., min_length=1, max_length=50, description="KOReader datetime format")
 
 
 class HighlightCreate(HighlightBase):
@@ -110,9 +106,7 @@ class HighlightUploadRequest(BaseModel):
     """Schema for uploading highlights from KOReader."""
 
     book: BookCreate = Field(..., description="Book metadata")
-    highlights: list[HighlightCreate] = Field(
-        ..., description="List of highlights to upload"
-    )
+    highlights: list[HighlightCreate] = Field(..., description="List of highlights to upload")
 
 
 class HighlightUploadResponse(BaseModel):
@@ -121,9 +115,7 @@ class HighlightUploadResponse(BaseModel):
     success: bool = Field(..., description="Whether the upload was successful")
     message: str = Field(..., description="Response message")
     book_id: int = Field(..., description="ID of the book")
-    highlights_created: int = Field(
-        ..., ge=0, description="Number of highlights created"
-    )
+    highlights_created: int = Field(..., ge=0, description="Number of highlights created")
     highlights_skipped: int = Field(
         ..., ge=0, description="Number of highlights skipped (duplicates)"
     )
@@ -134,9 +126,7 @@ class ChapterWithHighlights(BaseModel):
 
     id: int
     name: str
-    chapter_number: int | None = Field(
-        None, description="Chapter order number from TOC"
-    )
+    chapter_number: int | None = Field(None, description="Chapter order number from TOC")
     highlights: list[Highlight] = Field(
         default_factory=list, description="List of highlights in this chapter"
     )
@@ -157,9 +147,7 @@ class BookDetails(BaseModel):
     description: str | None = None
     language: str | None = None
     page_count: int | None = None
-    tags: list[TagInBook] = Field(
-        default_factory=list, description="List of tags for this book"
-    )
+    tags: list[TagInBook] = Field(default_factory=list, description="List of tags for this book")
     highlight_tags: list[HighlightTagInBook] = Field(
         default_factory=list, description="List of highlight tags for this book"
     )
@@ -208,9 +196,7 @@ class HighlightSearchResult(BaseModel):
     book_author: str | None
     chapter_id: int | None
     chapter_name: str | None
-    chapter_number: int | None = Field(
-        None, description="Chapter order number from TOC"
-    )
+    chapter_number: int | None = Field(None, description="Chapter order number from TOC")
     highlight_tags: list[HighlightTagInBook] = Field(
         default_factory=list, description="List of highlight tags for this highlight"
     )
