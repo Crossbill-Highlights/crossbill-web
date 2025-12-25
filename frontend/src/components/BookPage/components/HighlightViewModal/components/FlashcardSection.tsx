@@ -4,7 +4,16 @@ import { useCreateFlashcardForHighlightApiV1HighlightsHighlightIdFlashcardsPost 
 import type { Flashcard } from '@/api/generated/model';
 import { Collapsable } from '@/components/common/animations/Collapsable';
 import { Delete as DeleteIcon } from '@mui/icons-material';
-import { Box, Button, IconButton, TextField, Tooltip, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Card,
+  CardActionArea,
+  IconButton,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
@@ -30,22 +39,19 @@ const Flashcard = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <Box
+    <Card
       key={id}
       sx={{
         p: 1.5,
         borderRadius: 1,
         bgcolor: 'action.hover',
         position: 'relative',
+        border: 0,
+        boxShadow: 0,
       }}
     >
-      <Box sx={{ pr: 4 }}>
-        <Typography
-          sx={{ cursor: 'pointer' }}
-          variant="body2"
-          fontWeight="medium"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
+      <CardActionArea onClick={() => setIsExpanded(!isExpanded)}>
+        <Typography variant="body2" fontWeight="medium">
           Q: {question}
         </Typography>
         <Collapsable isExpanded={isExpanded}>
@@ -53,7 +59,7 @@ const Flashcard = ({
             A: {answer}
           </Typography>
         </Collapsable>
-      </Box>
+      </CardActionArea>
       <Tooltip title="Delete flashcard">
         <IconButton
           size="small"
@@ -64,7 +70,7 @@ const Flashcard = ({
           <DeleteIcon fontSize="small" />
         </IconButton>
       </Tooltip>
-    </Box>
+    </Card>
   );
 };
 
