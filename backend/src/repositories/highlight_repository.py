@@ -148,7 +148,10 @@ class HighlightRepository:
         """Find all non-deleted highlights for a chapter, ordered by datetime."""
         stmt = (
             select(models.Highlight)
-            .options(selectinload(models.Highlight.flashcards))
+            .options(
+                selectinload(models.Highlight.flashcards),
+                selectinload(models.Highlight.highlight_tags),
+            )
             .where(
                 models.Highlight.chapter_id == chapter_id,
                 models.Highlight.user_id == user_id,

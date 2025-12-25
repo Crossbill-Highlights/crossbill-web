@@ -439,3 +439,61 @@ class TestGetBookDetails:
         assert len(data["chapters"]) == 1
         assert len(data["chapters"][0]["highlights"]) == 1
         assert data["chapters"][0]["highlights"][0]["text"] == "Active Highlight"
+
+    def test_get_book_details_includes_highlight_tags(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """Test that book details endpoint includes highlight tags for each highlight."""
+        # Create a book with a chapter and highlight
+        book = create_test_book(
+            db_session=db_session,
+            user_id=DEFAULT_USER_ID,
+            title="Test Book",
+            author="Test Author",
+        )
+
+        chapter = models.Chapter(book_id=book.id, name="Chapter 1")
+        db_session.add(chapter)
+        db_session.commit()
+        db_session.refresh(chapter)
+
+        highlight = create_test_highlight(
+            db_session=db_session,
+            book=book,
+            user_id=DEFAULT_USER_ID,
+            chapter_id=chapter.id,
+            text="Test Highlight",
+            page=10,
+            datetime_str="2024-01-15 14:30:22",
+        )
+
+        # Create highlight tags for the book
+        tag1 = models.HighlightTag(book_id=book.id, user_id=DEFAULT_USER_ID, name="Important")
+        tag2 = models.HighlightTag(book_id=book.id, user_id=DEFAULT_USER_ID, name="Review")
+        db_session.add_all([tag1, tag2])
+        db_session.commit()
+        db_session.refresh(tag1)
+        db_session.refresh(tag2)
+
+        # Associate tags with the highlight
+        highlight.highlight_tags.append(tag1)
+        highlight.highlight_tags.append(tag2)
+        db_session.commit()
+
+        # Get book details
+        response = client.get(f"/api/v1/books/{book.id}")
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+
+        # Verify highlight tags are returned
+        assert len(data["chapters"]) == 1
+        assert len(data["chapters"][0]["highlights"]) == 1
+
+        highlight_data = data["chapters"][0]["highlights"][0]
+        assert "highlight_tags" in highlight_data
+        assert len(highlight_data["highlight_tags"]) == 2
+
+        tag_names = [tag["name"] for tag in highlight_data["highlight_tags"]]
+        assert "Important" in tag_names
+        assert "Review" in tag_names

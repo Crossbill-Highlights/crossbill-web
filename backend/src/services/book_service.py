@@ -74,6 +74,9 @@ class BookService:
                     note=h.note,
                     datetime=h.datetime,
                     flashcards=[schemas.Flashcard.model_validate(fc) for fc in h.flashcards],
+                    highlight_tags=[
+                        schemas.HighlightTagInBook.model_validate(ht) for ht in h.highlight_tags
+                    ],
                     created_at=h.created_at,
                     updated_at=h.updated_at,
                 )
