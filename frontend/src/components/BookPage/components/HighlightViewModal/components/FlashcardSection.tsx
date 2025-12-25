@@ -2,6 +2,7 @@ import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/bo
 import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/generated/flashcards/flashcards';
 import { useCreateFlashcardForHighlightApiV1HighlightsHighlightIdFlashcardsPost } from '@/api/generated/highlights/highlights';
 import type { Flashcard } from '@/api/generated/model';
+import { Collapsable } from '@/components/common/animations/Collapsable';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { Box, Button, IconButton, TextField, Tooltip, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
@@ -26,6 +27,8 @@ const Flashcard = ({
   isLoading: boolean;
   onDelete: (id: number) => void;
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
     <Box
       key={id}
@@ -37,12 +40,19 @@ const Flashcard = ({
       }}
     >
       <Box sx={{ pr: 4 }}>
-        <Typography variant="body2" fontWeight="medium">
+        <Typography
+          sx={{ cursor: 'pointer' }}
+          variant="body2"
+          fontWeight="medium"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
           Q: {question}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          A: {answer}
-        </Typography>
+        <Collapsable isExpanded={isExpanded}>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            A: {answer}
+          </Typography>
+        </Collapsable>
       </Box>
       <Tooltip title="Delete flashcard">
         <IconButton
