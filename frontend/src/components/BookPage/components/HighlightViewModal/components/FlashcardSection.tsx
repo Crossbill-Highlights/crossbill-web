@@ -40,7 +40,6 @@ const Flashcard = ({
 
   return (
     <Card
-      key={id}
       sx={{
         p: 1.5,
         borderRadius: 1,
@@ -159,7 +158,12 @@ export const FlashcardSection = ({
             {flashcards.length > 0 && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
                 {flashcards.map((flashcard) => (
-                  <Flashcard onDelete={handleDelete} isLoading={isLoading} {...flashcard} />
+                  <Flashcard
+                    key={flashcard.id}
+                    onDelete={handleDelete}
+                    isLoading={isLoading}
+                    {...flashcard}
+                  />
                 ))}
               </Box>
             )}
