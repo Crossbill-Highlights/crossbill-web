@@ -32,7 +32,7 @@ import type {
   CoverUploadResponse,
   FlashcardCreateRequest,
   FlashcardCreateResponse,
-  FlashcardsListResponse,
+  FlashcardsWithHighlightsResponse,
   GetBooksApiV1BooksGetParams,
   GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams,
   HTTPValidationError,
@@ -1999,7 +1999,7 @@ export const useCreateFlashcardForBookApiV1BooksBookIdFlashcardsPost = <
   return useMutation(mutationOptions, queryClient);
 };
 /**
- * Get all flashcards for a book.
+ * Get all flashcards for a book with embedded highlight data.
 
 Returns all flashcards ordered by creation date (newest first).
 
@@ -2008,7 +2008,7 @@ Args:
     db: Database session
 
 Returns:
-    List of flashcards for the book
+    List of flashcards with highlight data for the book
 
 Raises:
     HTTPException: If book not found or fetching fails
@@ -2018,7 +2018,7 @@ export const getFlashcardsForBookApiV1BooksBookIdFlashcardsGet = (
   bookId: number,
   signal?: AbortSignal
 ) => {
-  return axiosInstance<FlashcardsListResponse>({
+  return axiosInstance<FlashcardsWithHighlightsResponse>({
     url: `/api/v1/books/${bookId}/flashcards`,
     method: 'GET',
     signal,

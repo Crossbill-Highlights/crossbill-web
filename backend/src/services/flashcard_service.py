@@ -118,16 +118,18 @@ class FlashcardService:
         logger.info(f"Created flashcard {flashcard.id} for book {book_id}")
         return schemas.Flashcard.model_validate(flashcard)
 
-    def get_flashcards_by_book(self, book_id: int, user_id: int) -> schemas.FlashcardsListResponse:
+    def get_flashcards_by_book(
+        self, book_id: int, user_id: int
+    ) -> schemas.FlashcardsWithHighlightsResponse:
         """
-        Get all flashcards for a specific book.
+        Get all flashcards for a specific book with embedded highlight data.
 
         Args:
             book_id: ID of the book
             user_id: ID of the user
 
         Returns:
-            List of flashcards
+            List of flashcards with highlight data
 
         Raises:
             BookNotFoundError: If book is not found
@@ -138,8 +140,8 @@ class FlashcardService:
             raise BookNotFoundError(book_id)
 
         flashcards = self.flashcard_repo.get_by_book_id(book_id, user_id)
-        return schemas.FlashcardsListResponse(
-            flashcards=[schemas.Flashcard.model_validate(f) for f in flashcards]
+        return schemas.FlashcardsWithHighlightsResponse(
+            flashcards=[schemas.FlashcardWithHighlight.model_validate(f) for f in flashcards]
         )
 
     def get_flashcards_by_highlight(

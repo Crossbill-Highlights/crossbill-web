@@ -1,6 +1,6 @@
 """Pydantic schemas for Flashcard API request/response validation."""
 
-from datetime import datetime
+from datetime import datetime as dt
 
 from pydantic import BaseModel, Field
 
@@ -19,14 +19,14 @@ class FlashcardCreate(FlashcardBase):
 
 
 class Flashcard(FlashcardBase):
-    """Schema for Flashcard response."""
+    """Schema for Flashcard response (without embedded highlight)."""
 
     id: int
     user_id: int
     book_id: int
     highlight_id: int | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: dt
+    updated_at: dt
 
     model_config = {"from_attributes": True}
 

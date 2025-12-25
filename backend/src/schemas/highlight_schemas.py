@@ -29,17 +29,17 @@ class HighlightCreate(HighlightBase):
     """Schema for creating a Highlight."""
 
 
-class Highlight(HighlightBase):
-    """Schema for Highlight response."""
+class HighlightResponseBase(HighlightBase):
+    """Base schema for Highlight response (without flashcards).
+
+    Use this when you need highlight data but don't want nested flashcards.
+    """
 
     id: int
     book_id: int
     chapter_id: int | None
     highlight_tags: list[HighlightTagInBook] = Field(
         default_factory=list, description="List of highlight tags for this highlight"
-    )
-    flashcards: list[Flashcard] = Field(
-        default_factory=list, description="List of flashcards for this highlight"
     )
     created_at: dt
     updated_at: dt
@@ -49,57 +49,56 @@ class Highlight(HighlightBase):
     @model_validator(mode="before")
     @classmethod
     def extract_chapter_from_relationship(cls, data: Any) -> Any:  # noqa: ANN401
-        """Extract chapter name and number from Chapter relationship object before validation."""
-        # Handle both dict and ORM model object
+        """Extract chapter name and number from Chapter relationship object before validation.
+
+        This validator dynamically uses cls.model_fields, so it works correctly
+        for both this base class and any subclasses that add additional fields.
+        """
+        # Handle dict input
         if isinstance(data, dict):
-            # If already a dict, check if we need to transform anything
             chapter = data.get("chapter")
             if chapter is not None and hasattr(chapter, "name"):
                 data["chapter"] = chapter.name
-                # Also extract chapter_number if not present
                 if "chapter_number" not in data or data["chapter_number"] is None:
                     data["chapter_number"] = getattr(chapter, "chapter_number", None)
-        # It's an ORM model object - get attributes
-        elif hasattr(data, "chapter"):
+            return data
+
+        # Handle ORM model object - convert to dict using cls.model_fields
+        if hasattr(data, "chapter"):
             chapter = data.chapter
-            flashcards = []
-            if hasattr(data, "flashcards") and data.flashcards is not None:
-                flashcards = list(data.flashcards)
-            if chapter is not None and hasattr(chapter, "name"):
-                # Need to set chapter to the name string
-                # Since we can't modify the ORM object, create a dict
-                return {
-                    "id": data.id,
-                    "book_id": data.book_id,
-                    "chapter_id": data.chapter_id,
-                    "text": data.text,
-                    "page": data.page,
-                    "note": data.note,
-                    "datetime": data.datetime,
-                    "created_at": data.created_at,
-                    "updated_at": data.updated_at,
-                    "highlight_tags": data.highlight_tags,
-                    "flashcards": flashcards,
-                    "chapter": chapter.name,
-                    "chapter_number": getattr(chapter, "chapter_number", None),
-                }
-            # Chapter is None but we still need to include flashcards
-            return {
-                "id": data.id,
-                "book_id": data.book_id,
-                "chapter_id": data.chapter_id,
-                "text": data.text,
-                "page": data.page,
-                "note": data.note,
-                "datetime": data.datetime,
-                "created_at": data.created_at,
-                "updated_at": data.updated_at,
-                "highlight_tags": data.highlight_tags,
-                "flashcards": flashcards,
-                "chapter": None,
-                "chapter_number": None,
-            }
+            result: dict[str, Any] = {}
+
+            for field_name in cls.model_fields:
+                if field_name == "chapter":
+                    result["chapter"] = (
+                        chapter.name if chapter and hasattr(chapter, "name") else None
+                    )
+                elif field_name == "chapter_number":
+                    result["chapter_number"] = (
+                        getattr(chapter, "chapter_number", None) if chapter else None
+                    )
+                elif hasattr(data, field_name):
+                    value = getattr(data, field_name)
+                    # Convert SQLAlchemy collections to lists
+                    if hasattr(value, "__iter__") and not isinstance(value, (str, bytes)):
+                        try:
+                            result[field_name] = list(value)
+                        except TypeError:
+                            result[field_name] = value
+                    else:
+                        result[field_name] = value
+
+            return result
+
         return data
+
+
+class Highlight(HighlightResponseBase):
+    """Schema for Highlight response with flashcards."""
+
+    flashcards: list[Flashcard] = Field(
+        default_factory=list, description="List of flashcards for this highlight"
+    )
 
 
 class HighlightUploadRequest(BaseModel):

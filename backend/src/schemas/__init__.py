@@ -17,6 +17,10 @@ from src.schemas.bookmark_schemas import (
     BookmarksResponse,
 )
 from src.schemas.chapter_schemas import Chapter, ChapterBase
+from src.schemas.flashcard_api_schemas import (
+    FlashcardsWithHighlightsResponse,
+    FlashcardWithHighlight,
+)
 from src.schemas.flashcard_schemas import (
     Flashcard,
     FlashcardBase,
@@ -38,6 +42,7 @@ from src.schemas.highlight_schemas import (
     HighlightDeleteResponse,
     HighlightNoteUpdate,
     HighlightNoteUpdateResponse,
+    HighlightResponseBase,
     HighlightSearchResponse,
     HighlightSearchResult,
     HighlightUploadRequest,
@@ -83,7 +88,9 @@ __all__ = [
     "FlashcardDeleteResponse",
     "FlashcardUpdateRequest",
     "FlashcardUpdateResponse",
+    "FlashcardWithHighlight",
     "FlashcardsListResponse",
+    "FlashcardsWithHighlightsResponse",
     "Highlight",
     "HighlightBase",
     "HighlightCreate",
@@ -91,6 +98,7 @@ __all__ = [
     "HighlightDeleteResponse",
     "HighlightNoteUpdate",
     "HighlightNoteUpdateResponse",
+    "HighlightResponseBase",
     "HighlightSearchResponse",
     "HighlightSearchResult",
     "HighlightTag",

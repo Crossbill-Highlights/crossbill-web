@@ -13,7 +13,7 @@ import type { HighlightPage } from './highlightPage';
 import type { HighlightTagInBook } from './highlightTagInBook';
 
 /**
- * Schema for Highlight response.
+ * Schema for Highlight response with flashcards.
  */
 export interface Highlight {
   /**
@@ -40,8 +40,8 @@ export interface Highlight {
   chapter_id: HighlightChapterId;
   /** List of highlight tags for this highlight */
   highlight_tags?: HighlightTagInBook[];
-  /** List of flashcards for this highlight */
-  flashcards?: Flashcard[];
   created_at: string;
   updated_at: string;
+  /** List of flashcards for this highlight */
+  flashcards?: Flashcard[];
 }

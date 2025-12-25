@@ -3,7 +3,7 @@
 import logging
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from src import models
 
@@ -29,13 +29,16 @@ class FlashcardRepository:
         """Get all flashcards for a specific book, verifying user ownership."""
         stmt = (
             select(models.Flashcard)
+            .options(
+                joinedload(models.Flashcard.highlight).selectinload(models.Highlight.highlight_tags)
+            )
             .where(
                 models.Flashcard.book_id == book_id,
                 models.Flashcard.user_id == user_id,
             )
             .order_by(models.Flashcard.created_at.desc())
         )
-        return list(self.db.execute(stmt).scalars().all())
+        return list(self.db.execute(stmt).unique().scalars().all())
 
     def get_by_highlight_id(self, highlight_id: int, user_id: int) -> list[models.Flashcard]:
         """Get all flashcards for a specific highlight, verifying user ownership."""

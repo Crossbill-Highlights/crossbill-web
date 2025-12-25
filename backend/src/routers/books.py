@@ -770,16 +770,16 @@ def create_flashcard_for_book(
 
 @router.get(
     "/{book_id}/flashcards",
-    response_model=schemas.FlashcardsListResponse,
+    response_model=schemas.FlashcardsWithHighlightsResponse,
     status_code=status.HTTP_200_OK,
 )
 def get_flashcards_for_book(
     book_id: int,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.FlashcardsListResponse:
+) -> schemas.FlashcardsWithHighlightsResponse:
     """
-    Get all flashcards for a book.
+    Get all flashcards for a book with embedded highlight data.
 
     Returns all flashcards ordered by creation date (newest first).
 
@@ -788,7 +788,7 @@ def get_flashcards_for_book(
         db: Database session
 
     Returns:
-        List of flashcards for the book
+        List of flashcards with highlight data for the book
 
     Raises:
         HTTPException: If book not found or fetching fails

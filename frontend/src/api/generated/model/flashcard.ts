@@ -7,7 +7,7 @@
 import type { FlashcardHighlightId } from './flashcardHighlightId';
 
 /**
- * Schema for Flashcard response.
+ * Schema for Flashcard response (without embedded highlight).
  */
 export interface Flashcard {
   /**
