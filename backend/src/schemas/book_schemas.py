@@ -48,7 +48,7 @@ class TagInBook(BaseModel):
 
 
 class BookWithHighlightCount(BaseModel):
-    """Schema for Book with highlight count."""
+    """Schema for Book with highlight and flashcard counts."""
 
     id: int
     title: str
@@ -59,6 +59,7 @@ class BookWithHighlightCount(BaseModel):
     language: str | None = None
     page_count: int | None = None
     highlight_count: int = Field(..., ge=0, description="Number of highlights for this book")
+    flashcard_count: int = Field(0, ge=0, description="Number of flashcards for this book")
     tags: list[TagInBook] = Field(default_factory=list, description="List of tags for this book")
     created_at: datetime
     updated_at: datetime

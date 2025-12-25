@@ -136,7 +136,8 @@ class SettingsDialog(QDialog):
             from api import CrossbillAPI
 
             api = CrossbillAPI(server_host, email=email, password=password)
-            if api.test_connection():
+            success, message = api.test_connection()
+            if success:
                 QMessageBox.information(
                     self,
                     "Success",
@@ -146,7 +147,7 @@ class SettingsDialog(QDialog):
                 QMessageBox.warning(
                     self,
                     "Connection Failed",
-                    "Could not connect to Crossbill server. Please check the URL, credentials, and try again."
+                    f"Could not connect to Crossbill server:\n\n{message}"
                 )
 
         except Exception as e:

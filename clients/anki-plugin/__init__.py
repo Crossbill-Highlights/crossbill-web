@@ -1,7 +1,7 @@
 """
 Crossbill Anki Plugin
 
-Import highlights from Crossbill server into Anki as flashcards.
+Import flashcards from Crossbill server into Anki.
 """
 
 from aqt import mw
@@ -9,14 +9,14 @@ from aqt.qt import QAction
 from aqt.utils import showInfo, qconnect
 
 # Plugin metadata
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __author__ = "Crossbill Contributors"
 
 
-def show_highlights_browser():
-    """Show the highlights browser window"""
+def show_flashcards_browser():
+    """Show the flashcards browser window"""
     # Import here to avoid circular dependencies and load UI only when needed
-    from .ui.browser_dialog import HighlightsBrowserDialog
+    from .ui.browser_dialog import FlashcardsBrowserDialog
 
     config = mw.addonManager.getConfig(__name__)
     if not config:
@@ -25,7 +25,7 @@ def show_highlights_browser():
 
     # Show the browser window (non-modal for better tiling WM support)
     # If connection fails, the window will show appropriate error messages
-    window = HighlightsBrowserDialog(mw, config)
+    window = FlashcardsBrowserDialog(mw, config)
     window.show()
 
 
@@ -37,9 +37,9 @@ def show_settings():
 
 def init_plugin():
     """Initialize the plugin and register menu actions"""
-    # Create menu action for browsing highlights
-    action_browse = QAction("Browse Crossbill Highlights", mw)
-    qconnect(action_browse.triggered, show_highlights_browser)
+    # Create menu action for browsing flashcards
+    action_browse = QAction("Browse Crossbill Flashcards", mw)
+    qconnect(action_browse.triggered, show_flashcards_browser)
     mw.form.menuTools.addAction(action_browse)
 
     # Create menu action for settings

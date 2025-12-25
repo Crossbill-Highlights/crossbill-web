@@ -18,6 +18,9 @@ from models import (
     Chapter,
     Highlight,
     HighlightTag,
+    Flashcard,
+    FlashcardWithHighlight,
+    FlashcardsResponse,
 )
 
 
@@ -160,8 +163,7 @@ class CrossbillAPI:
                 request.add_header("Authorization", f"Bearer {self.bearer_token}")
 
             with urllib.request.urlopen(request, timeout=30) as response:
-                data = response.read()
-                return json.loads(data.decode("utf-8"))
+                return json.loads(response.read().decode("utf-8"))
 
         except urllib.error.HTTPError as e:
             # Handle 401 Unauthorized - token expired
@@ -185,7 +187,7 @@ class CrossbillAPI:
             raise CrossbillAPIError(f"Network error: {e.reason}") from e
 
         except json.JSONDecodeError as e:
-            raise CrossbillAPIError(f"Invalid JSON response: {e}") from e
+            raise CrossbillAPIError(f"Invalid JSON response from {endpoint}: {e}") from e
 
         except Exception as e:
             raise CrossbillAPIError(f"Unexpected error: {e}") from e
@@ -204,7 +206,7 @@ class CrossbillAPI:
         Raises:
             CrossbillAPIError: If request fails
         """
-        endpoint = f"/api/v1/books?limit={limit}&offset={offset}"
+        endpoint = f"/api/v1/books/?limit={limit}&offset={offset}"
         data = self._make_request(endpoint)
 
         books = []
@@ -217,6 +219,7 @@ class CrossbillAPI:
                 created_at=book_data["created_at"],
                 updated_at=book_data["updated_at"],
                 highlight_count=book_data["highlight_count"],
+                flashcard_count=book_data.get("flashcard_count", 0),
             )
             books.append(book)
 
@@ -289,15 +292,72 @@ class CrossbillAPI:
             chapters=chapters,
         )
 
-    def test_connection(self) -> bool:
+    def get_flashcards(self, book_id: int) -> FlashcardsResponse:
+        """
+        Fetch all flashcards for a book with their embedded highlight data
+
+        Args:
+            book_id: ID of the book to fetch flashcards for
+
+        Returns:
+            FlashcardsResponse containing list of flashcards
+
+        Raises:
+            CrossbillAPIError: If request fails
+        """
+        endpoint = f"/api/v1/books/{book_id}/flashcards"
+        data = self._make_request(endpoint)
+
+        flashcards = []
+        for fc_data in data.get("flashcards", []):
+            # Parse embedded highlight if present
+            highlight = None
+            hl_data = fc_data.get("highlight")
+            if hl_data:
+                # Parse tags
+                tags = []
+                for tag_data in hl_data.get("highlight_tags", []):
+                    tags.append(HighlightTag(id=tag_data["id"], name=tag_data["name"]))
+
+                highlight = Highlight(
+                    id=hl_data["id"],
+                    book_id=hl_data["book_id"],
+                    chapter_id=hl_data.get("chapter_id"),
+                    text=hl_data["text"],
+                    chapter=hl_data.get("chapter"),
+                    page=hl_data.get("page"),
+                    note=hl_data.get("note"),
+                    datetime=hl_data.get("datetime", ""),
+                    highlight_tags=tags,
+                    created_at=hl_data["created_at"],
+                    updated_at=hl_data["updated_at"],
+                )
+
+            flashcard = FlashcardWithHighlight(
+                id=fc_data["id"],
+                book_id=fc_data["book_id"],
+                highlight_id=fc_data.get("highlight_id"),
+                question=fc_data["question"],
+                answer=fc_data["answer"],
+                created_at=fc_data["created_at"],
+                updated_at=fc_data["updated_at"],
+                highlight=highlight,
+            )
+            flashcards.append(flashcard)
+
+        return FlashcardsResponse(flashcards=flashcards)
+
+    def test_connection(self) -> tuple[bool, str]:
         """
         Test if connection to Crossbill server is working
 
         Returns:
-            True if connection successful, False otherwise
+            Tuple of (success: bool, message: str)
         """
         try:
             self.get_books(limit=1)
-            return True
-        except CrossbillAPIError:
-            return False
+            return True, "Connection successful"
+        except CrossbillAPIError as e:
+            return False, str(e)
+        except Exception as e:
+            return False, f"Unexpected error: {e}"

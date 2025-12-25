@@ -177,7 +177,7 @@ class HighlightService:
         search_text: str | None = None,
     ) -> schemas.BooksListResponse:
         """
-        Get all books with their highlight counts, sorted alphabetically by title.
+        Get all books with their highlight and flashcard counts, sorted alphabetically by title.
 
         Args:
             user_id: ID of the user
@@ -203,13 +203,14 @@ class HighlightService:
                 description=book.description,
                 language=book.language,
                 page_count=book.page_count,
-                highlight_count=count,
+                highlight_count=highlight_count,
+                flashcard_count=flashcard_count,
                 tags=[schemas.TagInBook.model_validate(tag) for tag in book.tags],
                 created_at=book.created_at,
                 updated_at=book.updated_at,
                 last_viewed=book.last_viewed,
             )
-            for book, count in books_with_counts
+            for book, highlight_count, flashcard_count in books_with_counts
         ]
 
         return schemas.BooksListResponse(books=books_list, total=total, offset=offset, limit=limit)
@@ -218,7 +219,7 @@ class HighlightService:
         self, user_id: int, limit: int = 10
     ) -> schemas.RecentlyViewedBooksResponse:
         """
-        Get recently viewed books with their highlight counts.
+        Get recently viewed books with their highlight and flashcard counts.
 
         Only returns books that have been viewed at least once.
 
@@ -242,13 +243,14 @@ class HighlightService:
                 description=book.description,
                 language=book.language,
                 page_count=book.page_count,
-                highlight_count=count,
+                highlight_count=highlight_count,
+                flashcard_count=flashcard_count,
                 tags=[schemas.TagInBook.model_validate(tag) for tag in book.tags],
                 created_at=book.created_at,
                 updated_at=book.updated_at,
                 last_viewed=book.last_viewed,
             )
-            for book, count in books_with_counts
+            for book, highlight_count, flashcard_count in books_with_counts
         ]
 
         return schemas.RecentlyViewedBooksResponse(books=books_list)

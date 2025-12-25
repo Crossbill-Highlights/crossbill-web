@@ -14,7 +14,7 @@ import type { BookWithHighlightCountPageCount } from './bookWithHighlightCountPa
 import type { TagInBook } from './tagInBook';
 
 /**
- * Schema for Book with highlight count.
+ * Schema for Book with highlight and flashcard counts.
  */
 export interface BookWithHighlightCount {
   id: number;
@@ -30,6 +30,11 @@ export interface BookWithHighlightCount {
    * @minimum 0
    */
   highlight_count: number;
+  /**
+   * Number of flashcards for this book
+   * @minimum 0
+   */
+  flashcard_count?: number;
   /** List of tags for this book */
   tags?: TagInBook[];
   created_at: string;

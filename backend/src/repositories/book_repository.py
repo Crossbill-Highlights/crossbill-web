@@ -95,9 +95,11 @@ class BookRepository:
         offset: int = 0,
         limit: int = 100,
         search_text: str | None = None,
-    ) -> tuple[Sequence[Row[tuple[models.Book, int]]], int]:
+    ) -> tuple[Sequence[Row[tuple[models.Book, int, int]]], int]:
         """
-        Get books with their highlight counts for a specific user, sorted alphabetically by title.
+        Get books with their highlight and flashcard counts for a specific user.
+
+        Books are sorted alphabetically by title.
 
         Args:
             user_id: ID of the user whose books to retrieve
@@ -106,7 +108,8 @@ class BookRepository:
             search_text: Optional text to search for in book title or author (case-insensitive)
 
         Returns:
-            tuple[Sequence[tuple[Book, int]], int]: (list of (book, count) tuples, total count)
+            tuple[Sequence[tuple[Book, highlight_count, flashcard_count]], int]:
+                (list of (book, highlight_count, flashcard_count) tuples, total count)
         """
         # Build base filter conditions - always filter by user
         filters = [models.Book.user_id == user_id]
@@ -121,16 +124,31 @@ class BookRepository:
         total_stmt = select(func.count(models.Book.id)).where(*filters)
         total = self.db.execute(total_stmt).scalar() or 0
 
-        # Main query for books with highlight counts (excluding soft-deleted highlights)
-        stmt = (
-            select(models.Book, func.count(models.Highlight.id).label("highlight_count"))
-            .outerjoin(
-                models.Highlight,
-                (models.Book.id == models.Highlight.book_id)
-                & (models.Highlight.deleted_at.is_(None)),
+        # Subquery for highlight counts (excluding soft-deleted highlights)
+        highlight_count_subq = (
+            select(func.count(models.Highlight.id))
+            .where(
+                models.Highlight.book_id == models.Book.id,
+                models.Highlight.deleted_at.is_(None),
             )
+            .correlate(models.Book)
+            .scalar_subquery()
+            .label("highlight_count")
+        )
+
+        # Subquery for flashcard counts
+        flashcard_count_subq = (
+            select(func.count(models.Flashcard.id))
+            .where(models.Flashcard.book_id == models.Book.id)
+            .correlate(models.Book)
+            .scalar_subquery()
+            .label("flashcard_count")
+        )
+
+        # Main query for books with both counts
+        stmt = (
+            select(models.Book, highlight_count_subq, flashcard_count_subq)
             .where(*filters)
-            .group_by(models.Book.id)
             .order_by(models.Book.title)
             .offset(offset)
             .limit(limit)
@@ -189,9 +207,9 @@ class BookRepository:
 
     def get_recently_viewed_books(
         self, user_id: int, limit: int = 10
-    ) -> Sequence[Row[tuple[models.Book, int]]]:
+    ) -> Sequence[Row[tuple[models.Book, int, int]]]:
         """
-        Get recently viewed books with their highlight counts for a specific user.
+        Get recently viewed books with their highlight and flashcard counts.
 
         Only returns books that have been viewed (last_viewed is not NULL).
 
@@ -200,20 +218,35 @@ class BookRepository:
             limit: Maximum number of books to return (default: 10)
 
         Returns:
-            Sequence of (book, highlight_count) tuples ordered by last_viewed DESC
+            Sequence of (book, highlight_count, flashcard_count) tuples ordered by last_viewed DESC
         """
-        stmt = (
-            select(models.Book, func.count(models.Highlight.id).label("highlight_count"))
-            .outerjoin(
-                models.Highlight,
-                (models.Book.id == models.Highlight.book_id)
-                & (models.Highlight.deleted_at.is_(None)),
+        # Subquery for highlight counts (excluding soft-deleted highlights)
+        highlight_count_subq = (
+            select(func.count(models.Highlight.id))
+            .where(
+                models.Highlight.book_id == models.Book.id,
+                models.Highlight.deleted_at.is_(None),
             )
+            .correlate(models.Book)
+            .scalar_subquery()
+            .label("highlight_count")
+        )
+
+        # Subquery for flashcard counts
+        flashcard_count_subq = (
+            select(func.count(models.Flashcard.id))
+            .where(models.Flashcard.book_id == models.Book.id)
+            .correlate(models.Book)
+            .scalar_subquery()
+            .label("flashcard_count")
+        )
+
+        stmt = (
+            select(models.Book, highlight_count_subq, flashcard_count_subq)
             .where(
                 models.Book.user_id == user_id,
                 models.Book.last_viewed.isnot(None),
             )
-            .group_by(models.Book.id)
             .order_by(models.Book.last_viewed.desc())
             .limit(limit)
         )

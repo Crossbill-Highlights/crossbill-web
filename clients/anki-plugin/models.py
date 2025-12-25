@@ -21,8 +21,9 @@ class Book:
 
 @dataclass
 class BookWithHighlightCount(Book):
-    """Book with the count of highlights"""
+    """Book with the count of highlights and flashcards"""
     highlight_count: int
+    flashcard_count: int = 0
 
 
 @dataclass
@@ -46,6 +47,30 @@ class Highlight:
     highlight_tags: List[HighlightTag]
     created_at: str
     updated_at: str
+
+
+@dataclass
+class Flashcard:
+    """Represents a flashcard from Crossbill"""
+    id: int
+    book_id: int
+    highlight_id: Optional[int]
+    question: str
+    answer: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass
+class FlashcardWithHighlight(Flashcard):
+    """Flashcard with embedded highlight data (if associated)"""
+    highlight: Optional[Highlight] = None
+
+
+@dataclass
+class FlashcardsResponse:
+    """Response from the flashcards API endpoint"""
+    flashcards: List[FlashcardWithHighlight]
 
 
 @dataclass

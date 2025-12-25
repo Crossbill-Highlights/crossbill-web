@@ -1,5 +1,5 @@
 """
-Highlights browser dialog for browsing and selecting Crossbill highlights
+Flashcards browser dialog for browsing and selecting Crossbill flashcards
 """
 
 import sys
@@ -20,12 +20,12 @@ if plugin_dir not in sys.path:
     sys.path.insert(0, plugin_dir)
 
 from api import CrossbillAPI, CrossbillAPIError
-from models import BookWithHighlightCount, BookDetails, Highlight, PluginConfig
+from models import BookWithHighlightCount, FlashcardWithHighlight, PluginConfig
 from note_creator import NoteCreator
 
 
-class HighlightsBrowserDialog(QWidget):
-    """Window for browsing and selecting highlights from Crossbill"""
+class FlashcardsBrowserDialog(QWidget):
+    """Window for browsing and selecting flashcards from Crossbill"""
 
     def __init__(self, parent=None, config=None):
         super().__init__(parent)
@@ -51,17 +51,19 @@ class HighlightsBrowserDialog(QWidget):
         self.note_creator = NoteCreator(self.plugin_config)
 
         self.books: List[BookWithHighlightCount] = []
-        self.current_book: Optional[BookDetails] = None
-        self.all_highlights: List[Highlight] = []
-        self.imported_highlight_ids = set()
+        self.current_book_id: Optional[int] = None
+        self.current_book_title: str = ""
+        self.current_book_author: Optional[str] = None
+        self.all_flashcards: List[FlashcardWithHighlight] = []
+        self.imported_flashcard_ids = set()
 
         self.setup_ui()
-        self.load_imported_highlights()
+        self.load_imported_flashcards()
         self.load_books()
 
     def setup_ui(self):
         """Initialize the UI components"""
-        self.setWindowTitle("Crossbill Highlights Browser")
+        self.setWindowTitle("Crossbill Flashcards Browser")
 
         # Get dialog size from config
         width = self.config.get('ui_preferences', {}).get('dialog_width', 900)
@@ -71,7 +73,7 @@ class HighlightsBrowserDialog(QWidget):
         layout = QVBoxLayout()
 
         # Header
-        header_label = QLabel("<h2>Browse Crossbill Highlights</h2>")
+        header_label = QLabel("<h2>Browse Crossbill Flashcards</h2>")
         layout.addWidget(header_label)
 
         # Main content area with vertical splitter for resizable sections
@@ -92,27 +94,27 @@ class HighlightsBrowserDialog(QWidget):
         books_container.setLayout(books_layout)
         splitter.addWidget(books_container)
 
-        # Highlights section - full width
-        highlights_container = QLabel()  # Container widget for layout
-        highlights_layout = QVBoxLayout()
-        highlights_layout.setContentsMargins(0, 0, 0, 0)
+        # Flashcards section - full width
+        flashcards_container = QLabel()  # Container widget for layout
+        flashcards_layout = QVBoxLayout()
+        flashcards_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Highlights header with controls
-        highlights_header = QHBoxLayout()
-        highlights_label = QLabel("<b>Highlights</b>")
-        highlights_header.addWidget(highlights_label)
-        highlights_header.addStretch()
+        # Flashcards header with controls
+        flashcards_header = QHBoxLayout()
+        flashcards_label = QLabel("<b>Flashcards</b>")
+        flashcards_header.addWidget(flashcards_label)
+        flashcards_header.addStretch()
 
         # Selection buttons
         select_all_btn = QPushButton("Select All")
-        select_all_btn.clicked.connect(self.select_all_highlights)
-        highlights_header.addWidget(select_all_btn)
+        select_all_btn.clicked.connect(self.select_all_flashcards)
+        flashcards_header.addWidget(select_all_btn)
 
         deselect_all_btn = QPushButton("Deselect All")
-        deselect_all_btn.clicked.connect(self.deselect_all_highlights)
-        highlights_header.addWidget(deselect_all_btn)
+        deselect_all_btn.clicked.connect(self.deselect_all_flashcards)
+        flashcards_header.addWidget(deselect_all_btn)
 
-        highlights_layout.addLayout(highlights_header)
+        flashcards_layout.addLayout(flashcards_header)
 
         # Search and filter controls
         filter_layout = QHBoxLayout()
@@ -120,7 +122,7 @@ class HighlightsBrowserDialog(QWidget):
         # Search box
         filter_layout.addWidget(QLabel("Search:"))
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Search highlight text...")
+        self.search_input.setPlaceholderText("Search flashcard questions...")
         self.search_input.textChanged.connect(self.on_search_changed)
         filter_layout.addWidget(self.search_input)
 
@@ -143,16 +145,16 @@ class HighlightsBrowserDialog(QWidget):
         clear_btn.clicked.connect(self.clear_filters)
         filter_layout.addWidget(clear_btn)
 
-        highlights_layout.addLayout(filter_layout)
+        flashcards_layout.addLayout(filter_layout)
 
-        # Highlights list with checkboxes
-        self.highlights_list = QListWidget()
-        self.highlights_list.itemClicked.connect(self.on_highlight_clicked)
-        self.highlights_list.itemChanged.connect(self.update_import_button_states)
-        highlights_layout.addWidget(self.highlights_list)
+        # Flashcards list with checkboxes
+        self.flashcards_list = QListWidget()
+        self.flashcards_list.itemClicked.connect(self.on_flashcard_clicked)
+        self.flashcards_list.itemChanged.connect(self.update_import_button_states)
+        flashcards_layout.addWidget(self.flashcards_list)
 
-        highlights_container.setLayout(highlights_layout)
-        splitter.addWidget(highlights_container)
+        flashcards_container.setLayout(flashcards_layout)
+        splitter.addWidget(flashcards_container)
 
         # Details section - full width
         details_container = QLabel()  # Container widget for layout
@@ -162,9 +164,9 @@ class HighlightsBrowserDialog(QWidget):
         details_label = QLabel("<b>Details</b>")
         details_layout.addWidget(details_label)
 
-        self.highlight_details = QTextEdit()
-        self.highlight_details.setReadOnly(True)
-        details_layout.addWidget(self.highlight_details)
+        self.flashcard_details = QTextEdit()
+        self.flashcard_details.setReadOnly(True)
+        details_layout.addWidget(self.flashcard_details)
 
         details_container.setLayout(details_layout)
         splitter.addWidget(details_container)
@@ -211,7 +213,7 @@ class HighlightsBrowserDialog(QWidget):
         import_button_layout.addWidget(self.import_chapter_btn)
 
         self.import_btn = QPushButton("Import Selected")
-        self.import_btn.clicked.connect(self.import_selected_highlights)
+        self.import_btn.clicked.connect(self.import_selected_flashcards)
         self.import_btn.setEnabled(False)
         import_button_layout.addWidget(self.import_btn)
 
@@ -244,14 +246,14 @@ class HighlightsBrowserDialog(QWidget):
                 QMessageBox.information(
                     self,
                     "No Books",
-                    "No books with highlights found on your Crossbill server."
+                    "No books with flashcards found on your Crossbill server."
                 )
                 return
 
-            # Populate books list
+            # Populate books list - show flashcard count
             for book in self.books:
                 author_text = f" by {book.author}" if book.author else ""
-                item_text = f"{book.title}{author_text} ({book.highlight_count} highlights)"
+                item_text = f"{book.title}{author_text} ({book.flashcard_count} flashcards)"
                 item = QListWidgetItem(item_text)
                 item.setData(Qt.ItemDataRole.UserRole, book.id)
                 self.books_list.addItem(item)
@@ -279,83 +281,81 @@ class HighlightsBrowserDialog(QWidget):
     def on_book_selected(self, item: QListWidgetItem):
         """Handle book selection"""
         book_id = item.data(Qt.ItemDataRole.UserRole)
-        self.status_label.setText(f"Loading highlights for book {book_id}...")
+        self.status_label.setText(f"Loading flashcards for book {book_id}...")
 
         try:
-            self.current_book = self.api.get_book_details(book_id)
+            # Find book info from our cached books list
+            book_info = next((b for b in self.books if b.id == book_id), None)
+            if book_info:
+                self.current_book_id = book_id
+                self.current_book_title = book_info.title
+                self.current_book_author = book_info.author
+
+            # Fetch flashcards for this book
+            response = self.api.get_flashcards(book_id)
+            self.all_flashcards = response.flashcards
 
             # Save last selected book
             self.config['ui_preferences']['last_selected_book'] = book_id
             mw.addonManager.writeConfig(__name__.split('.')[0], self.config)
 
-            # Collect all highlights from all chapters
-            self.all_highlights = []
-            for chapter in self.current_book.chapters:
-                self.all_highlights.extend(chapter.highlights)
-
-            # Populate tag and chapter filters
+            # Populate tag and chapter filters (from flashcard highlights)
             self.populate_tag_filter()
             self.populate_chapter_filter()
 
             # Clear search and filters
             self.search_input.clear()
 
-            # Populate highlights list with checkboxes and import status
-            self.refresh_highlights_list()
+            # Populate flashcards list with checkboxes and import status
+            self.refresh_flashcards_list()
 
             # Update import button states based on current selections
             self.update_import_button_states()
 
-            count = len(self.all_highlights)
-            self.status_label.setText(f"Loaded {count} highlights from {self.current_book.title}")
+            count = len(self.all_flashcards)
+            self.status_label.setText(f"Loaded {count} flashcards from {self.current_book_title}")
 
         except CrossbillAPIError as e:
-            self.status_label.setText("Error loading highlights")
+            self.status_label.setText("Error loading flashcards")
             QMessageBox.critical(
                 self,
                 "Error",
-                f"Failed to load book details:\n{str(e)}"
+                f"Failed to load flashcards:\n{str(e)}"
             )
 
-    def on_highlight_selected(self, item: QListWidgetItem):
-        """Handle highlight selection"""
-        highlight_id = item.data(Qt.ItemDataRole.UserRole)
+    def on_flashcard_selected(self, item: QListWidgetItem):
+        """Handle flashcard selection"""
+        flashcard_id = item.data(Qt.ItemDataRole.UserRole)
 
-        # Find the highlight
-        highlight = None
-        for hl in self.all_highlights:
-            if hl.id == highlight_id:
-                highlight = hl
-                break
-
-        if not highlight:
+        # Find the flashcard
+        flashcard = next((fc for fc in self.all_flashcards if fc.id == flashcard_id), None)
+        if not flashcard:
             return
 
-        # Display highlight details
-        details_html = f"<h3>Highlight</h3>"
-        details_html += f"<p><i>{highlight.text}</i></p>"
+        # Display flashcard details
+        details_html = f"<h3>Question</h3>"
+        details_html += f"<p>{flashcard.question}</p>"
 
-        if highlight.note:
-            details_html += f"<h4>Your Note</h4>"
-            details_html += f"<p>{highlight.note}</p>"
+        details_html += f"<h3>Answer</h3>"
+        details_html += f"<p>{flashcard.answer}</p>"
 
-        details_html += f"<h4>Source</h4>"
-        details_html += f"<p><b>Book:</b> {self.current_book.title}</p>"
+        if flashcard.highlight:
+            details_html += f"<h4>Source Highlight</h4>"
+            details_html += f"<p><i>{flashcard.highlight.text}</i></p>"
 
-        if self.current_book.author:
-            details_html += f"<p><b>Author:</b> {self.current_book.author}</p>"
+            if flashcard.highlight.chapter:
+                details_html += f"<p><b>Chapter:</b> {flashcard.highlight.chapter}</p>"
 
-        if highlight.chapter:
-            details_html += f"<p><b>Chapter:</b> {highlight.chapter}</p>"
+            if flashcard.highlight.page:
+                details_html += f"<p><b>Page:</b> {flashcard.highlight.page}</p>"
 
-        if highlight.page:
-            details_html += f"<p><b>Page:</b> {highlight.page}</p>"
+            if flashcard.highlight.highlight_tags:
+                tags = ", ".join([tag.name for tag in flashcard.highlight.highlight_tags])
+                details_html += f"<p><b>Tags:</b> {tags}</p>"
+        else:
+            details_html += "<p><i>(Standalone flashcard - no associated highlight)</i></p>"
 
-        if highlight.highlight_tags:
-            tags = ", ".join([tag.name for tag in highlight.highlight_tags])
-            details_html += f"<p><b>Tags:</b> {tags}</p>"
-
-        self.highlight_details.setHtml(details_html)
+        self.flashcard_details.setHtml(details_html)
 
     def populate_decks(self):
         """Populate the deck selection dropdown"""
@@ -379,47 +379,47 @@ class HighlightsBrowserDialog(QWidget):
         if index >= 0:
             self.note_type_combo.setCurrentIndex(index)
 
-    def load_imported_highlights(self):
-        """Load the set of already imported highlight IDs"""
-        self.imported_highlight_ids = self.note_creator.get_imported_highlight_ids()
+    def load_imported_flashcards(self):
+        """Load the set of already imported flashcard IDs"""
+        self.imported_flashcard_ids = self.note_creator.get_imported_flashcard_ids()
 
-    def select_all_highlights(self):
-        """Select all highlights in the list"""
-        for i in range(self.highlights_list.count()):
-            item = self.highlights_list.item(i)
+    def select_all_flashcards(self):
+        """Select all flashcards in the list"""
+        for i in range(self.flashcards_list.count()):
+            item = self.flashcards_list.item(i)
             if item.checkState() != Qt.CheckState.Checked:
                 item.setCheckState(Qt.CheckState.Checked)
         self.update_import_button_states()
 
-    def deselect_all_highlights(self):
-        """Deselect all highlights in the list"""
-        for i in range(self.highlights_list.count()):
-            item = self.highlights_list.item(i)
+    def deselect_all_flashcards(self):
+        """Deselect all flashcards in the list"""
+        for i in range(self.flashcards_list.count()):
+            item = self.flashcards_list.item(i)
             if item.checkState() == Qt.CheckState.Checked:
                 item.setCheckState(Qt.CheckState.Unchecked)
         self.update_import_button_states()
 
-    def on_highlight_clicked(self, item: QListWidgetItem):
-        """Handle highlight click - show details"""
-        self.on_highlight_selected(item)
+    def on_flashcard_clicked(self, item: QListWidgetItem):
+        """Handle flashcard click - show details"""
+        self.on_flashcard_selected(item)
 
-    def get_selected_highlights(self) -> List[Highlight]:
-        """Get list of selected highlights"""
+    def get_selected_flashcards(self) -> List[FlashcardWithHighlight]:
+        """Get list of selected flashcards"""
         selected = []
-        for i in range(self.highlights_list.count()):
-            item = self.highlights_list.item(i)
+        for i in range(self.flashcards_list.count()):
+            item = self.flashcards_list.item(i)
             if item.checkState() == Qt.CheckState.Checked:
-                highlight_id = item.data(Qt.ItemDataRole.UserRole)
-                # Find the highlight object
-                for hl in self.all_highlights:
-                    if hl.id == highlight_id:
-                        selected.append(hl)
+                flashcard_id = item.data(Qt.ItemDataRole.UserRole)
+                # Find the flashcard object
+                for fc in self.all_flashcards:
+                    if fc.id == flashcard_id:
+                        selected.append(fc)
                         break
         return selected
 
-    def import_selected_highlights(self):
-        """Import selected highlights as Anki notes"""
-        if not self.current_book:
+    def import_selected_flashcards(self):
+        """Import selected flashcards as Anki notes"""
+        if not self.current_book_id:
             QMessageBox.warning(
                 self,
                 "No Book Selected",
@@ -427,12 +427,12 @@ class HighlightsBrowserDialog(QWidget):
             )
             return
 
-        selected_highlights = self.get_selected_highlights()
-        if not selected_highlights:
+        selected_flashcards = self.get_selected_flashcards()
+        if not selected_flashcards:
             QMessageBox.warning(
                 self,
-                "No Highlights Selected",
-                "Please select at least one highlight to import."
+                "No Flashcards Selected",
+                "Please select at least one flashcard to import."
             )
             return
 
@@ -441,11 +441,11 @@ class HighlightsBrowserDialog(QWidget):
         note_type_name = self.note_type_combo.currentText()
 
         # Confirm import
-        count = len(selected_highlights)
+        count = len(selected_flashcards)
         reply = QMessageBox.question(
             self,
             "Confirm Import",
-            f"Import {count} highlight(s) to deck '{deck_name}'?",
+            f"Import {count} flashcard(s) to deck '{deck_name}'?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.Yes
         )
@@ -454,15 +454,16 @@ class HighlightsBrowserDialog(QWidget):
             return
 
         # Show progress dialog
-        progress = QProgressDialog("Importing highlights...", "Cancel", 0, count, self)
+        progress = QProgressDialog("Importing flashcards...", "Cancel", 0, count, self)
         progress.setWindowTitle("Import Progress")
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.show()
 
-        # Import highlights
-        stats = self.note_creator.import_highlights(
-            selected_highlights,
-            self.current_book,
+        # Import flashcards
+        stats = self.note_creator.import_flashcards(
+            selected_flashcards,
+            self.current_book_title,
+            self.current_book_author,
             deck_name,
             note_type_name,
             skip_duplicates=True
@@ -487,24 +488,24 @@ class HighlightsBrowserDialog(QWidget):
 
         if stats['created'] > 0:
             QMessageBox.information(self, "Import Successful", result_msg)
-            # Reload imported highlights
-            self.load_imported_highlights()
-            # Refresh the highlights list to show import status
-            if self.current_book:
-                self.refresh_highlights_list()
+            # Reload imported flashcards
+            self.load_imported_flashcards()
+            # Refresh the flashcards list to show import status
+            if self.current_book_id:
+                self.refresh_flashcards_list()
                 self.update_import_button_states()
         else:
             QMessageBox.warning(self, "Import Results", result_msg)
 
-    def refresh_highlights_list(self):
-        """Refresh the highlights list to update import status and apply filters"""
-        if not self.all_highlights:
+    def refresh_flashcards_list(self):
+        """Refresh the flashcards list to update import status and apply filters"""
+        if not self.all_flashcards:
             return
 
         # Remember current selections
         selected_ids = set()
-        for i in range(self.highlights_list.count()):
-            item = self.highlights_list.item(i)
+        for i in range(self.flashcards_list.count()):
+            item = self.flashcards_list.item(i)
             if item.checkState() == Qt.CheckState.Checked:
                 selected_ids.add(item.data(Qt.ItemDataRole.UserRole))
 
@@ -514,118 +515,138 @@ class HighlightsBrowserDialog(QWidget):
         selected_chapter = self.chapter_filter_combo.currentData()
 
         # Rebuild list with filtering
-        self.highlights_list.clear()
+        self.flashcards_list.clear()
         displayed_count = 0
 
-        for highlight in self.all_highlights:
-            # Apply filters
-            if search_text and search_text not in highlight.text.lower():
-                if not highlight.note or search_text not in highlight.note.lower():
+        for flashcard in self.all_flashcards:
+            # Apply search filter to question and answer
+            if search_text:
+                if search_text not in flashcard.question.lower() and search_text not in flashcard.answer.lower():
                     continue
 
-            if selected_tag and selected_tag not in [tag.name for tag in highlight.highlight_tags]:
-                continue
+            # Apply tag filter (only works if flashcard has highlight with tags)
+            if selected_tag:
+                if not flashcard.highlight:
+                    continue
+                tag_names = [tag.name for tag in flashcard.highlight.highlight_tags]
+                if selected_tag not in tag_names:
+                    continue
 
-            if selected_chapter and highlight.chapter_id != selected_chapter:
-                continue
+            # Apply chapter filter (only works if flashcard has highlight with chapter)
+            if selected_chapter:
+                if not flashcard.highlight or flashcard.highlight.chapter_id != selected_chapter:
+                    continue
 
             displayed_count += 1
-            # Create preview text (first 100 chars)
-            preview = highlight.text[:100]
-            if len(highlight.text) > 100:
+            # Create preview text (first 100 chars of question)
+            preview = flashcard.question[:100]
+            if len(flashcard.question) > 100:
                 preview += "..."
 
-            chapter_text = f" [{highlight.chapter}]" if highlight.chapter else ""
-            page_text = f" (p. {highlight.page})" if highlight.page else ""
+            # Show chapter/page from highlight if available
+            chapter_text = ""
+            page_text = ""
+            if flashcard.highlight:
+                if flashcard.highlight.chapter:
+                    chapter_text = f" [{flashcard.highlight.chapter}]"
+                if flashcard.highlight.page:
+                    page_text = f" (p. {flashcard.highlight.page})"
 
             # Add import status
-            is_imported = highlight.id in self.imported_highlight_ids
+            is_imported = flashcard.id in self.imported_flashcard_ids
             status_text = " ✓ Imported" if is_imported else ""
 
             item_text = f"{preview}{chapter_text}{page_text}{status_text}"
             item = QListWidgetItem(item_text)
-            item.setData(Qt.ItemDataRole.UserRole, highlight.id)
+            item.setData(Qt.ItemDataRole.UserRole, flashcard.id)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
 
             # Restore selection state
-            if highlight.id in selected_ids:
+            if flashcard.id in selected_ids:
                 item.setCheckState(Qt.CheckState.Checked)
             else:
                 item.setCheckState(Qt.CheckState.Unchecked)
 
-            # Gray out imported highlights
+            # Gray out imported flashcards
             if is_imported:
                 item.setForeground(Qt.GlobalColor.gray)
 
-            self.highlights_list.addItem(item)
+            self.flashcards_list.addItem(item)
 
         # Update status with filter info
-        if displayed_count < len(self.all_highlights):
+        if displayed_count < len(self.all_flashcards):
             self.status_label.setText(
-                f"Showing {displayed_count} of {len(self.all_highlights)} highlights (filtered)"
+                f"Showing {displayed_count} of {len(self.all_flashcards)} flashcards (filtered)"
             )
-        elif self.current_book:
+        elif self.current_book_id:
             self.status_label.setText(
-                f"Showing {displayed_count} highlights from {self.current_book.title}"
+                f"Showing {displayed_count} flashcards from {self.current_book_title}"
             )
 
     def populate_tag_filter(self):
-        """Populate the tag filter dropdown with all unique tags from current highlights"""
+        """Populate the tag filter dropdown with all unique tags from flashcard highlights"""
         # Clear existing items except "All Tags"
         self.tag_filter_combo.clear()
         self.tag_filter_combo.addItem("All Tags", None)
 
-        if not self.all_highlights:
+        if not self.all_flashcards:
             return
 
-        # Collect all unique tags
+        # Collect all unique tags from flashcard highlights
         tags = set()
-        for highlight in self.all_highlights:
-            for tag in highlight.highlight_tags:
-                tags.add(tag.name)
+        for flashcard in self.all_flashcards:
+            if flashcard.highlight:
+                for tag in flashcard.highlight.highlight_tags:
+                    tags.add(tag.name)
 
         # Add tags to dropdown
         for tag in sorted(tags):
             self.tag_filter_combo.addItem(tag, tag)
 
     def populate_chapter_filter(self):
-        """Populate the chapter filter dropdown with all unique chapters"""
+        """Populate the chapter filter dropdown with all unique chapters from flashcard highlights"""
         # Clear existing items except "All Chapters"
         self.chapter_filter_combo.clear()
         self.chapter_filter_combo.addItem("All Chapters", None)
 
-        if not self.current_book:
+        if not self.all_flashcards:
             return
 
+        # Collect unique chapters from flashcard highlights
+        chapters = {}  # chapter_id -> chapter_name
+        for flashcard in self.all_flashcards:
+            if flashcard.highlight and flashcard.highlight.chapter_id:
+                chapters[flashcard.highlight.chapter_id] = flashcard.highlight.chapter
+
         # Add chapters to dropdown
-        for chapter in self.current_book.chapters:
-            if chapter.highlights:  # Only show chapters with highlights
-                self.chapter_filter_combo.addItem(chapter.name, chapter.id)
+        for chapter_id, chapter_name in sorted(chapters.items(), key=lambda x: x[1] or ""):
+            if chapter_name:
+                self.chapter_filter_combo.addItem(chapter_name, chapter_id)
 
     def on_search_changed(self, text):
         """Handle search text change"""
-        self.refresh_highlights_list()
+        self.refresh_flashcards_list()
 
     def on_filter_changed(self, index):
         """Handle filter dropdown change"""
-        self.refresh_highlights_list()
+        self.refresh_flashcards_list()
         self.update_import_button_states()
 
     def update_import_button_states(self):
         """Update the enabled/disabled state of import buttons based on current state"""
         # Import All from Book: enabled if book is selected
-        has_book = self.current_book is not None and len(self.all_highlights) > 0
+        has_book = self.current_book_id is not None and len(self.all_flashcards) > 0
         self.import_all_btn.setEnabled(has_book)
 
         # Import All from Chapter: enabled if book is selected AND a specific chapter is selected
         has_chapter = has_book and self.chapter_filter_combo.currentData() is not None
         self.import_chapter_btn.setEnabled(has_chapter)
 
-        # Import Selected: enabled if book is selected AND at least one highlight is checked
+        # Import Selected: enabled if book is selected AND at least one flashcard is checked
         has_selected = False
         if has_book:
-            for i in range(self.highlights_list.count()):
-                item = self.highlights_list.item(i)
+            for i in range(self.flashcards_list.count()):
+                item = self.flashcards_list.item(i)
                 if item.checkState() == Qt.CheckState.Checked:
                     has_selected = True
                     break
@@ -636,11 +657,11 @@ class HighlightsBrowserDialog(QWidget):
         self.search_input.clear()
         self.tag_filter_combo.setCurrentIndex(0)  # "All Tags"
         self.chapter_filter_combo.setCurrentIndex(0)  # "All Chapters"
-        self.refresh_highlights_list()
+        self.refresh_flashcards_list()
 
     def import_all_from_book(self):
-        """Import all highlights from the current book"""
-        if not self.current_book or not self.all_highlights:
+        """Import all flashcards from the current book"""
+        if not self.current_book_id or not self.all_flashcards:
             QMessageBox.warning(
                 self,
                 "No Book Selected",
@@ -652,25 +673,25 @@ class HighlightsBrowserDialog(QWidget):
         deck_name = self.deck_combo.currentText()
         note_type_name = self.note_type_combo.currentText()
 
-        # Count highlights that haven't been imported yet
-        new_highlights = [hl for hl in self.all_highlights
-                         if hl.id not in self.imported_highlight_ids]
-        total_count = len(self.all_highlights)
-        new_count = len(new_highlights)
+        # Count flashcards that haven't been imported yet
+        new_flashcards = [fc for fc in self.all_flashcards
+                         if fc.id not in self.imported_flashcard_ids]
+        total_count = len(self.all_flashcards)
+        new_count = len(new_flashcards)
 
         # Confirm import
         if new_count == 0:
             QMessageBox.information(
                 self,
                 "All Imported",
-                f"All {total_count} highlights from this book have already been imported."
+                f"All {total_count} flashcards from this book have already been imported."
             )
             return
 
         reply = QMessageBox.question(
             self,
             "Confirm Batch Import",
-            f"Import all {total_count} highlights from '{self.current_book.title}'?\n"
+            f"Import all {total_count} flashcards from '{self.current_book_title}'?\n"
             f"({new_count} new, {total_count - new_count} already imported)\n\n"
             f"Deck: {deck_name}",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
@@ -680,12 +701,12 @@ class HighlightsBrowserDialog(QWidget):
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        # Import all highlights
-        self._do_batch_import(self.all_highlights, deck_name, note_type_name)
+        # Import all flashcards
+        self._do_batch_import(self.all_flashcards, deck_name, note_type_name)
 
     def import_all_from_chapter(self):
-        """Import all highlights from the currently filtered chapter"""
-        if not self.current_book or not self.all_highlights:
+        """Import all flashcards from the currently filtered chapter"""
+        if not self.current_book_id or not self.all_flashcards:
             QMessageBox.warning(
                 self,
                 "No Book Selected",
@@ -706,15 +727,15 @@ class HighlightsBrowserDialog(QWidget):
         # Get chapter name for display
         selected_chapter_name = self.chapter_filter_combo.currentText()
 
-        # Filter highlights by chapter ID
-        chapter_highlights = [hl for hl in self.all_highlights
-                            if hl.chapter_id == selected_chapter_id]
+        # Filter flashcards by chapter ID (from their associated highlights)
+        chapter_flashcards = [fc for fc in self.all_flashcards
+                            if fc.highlight and fc.highlight.chapter_id == selected_chapter_id]
 
-        if not chapter_highlights:
+        if not chapter_flashcards:
             QMessageBox.warning(
                 self,
-                "No Highlights",
-                f"No highlights found in chapter '{selected_chapter_name}'."
+                "No Flashcards",
+                f"No flashcards found in chapter '{selected_chapter_name}'."
             )
             return
 
@@ -722,18 +743,18 @@ class HighlightsBrowserDialog(QWidget):
         deck_name = self.deck_combo.currentText()
         note_type_name = self.note_type_combo.currentText()
 
-        # Count new highlights
-        new_highlights = [hl for hl in chapter_highlights
-                         if hl.id not in self.imported_highlight_ids]
-        total_count = len(chapter_highlights)
-        new_count = len(new_highlights)
+        # Count new flashcards
+        new_flashcards = [fc for fc in chapter_flashcards
+                         if fc.id not in self.imported_flashcard_ids]
+        total_count = len(chapter_flashcards)
+        new_count = len(new_flashcards)
 
         # Confirm import
         if new_count == 0:
             QMessageBox.information(
                 self,
                 "All Imported",
-                f"All {total_count} highlights from chapter '{selected_chapter_name}' "
+                f"All {total_count} flashcards from chapter '{selected_chapter_name}' "
                 f"have already been imported."
             )
             return
@@ -741,7 +762,7 @@ class HighlightsBrowserDialog(QWidget):
         reply = QMessageBox.question(
             self,
             "Confirm Batch Import",
-            f"Import all {total_count} highlights from chapter '{selected_chapter_name}'?\n"
+            f"Import all {total_count} flashcards from chapter '{selected_chapter_name}'?\n"
             f"({new_count} new, {total_count - new_count} already imported)\n\n"
             f"Deck: {deck_name}",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
@@ -751,23 +772,24 @@ class HighlightsBrowserDialog(QWidget):
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        # Import chapter highlights
-        self._do_batch_import(chapter_highlights, deck_name, note_type_name)
+        # Import chapter flashcards
+        self._do_batch_import(chapter_flashcards, deck_name, note_type_name)
 
-    def _do_batch_import(self, highlights: List[Highlight], deck_name: str, note_type_name: str):
-        """Execute batch import of highlights"""
-        count = len(highlights)
+    def _do_batch_import(self, flashcards: List[FlashcardWithHighlight], deck_name: str, note_type_name: str):
+        """Execute batch import of flashcards"""
+        count = len(flashcards)
 
         # Show progress dialog
-        progress = QProgressDialog("Importing highlights...", "Cancel", 0, count, self)
+        progress = QProgressDialog("Importing flashcards...", "Cancel", 0, count, self)
         progress.setWindowTitle("Batch Import")
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.show()
 
-        # Import highlights
-        stats = self.note_creator.import_highlights(
-            highlights,
-            self.current_book,
+        # Import flashcards
+        stats = self.note_creator.import_flashcards(
+            flashcards,
+            self.current_book_title,
+            self.current_book_author,
             deck_name,
             note_type_name,
             skip_duplicates=True
@@ -792,10 +814,10 @@ class HighlightsBrowserDialog(QWidget):
 
         if stats['created'] > 0:
             QMessageBox.information(self, "Batch Import Successful", result_msg)
-            # Reload imported highlights
-            self.load_imported_highlights()
-            # Refresh the highlights list
-            self.refresh_highlights_list()
+            # Reload imported flashcards
+            self.load_imported_flashcards()
+            # Refresh the flashcards list
+            self.refresh_flashcards_list()
             self.update_import_button_states()
         else:
             QMessageBox.warning(self, "Batch Import Results", result_msg)
