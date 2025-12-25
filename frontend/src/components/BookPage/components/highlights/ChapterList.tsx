@@ -1,8 +1,8 @@
 import type { Bookmark, Highlight } from '@/api/generated/model';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
-import { SectionTitle } from '@/components/common/SectionTitle';
+import { SectionTitle } from '@/components/common/SectionTitle.tsx';
 import { Box, Typography } from '@mui/material';
-import { HighlightCard } from './HighlightCard';
+import { HighlightCard } from './HighlightCard.tsx';
 
 export interface ChapterData {
   id: number | string;

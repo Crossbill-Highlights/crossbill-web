@@ -1,8 +1,8 @@
-import { Collapsable } from '@/components/common/animations/Collapsable';
+import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
 import { ChapterListIcon, ExpandMoreIcon } from '@/components/common/Icons';
 import { Box, IconButton, Typography } from '@mui/material';
 import { useState } from 'react';
-import type { ChapterData } from './ChapterList';
+import type { ChapterData } from './ChapterList.tsx';
 
 interface ChapterNavProps {
   chapters: ChapterData[];

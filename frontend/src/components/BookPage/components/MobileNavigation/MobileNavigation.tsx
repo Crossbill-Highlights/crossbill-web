@@ -1,4 +1,4 @@
-import { BookDetails, Bookmark, Highlight } from '@/api/generated/model';
+import { BookDetails, Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
 import { BookmarkFilledIcon, ChapterListIcon, CloseIcon, TagIcon } from '@/components/common/Icons';
 import {
   BottomNavigation,
@@ -12,8 +12,8 @@ import {
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { BookmarkList } from '../BookmarkList';
-import { ChapterData } from '../ChapterList';
-import { ChapterNav } from '../ChapterNav';
+import { ChapterData } from '../highlights/ChapterList.tsx';
+import { ChapterNav } from '../highlights/ChapterNav.tsx';
 import { HighlightTags } from '../HighlightTags';
 
 const BottomDrawer = ({
@@ -51,13 +51,19 @@ interface TagsDrawerContentProps {
   book: BookDetails;
   selectedTag?: number | null;
   onTagClick: (tagId: number | null) => void;
+  displayTags?: HighlightTagInBook[];
 }
 
-const TagsDrawerContent = ({ book, selectedTag, onTagClick }: TagsDrawerContentProps) => {
+const TagsDrawerContent = ({
+  book,
+  selectedTag,
+  onTagClick,
+  displayTags,
+}: TagsDrawerContentProps) => {
   return (
     <Box>
       <HighlightTags
-        tags={book.highlight_tags || []}
+        tags={displayTags || book.highlight_tags || []}
         tagGroups={book.highlight_tag_groups || []}
         bookId={book.id}
         selectedTag={selectedTag}
@@ -118,6 +124,7 @@ export const MobileNavigation = ({
   onBookmarkClick,
   chapters,
   onChapterClick,
+  displayTags,
 }: MobileNavigationProps) => {
   const [drawerIsOpen, setDrawerState] = useState(false);
   const [drawerContent, setDrawerContent] = useState<DrawerContentType>('tags');
@@ -132,6 +139,7 @@ export const MobileNavigation = ({
             onTagClick(data);
             setDrawerState(false);
           }}
+          displayTags={displayTags}
         />
       );
     }
