@@ -176,6 +176,7 @@ export const BookTitle = ({ book, highlightCount }: BookTitleProps) => {
               gap: 1,
               mb: book.tags && book.tags.length > 0 ? 2 : 0,
               width: '100%',
+              flexWrap: 'wrap',
             }}
           >
             <BookmarkIcon sx={{ fontSize: 18, color: 'primary.main' }} />
