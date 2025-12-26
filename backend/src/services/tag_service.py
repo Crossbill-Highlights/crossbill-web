@@ -18,7 +18,7 @@ class TagService:
         self.tag_repo = repositories.TagRepository(db)
         self.book_repo = repositories.BookRepository(db)
 
-    def update_book_tags(self, book_id: int, tag_names: list[str], user_id: int) -> models.Book:
+    def update_book_tags(self, book: models.Book, tag_names: list[str], user_id: int) -> models.Book:
         """
         Update the tags associated with a book.
 
@@ -28,19 +28,13 @@ class TagService:
         - Reuse existing tags if they already exist
 
         Args:
-            book_id: ID of the book to update
+            book: Book object to update
             tag_names: List of tag names to associate with the book
+            user_id: ID of the user
 
         Returns:
             Updated book with new tags
-
-        Raises:
-            ValueError: If book is not found
         """
-        book = self.book_repo.get_by_id(book_id, user_id)
-        if not book:
-            raise ValueError(f"Book with id {book_id} not found")
-
         # Get or create tags (bulk operation: max 2 queries)
         tags = self.tag_repo.get_or_create_many(tag_names, user_id)
 
@@ -49,7 +43,7 @@ class TagService:
         self.db.flush()
         self.db.refresh(book)
 
-        logger.info(f"Updated tags for book {book_id}: {[tag.name for tag in tags]}")
+        logger.info(f"Updated tags for book {book.id}: {[tag.name for tag in tags]}")
         return book
 
     def add_book_tags(self, book_id: int, tag_names: list[str], user_id: int) -> models.Book:
