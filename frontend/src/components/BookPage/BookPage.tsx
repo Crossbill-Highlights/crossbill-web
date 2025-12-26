@@ -14,6 +14,7 @@ import {
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils';
 import { FlashcardsIcon, HighlightsIcon } from '@/components/common/Icons.tsx';
+import { ThreeColumnLayout } from '@/components/layout/Layouts.tsx';
 import { queryClient } from '@/lib/queryClient';
 import {
   Alert,
@@ -168,7 +169,10 @@ export const BookPage = () => {
         {isDesktop && (
           <Box sx={{ px: 4, py: 4 }}>
             <BookTitle book={book} highlightCount={totalHighlights} />
-            {TabsComponent}
+            <ThreeColumnLayout>
+              <div></div> {/* Empty left column for spacing */}
+              {TabsComponent}
+            </ThreeColumnLayout>
 
             {activeTab === 'highlights' ? (
               <HighlightsTab book={book} isDesktop={true} isMobile={false} />
