@@ -320,6 +320,7 @@ const DesktopFlashcardsContent = ({
       bookId={book.id}
       selectedTag={selectedTagId}
       onTagClick={onTagClick}
+      hideEmptyGroups
     />
 
     {/* Middle Column - Search + Content */}

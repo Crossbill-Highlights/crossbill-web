@@ -57,6 +57,7 @@ interface TagsDrawerContentProps {
   selectedTag?: number | null;
   onTagClick: (tagId: number | null) => void;
   displayTags?: HighlightTagInBook[];
+  currentTab: 'highlights' | 'flashcards';
 }
 
 const TagsDrawerContent = ({
@@ -64,6 +65,7 @@ const TagsDrawerContent = ({
   selectedTag,
   onTagClick,
   displayTags,
+  currentTab,
 }: TagsDrawerContentProps) => {
   return (
     <Box>
@@ -74,6 +76,7 @@ const TagsDrawerContent = ({
         selectedTag={selectedTag}
         onTagClick={onTagClick}
         hideTitle={true}
+        hideEmptyGroups={currentTab === 'flashcards'}
       />
     </Box>
   );
@@ -115,7 +118,7 @@ const ChaptersDrawerContent = ({ chapters, onChapterClick }: ChaptersDrawerConte
   );
 };
 
-type MobileNavigationProps = TagsDrawerContentProps &
+type MobileNavigationProps = { currentTab: 'highlights' | 'flashcards' } & TagsDrawerContentProps &
   BookmarksDrawerContentProps &
   ChaptersDrawerContentProps;
 type DrawerContentType = 'tags' | 'bookmarks' | 'chapters';
@@ -130,6 +133,7 @@ export const MobileNavigation = ({
   chapters,
   onChapterClick,
   displayTags,
+  currentTab,
 }: MobileNavigationProps) => {
   const [drawerIsOpen, setDrawerState] = useState(false);
   const [drawerContent, setDrawerContent] = useState<DrawerContentType>('tags');
@@ -145,6 +149,7 @@ export const MobileNavigation = ({
             setDrawerState(false);
           }}
           displayTags={displayTags}
+          currentTab={currentTab}
         />
       );
     }

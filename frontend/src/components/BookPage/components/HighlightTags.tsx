@@ -44,6 +44,7 @@ interface HighlightTagsProps {
   selectedTag?: number | null;
   onTagClick: (tagId: number | null) => void;
   hideTitle?: boolean;
+  hideEmptyGroups?: boolean;
 }
 
 interface DraggableTagProps {
@@ -621,6 +622,7 @@ export const HighlightTags = ({
   selectedTag,
   onTagClick,
   hideTitle,
+  hideEmptyGroups,
 }: HighlightTagsProps) => {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<number, boolean>>({});
   const [ungroupedCollapsed, setUngroupedCollapsed] = useState(false);
@@ -904,36 +906,40 @@ export const HighlightTags = ({
         {tags && tags.length > 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {/* Grouped tags */}
-            {groupedTags.map(({ group, tags: groupTags }) => (
-              <TagGroup
-                key={group.id}
-                group={group}
-                tags={groupTags}
-                isCollapsed={!!collapsedGroups[group.id]}
-                isEditing={editingGroupId === group.id}
-                editValue={editValue}
-                isProcessing={isProcessing}
-                selectedTag={selectedTag}
-                onToggleCollapse={() => handleToggleCollapse(group.id)}
-                onStartEdit={() => handleStartEdit(group)}
-                onEditChange={setEditValue}
-                onEditSubmit={() => void handleEditSubmit()}
-                onEditCancel={handleEditCancel}
-                onDelete={() => void handleDeleteGroup(group.id)}
-                onTagClick={onTagClick}
-              />
-            ))}
+            {groupedTags.map(({ group, tags: groupTags }) =>
+              hideEmptyGroups && groupTags.length === 0 ? null : (
+                <TagGroup
+                  key={group.id}
+                  group={group}
+                  tags={groupTags}
+                  isCollapsed={!!collapsedGroups[group.id]}
+                  isEditing={editingGroupId === group.id}
+                  editValue={editValue}
+                  isProcessing={isProcessing}
+                  selectedTag={selectedTag}
+                  onToggleCollapse={() => handleToggleCollapse(group.id)}
+                  onStartEdit={() => handleStartEdit(group)}
+                  onEditChange={setEditValue}
+                  onEditSubmit={() => void handleEditSubmit()}
+                  onEditCancel={handleEditCancel}
+                  onDelete={() => void handleDeleteGroup(group.id)}
+                  onTagClick={onTagClick}
+                />
+              )
+            )}
 
             {/* Ungrouped tags */}
-            <UngroupedTags
-              tags={ungroupedTags}
-              selectedTag={selectedTag}
-              activeTag={activeTag}
-              movingTagId={movingTagId}
-              isCollapsed={ungroupedCollapsed}
-              onToggleCollapse={handleToggleUngroupedCollapse}
-              onTagClick={onTagClick}
-            />
+            {hideEmptyGroups && ungroupedTags.length === 0 ? null : (
+              <UngroupedTags
+                tags={ungroupedTags}
+                selectedTag={selectedTag}
+                activeTag={activeTag}
+                movingTagId={movingTagId}
+                isCollapsed={ungroupedCollapsed}
+                onToggleCollapse={handleToggleUngroupedCollapse}
+                onTagClick={onTagClick}
+              />
+            )}
           </Box>
         ) : (
           <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.813rem' }}>

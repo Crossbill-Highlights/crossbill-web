@@ -249,6 +249,7 @@ const MobileNavigationWrapper = ({ book, activeTab }: MobileNavigationWrapperPro
       chapters={data.chapters}
       onChapterClick={handleChapterClick}
       displayTags={data.tags}
+      currentTab={activeTab}
     />
   );
 };
