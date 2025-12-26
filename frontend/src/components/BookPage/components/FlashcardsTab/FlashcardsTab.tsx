@@ -7,8 +7,8 @@ import type {
 } from '@/api/generated/model';
 import { ChapterNav } from '@/components/BookPage/components/HighlightsTab/ChapterNav.tsx';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils.ts';
+import { SortIcon } from '@/components/common/Icons.tsx';
 import { SearchBar } from '@/components/common/SearchBar.tsx';
-import { SwapVert as SwapVertIcon } from '@mui/icons-material';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { flatMap } from 'lodash';
@@ -263,7 +263,7 @@ const MobileFlashcardsContent = ({
             '&:hover': { color: 'primary.main' },
           }}
         >
-          <SwapVertIcon />
+          <SortIcon />
         </IconButton>
       </Tooltip>
     </Box>
@@ -347,7 +347,7 @@ const DesktopFlashcardsContent = ({
               '&:hover': { color: 'primary.main' },
             }}
           >
-            <SwapVertIcon />
+            <SortIcon />
           </IconButton>
         </Tooltip>
       </Box>

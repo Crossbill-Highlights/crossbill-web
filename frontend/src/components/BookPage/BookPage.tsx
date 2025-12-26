@@ -13,8 +13,8 @@ import {
 } from '@/components/BookPage/components/HighlightsTab/HighlightsTab.tsx';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils';
+import { FlashcardsIcon, HighlightsIcon } from '@/components/common/Icons.tsx';
 import { queryClient } from '@/lib/queryClient';
-import { Style as FlashcardsIcon, MenuBook as HighlightsIcon } from '@mui/icons-material';
 import {
   Alert,
   Box,

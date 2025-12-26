@@ -2,8 +2,8 @@ import { useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet } from '@/api/gener
 import { useSearchHighlightsApiV1HighlightsSearchGet } from '@/api/generated/highlights/highlights.ts';
 import type { BookDetails, Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils.ts';
+import { SortIcon } from '@/components/common/Icons.tsx';
 import { SearchBar } from '@/components/common/SearchBar.tsx';
-import { SwapVert as SwapVertIcon } from '@mui/icons-material';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';
@@ -287,7 +287,7 @@ const MobileHighlightsContent = ({
             '&:hover': { color: 'primary.main' },
           }}
         >
-          <SwapVertIcon />
+          <SortIcon />
         </IconButton>
       </Tooltip>
     </Box>
@@ -376,7 +376,7 @@ const DesktopHighlightsContent = ({
               '&:hover': { color: 'primary.main' },
             }}
           >
-            <SwapVertIcon />
+            <SortIcon />
           </IconButton>
         </Tooltip>
       </Box>
