@@ -4,7 +4,7 @@ import logging
 from collections.abc import Sequence
 from datetime import UTC, datetime
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
@@ -231,8 +231,8 @@ class HighlightRepository:
         """
         Soft delete highlights by their IDs for a specific book and user.
 
-        Also deletes all bookmarks associated with the deleted highlights,
-        as soft-deleted highlights should not have active bookmarks.
+        Also deletes all bookmarks and flashcards associated with the deleted highlights,
+        as soft-deleted highlights should not have active bookmarks or flashcards.
 
         Args:
             book_id: ID of the book (for validation)
@@ -242,40 +242,45 @@ class HighlightRepository:
         Returns:
             int: Number of highlights soft deleted
         """
-        # Find highlights that belong to the book/user and are not already deleted
-        stmt = select(models.Highlight).where(
-            models.Highlight.id.in_(highlight_ids),
-            models.Highlight.book_id == book_id,
-            models.Highlight.user_id == user_id,
-            models.Highlight.deleted_at.is_(None),
+        # Subquery to get valid highlight IDs (belong to book/user, not already deleted)
+        valid_highlight_ids_subquery = (
+            select(models.Highlight.id)
+            .where(
+                models.Highlight.id.in_(highlight_ids),
+                models.Highlight.book_id == book_id,
+                models.Highlight.user_id == user_id,
+                models.Highlight.deleted_at.is_(None),
+            )
+            .scalar_subquery()
         )
-        highlights = self.db.execute(stmt).scalars().all()
 
-        if not highlights:
-            return 0
-
-        # Get IDs of highlights to be deleted
-        highlight_ids_to_delete = [h.id for h in highlights]
-
-        # Bulk delete all bookmarks for these highlights in a single query
+        # Bulk delete all bookmarks for valid highlights
         stmt_delete_bookmarks = delete(models.Bookmark).where(
-            models.Bookmark.highlight_id.in_(highlight_ids_to_delete)
+            models.Bookmark.highlight_id.in_(valid_highlight_ids_subquery)
         )
         result = self.db.execute(stmt_delete_bookmarks)
         bookmarks_deleted = getattr(result, "rowcount", 0) or 0
 
-        # Bulk delete all flashcards for these highlights in a single query
+        # Bulk delete all flashcards for valid highlights
         stmt_delete_flashcards = delete(models.Flashcard).where(
-            models.Flashcard.highlight_id.in_(highlight_ids_to_delete)
+            models.Flashcard.highlight_id.in_(valid_highlight_ids_subquery)
         )
         result = self.db.execute(stmt_delete_flashcards)
         flashcards_deleted = getattr(result, "rowcount", 0) or 0
 
-        # Soft delete each highlight
-        count = 0
-        for highlight in highlights:
-            highlight.deleted_at = datetime.now(UTC)
-            count += 1
+        # Bulk soft delete all valid highlights in a single query
+        stmt_soft_delete = (
+            update(models.Highlight)
+            .where(
+                models.Highlight.id.in_(highlight_ids),
+                models.Highlight.book_id == book_id,
+                models.Highlight.user_id == user_id,
+                models.Highlight.deleted_at.is_(None),
+            )
+            .values(deleted_at=datetime.now(UTC))
+        )
+        result = self.db.execute(stmt_soft_delete)
+        count = getattr(result, "rowcount", 0) or 0
 
         self.db.flush()
         logger.info(
