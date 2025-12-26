@@ -1,10 +1,9 @@
 """Service layer for highlight-related business logic."""
 
 import structlog
-from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
 
-from src import repositories, schemas
+from src import models, repositories, schemas
 from src.services.tag_service import TagService
 from src.utils import compute_book_hash, compute_highlight_hash
 
@@ -25,15 +24,15 @@ class HighlightService:
         self,
         request: schemas.HighlightUploadRequest,
         user_id: int,
-        background_tasks: BackgroundTasks | None = None,
     ) -> schemas.HighlightUploadResponse:
         """
         Process highlight upload from KOReader.
 
         This method:
         1. Creates or updates the book record
-        2. Creates or retrieves chapter records for highlights with chapter info
-        3. Bulk creates highlights with deduplication
+        2. Batch processes chapters (fetches existing and bulk creates new ones)
+        3. Prepares highlights with content hashes
+        4. Bulk creates highlights with deduplication
 
         Args:
             request: Upload request containing book metadata and highlights
@@ -62,22 +61,53 @@ class HighlightService:
             tag_service = TagService(self.db)
             tag_service.add_book_tags(book.id, request.book.keywords, user_id)
 
-        # Step 2: Process chapters and prepare highlights with content hashes
+        # Step 2: Batch process chapters
+        # Collect unique chapter data from highlights
+        chapter_data_map: dict[str, int | None] = {}  # name -> chapter_number
+        for highlight_data in request.highlights:
+            if highlight_data.chapter:
+                # Keep the latest chapter_number for each chapter name
+                chapter_data_map[highlight_data.chapter] = highlight_data.chapter_number
+
+        chapter_names = set(chapter_data_map.keys())
+        existing_chapters = self.chapter_repo.get_by_names(book.id, chapter_names, user_id)
+
+        chapters_to_create = [
+            (name, chapter_number)
+            for name, chapter_number in chapter_data_map.items()
+            if name not in existing_chapters
+        ]
+
+        # Bulk create new chapters
+        new_chapters = self.chapter_repo.bulk_create(book.id, user_id, chapters_to_create)
+
+        # Build complete chapter mapping (existing + newly created)
+        chapter_mapping: dict[str, models.Chapter] = {**existing_chapters}
+        for chapter in new_chapters:
+            chapter_mapping[chapter.name] = chapter
+
+        # Update chapter numbers if they've changed
+        for name, chapter in existing_chapters.items():
+            expected_number = chapter_data_map[name]
+            if expected_number is not None and chapter.chapter_number != expected_number:
+                chapter.chapter_number = expected_number
+                logger.info(
+                    f"Updated chapter number for '{name}' (book_id={book.id}) to {expected_number}"
+                )
+
+        # Commit chapters before creating highlights to avoid rollback issues
+        # This ensures chapter foreign keys exist before highlights reference them
+        self.db.commit()
+
+        # Step 3: Prepare highlights with content hashes
         highlights_with_chapters: list[tuple[int | None, str, schemas.HighlightCreate]] = []
 
         for highlight_data in request.highlights:
             chapter_id = None
 
-            # If highlight has chapter info, get or create the chapter
-            if highlight_data.chapter:
-                # Use chapter_number from the highlight (set by KOReader plugin)
-                chapter_number = highlight_data.chapter_number
-
-                # Get or create chapter with the chapter number
-                chapter = self.chapter_repo.get_or_create(
-                    book.id, user_id, highlight_data.chapter, chapter_number
-                )
-                chapter_id = chapter.id
+            # If highlight has chapter info, look up the chapter from our mapping
+            if highlight_data.chapter and highlight_data.chapter in chapter_mapping:
+                chapter_id = chapter_mapping[highlight_data.chapter].id
 
             # Compute content hash for deduplication
             content_hash = compute_highlight_hash(
@@ -88,11 +118,7 @@ class HighlightService:
 
             highlights_with_chapters.append((chapter_id, content_hash, highlight_data))
 
-        # Commit chapters before creating highlights to avoid rollback issues
-        # This ensures chapter foreign keys exist before highlights reference them
-        self.db.commit()
-
-        # Step 3: Bulk create highlights
+        # Step 4: Bulk create highlights
         highlights_created, highlights_skipped = self.highlight_repo.bulk_create(
             book.id, user_id, highlights_with_chapters
         )

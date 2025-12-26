@@ -3,7 +3,7 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src import schemas
 from src.database import DatabaseSession
@@ -24,7 +24,6 @@ router = APIRouter(prefix="/highlights", tags=["highlights"])
 )
 async def upload_highlights(
     request: schemas.HighlightUploadRequest,
-    background_tasks: BackgroundTasks,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.HighlightUploadResponse:
@@ -46,7 +45,7 @@ async def upload_highlights(
     """
     try:
         service = HighlightService(db)
-        return service.upload_highlights(request, current_user.id, background_tasks)
+        return service.upload_highlights(request, current_user.id)
     except Exception as e:
         logger.error(f"Failed to upload highlights: {e!s}", exc_info=True)
         raise HTTPException(

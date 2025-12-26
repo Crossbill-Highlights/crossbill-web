@@ -90,6 +90,55 @@ class ChapterRepository:
         # Any integrity errors will propagate up and be handled by the caller
         return self.create(book_id, user_id, name, chapter_number)
 
+    def get_by_names(
+        self, book_id: int, names: set[str], user_id: int
+    ) -> dict[str, models.Chapter]:
+        """Get multiple chapters by names for a book in one query.
+
+        Returns a dictionary mapping chapter names to Chapter objects.
+        """
+        if not names:
+            return {}
+
+        stmt = (
+            select(models.Chapter)
+            .join(models.Book, models.Chapter.book_id == models.Book.id)
+            .where(
+                models.Chapter.book_id == book_id,
+                models.Chapter.name.in_(names),
+                models.Book.user_id == user_id,
+            )
+        )
+        chapters = self.db.execute(stmt).scalars().all()
+        return {chapter.name: chapter for chapter in chapters}
+
+    def bulk_create(
+        self, book_id: int, user_id: int, chapter_data: list[tuple[str, int | None]]
+    ) -> list[models.Chapter]:
+        """Bulk create multiple chapters.
+
+        Args:
+            book_id: The book ID
+            user_id: The user ID (for ownership verification)
+            chapter_data: List of tuples (name, chapter_number)
+
+        Returns:
+            List of created Chapter objects
+        """
+        if not chapter_data:
+            return []
+
+        chapters = [
+            models.Chapter(book_id=book_id, name=name, chapter_number=chapter_number)
+            for name, chapter_number in chapter_data
+        ]
+
+        self.db.add_all(chapters)
+        self.db.flush()
+
+        logger.info(f"Bulk created {len(chapters)} chapters for book_id={book_id}")
+        return chapters
+
     def get_by_book_id(self, book_id: int, user_id: int) -> Sequence[models.Chapter]:
         """Get all chapters for a book, ordered by chapter_number if available."""
         stmt = (
