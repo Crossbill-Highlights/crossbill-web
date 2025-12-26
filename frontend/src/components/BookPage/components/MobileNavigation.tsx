@@ -1,5 +1,12 @@
 import { BookDetails, Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
-import { BookmarkFilledIcon, ChapterListIcon, CloseIcon, TagIcon } from '@/components/common/Icons';
+import { ChapterData } from '@/components/BookPage/components/HighlightsTab/ChapterList.tsx';
+import { ChapterNav } from '@/components/BookPage/components/HighlightsTab/ChapterNav.tsx';
+import {
+  BookmarkFilledIcon,
+  ChapterListIcon,
+  CloseIcon,
+  TagIcon,
+} from '@/components/common/Icons.tsx';
 import {
   BottomNavigation,
   BottomNavigationAction,
@@ -11,10 +18,8 @@ import {
 } from '@mui/material';
 import { motion } from 'motion/react';
 import { useState } from 'react';
-import { BookmarkList } from '../BookmarkList';
-import { ChapterData } from '../highlights/ChapterList.tsx';
-import { ChapterNav } from '../highlights/ChapterNav.tsx';
-import { HighlightTags } from '../HighlightTags';
+import { BookmarkList } from './BookmarkList.tsx';
+import { HighlightTags } from './HighlightTags.tsx';
 
 const BottomDrawer = ({
   isOpen,

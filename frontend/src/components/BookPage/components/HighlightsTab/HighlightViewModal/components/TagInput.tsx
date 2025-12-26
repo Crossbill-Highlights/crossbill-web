@@ -3,7 +3,7 @@ import {
   getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey,
   useAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost,
   useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete,
-} from '@/api/generated/books/books';
+} from '@/api/generated/books/books.ts';
 import type { HighlightTagInBook } from '@/api/generated/model';
 import { Autocomplete, Box, Chip, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';

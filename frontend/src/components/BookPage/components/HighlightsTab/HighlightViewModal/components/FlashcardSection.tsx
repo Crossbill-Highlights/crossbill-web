@@ -1,9 +1,9 @@
-import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books';
-import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/generated/flashcards/flashcards';
-import { useCreateFlashcardForHighlightApiV1HighlightsHighlightIdFlashcardsPost } from '@/api/generated/highlights/highlights';
+import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
+import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/generated/flashcards/flashcards.ts';
+import { useCreateFlashcardForHighlightApiV1HighlightsHighlightIdFlashcardsPost } from '@/api/generated/highlights/highlights.ts';
 import type { Flashcard } from '@/api/generated/model';
-import { Collapsable } from '@/components/common/animations/Collapsable';
-import { DeleteIcon } from '@/components/common/Icons';
+import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
+import { DeleteIcon } from '@/components/common/Icons.tsx';
 import {
   Box,
   Button,

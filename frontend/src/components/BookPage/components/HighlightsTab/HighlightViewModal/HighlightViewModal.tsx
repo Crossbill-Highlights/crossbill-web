@@ -2,21 +2,21 @@ import {
   getGetBookDetailsApiV1BooksBookIdGetQueryKey,
   getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey,
   useDeleteHighlightsApiV1BooksBookIdHighlightDelete,
-} from '@/api/generated/books/books';
+} from '@/api/generated/books/books.ts';
 import type { Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
-import { ArrowBackIcon, ArrowForwardIcon } from '@/components/common/Icons';
+import { ArrowBackIcon, ArrowForwardIcon } from '@/components/common/Icons.tsx';
 import { Box, Button, IconButton, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { CommonDialog } from '../../../common/CommonDialog';
-import { FlashcardSection } from './components/FlashcardSection';
-import { HighlightContent } from '../HighlightContent.tsx';
-import { HighlightNote } from './components/HighlightNote';
-import { ProgressBar } from './components/ProgressBar';
-import { TagInput } from './components/TagInput';
-import { Toolbar } from './components/Toolbar';
-import { useHighlightNavigation } from './hooks/useHighlightNavigation';
+import { CommonDialog } from '../../../../common/CommonDialog.tsx';
+import { HighlightContent } from '../../HighlightContent.tsx';
+import { FlashcardSection } from './components/FlashcardSection.tsx';
+import { HighlightNote } from './components/HighlightNote.tsx';
+import { ProgressBar } from './components/ProgressBar.tsx';
+import { TagInput } from './components/TagInput.tsx';
+import { Toolbar } from './components/Toolbar.tsx';
+import { useHighlightNavigation } from './hooks/useHighlightNavigation.ts';
 
 export interface HighlightViewModalProps {
   highlight: Highlight;
