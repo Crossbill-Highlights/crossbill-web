@@ -59,7 +59,7 @@ export const BookTitle = ({ book, highlightCount }: BookTitleProps) => {
           gridTemplateColumns: { xs: '1fr', lg: '280px 1fr 280px' },
           gap: 4,
           alignItems: 'start',
-          mb: 5,
+          mb: 2.5,
         }}
       >
         {/* Book Cover */}
