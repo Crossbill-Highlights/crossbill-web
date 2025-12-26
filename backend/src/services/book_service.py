@@ -260,7 +260,7 @@ class BookService:
 
         # Update tags using TagService
         tag_service = TagService(self.db)
-        updated_book = tag_service.update_book_tags(book_id, update_data.tags, user_id)
+        updated_book = tag_service.update_book_tags(book, update_data.tags, user_id)
 
         # Commit the changes
         self.db.commit()
