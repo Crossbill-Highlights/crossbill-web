@@ -6,6 +6,7 @@ Create Date: 2025-11-23 00:00:00.000000
 
 """
 
+import os
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -44,7 +45,13 @@ def upgrade() -> None:
     op.create_index(op.f("ix_users_name"), "users", ["name"], unique=False)
 
     # 2. Insert default admin user
-    op.execute(sa.text("INSERT INTO users (id, name) VALUES (1, 'admin')"))
+    # Use ADMIN_USERNAME from environment or default to 'admin'
+    admin_username = os.getenv("ADMIN_USERNAME", "admin")
+    op.execute(
+        sa.text("INSERT INTO users (id, name) VALUES (1, :username)").bindparams(
+            username=admin_username
+        )
+    )
 
     # 3. Add user_id columns (nullable first to allow migration of existing data)
     op.add_column("books", sa.Column("user_id", sa.Integer(), nullable=True))
