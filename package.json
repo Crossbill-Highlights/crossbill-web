@@ -1,6 +1,6 @@
 {
   "name": "crossbill",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Crossbill - KOReader highlights sync",
   "private": true,
   "workspaces": [
