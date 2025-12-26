@@ -1,13 +1,6 @@
-import {
-  useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet,
-} from '@/api/generated/books/books.ts';
+import { useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet } from '@/api/generated/books/books.ts';
 import { useSearchHighlightsApiV1HighlightsSearchGet } from '@/api/generated/highlights/highlights.ts';
-import type {
-  Bookmark,
-  BookDetails,
-  Highlight,
-  HighlightTagInBook,
-} from '@/api/generated/model';
+import type { BookDetails, Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils.ts';
 import { SearchBar } from '@/components/common/SearchBar.tsx';
 import { SwapVert as SwapVertIcon } from '@mui/icons-material';
@@ -15,13 +8,13 @@ import { Box, IconButton, Tooltip } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';
 import { useEffect, useMemo, useState } from 'react';
-import { BookmarkList } from '../BookmarkList.tsx';
-import { ChapterList, type ChapterData } from './ChapterList.tsx';
-import { ChapterNav } from './ChapterNav.tsx';
-import { HighlightTags } from '../HighlightTags.tsx';
-import { HighlightViewModal } from '../HighlightViewModal';
 import { useHighlightModal } from '../../hooks/useHighlightModal.ts';
 import { groupSearchResultsIntoChapters } from '../../utils/groupSearchResults.ts';
+import { BookmarkList } from '../BookmarkList.tsx';
+import { HighlightTags } from '../HighlightTags.tsx';
+import { ChapterList, type ChapterData } from './ChapterList.tsx';
+import { ChapterNav } from './ChapterNav.tsx';
+import { HighlightViewModal } from './HighlightViewModal';
 
 interface HighlightsTabProps {
   book: BookDetails;
@@ -279,7 +272,11 @@ const MobileHighlightsContent = ({
   <>
     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
       <Box sx={{ flexGrow: 1 }}>
-        <SearchBar onSearch={onSearch} placeholder="Search highlights..." initialValue={searchText} />
+        <SearchBar
+          onSearch={onSearch}
+          placeholder="Search highlights..."
+          initialValue={searchText}
+        />
       </Box>
       <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
         <IconButton
@@ -364,7 +361,11 @@ const DesktopHighlightsContent = ({
     <Box>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
         <Box sx={{ flexGrow: 1 }}>
-          <SearchBar onSearch={onSearch} placeholder="Search highlights..." initialValue={searchText} />
+          <SearchBar
+            onSearch={onSearch}
+            placeholder="Search highlights..."
+            initialValue={searchText}
+          />
         </Box>
         <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
           <IconButton

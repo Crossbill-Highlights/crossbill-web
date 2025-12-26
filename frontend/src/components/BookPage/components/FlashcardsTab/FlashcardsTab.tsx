@@ -5,6 +5,7 @@ import type {
   Highlight,
   HighlightTagInBook,
 } from '@/api/generated/model';
+import { ChapterNav } from '@/components/BookPage/components/HighlightsTab/ChapterNav.tsx';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils.ts';
 import { SearchBar } from '@/components/common/SearchBar.tsx';
 import { SwapVert as SwapVertIcon } from '@mui/icons-material';
@@ -12,7 +13,6 @@ import { Box, IconButton, Tooltip } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { flatMap } from 'lodash';
 import { useEffect, useMemo, useState } from 'react';
-import { ChapterNav } from '../highlights/ChapterNav.tsx';
 import { HighlightTags } from '../HighlightTags.tsx';
 import {
   FlashcardChapterList,

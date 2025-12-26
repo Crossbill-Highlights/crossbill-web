@@ -1,6 +1,6 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books';
 import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/generated/flashcards/flashcards';
-import { FlashcardWithContext } from '@/components/BookPage/components/flashcards/FlashcardChapterList.tsx';
+import { FlashcardWithContext } from '@/components/BookPage/components/FlashcardsTab/FlashcardChapterList.tsx';
 import { DeleteIcon, QuoteIcon } from '@/components/common/Icons.tsx';
 import {
   Box,
