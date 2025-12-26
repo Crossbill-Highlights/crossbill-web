@@ -1,7 +1,8 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books';
 import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/generated/flashcards/flashcards';
 import { FlashcardWithContext } from '@/components/BookPage/components/FlashcardsTab/FlashcardChapterList.tsx';
-import { DeleteIcon, QuoteIcon } from '@/components/common/Icons.tsx';
+import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
+import { DeleteIcon, EditIcon, QuoteIcon } from '@/components/common/Icons.tsx';
 import {
   Box,
   Card,
@@ -22,7 +23,7 @@ export interface FlashcardCardProps {
 }
 
 const FlashcardStyled = styled(Card)(() => ({
-  height: '100%',
+  height: 'fit-content',
   display: 'flex',
   flexDirection: 'column',
   position: 'relative',
@@ -50,6 +51,7 @@ const ActionButtonsStyled = styled(Box)(() => ({
 
 export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const queryClient = useQueryClient();
 
   const deleteMutation = useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete({
@@ -81,6 +83,11 @@ export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardPr
   return (
     <FlashcardStyled>
       <ActionButtonsStyled>
+        <Tooltip title="Edit">
+          <IconButton size="small" onClick={onEdit} disabled={isDeleting}>
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
         <Tooltip title="Delete">
           <IconButton size="small" onClick={handleDelete} disabled={isDeleting}>
             <DeleteIcon fontSize="small" />
@@ -89,7 +96,7 @@ export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardPr
       </ActionButtonsStyled>
 
       <CardActionArea
-        onClick={() => onEdit()}
+        onClick={() => setIsExpanded(!isExpanded)}
         sx={{
           flexGrow: 1,
           display: 'flex',
@@ -100,7 +107,12 @@ export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardPr
       >
         <CardContent sx={{ width: '100%', pt: 3 }}>
           {/* Question */}
-          <Box sx={{ mb: 2, pr: 6 }}>
+          <Box
+            sx={{
+              mb: isExpanded ? 2 : 1,
+              pr: 6,
+            }}
+          >
             <Typography
               variant="caption"
               sx={{
@@ -119,8 +131,7 @@ export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardPr
             </Typography>
           </Box>
 
-          {/* Answer Section */}
-          <Box>
+          <Collapsable isExpanded={isExpanded}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
               <Typography
                 variant="caption"
@@ -138,37 +149,39 @@ export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardPr
             <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
               {flashcard.answer}
             </Typography>
-          </Box>
 
-          {/* Source highlight preview */}
-          {flashcard.highlight?.text && (
-            <Box
-              sx={{
-                mt: 2,
-                pt: 2,
-                borderTop: '1px dashed',
-                borderColor: 'divider',
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                <QuoteIcon sx={{ fontSize: 14, color: 'text.disabled', mt: 0.25, flexShrink: 0 }} />
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: 'text.disabled',
-                    fontStyle: 'italic',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {flashcard.highlight?.text}
-                </Typography>
+            {/* Source highlight preview */}
+            {flashcard.highlight?.text && (
+              <Box
+                sx={{
+                  mt: 2,
+                  pt: 2,
+                  borderTop: '1px dashed',
+                  borderColor: 'divider',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                  <QuoteIcon
+                    sx={{ fontSize: 14, color: 'text.disabled', mt: 0.25, flexShrink: 0 }}
+                  />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'text.disabled',
+                      fontStyle: 'italic',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {flashcard.highlight?.text}
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
-          )}
+            )}
+          </Collapsable>
         </CardContent>
       </CardActionArea>
     </FlashcardStyled>
