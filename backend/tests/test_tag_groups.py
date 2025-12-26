@@ -163,6 +163,38 @@ class TestCreateTagGroup:
         assert "already exists" in data["detail"].lower()
         assert "Aivelo" in data["detail"]
 
+    def test_update_tag_group_wrong_book(self, client: TestClient, db_session: Session) -> None:
+        """Test updating tag group with mismatched book_id."""
+        # Create two books with tag groups
+        book1 = create_test_book(
+            db_session=db_session,
+            user_id=DEFAULT_USER_ID,
+            title="Book 1",
+            author="Author 1",
+        )
+        book2 = create_test_book(
+            db_session=db_session,
+            user_id=DEFAULT_USER_ID,
+            title="Book 2",
+            author="Author 2",
+        )
+
+        tag_group1 = models.HighlightTagGroup(book_id=book1.id, name="Group 1")
+        db_session.add(tag_group1)
+        db_session.commit()
+        db_session.refresh(tag_group1)
+
+        # Try to update tag_group1 with book2's id (should fail)
+        response = client.post(
+            "/api/v1/highlights/tag_group",
+            json={"id": tag_group1.id, "book_id": book2.id, "name": "Updated Name"},
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        data = response.json()
+        assert "detail" in data
+        assert "does not belong to book" in data["detail"].lower()
+
 
 class TestDeleteTagGroup:
     """Test suite for DELETE /highlights/tag_group/:id endpoint."""

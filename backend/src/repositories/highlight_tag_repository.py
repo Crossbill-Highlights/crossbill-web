@@ -205,16 +205,29 @@ class HighlightTagRepository:
         return tag_group
 
     def update_tag_group(
-        self, tag_group_id: int, user_id: int, name: str
+        self, tag_group_id: int, user_id: int, name: str, book_id: int | None = None
     ) -> models.HighlightTagGroup | None:
         """Update a highlight tag group's name.
 
+        Args:
+            tag_group_id: ID of the tag group to update
+            user_id: ID of the user (for ownership verification)
+            name: New name for the tag group
+            book_id: Optional book_id to verify tag group belongs to this book
+
         Raises:
-            CrossbillError: If a tag group with the same name already exists for this book
+            CrossbillError: If a tag group with the same name already exists for this book,
+                          or if book_id is provided and doesn't match
         """
         tag_group = self.get_tag_group_by_id(tag_group_id, user_id)
         if not tag_group:
             return None
+
+        # Verify tag group belongs to the specified book if book_id is provided
+        if book_id is not None and tag_group.book_id != book_id:
+            raise CrossbillError(
+                f"Tag group {tag_group_id} does not belong to book {book_id}", status_code=400
+            )
 
         tag_group.name = name
         try:
@@ -249,11 +262,12 @@ class HighlightTagRepository:
         """Create a new tag group or update existing one.
 
         Raises:
-            CrossbillError: If creating a new tag group and one with the same name already exists
+            CrossbillError: If creating a new tag group and one with the same name already exists,
+                          or if updating and tag group doesn't belong to the specified book
         """
         if tag_group_id:
-            # Update existing tag group
-            tag_group = self.update_tag_group(tag_group_id, user_id, name)
+            # Update existing tag group (validates book_id ownership)
+            tag_group = self.update_tag_group(tag_group_id, user_id, name, book_id)
             if tag_group:
                 return tag_group
 
@@ -265,7 +279,7 @@ class HighlightTagRepository:
                 f"A tag group with the name '{name}' already exists for this book", status_code=409
             )
 
-        # Create new tag group
+        # Create new tag group (validates book ownership)
         return self.create_tag_group(book_id, user_id, name)
 
     def delete_tag_group(self, tag_group_id: int, user_id: int) -> bool:

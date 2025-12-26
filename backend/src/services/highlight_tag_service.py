@@ -341,28 +341,15 @@ class HighlightTagService:
             Created or updated HighlightTagGroup model
 
         Raises:
-            ValueError: If book not found or tag group name is empty
-            CrossbillError: If updating and tag group doesn't belong to the book
+            ValueError: If tag group name is empty
+            CrossbillError: If book not found, tag group doesn't belong to book, or name conflict
         """
-        # Validate book exists
-        book = self.book_repo.get_by_id(book_id, user_id)
-        if not book:
-            raise ValueError(f"Book with id {book_id} not found")
-
         # Validate tag group name
         name = name.strip()
         if not name:
             raise ValueError("Tag group name cannot be empty")
 
-        # If updating, verify tag group belongs to the book
-        if tag_group_id:
-            existing_tag_group = self.highlight_tag_repo.get_tag_group_by_id(tag_group_id, user_id)
-            if existing_tag_group and existing_tag_group.book_id != book_id:
-                raise CrossbillError(
-                    f"Tag group {tag_group_id} does not belong to book {book_id}", status_code=400
-                )
-
-        # Upsert the tag group
+        # Upsert the tag group (validates book ownership and book_id match internally)
         tag_group = self.highlight_tag_repo.upsert_tag_group(book_id, user_id, name, tag_group_id)
         self.db.commit()
 
