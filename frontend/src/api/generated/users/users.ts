@@ -22,7 +22,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
   HTTPValidationError,
-  Token,
+  TokenWithRefresh,
   UserDetailsResponse,
   UserRegisterRequest,
   UserUpdateRequest,
@@ -34,14 +34,14 @@ import { axiosInstance } from '../../axios-instance';
  * Register a new user account.
 
 Creates a new user with the provided email and password.
-Returns an access token for immediate login after registration.
+Returns token pair for immediate login after registration.
  * @summary Register
  */
 export const registerApiV1UsersRegisterPost = (
   userRegisterRequest: UserRegisterRequest,
   signal?: AbortSignal
 ) => {
-  return axiosInstance<Token>({
+  return axiosInstance<TokenWithRefresh>({
     url: `/api/v1/users/register`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -12,7 +12,13 @@ import type {
 } from '@tanstack/react-query';
 import { useMutation } from '@tanstack/react-query';
 
-import type { BodyLoginApiV1AuthLoginPost, HTTPValidationError, Token } from '.././model';
+import type {
+  BodyLoginApiV1AuthLoginPost,
+  HTTPValidationError,
+  LogoutApiV1AuthLogoutPost200,
+  RefreshApiV1AuthRefreshPostBody,
+  TokenWithRefresh,
+} from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
 
@@ -48,7 +54,7 @@ export const loginApiV1AuthLoginPost = (
     formUrlEncoded.append(`client_secret`, bodyLoginApiV1AuthLoginPost.client_secret);
   }
 
-  return axiosInstance<Token>({
+  return axiosInstance<TokenWithRefresh>({
     url: `/api/v1/auth/login`,
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -118,6 +124,169 @@ export const useLoginApiV1AuthLoginPost = <TError = HTTPValidationError, TContex
   TContext
 > => {
   const mutationOptions = getLoginApiV1AuthLoginPostMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+/**
+ * Refresh the access token using a refresh token.
+
+The refresh token can be provided either:
+- In an httpOnly cookie (for web clients)
+- In the request body (for plugin clients)
+ * @summary Refresh
+ */
+export const refreshApiV1AuthRefreshPost = (
+  refreshApiV1AuthRefreshPostBody: RefreshApiV1AuthRefreshPostBody,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<TokenWithRefresh>({
+    url: `/api/v1/auth/refresh`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: refreshApiV1AuthRefreshPostBody,
+    signal,
+  });
+};
+
+export const getRefreshApiV1AuthRefreshPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof refreshApiV1AuthRefreshPost>>,
+    TError,
+    { data: RefreshApiV1AuthRefreshPostBody },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof refreshApiV1AuthRefreshPost>>,
+  TError,
+  { data: RefreshApiV1AuthRefreshPostBody },
+  TContext
+> => {
+  const mutationKey = ['refreshApiV1AuthRefreshPost'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof refreshApiV1AuthRefreshPost>>,
+    { data: RefreshApiV1AuthRefreshPostBody }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return refreshApiV1AuthRefreshPost(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RefreshApiV1AuthRefreshPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof refreshApiV1AuthRefreshPost>>
+>;
+export type RefreshApiV1AuthRefreshPostMutationBody = RefreshApiV1AuthRefreshPostBody;
+export type RefreshApiV1AuthRefreshPostMutationError = HTTPValidationError;
+
+/**
+ * @summary Refresh
+ */
+export const useRefreshApiV1AuthRefreshPost = <TError = HTTPValidationError, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof refreshApiV1AuthRefreshPost>>,
+      TError,
+      { data: RefreshApiV1AuthRefreshPostBody },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof refreshApiV1AuthRefreshPost>>,
+  TError,
+  { data: RefreshApiV1AuthRefreshPostBody },
+  TContext
+> => {
+  const mutationOptions = getRefreshApiV1AuthRefreshPostMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+/**
+ * Log out by clearing the refresh token cookie.
+
+Note: This only clears the cookie. The access token will remain valid
+until it expires. For immediate invalidation, consider implementing
+a token blacklist.
+ * @summary Logout
+ */
+export const logoutApiV1AuthLogoutPost = (signal?: AbortSignal) => {
+  return axiosInstance<LogoutApiV1AuthLogoutPost200>({
+    url: `/api/v1/auth/logout`,
+    method: 'POST',
+    signal,
+  });
+};
+
+export const getLogoutApiV1AuthLogoutPostMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof logoutApiV1AuthLogoutPost>>,
+    TError,
+    void,
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof logoutApiV1AuthLogoutPost>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ['logoutApiV1AuthLogoutPost'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof logoutApiV1AuthLogoutPost>>,
+    void
+  > = () => {
+    return logoutApiV1AuthLogoutPost();
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LogoutApiV1AuthLogoutPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof logoutApiV1AuthLogoutPost>>
+>;
+
+export type LogoutApiV1AuthLogoutPostMutationError = unknown;
+
+/**
+ * @summary Logout
+ */
+export const useLogoutApiV1AuthLogoutPost = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof logoutApiV1AuthLogoutPost>>,
+      TError,
+      void,
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof logoutApiV1AuthLogoutPost>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getLogoutApiV1AuthLogoutPostMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
