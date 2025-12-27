@@ -279,7 +279,7 @@ class BookService:
         logger.info(f"Successfully saved cover for book {book_id} at {cover_path}")
 
         # Update book's cover field in database
-        cover_url = f"/media/covers/{cover_filename}"
+        cover_url = f"/api/v1/books/{book_id}/cover"
         book.cover = cover_url
         self.db.commit()
 
@@ -343,3 +343,32 @@ class BookService:
             updated_at=updated_book.updated_at,
             last_viewed=updated_book.last_viewed,
         )
+
+    def get_cover_path(self, book_id: int, user_id: int) -> Path:
+        """
+        Get the file path for a book cover with ownership verification.
+
+        Args:
+            book_id: ID of the book
+            user_id: ID of the user requesting the cover
+
+        Returns:
+            Path to the cover file
+
+        Raises:
+            BookNotFoundError: If book is not found or user doesn't own it
+            HTTPException: If cover file doesn't exist
+        """
+        # Verify book exists and user owns it
+        book = self.book_repo.get_by_id(book_id, user_id)
+
+        if not book:
+            raise BookNotFoundError(book_id)
+
+        cover_filename = f"{book_id}.jpg"
+        cover_path = COVERS_DIR / cover_filename
+
+        if not cover_path.is_file():
+            raise HTTPException(status_code=404, detail="Cover not found")
+
+        return cover_path

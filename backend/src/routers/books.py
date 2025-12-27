@@ -4,6 +4,7 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse
 
 from src import schemas
 from src.database import DatabaseSession
@@ -239,6 +240,34 @@ def upload_book_cover(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again later.",
         ) from e
+
+
+@router.get("/{book_id}/cover", status_code=status.HTTP_200_OK)
+def get_book_cover(
+    book_id: int,
+    db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> FileResponse:
+    """
+    Get the cover image for a book.
+
+    This endpoint serves the book cover image with user ownership verification.
+    Only users who own the book can access its cover.
+
+    Args:
+        book_id: ID of the book
+        db: Database session
+        current_user: Authenticated user
+
+    Returns:
+        FileResponse with the book cover image
+
+    Raises:
+        HTTPException: If book is not found, user doesn't own it, or cover doesn't exist
+    """
+    service = BookService(db)
+    cover_path = service.get_cover_path(book_id, current_user.id)
+    return FileResponse(cover_path, media_type="image/jpeg")
 
 
 @router.post(

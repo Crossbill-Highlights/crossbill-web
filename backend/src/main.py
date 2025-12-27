@@ -34,9 +34,6 @@ configure_logging(settings.ENVIRONMENT)
 
 logger = structlog.get_logger(__name__)
 
-# Directory for book cover images
-COVERS_DIR = Path(__file__).parent.parent / "book-covers"
-
 # Directory for frontend static files
 STATIC_DIR = Path(__file__).parent.parent / "static"
 
@@ -170,7 +167,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        if settings.ENVIRONMENT != "development":
+            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         return response
 
 
@@ -235,11 +233,6 @@ app.include_router(flashcards.router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(users.router, prefix=settings.API_V1_PREFIX)
 app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)
-
-# Mount static files for book covers
-# Ensure directory exists before mounting
-COVERS_DIR.mkdir(parents=True, exist_ok=True)
-app.mount("/media/covers", StaticFiles(directory=str(COVERS_DIR)), name="covers")
 
 
 @app.get("/health")

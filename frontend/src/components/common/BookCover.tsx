@@ -1,5 +1,6 @@
 import { BookCoverIcon } from '@/components/common/Icons';
-import { Box, type SxProps, type Theme, useTheme } from '@mui/material';
+import { useAuthenticatedImage } from '@/hooks/useAuthenticatedImage';
+import { Box, CircularProgress, type SxProps, type Theme, useTheme } from '@mui/material';
 
 export interface BookCoverProps {
   coverPath: string | null | undefined;
@@ -38,9 +39,17 @@ export const BookCover = ({
     import.meta.env.VITE_API_URL !== undefined
       ? import.meta.env.VITE_API_URL
       : 'http://localhost:8000';
-  const coverUrl = coverPath ? `${apiUrl}${coverPath}` : null;
+
+  // For authenticated URLs, fetch as blob with auth headers
+  const { objectUrl, loading, error } = useAuthenticatedImage(
+    coverPath ? `${apiUrl}${coverPath}` : null
+  );
+
+  // Determine final URL to use
+  const coverUrl = objectUrl;
 
   const placeholderBackground = theme.palette.action.hover;
+  const showPlaceholder = !coverUrl || error;
 
   return (
     <Box
@@ -50,12 +59,21 @@ export const BookCover = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: coverUrl ? 'transparent' : placeholderBackground,
+        background: showPlaceholder ? placeholderBackground : 'transparent',
         overflow: 'hidden',
         ...sx,
       }}
     >
-      {coverUrl ? (
+      {/* Show loading spinner while fetching authenticated image */}
+      {loading && (
+        <CircularProgress
+          size={typeof height === 'number' ? Math.min(height * 0.3, 40) : 40}
+          sx={{ color: 'text.disabled' }}
+        />
+      )}
+
+      {/* Show image when loaded */}
+      {!loading && coverUrl && (
         <img
           src={coverUrl}
           alt={`${title} cover`}
@@ -71,11 +89,12 @@ export const BookCover = ({
             if (placeholder) placeholder.style.display = 'flex';
           }}
         />
-      ) : null}
-      {/* Placeholder icon when no cover is available */}
+      )}
+
+      {/* Placeholder icon when no cover is available or on error */}
       <Box
         sx={{
-          display: coverUrl ? 'none' : 'flex',
+          display: !loading && showPlaceholder ? 'flex' : 'none',
           alignItems: 'center',
           justifyContent: 'center',
           width: '100%',

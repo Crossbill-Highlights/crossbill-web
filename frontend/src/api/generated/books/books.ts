@@ -871,6 +871,163 @@ export const useUploadBookCoverApiV1BooksBookIdMetadataCoverPost = <
   return useMutation(mutationOptions, queryClient);
 };
 /**
+ * Get the cover image for a book.
+
+This endpoint serves the book cover image with user ownership verification.
+Only users who own the book can access its cover.
+
+Args:
+    book_id: ID of the book
+    db: Database session
+    current_user: Authenticated user
+
+Returns:
+    FileResponse with the book cover image
+
+Raises:
+    HTTPException: If book is not found, user doesn't own it, or cover doesn't exist
+ * @summary Get Book Cover
+ */
+export const getBookCoverApiV1BooksBookIdCoverGet = (bookId: number, signal?: AbortSignal) => {
+  return axiosInstance<unknown>({ url: `/api/v1/books/${bookId}/cover`, method: 'GET', signal });
+};
+
+export const getGetBookCoverApiV1BooksBookIdCoverGetQueryKey = (bookId?: number) => {
+  return [`/api/v1/books/${bookId}/cover`] as const;
+};
+
+export const getGetBookCoverApiV1BooksBookIdCoverGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetBookCoverApiV1BooksBookIdCoverGetQueryKey(bookId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>
+  > = ({ signal }) => getBookCoverApiV1BooksBookIdCoverGet(bookId, signal);
+
+  return { queryKey, queryFn, enabled: !!bookId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetBookCoverApiV1BooksBookIdCoverGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>
+>;
+export type GetBookCoverApiV1BooksBookIdCoverGetQueryError = HTTPValidationError;
+
+export function useGetBookCoverApiV1BooksBookIdCoverGet<
+  TData = Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetBookCoverApiV1BooksBookIdCoverGet<
+  TData = Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetBookCoverApiV1BooksBookIdCoverGet<
+  TData = Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Book Cover
+ */
+
+export function useGetBookCoverApiV1BooksBookIdCoverGet<
+  TData = Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetBookCoverApiV1BooksBookIdCoverGetQueryOptions(bookId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
  * Get all highlight tags for a book.
 
 Args:
