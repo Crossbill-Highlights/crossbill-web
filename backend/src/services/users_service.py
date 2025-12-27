@@ -1,7 +1,6 @@
 """Service layer for user-related business logic."""
 
 import logging
-from datetime import timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -11,9 +10,8 @@ from src.config import get_settings
 from src.models import User
 from src.repositories import UserRepository
 from src.services.auth_service import (
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-    Token,
-    create_access_token,
+    TokenWithRefresh,
+    create_token_pair,
     hash_password,
     verify_password,
 )
@@ -29,18 +27,18 @@ class UserService:
         self.db = db
         self.user_repo = UserRepository(db)
 
-    def register_user(self, register_data: schemas.UserRegisterRequest) -> Token:
+    def register_user(self, register_data: schemas.UserRegisterRequest) -> TokenWithRefresh:
         """
         Register a new user account.
 
         Creates a new user with the provided email and password.
-        Returns an access token for immediate login after registration.
+        Returns token pair for immediate login after registration.
 
         Args:
             register_data: User registration request containing email and password
 
         Returns:
-            Token with access token for authentication
+            TokenWithRefresh with access and refresh tokens
 
         Raises:
             HTTPException: If registration is disabled or email already exists
@@ -70,15 +68,12 @@ class UserService:
 
         self.db.commit()
 
-        # Create access token for automatic login
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": str(user.id)}, expires_delta=access_token_expires
-        )
+        # Create token pair for automatic login
+        token_pair = create_token_pair(user.id)
 
         logger.info(f"Successfully registered user with email: {register_data.email}")
 
-        return Token(access_token=access_token, token_type="bearer")  # noqa: S106
+        return token_pair
 
     def update_user(
         self, current_user: User, update_data: schemas.UserUpdateRequest

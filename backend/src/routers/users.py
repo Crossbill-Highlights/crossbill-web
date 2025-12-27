@@ -1,15 +1,16 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from src.database import DatabaseSession
 from src.exceptions import CrossbillError
 from src.models import User
+from src.routers.auth import _set_refresh_cookie
 from src.schemas.user_schemas import UserDetailsResponse, UserRegisterRequest, UserUpdateRequest
-from src.services.auth_service import Token, get_current_user
+from src.services.auth_service import TokenWithRefresh, get_current_user
 from src.services.users_service import UserService
 
 logger = logging.getLogger(__name__)
@@ -20,17 +21,19 @@ limiter = Limiter(key_func=get_remote_address)
 @router.post("/register")
 @limiter.limit("5/minute")
 async def register(
-    request: Request, register_data: UserRegisterRequest, db: DatabaseSession
-) -> Token:
+    request: Request, response: Response, register_data: UserRegisterRequest, db: DatabaseSession
+) -> TokenWithRefresh:
     """
     Register a new user account.
 
     Creates a new user with the provided email and password.
-    Returns an access token for immediate login after registration.
+    Returns token pair for immediate login after registration.
     """
     try:
         service = UserService(db)
-        return service.register_user(register_data)
+        token_pair = service.register_user(register_data)
+        _set_refresh_cookie(response, token_pair.refresh_token)
+        return token_pair
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
