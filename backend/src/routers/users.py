@@ -35,7 +35,7 @@ async def register(register_data: UserRegisterRequest, db: DatabaseSession) -> T
         logger.error(f"Failed to register user: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to register user: {e!s}",
+            detail="An unexpected error occurred. Please try again later.",
         ) from e
 
 
@@ -70,5 +70,5 @@ async def update_me(
         logger.error(f"Failed to update user {current_user.id}: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update user: {e!s}",
+            detail="An unexpected error occurred. Please try again later.",
         ) from e

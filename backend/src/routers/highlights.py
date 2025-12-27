@@ -50,7 +50,7 @@ async def upload_highlights(
         logger.error(f"Failed to upload highlights: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Upload failed: {e!s}",
+            detail="An unexpected error occurred. Please try again later.",
         ) from e
 
 
@@ -98,7 +98,7 @@ def search_highlights(
         logger.error(f"Failed to search highlights: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Search failed: {e!s}",
+            detail="An unexpected error occurred. Please try again later.",
         ) from e
 
 
@@ -148,7 +148,7 @@ def update_highlight_note(
         logger.error(f"Failed to update highlight note: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update note: {e!s}",
+            detail="An unexpected error occurred. Please try again later.",
         ) from e
 
 
@@ -204,7 +204,7 @@ def create_or_update_tag_group(
         logger.error(f"Failed to create/update tag group: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create/update tag group: {e!s}",
+            detail="An unexpected error occurred. Please try again later.",
         ) from e
 
 
@@ -241,7 +241,7 @@ def delete_tag_group(
         logger.error(f"Failed to delete tag group: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete tag group: {e!s}",
+            detail="An unexpected error occurred. Please try again later.",
         ) from e
 
 
@@ -295,5 +295,5 @@ def create_flashcard_for_highlight(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create flashcard: {e!s}",
+            detail="An unexpected error occurred. Please try again later.",
         ) from e

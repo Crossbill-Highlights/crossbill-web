@@ -61,7 +61,7 @@ def update_flashcard(
         logger.error(f"Failed to update flashcard {flashcard_id}: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update flashcard: {e!s}",
+            detail="An unexpected error occurred. Please try again later.",
         ) from e
 
 
@@ -101,5 +101,5 @@ def delete_flashcard(
         logger.error(f"Failed to delete flashcard {flashcard_id}: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete flashcard: {e!s}",
+            detail="An unexpected error occurred. Please try again later.",
         ) from e
