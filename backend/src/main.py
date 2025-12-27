@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import structlog
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -269,7 +269,12 @@ if STATIC_DIR.exists():
     async def serve_spa(full_path: str) -> FileResponse:
         """Serve the SPA for all non-API routes."""
         # If the path is a file that exists in static, serve it
-        file_path = STATIC_DIR / full_path
+        file_path = (STATIC_DIR / full_path).resolve()
+
+        # Validate that the resolved path is within STATIC_DIR to prevent path traversal
+        if not file_path.is_relative_to(STATIC_DIR):
+            raise HTTPException(status_code=404, detail="Not found")
+
         if file_path.is_file():
             return FileResponse(file_path)
         # Otherwise serve index.html for client-side routing
