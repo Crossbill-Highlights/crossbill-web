@@ -70,9 +70,7 @@ def _get_user_by_id(db: DatabaseSession, id: int) -> User | None:
 def authenticate_user(email: str, password: str, db: DatabaseSession) -> User | None:
     user = _get_user_by_email(db, email)
     if not user:
-        _verify_password(
-            password, DUMMY_HASH
-        )  # Constant time to avoid timing difference
+        _verify_password(password, DUMMY_HASH)  # Constant time to avoid timing difference
         return None
     if not user.hashed_password or not _verify_password(password, user.hashed_password):
         return None
