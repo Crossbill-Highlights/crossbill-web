@@ -231,9 +231,12 @@ jobs:
 
       - name: Package KoReader plugin
         run: |
-          cd clients/koreader-plugin/crossbill.koplugin
-          zip -r ../../../koreader-plugin.zip *
-          cd ../../..
+          mkdir -p temp/crossbill.plugin
+          cp -r clients/koreader-plugin/crossbill.koplugin/* temp/crossbill.plugin/
+          cd temp
+          zip -r ../koreader-plugin.zip crossbill.plugin
+          cd ..
+          rm -rf temp
 
       - name: Package Anki plugin
         run: |
