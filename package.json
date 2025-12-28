@@ -26,10 +26,6 @@
     "backend/**/*.py": [
       "bash -c 'cd backend && poetry run ruff check --fix \"$0\"'",
       "bash -c 'cd backend && poetry run pyright \"$0\"'"
-    ],
-    "clients/anki-plugin/**/*.py": [
-      "bash -c 'cd clients/anki-plugin && poetry run ruff check --fix \"$0\"'",
-      "bash -c 'cd clients/anki-plugin && poetry run pyright \"$0\"'"
     ]
   }
 }
