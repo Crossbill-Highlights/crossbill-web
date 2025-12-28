@@ -2,17 +2,29 @@
 Flashcards browser dialog for browsing and selecting Crossbill flashcards
 """
 
-import sys
 import os
-from typing import List, Optional
+import sys
+from typing import Any
 
 from aqt import mw
 from aqt.qt import (
-    QDialog, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QFormLayout,
-    QListWidget, QListWidgetItem, QTextEdit, QPushButton, QComboBox, QCheckBox, QLineEdit,
-    QLabel, QMessageBox, QProgressDialog, Qt
+    QCloseEvent,
+    QComboBox,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QProgressDialog,
+    QPushButton,
+    QSplitter,
+    Qt,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
-from aqt.utils import showInfo, tooltip
 
 # Add plugin directory to path to import our modules
 plugin_dir = os.path.dirname(os.path.dirname(__file__))
@@ -27,51 +39,51 @@ from note_creator import NoteCreator
 class FlashcardsBrowserDialog(QWidget):
     """Window for browsing and selecting flashcards from Crossbill"""
 
-    def __init__(self, parent=None, config=None):
+    def __init__(self, parent: QWidget | None = None, config: dict[str, Any] | None = None) -> None:
         super().__init__(parent)
         # Set window flag to make it a proper window (not floating dialog)
         self.setWindowFlags(Qt.WindowType.Window)
-        self.config = config or mw.addonManager.getConfig(__name__.split('.')[0])
+        self.config = config or mw.addonManager.getConfig(__name__.split(".")[0])
         self.plugin_config = PluginConfig.from_dict(self.config)
 
         # Initialize API with authentication credentials
         self.api = CrossbillAPI(
-            self.config.get('server_host', 'http://localhost:8000'),
-            bearer_token=self.config.get('bearer_token', ''),
-            email=self.config.get('email', ''),
-            password=self.config.get('password', ''),
-            refresh_token=self.config.get('refresh_token', ''),
-            token_expires_at=self.config.get('token_expires_at')
+            self.config.get("server_host", "http://localhost:8000"),
+            bearer_token=self.config.get("bearer_token", ""),
+            email=self.config.get("email", ""),
+            password=self.config.get("password", ""),
+            refresh_token=self.config.get("refresh_token", ""),
+            token_expires_at=self.config.get("token_expires_at"),
         )
 
         # Set up callback to save tokens when updated
-        def save_token(token: str, refresh_token: str, expires_at: float):
-            self.config['bearer_token'] = token
-            self.config['refresh_token'] = refresh_token
-            self.config['token_expires_at'] = expires_at
-            mw.addonManager.writeConfig(__name__.split('.')[0], self.config)
+        def save_token(token: str, refresh_token: str, expires_at: float) -> None:
+            self.config["bearer_token"] = token
+            self.config["refresh_token"] = refresh_token
+            self.config["token_expires_at"] = expires_at
+            mw.addonManager.writeConfig(__name__.split(".")[0], self.config)
 
         self.api.set_on_token_update(save_token)
         self.note_creator = NoteCreator(self.plugin_config)
 
-        self.books: List[BookWithHighlightCount] = []
-        self.current_book_id: Optional[int] = None
+        self.books: list[BookWithHighlightCount] = []
+        self.current_book_id: int | None = None
         self.current_book_title: str = ""
-        self.current_book_author: Optional[str] = None
-        self.all_flashcards: List[FlashcardWithHighlight] = []
+        self.current_book_author: str | None = None
+        self.all_flashcards: list[FlashcardWithHighlight] = []
         self.imported_flashcard_ids = set()
 
         self.setup_ui()
         self.load_imported_flashcards()
         self.load_books()
 
-    def setup_ui(self):
+    def setup_ui(self) -> None:
         """Initialize the UI components"""
         self.setWindowTitle("Crossbill Flashcards Browser")
 
         # Get dialog size from config
-        width = self.config.get('ui_preferences', {}).get('dialog_width', 900)
-        height = self.config.get('ui_preferences', {}).get('dialog_height', 700)
+        width = self.config.get("ui_preferences", {}).get("dialog_width", 900)
+        height = self.config.get("ui_preferences", {}).get("dialog_height", 700)
         self.resize(width, height)
 
         layout = QVBoxLayout()
@@ -236,7 +248,7 @@ class FlashcardsBrowserDialog(QWidget):
 
         self.setLayout(layout)
 
-    def load_books(self):
+    def load_books(self) -> None:
         """Load books from Crossbill server"""
         self.status_label.setText("Loading books...")
         self.books_list.clear()
@@ -248,9 +260,7 @@ class FlashcardsBrowserDialog(QWidget):
             if not self.books:
                 self.status_label.setText("No books found")
                 QMessageBox.information(
-                    self,
-                    "No Books",
-                    "No books with flashcards found on your Crossbill server."
+                    self, "No Books", "No books with flashcards found on your Crossbill server."
                 )
                 return
 
@@ -265,7 +275,7 @@ class FlashcardsBrowserDialog(QWidget):
             self.status_label.setText(f"Loaded {len(self.books)} books")
 
             # Select last selected book if available
-            last_selected = self.config.get('ui_preferences', {}).get('last_selected_book')
+            last_selected = self.config.get("ui_preferences", {}).get("last_selected_book")
             if last_selected:
                 for i in range(self.books_list.count()):
                     item = self.books_list.item(i)
@@ -277,12 +287,10 @@ class FlashcardsBrowserDialog(QWidget):
         except CrossbillAPIError as e:
             self.status_label.setText("Error loading books")
             QMessageBox.critical(
-                self,
-                "Error",
-                f"Failed to load books from Crossbill server:\n{str(e)}"
+                self, "Error", f"Failed to load books from Crossbill server:\n{e!s}"
             )
 
-    def on_book_selected(self, item: QListWidgetItem):
+    def on_book_selected(self, item: QListWidgetItem) -> None:
         """Handle book selection"""
         book_id = item.data(Qt.ItemDataRole.UserRole)
         self.status_label.setText(f"Loading flashcards for book {book_id}...")
@@ -300,8 +308,8 @@ class FlashcardsBrowserDialog(QWidget):
             self.all_flashcards = response.flashcards
 
             # Save last selected book
-            self.config['ui_preferences']['last_selected_book'] = book_id
-            mw.addonManager.writeConfig(__name__.split('.')[0], self.config)
+            self.config["ui_preferences"]["last_selected_book"] = book_id
+            mw.addonManager.writeConfig(__name__.split(".")[0], self.config)
 
             # Populate tag and chapter filters (from flashcard highlights)
             self.populate_tag_filter()
@@ -321,13 +329,9 @@ class FlashcardsBrowserDialog(QWidget):
 
         except CrossbillAPIError as e:
             self.status_label.setText("Error loading flashcards")
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"Failed to load flashcards:\n{str(e)}"
-            )
+            QMessageBox.critical(self, "Error", f"Failed to load flashcards:\n{e!s}")
 
-    def on_flashcard_selected(self, item: QListWidgetItem):
+    def on_flashcard_selected(self, item: QListWidgetItem) -> None:
         """Handle flashcard selection"""
         flashcard_id = item.data(Qt.ItemDataRole.UserRole)
 
@@ -337,14 +341,14 @@ class FlashcardsBrowserDialog(QWidget):
             return
 
         # Display flashcard details
-        details_html = f"<h3>Question</h3>"
+        details_html = "<h3>Question</h3>"
         details_html += f"<p>{flashcard.question}</p>"
 
-        details_html += f"<h3>Answer</h3>"
+        details_html += "<h3>Answer</h3>"
         details_html += f"<p>{flashcard.answer}</p>"
 
         if flashcard.highlight:
-            details_html += f"<h4>Source Highlight</h4>"
+            details_html += "<h4>Source Highlight</h4>"
             details_html += f"<p><i>{flashcard.highlight.text}</i></p>"
 
             if flashcard.highlight.chapter:
@@ -361,33 +365,33 @@ class FlashcardsBrowserDialog(QWidget):
 
         self.flashcard_details.setHtml(details_html)
 
-    def populate_decks(self):
+    def populate_decks(self) -> None:
         """Populate the deck selection dropdown"""
         deck_names = sorted(mw.col.decks.all_names())
         self.deck_combo.addItems(deck_names)
 
         # Set default deck from config
-        default_deck = self.config.get('default_deck', 'Default')
+        default_deck = self.config.get("default_deck", "Default")
         index = self.deck_combo.findText(default_deck)
         if index >= 0:
             self.deck_combo.setCurrentIndex(index)
 
-    def populate_note_types(self):
+    def populate_note_types(self) -> None:
         """Populate the note type selection dropdown"""
         model_names = sorted(mw.col.models.all_names())
         self.note_type_combo.addItems(model_names)
 
         # Set default note type from config
-        default_note_type = self.config.get('default_note_type', 'Basic')
+        default_note_type = self.config.get("default_note_type", "Basic")
         index = self.note_type_combo.findText(default_note_type)
         if index >= 0:
             self.note_type_combo.setCurrentIndex(index)
 
-    def load_imported_flashcards(self):
+    def load_imported_flashcards(self) -> None:
         """Load the set of already imported flashcard IDs"""
         self.imported_flashcard_ids = self.note_creator.get_imported_flashcard_ids()
 
-    def select_all_flashcards(self):
+    def select_all_flashcards(self) -> None:
         """Select all flashcards in the list"""
         for i in range(self.flashcards_list.count()):
             item = self.flashcards_list.item(i)
@@ -395,7 +399,7 @@ class FlashcardsBrowserDialog(QWidget):
                 item.setCheckState(Qt.CheckState.Checked)
         self.update_import_button_states()
 
-    def deselect_all_flashcards(self):
+    def deselect_all_flashcards(self) -> None:
         """Deselect all flashcards in the list"""
         for i in range(self.flashcards_list.count()):
             item = self.flashcards_list.item(i)
@@ -403,11 +407,11 @@ class FlashcardsBrowserDialog(QWidget):
                 item.setCheckState(Qt.CheckState.Unchecked)
         self.update_import_button_states()
 
-    def on_flashcard_clicked(self, item: QListWidgetItem):
+    def on_flashcard_clicked(self, item: QListWidgetItem) -> None:
         """Handle flashcard click - show details"""
         self.on_flashcard_selected(item)
 
-    def get_selected_flashcards(self) -> List[FlashcardWithHighlight]:
+    def get_selected_flashcards(self) -> list[FlashcardWithHighlight]:
         """Get list of selected flashcards"""
         selected = []
         for i in range(self.flashcards_list.count()):
@@ -421,22 +425,16 @@ class FlashcardsBrowserDialog(QWidget):
                         break
         return selected
 
-    def import_selected_flashcards(self):
+    def import_selected_flashcards(self) -> None:
         """Import selected flashcards as Anki notes"""
         if not self.current_book_id:
-            QMessageBox.warning(
-                self,
-                "No Book Selected",
-                "Please select a book first."
-            )
+            QMessageBox.warning(self, "No Book Selected", "Please select a book first.")
             return
 
         selected_flashcards = self.get_selected_flashcards()
         if not selected_flashcards:
             QMessageBox.warning(
-                self,
-                "No Flashcards Selected",
-                "Please select at least one flashcard to import."
+                self, "No Flashcards Selected", "Please select at least one flashcard to import."
             )
             return
 
@@ -451,7 +449,7 @@ class FlashcardsBrowserDialog(QWidget):
             "Confirm Import",
             f"Import {count} flashcard(s) to deck '{deck_name}'?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.Yes
+            QMessageBox.StandardButton.Yes,
         )
 
         if reply != QMessageBox.StandardButton.Yes:
@@ -470,27 +468,27 @@ class FlashcardsBrowserDialog(QWidget):
             self.current_book_author,
             deck_name,
             note_type_name,
-            skip_duplicates=True
+            skip_duplicates=True,
         )
 
         progress.close()
 
         # Show results
-        result_msg = f"Import complete!\n\n"
+        result_msg = "Import complete!\n\n"
         result_msg += f"Created: {stats['created']} notes\n"
-        if stats['skipped'] > 0:
+        if stats["skipped"] > 0:
             result_msg += f"Skipped (already imported): {stats['skipped']}\n"
-        if stats['failed'] > 0:
+        if stats["failed"] > 0:
             result_msg += f"Failed: {stats['failed']}\n"
 
-        if stats['errors']:
-            result_msg += f"\nErrors:\n"
-            for error in stats['errors'][:5]:  # Show first 5 errors
+        if stats["errors"]:
+            result_msg += "\nErrors:\n"
+            for error in stats["errors"][:5]:  # Show first 5 errors
                 result_msg += f"- {error}\n"
-            if len(stats['errors']) > 5:
+            if len(stats["errors"]) > 5:
                 result_msg += f"... and {len(stats['errors']) - 5} more errors"
 
-        if stats['created'] > 0:
+        if stats["created"] > 0:
             QMessageBox.information(self, "Import Successful", result_msg)
             # Reload imported flashcards
             self.load_imported_flashcards()
@@ -501,7 +499,7 @@ class FlashcardsBrowserDialog(QWidget):
         else:
             QMessageBox.warning(self, "Import Results", result_msg)
 
-    def refresh_flashcards_list(self):
+    def refresh_flashcards_list(self) -> None:
         """Refresh the flashcards list to update import status and apply filters"""
         if not self.all_flashcards:
             return
@@ -525,7 +523,10 @@ class FlashcardsBrowserDialog(QWidget):
         for flashcard in self.all_flashcards:
             # Apply search filter to question and answer
             if search_text:
-                if search_text not in flashcard.question.lower() and search_text not in flashcard.answer.lower():
+                if (
+                    search_text not in flashcard.question.lower()
+                    and search_text not in flashcard.answer.lower()
+                ):
                     continue
 
             # Apply tag filter (only works if flashcard has highlight with tags)
@@ -587,7 +588,7 @@ class FlashcardsBrowserDialog(QWidget):
                 f"Showing {displayed_count} flashcards from {self.current_book_title}"
             )
 
-    def populate_tag_filter(self):
+    def populate_tag_filter(self) -> None:
         """Populate the tag filter dropdown with all unique tags from flashcard highlights"""
         # Clear existing items except "All Tags"
         self.tag_filter_combo.clear()
@@ -607,7 +608,7 @@ class FlashcardsBrowserDialog(QWidget):
         for tag in sorted(tags):
             self.tag_filter_combo.addItem(tag, tag)
 
-    def populate_chapter_filter(self):
+    def populate_chapter_filter(self) -> None:
         """Populate the chapter filter dropdown with all unique chapters from flashcard highlights"""
         # Clear existing items except "All Chapters"
         self.chapter_filter_combo.clear()
@@ -627,16 +628,16 @@ class FlashcardsBrowserDialog(QWidget):
             if chapter_name:
                 self.chapter_filter_combo.addItem(chapter_name, chapter_id)
 
-    def on_search_changed(self, text):
+    def on_search_changed(self, text: str) -> None:
         """Handle search text change"""
         self.refresh_flashcards_list()
 
-    def on_filter_changed(self, index):
+    def on_filter_changed(self, index: int) -> None:
         """Handle filter dropdown change"""
         self.refresh_flashcards_list()
         self.update_import_button_states()
 
-    def update_import_button_states(self):
+    def update_import_button_states(self) -> None:
         """Update the enabled/disabled state of import buttons based on current state"""
         # Import All from Book: enabled if book is selected
         has_book = self.current_book_id is not None and len(self.all_flashcards) > 0
@@ -656,21 +657,17 @@ class FlashcardsBrowserDialog(QWidget):
                     break
         self.import_btn.setEnabled(has_selected)
 
-    def clear_filters(self):
+    def clear_filters(self) -> None:
         """Clear all filters and search"""
         self.search_input.clear()
         self.tag_filter_combo.setCurrentIndex(0)  # "All Tags"
         self.chapter_filter_combo.setCurrentIndex(0)  # "All Chapters"
         self.refresh_flashcards_list()
 
-    def import_all_from_book(self):
+    def import_all_from_book(self) -> None:
         """Import all flashcards from the current book"""
         if not self.current_book_id or not self.all_flashcards:
-            QMessageBox.warning(
-                self,
-                "No Book Selected",
-                "Please select a book first."
-            )
+            QMessageBox.warning(self, "No Book Selected", "Please select a book first.")
             return
 
         # Get selected deck and note type
@@ -678,8 +675,9 @@ class FlashcardsBrowserDialog(QWidget):
         note_type_name = self.note_type_combo.currentText()
 
         # Count flashcards that haven't been imported yet
-        new_flashcards = [fc for fc in self.all_flashcards
-                         if fc.id not in self.imported_flashcard_ids]
+        new_flashcards = [
+            fc for fc in self.all_flashcards if fc.id not in self.imported_flashcard_ids
+        ]
         total_count = len(self.all_flashcards)
         new_count = len(new_flashcards)
 
@@ -688,7 +686,7 @@ class FlashcardsBrowserDialog(QWidget):
             QMessageBox.information(
                 self,
                 "All Imported",
-                f"All {total_count} flashcards from this book have already been imported."
+                f"All {total_count} flashcards from this book have already been imported.",
             )
             return
 
@@ -699,7 +697,7 @@ class FlashcardsBrowserDialog(QWidget):
             f"({new_count} new, {total_count - new_count} already imported)\n\n"
             f"Deck: {deck_name}",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.Yes
+            QMessageBox.StandardButton.Yes,
         )
 
         if reply != QMessageBox.StandardButton.Yes:
@@ -708,14 +706,10 @@ class FlashcardsBrowserDialog(QWidget):
         # Import all flashcards
         self._do_batch_import(self.all_flashcards, deck_name, note_type_name)
 
-    def import_all_from_chapter(self):
+    def import_all_from_chapter(self) -> None:
         """Import all flashcards from the currently filtered chapter"""
         if not self.current_book_id or not self.all_flashcards:
-            QMessageBox.warning(
-                self,
-                "No Book Selected",
-                "Please select a book first."
-            )
+            QMessageBox.warning(self, "No Book Selected", "Please select a book first.")
             return
 
         # Get current chapter filter (chapter ID)
@@ -724,7 +718,7 @@ class FlashcardsBrowserDialog(QWidget):
             QMessageBox.information(
                 self,
                 "No Chapter Selected",
-                "Please select a chapter from the Chapter filter dropdown first."
+                "Please select a chapter from the Chapter filter dropdown first.",
             )
             return
 
@@ -732,14 +726,15 @@ class FlashcardsBrowserDialog(QWidget):
         selected_chapter_name = self.chapter_filter_combo.currentText()
 
         # Filter flashcards by chapter ID (from their associated highlights)
-        chapter_flashcards = [fc for fc in self.all_flashcards
-                            if fc.highlight and fc.highlight.chapter_id == selected_chapter_id]
+        chapter_flashcards = [
+            fc
+            for fc in self.all_flashcards
+            if fc.highlight and fc.highlight.chapter_id == selected_chapter_id
+        ]
 
         if not chapter_flashcards:
             QMessageBox.warning(
-                self,
-                "No Flashcards",
-                f"No flashcards found in chapter '{selected_chapter_name}'."
+                self, "No Flashcards", f"No flashcards found in chapter '{selected_chapter_name}'."
             )
             return
 
@@ -748,8 +743,9 @@ class FlashcardsBrowserDialog(QWidget):
         note_type_name = self.note_type_combo.currentText()
 
         # Count new flashcards
-        new_flashcards = [fc for fc in chapter_flashcards
-                         if fc.id not in self.imported_flashcard_ids]
+        new_flashcards = [
+            fc for fc in chapter_flashcards if fc.id not in self.imported_flashcard_ids
+        ]
         total_count = len(chapter_flashcards)
         new_count = len(new_flashcards)
 
@@ -759,7 +755,7 @@ class FlashcardsBrowserDialog(QWidget):
                 self,
                 "All Imported",
                 f"All {total_count} flashcards from chapter '{selected_chapter_name}' "
-                f"have already been imported."
+                f"have already been imported.",
             )
             return
 
@@ -770,7 +766,7 @@ class FlashcardsBrowserDialog(QWidget):
             f"({new_count} new, {total_count - new_count} already imported)\n\n"
             f"Deck: {deck_name}",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.Yes
+            QMessageBox.StandardButton.Yes,
         )
 
         if reply != QMessageBox.StandardButton.Yes:
@@ -779,7 +775,9 @@ class FlashcardsBrowserDialog(QWidget):
         # Import chapter flashcards
         self._do_batch_import(chapter_flashcards, deck_name, note_type_name)
 
-    def _do_batch_import(self, flashcards: List[FlashcardWithHighlight], deck_name: str, note_type_name: str):
+    def _do_batch_import(
+        self, flashcards: list[FlashcardWithHighlight], deck_name: str, note_type_name: str
+    ) -> None:
         """Execute batch import of flashcards"""
         count = len(flashcards)
 
@@ -796,27 +794,27 @@ class FlashcardsBrowserDialog(QWidget):
             self.current_book_author,
             deck_name,
             note_type_name,
-            skip_duplicates=True
+            skip_duplicates=True,
         )
 
         progress.close()
 
         # Show results
-        result_msg = f"Batch import complete!\n\n"
+        result_msg = "Batch import complete!\n\n"
         result_msg += f"Created: {stats['created']} notes\n"
-        if stats['skipped'] > 0:
+        if stats["skipped"] > 0:
             result_msg += f"Skipped (already imported): {stats['skipped']}\n"
-        if stats['failed'] > 0:
+        if stats["failed"] > 0:
             result_msg += f"Failed: {stats['failed']}\n"
 
-        if stats['errors']:
-            result_msg += f"\nErrors:\n"
-            for error in stats['errors'][:5]:
+        if stats["errors"]:
+            result_msg += "\nErrors:\n"
+            for error in stats["errors"][:5]:
                 result_msg += f"- {error}\n"
-            if len(stats['errors']) > 5:
+            if len(stats["errors"]) > 5:
                 result_msg += f"... and {len(stats['errors']) - 5} more errors"
 
-        if stats['created'] > 0:
+        if stats["created"] > 0:
             QMessageBox.information(self, "Batch Import Successful", result_msg)
             # Reload imported flashcards
             self.load_imported_flashcards()
@@ -826,9 +824,9 @@ class FlashcardsBrowserDialog(QWidget):
         else:
             QMessageBox.warning(self, "Batch Import Results", result_msg)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         """Save dialog size when closing"""
-        self.config['ui_preferences']['dialog_width'] = self.width()
-        self.config['ui_preferences']['dialog_height'] = self.height()
-        mw.addonManager.writeConfig(__name__.split('.')[0], self.config)
+        self.config["ui_preferences"]["dialog_width"] = self.width()
+        self.config["ui_preferences"]["dialog_height"] = self.height()
+        mw.addonManager.writeConfig(__name__.split(".")[0], self.config)
         event.accept()

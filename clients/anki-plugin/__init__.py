@@ -6,14 +6,14 @@ Import flashcards from Crossbill server into Anki.
 
 from aqt import mw
 from aqt.qt import QAction
-from aqt.utils import showInfo, qconnect
+from aqt.utils import qconnect, showInfo
 
 # Plugin metadata
 __version__ = "0.4.0"
 __author__ = "Crossbill Contributors"
 
 
-def show_flashcards_browser():
+def show_flashcards_browser() -> None:
     """Show the flashcards browser window"""
     # Import here to avoid circular dependencies and load UI only when needed
     from .ui.browser_dialog import FlashcardsBrowserDialog
@@ -29,13 +29,14 @@ def show_flashcards_browser():
     window.show()
 
 
-def show_settings():
+def show_settings() -> None:
     """Show the settings dialog"""
     from .ui.settings_dialog import show_settings_dialog
+
     show_settings_dialog()
 
 
-def init_plugin():
+def init_plugin() -> None:
     """Initialize the plugin and register menu actions"""
     # Create menu action for browsing flashcards
     action_browse = QAction("Browse Crossbill Flashcards", mw)

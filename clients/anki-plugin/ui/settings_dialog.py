@@ -4,21 +4,28 @@ Settings dialog for Crossbill plugin configuration
 
 from aqt import mw
 from aqt.qt import (
-    QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
-    QLineEdit, QPushButton, QLabel, QMessageBox, QCheckBox
+    QCheckBox,
+    QDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-from aqt.utils import showInfo
 
 
 class SettingsDialog(QDialog):
     """Dialog for configuring Crossbill plugin settings"""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.config = mw.addonManager.getConfig(__name__.split('.')[0])
+        self.config = mw.addonManager.getConfig(__name__.split(".")[0])
         self.setup_ui()
 
-    def setup_ui(self):
+    def setup_ui(self) -> None:
         """Initialize the UI components"""
         self.setWindowTitle("Crossbill Settings")
         self.setMinimumWidth(500)
@@ -30,7 +37,7 @@ class SettingsDialog(QDialog):
 
         # Server host
         self.server_host_input = QLineEdit()
-        self.server_host_input.setText(self.config.get('server_host', 'http://localhost:8000'))
+        self.server_host_input.setText(self.config.get("server_host", "http://localhost:8000"))
         self.server_host_input.setPlaceholderText("e.g., http://localhost:8000")
         form_layout.addRow("Server URL:", self.server_host_input)
 
@@ -40,13 +47,13 @@ class SettingsDialog(QDialog):
 
         # Email
         self.email_input = QLineEdit()
-        self.email_input.setText(self.config.get('email', ''))
+        self.email_input.setText(self.config.get("email", ""))
         self.email_input.setPlaceholderText("email@example.com")
         form_layout.addRow("Email:", self.email_input)
 
         # Password
         self.password_input = QLineEdit()
-        self.password_input.setText(self.config.get('password', ''))
+        self.password_input.setText(self.config.get("password", ""))
         self.password_input.setPlaceholderText("Enter password")
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         form_layout.addRow("Password:", self.password_input)
@@ -57,19 +64,19 @@ class SettingsDialog(QDialog):
 
         # Default deck
         self.default_deck_input = QLineEdit()
-        self.default_deck_input.setText(self.config.get('default_deck', 'Default'))
+        self.default_deck_input.setText(self.config.get("default_deck", "Default"))
         self.default_deck_input.setPlaceholderText("e.g., Default")
         form_layout.addRow("Default Deck:", self.default_deck_input)
 
         # Default note type
         self.default_note_type_input = QLineEdit()
-        self.default_note_type_input.setText(self.config.get('default_note_type', 'Basic'))
+        self.default_note_type_input.setText(self.config.get("default_note_type", "Basic"))
         self.default_note_type_input.setPlaceholderText("e.g., Basic")
         form_layout.addRow("Default Note Type:", self.default_note_type_input)
 
         # Suspend on import
         self.suspend_on_import_checkbox = QCheckBox()
-        self.suspend_on_import_checkbox.setChecked(self.config.get('suspend_on_import', True))
+        self.suspend_on_import_checkbox.setChecked(self.config.get("suspend_on_import", True))
         form_layout.addRow("Suspend cards on import:", self.suspend_on_import_checkbox)
 
         layout.addLayout(form_layout)
@@ -109,7 +116,7 @@ class SettingsDialog(QDialog):
 
         self.setLayout(layout)
 
-    def test_connection(self):
+    def test_connection(self) -> None:
         """Test connection to Crossbill server"""
         server_host = self.server_host_input.text().strip()
         email = self.email_input.text().strip()
@@ -125,8 +132,8 @@ class SettingsDialog(QDialog):
 
         try:
             # Import API client
-            import sys
             import os
+            import sys
 
             # Add plugin directory to path to import api module
             plugin_dir = os.path.dirname(os.path.dirname(__file__))
@@ -141,23 +148,19 @@ class SettingsDialog(QDialog):
                 QMessageBox.information(
                     self,
                     "Success",
-                    "Successfully connected and authenticated with Crossbill server!"
+                    "Successfully connected and authenticated with Crossbill server!",
                 )
             else:
                 QMessageBox.warning(
                     self,
                     "Connection Failed",
-                    f"Could not connect to Crossbill server:\n\n{message}"
+                    f"Could not connect to Crossbill server:\n\n{message}",
                 )
 
         except Exception as e:
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"Failed to connect to server:\n{str(e)}"
-            )
+            QMessageBox.critical(self, "Error", f"Failed to connect to server:\n{e!s}")
 
-    def save_settings(self):
+    def save_settings(self) -> None:
         """Save settings to config"""
         server_host = self.server_host_input.text().strip()
         email = self.email_input.text().strip()
@@ -177,27 +180,27 @@ class SettingsDialog(QDialog):
             default_note_type = "Basic"
 
         # Update config
-        self.config['server_host'] = server_host
-        self.config['email'] = email
-        self.config['password'] = password
+        self.config["server_host"] = server_host
+        self.config["email"] = email
+        self.config["password"] = password
         # Keep existing tokens if present
-        if 'bearer_token' not in self.config:
-            self.config['bearer_token'] = ''
-        if 'refresh_token' not in self.config:
-            self.config['refresh_token'] = ''
-        if 'token_expires_at' not in self.config:
-            self.config['token_expires_at'] = None
-        self.config['default_deck'] = default_deck
-        self.config['default_note_type'] = default_note_type
-        self.config['suspend_on_import'] = suspend_on_import
+        if "bearer_token" not in self.config:
+            self.config["bearer_token"] = ""
+        if "refresh_token" not in self.config:
+            self.config["refresh_token"] = ""
+        if "token_expires_at" not in self.config:
+            self.config["token_expires_at"] = None
+        self.config["default_deck"] = default_deck
+        self.config["default_note_type"] = default_note_type
+        self.config["suspend_on_import"] = suspend_on_import
 
         # Save config
-        mw.addonManager.writeConfig(__name__.split('.')[0], self.config)
+        mw.addonManager.writeConfig(__name__.split(".")[0], self.config)
 
         self.accept()
 
 
-def show_settings_dialog():
+def show_settings_dialog() -> None:
     """Show the settings dialog"""
     dialog = SettingsDialog(mw)
     dialog.exec()

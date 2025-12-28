@@ -243,8 +243,15 @@ jobs:
           cd clients/anki-plugin
           # Remove pycache if it exists
           find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-          # Create zip excluding meta.json and pycache
-          zip -r ../../crossbill.ankiaddon * -x "meta.json" -x "*/__pycache__/*" -x "__pycache__/*"
+          # Create zip excluding meta.json, pycache, and dev files
+          zip -r ../../crossbill.ankiaddon * \
+            -x "meta.json" \
+            -x "*/__pycache__/*" \
+            -x "__pycache__/*" \
+            -x ".venv/*" \
+            -x "poetry.lock" \
+            -x "pyproject.toml" \
+            -x ".gitignore"
           cd ../..
 
       - name: Create GitHub Release

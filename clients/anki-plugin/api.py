@@ -6,29 +6,25 @@ Handles communication with the Crossbill backend server.
 
 import json
 import time
-import urllib.request
 import urllib.error
 import urllib.parse
-from typing import Optional, Callable
+import urllib.request
+from collections.abc import Callable
+
 from models import (
-    BooksListResponse,
     BookDetails,
+    BooksListResponse,
     BookWithHighlightCount,
-    Book,
     ChapterWithHighlights,
-    Chapter,
+    FlashcardsResponse,
+    FlashcardWithHighlight,
     Highlight,
     HighlightTag,
-    Flashcard,
-    FlashcardWithHighlight,
-    FlashcardsResponse,
 )
 
 
 class CrossbillAPIError(Exception):
     """Raised when API request fails"""
-
-    pass
 
 
 class CrossbillAPI:
@@ -37,12 +33,12 @@ class CrossbillAPI:
     def __init__(
         self,
         server_host: str,
-        bearer_token: Optional[str] = None,
-        email: Optional[str] = None,
-        password: Optional[str] = None,
-        refresh_token: Optional[str] = None,
-        token_expires_at: Optional[float] = None,
-    ):
+        bearer_token: str | None = None,
+        email: str | None = None,
+        password: str | None = None,
+        refresh_token: str | None = None,
+        token_expires_at: float | None = None,
+    ) -> None:
         """
         Initialize API client
 
@@ -60,14 +56,16 @@ class CrossbillAPI:
         self.password = password or ""
         self.refresh_token = refresh_token or ""
         self.token_expires_at = token_expires_at
-        self.on_token_update: Optional[Callable[[str, str, float], None]] = None
+        self.on_token_update: Callable[[str, str, float], None] | None = None
 
-    def set_credentials(self, email: str, password: str):
+    def set_credentials(self, email: str, password: str) -> None:
         """Update email and password credentials"""
         self.email = email
         self.password = password
 
-    def set_bearer_token(self, token: str, refresh_token: str = "", expires_at: Optional[float] = None):
+    def set_bearer_token(
+        self, token: str, refresh_token: str = "", expires_at: float | None = None
+    ) -> None:
         """Update bearer token and optionally refresh token"""
         self.bearer_token = token
         if refresh_token:
@@ -75,7 +73,7 @@ class CrossbillAPI:
         if expires_at is not None:
             self.token_expires_at = expires_at
 
-    def set_on_token_update(self, callback: Callable[[str, str, float], None]):
+    def set_on_token_update(self, callback: Callable[[str, str, float], None]) -> None:
         """Set callback to be called when token is updated (token, refresh_token, expires_at)"""
         self.on_token_update = callback
 
@@ -101,9 +99,7 @@ class CrossbillAPI:
         body = json.dumps({"refresh_token": self.refresh_token})
 
         try:
-            request = urllib.request.Request(
-                url, data=body.encode("utf-8"), method="POST"
-            )
+            request = urllib.request.Request(url, data=body.encode("utf-8"), method="POST")
             request.add_header("Content-Type", "application/json")
             request.add_header("Accept", "application/json")
 
@@ -116,7 +112,9 @@ class CrossbillAPI:
 
                 # Notify callback if set
                 if self.on_token_update:
-                    self.on_token_update(self.bearer_token, self.refresh_token, self.token_expires_at or 0)
+                    self.on_token_update(
+                        self.bearer_token, self.refresh_token, self.token_expires_at or 0
+                    )
 
                 return True
 
@@ -126,7 +124,7 @@ class CrossbillAPI:
             self.token_expires_at = None
             return False
 
-    def _ensure_authenticated(self):
+    def _ensure_authenticated(self) -> None:
         """Ensure we have a valid authentication token"""
         # Check if we have a valid (non-expired) token
         if self.bearer_token and not self._is_token_expired():
@@ -169,9 +167,7 @@ class CrossbillAPI:
         )
 
         try:
-            request = urllib.request.Request(
-                url, data=form_data.encode("utf-8"), method="POST"
-            )
+            request = urllib.request.Request(url, data=form_data.encode("utf-8"), method="POST")
             request.add_header("Content-Type", "application/x-www-form-urlencoded")
             request.add_header("Accept", "application/json")
 
@@ -184,7 +180,9 @@ class CrossbillAPI:
 
                 # Notify callback if set
                 if self.on_token_update:
-                    self.on_token_update(self.bearer_token, self.refresh_token, self.token_expires_at or 0)
+                    self.on_token_update(
+                        self.bearer_token, self.refresh_token, self.token_expires_at or 0
+                    )
 
                 return data
 
@@ -195,7 +193,7 @@ class CrossbillAPI:
                 error_data = json.loads(error_body)
                 if "detail" in error_data:
                     error_msg += f" - {error_data['detail']}"
-            except:
+            except Exception:
                 pass
             raise CrossbillAPIError(f"Login failed: {error_msg}") from e
 
@@ -249,7 +247,7 @@ class CrossbillAPI:
                 error_data = json.loads(error_body)
                 if "detail" in error_data:
                     error_msg += f" - {error_data['detail']}"
-            except:
+            except Exception:
                 pass
             raise CrossbillAPIError(f"Failed to fetch {endpoint}: {error_msg}") from e
 

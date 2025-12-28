@@ -1,0 +1,91 @@
+[project]
+name = "crossbill-anki-plugin"
+version = "0.4.0"
+description = "Crossbill Anki Plugin - Import flashcards from Crossbill server into Anki"
+authors = [{ name = "Crossbill Contributors" }]
+readme = "README.md"
+requires-python = ">=3.11,<4.0"
+dependencies = []
+
+[build-system]
+requires = ["poetry-core>=2.2.1,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.14.4"
+pyright = "^1.1.398"
+aqt = { version = "^25.0", extras = ["qt6"] }
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "standard"
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+reportUnknownVariableType = false
+reportUnknownParameterType = false
+# Anki-specific relaxations: mw.col, mw.addonManager.getConfig(), Qt items can be None
+# but are always set when plugin code runs
+reportOptionalMemberAccess = false
+reportOptionalSubscript = false
+reportArgumentType = false
+reportOperatorIssue = false
+reportPrivateImportUsage = false
+reportIncompatibleMethodOverride = false
+exclude = ["__pycache__", ".venv"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "ANN", # flake8-annotations
+    "S",   # flake8-bandit (security)
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "T10", # flake8-debugger
+    "PIE", # flake8-pie
+    "Q",   # flake8-quotes
+    "RSE", # flake8-raise
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "PL",  # pylint
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    "E501",    # Line too long (handled by formatter)
+    "ANN401",  # Dynamically typed expressions (Any) - needed for Anki APIs
+    "S101",    # Use of assert detected
+    "S110",    # try-except-pass (intentional for graceful degradation)
+    "PLR0913", # Too many arguments - Anki UI callbacks often have many params
+    "PLR0912", # Too many branches - complex UI logic
+    "PLR2004", # Magic value comparisons (HTTP status codes, etc.)
+    "N999",    # Invalid module name (anki-plugin uses hyphen, required by Anki)
+    "PLC0415", # Import inside function (lazy loading is intentional for Anki plugins)
+    "S310",    # URL audit - we use validated HTTP/HTTPS URLs only
+    "SIM102",  # Nested if statements - sometimes clearer for complex conditions
+]
+
+[tool.ruff.lint.per-file-ignores]
+"ui/*.py" = [
+    "PLR0912", # Too many branches (UI event handlers)
+    "PLR0915", # Too many statements (UI setup methods)
+    "PLR2004", # Magic values in UI sizing
+    "N802",    # Qt method overrides use CamelCase (closeEvent, etc.)
+    "E402",    # Imports not at top (sys.path manipulation required for Anki plugins)
+]
+
+[tool.ruff.format]
+line-ending = "auto"
+quote-style = "double"
+indent-style = "space"

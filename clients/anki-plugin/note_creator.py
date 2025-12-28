@@ -4,17 +4,18 @@ Note Creator for Crossbill Anki Plugin
 Handles creation of Anki notes from Crossbill highlights.
 """
 
-from typing import List, Optional, Set
 import re
-from aqt import mw
+
 from anki.notes import Note
-from models import Highlight, BookDetails, PluginConfig, FlashcardWithHighlight
+from aqt import mw
+
+from models import BookDetails, FlashcardWithHighlight, Highlight, PluginConfig
 
 
 class NoteCreator:
     """Creates Anki notes from Crossbill highlights"""
 
-    def __init__(self, config: PluginConfig):
+    def __init__(self, config: PluginConfig) -> None:
         """
         Initialize note creator
 
@@ -28,8 +29,8 @@ class NoteCreator:
         highlight: Highlight,
         book: BookDetails,
         deck_name: str,
-        note_type_name: Optional[str] = None
-    ) -> Optional[Note]:
+        note_type_name: str | None = None,
+    ) -> Note | None:
         """
         Create an Anki note from a Crossbill highlight
 
@@ -57,10 +58,10 @@ class NoteCreator:
 
         # Create the note
         note = Note(mw.col, model)
-        note.note_type()['did'] = deck_id
+        note.note_type()["did"] = deck_id
 
         # Format the note based on note type
-        if note_type_name == "Basic" or note_type_name == "Basic (and reversed card)":
+        if note_type_name in {"Basic", "Basic (and reversed card)"}:
             self._format_basic_note(note, highlight, book)
         else:
             # Try to use a custom note type with similar fields
@@ -78,7 +79,7 @@ class NoteCreator:
 
         return note
 
-    def _format_basic_note(self, note: Note, highlight: Highlight, book: BookDetails):
+    def _format_basic_note(self, note: Note, highlight: Highlight, book: BookDetails) -> None:
         """
         Format a Basic note type
 
@@ -109,16 +110,16 @@ class NoteCreator:
         # Add user's note if available
         if highlight.note:
             back_parts.append("")  # Empty line for spacing
-            back_parts.append(f"<b>Note:</b>")
+            back_parts.append("<b>Note:</b>")
             back_parts.append(self._sanitize_html(highlight.note))
 
         back = "<br>".join(back_parts)
 
         # Set the fields
-        note['Front'] = front
-        note['Back'] = back
+        note["Front"] = front
+        note["Back"] = back
 
-    def _format_custom_note(self, note: Note, highlight: Highlight, book: BookDetails):
+    def _format_custom_note(self, note: Note, highlight: Highlight, book: BookDetails) -> None:
         """
         Format a custom note type by mapping fields intelligently
 
@@ -132,7 +133,7 @@ class NoteCreator:
         # Try to find Front field
         front_field = None
         for field in fields:
-            if field.lower() in ['front', 'question', 'text']:
+            if field.lower() in ["front", "question", "text"]:
                 front_field = field
                 break
 
@@ -142,7 +143,7 @@ class NoteCreator:
         # Try to find Back field
         back_field = None
         for field in fields:
-            if field.lower() in ['back', 'answer', 'extra']:
+            if field.lower() in ["back", "answer", "extra"]:
                 back_field = field
                 break
 
@@ -158,21 +159,21 @@ class NoteCreator:
                 back_parts.append(f"<b>Page:</b> {highlight.page}")
             if highlight.note:
                 back_parts.append("")
-                back_parts.append(f"<b>Note:</b>")
+                back_parts.append("<b>Note:</b>")
                 back_parts.append(self._sanitize_html(highlight.note))
 
             note[back_field] = "<br>".join(back_parts)
 
         # If there's a Source field, use it
         for field in fields:
-            if field.lower() in ['source', 'reference']:
+            if field.lower() in ["source", "reference"]:
                 source = book.title
                 if book.author:
                     source += f" by {book.author}"
                 note[field] = self._sanitize_html(source)
                 break
 
-    def _generate_tags(self, highlight: Highlight, book: BookDetails) -> List[str]:
+    def _generate_tags(self, highlight: Highlight, book: BookDetails) -> list[str]:
         """
         Generate tags for the note
 
@@ -215,8 +216,8 @@ class NoteCreator:
             Sanitized tag name
         """
         # Remove special characters and replace spaces with underscores
-        tag = re.sub(r'[^\w\s-]', '', tag)
-        tag = re.sub(r'\s+', '_', tag.strip())
+        tag = re.sub(r"[^\w\s-]", "", tag)
+        tag = re.sub(r"\s+", "_", tag.strip())
         return tag.lower()
 
     def _sanitize_html(self, text: str) -> str:
@@ -233,18 +234,16 @@ class NoteCreator:
             return ""
 
         # Escape HTML special characters
-        text = text.replace('&', '&amp;')
-        text = text.replace('<', '&lt;')
-        text = text.replace('>', '&gt;')
-        text = text.replace('"', '&quot;')
-        text = text.replace("'", '&#39;')
+        text = text.replace("&", "&amp;")
+        text = text.replace("<", "&lt;")
+        text = text.replace(">", "&gt;")
+        text = text.replace('"', "&quot;")
+        text = text.replace("'", "&#39;")
 
         # Convert newlines to <br> tags
-        text = text.replace('\n', '<br>')
+        return text.replace("\n", "<br>")
 
-        return text
-
-    def get_imported_highlight_ids(self) -> Set[int]:
+    def get_imported_highlight_ids(self) -> set[int]:
         """
         Get the set of highlight IDs that have already been imported
 
@@ -263,7 +262,7 @@ class NoteCreator:
             for tag in note.tags:
                 if tag.startswith(f"{self.config.tag_prefix}::highlight-"):
                     try:
-                        highlight_id = int(tag.split('-')[1])
+                        highlight_id = int(tag.split("-")[1])
                         imported_ids.add(highlight_id)
                     except (ValueError, IndexError):
                         continue
@@ -286,11 +285,11 @@ class NoteCreator:
 
     def import_highlights(
         self,
-        highlights: List[Highlight],
+        highlights: list[Highlight],
         book: BookDetails,
         deck_name: str,
-        note_type_name: Optional[str] = None,
-        skip_duplicates: bool = True
+        note_type_name: str | None = None,
+        skip_duplicates: bool = True,
     ) -> dict:
         """
         Import multiple highlights as notes
@@ -311,23 +310,16 @@ class NoteCreator:
                 'errors': List[str]
             }
         """
-        stats = {
-            'created': 0,
-            'skipped': 0,
-            'failed': 0,
-            'errors': []
-        }
+        stats = {"created": 0, "skipped": 0, "failed": 0, "errors": []}
 
         for highlight in highlights:
             # Check for duplicates
             if skip_duplicates and self.is_highlight_imported(highlight.id):
-                stats['skipped'] += 1
+                stats["skipped"] += 1
                 continue
 
             try:
-                note = self.create_note_from_highlight(
-                    highlight, book, deck_name, note_type_name
-                )
+                note = self.create_note_from_highlight(highlight, book, deck_name, note_type_name)
 
                 if note:
                     # Add the note to the collection
@@ -339,18 +331,14 @@ class NoteCreator:
                         if card_ids:
                             mw.col.sched.suspend_cards(card_ids)
 
-                    stats['created'] += 1
+                    stats["created"] += 1
                 else:
-                    stats['failed'] += 1
-                    stats['errors'].append(
-                        f"Failed to create note for highlight {highlight.id}"
-                    )
+                    stats["failed"] += 1
+                    stats["errors"].append(f"Failed to create note for highlight {highlight.id}")
 
             except Exception as e:
-                stats['failed'] += 1
-                stats['errors'].append(
-                    f"Error importing highlight {highlight.id}: {str(e)}"
-                )
+                stats["failed"] += 1
+                stats["errors"].append(f"Error importing highlight {highlight.id}: {e!s}")
 
         return stats
 
@@ -360,10 +348,10 @@ class NoteCreator:
         self,
         flashcard: FlashcardWithHighlight,
         book_title: str,
-        book_author: Optional[str],
+        book_author: str | None,
         deck_name: str,
-        note_type_name: Optional[str] = None
-    ) -> Optional[Note]:
+        note_type_name: str | None = None,
+    ) -> Note | None:
         """
         Create an Anki note from a Crossbill flashcard
 
@@ -392,10 +380,10 @@ class NoteCreator:
 
         # Create the note
         note = Note(mw.col, model)
-        note.note_type()['did'] = deck_id
+        note.note_type()["did"] = deck_id
 
         # Format the note based on note type
-        if note_type_name == "Basic" or note_type_name == "Basic (and reversed card)":
+        if note_type_name in {"Basic", "Basic (and reversed card)"}:
             self._format_basic_note_from_flashcard(note, flashcard, book_title, book_author)
         else:
             # Try to use a custom note type with similar fields
@@ -418,8 +406,8 @@ class NoteCreator:
         note: Note,
         flashcard: FlashcardWithHighlight,
         book_title: str,
-        book_author: Optional[str]
-    ):
+        book_author: str | None,
+    ) -> None:
         """
         Format a Basic note type from flashcard
 
@@ -454,23 +442,25 @@ class NoteCreator:
         # Add chapter and page from highlight if available
         if flashcard.highlight:
             if flashcard.highlight.chapter:
-                back_parts.append(f"<b>Chapter:</b> {self._sanitize_html(flashcard.highlight.chapter)}")
+                back_parts.append(
+                    f"<b>Chapter:</b> {self._sanitize_html(flashcard.highlight.chapter)}"
+                )
             if flashcard.highlight.page:
                 back_parts.append(f"<b>Page:</b> {flashcard.highlight.page}")
 
         back = "<br>".join(back_parts)
 
         # Set the fields
-        note['Front'] = front
-        note['Back'] = back
+        note["Front"] = front
+        note["Back"] = back
 
     def _format_custom_note_from_flashcard(
         self,
         note: Note,
         flashcard: FlashcardWithHighlight,
         book_title: str,
-        book_author: Optional[str]
-    ):
+        book_author: str | None,
+    ) -> None:
         """
         Format a custom note type by mapping fields intelligently
 
@@ -485,7 +475,7 @@ class NoteCreator:
         # Try to find Front field
         front_field = None
         for field in fields:
-            if field.lower() in ['front', 'question', 'text']:
+            if field.lower() in ["front", "question", "text"]:
                 front_field = field
                 break
 
@@ -495,7 +485,7 @@ class NoteCreator:
         # Try to find Back field
         back_field = None
         for field in fields:
-            if field.lower() in ['back', 'answer', 'extra']:
+            if field.lower() in ["back", "answer", "extra"]:
                 back_field = field
                 break
 
@@ -517,7 +507,9 @@ class NoteCreator:
 
             if flashcard.highlight:
                 if flashcard.highlight.chapter:
-                    back_parts.append(f"<b>Chapter:</b> {self._sanitize_html(flashcard.highlight.chapter)}")
+                    back_parts.append(
+                        f"<b>Chapter:</b> {self._sanitize_html(flashcard.highlight.chapter)}"
+                    )
                 if flashcard.highlight.page:
                     back_parts.append(f"<b>Page:</b> {flashcard.highlight.page}")
 
@@ -525,7 +517,7 @@ class NoteCreator:
 
         # If there's a Source field, use it
         for field in fields:
-            if field.lower() in ['source', 'reference']:
+            if field.lower() in ["source", "reference"]:
                 source = book_title
                 if book_author:
                     source += f" by {book_author}"
@@ -533,11 +525,8 @@ class NoteCreator:
                 break
 
     def _generate_tags_from_flashcard(
-        self,
-        flashcard: FlashcardWithHighlight,
-        book_title: str,
-        book_author: Optional[str]
-    ) -> List[str]:
+        self, flashcard: FlashcardWithHighlight, book_title: str, book_author: str | None
+    ) -> list[str]:
         """
         Generate tags for the note from flashcard data
 
@@ -571,7 +560,7 @@ class NoteCreator:
 
         return tags
 
-    def get_imported_flashcard_ids(self) -> Set[int]:
+    def get_imported_flashcard_ids(self) -> set[int]:
         """
         Get the set of flashcard IDs that have already been imported
 
@@ -590,7 +579,7 @@ class NoteCreator:
             for tag in note.tags:
                 if tag.startswith(f"{self.config.tag_prefix}::flashcard-"):
                     try:
-                        flashcard_id = int(tag.split('-')[1])
+                        flashcard_id = int(tag.split("-")[1])
                         imported_ids.add(flashcard_id)
                     except (ValueError, IndexError):
                         continue
@@ -613,12 +602,12 @@ class NoteCreator:
 
     def import_flashcards(
         self,
-        flashcards: List[FlashcardWithHighlight],
+        flashcards: list[FlashcardWithHighlight],
         book_title: str,
-        book_author: Optional[str],
+        book_author: str | None,
         deck_name: str,
-        note_type_name: Optional[str] = None,
-        skip_duplicates: bool = True
+        note_type_name: str | None = None,
+        skip_duplicates: bool = True,
     ) -> dict:
         """
         Import multiple flashcards as notes
@@ -640,17 +629,12 @@ class NoteCreator:
                 'errors': List[str]
             }
         """
-        stats = {
-            'created': 0,
-            'skipped': 0,
-            'failed': 0,
-            'errors': []
-        }
+        stats = {"created": 0, "skipped": 0, "failed": 0, "errors": []}
 
         for flashcard in flashcards:
             # Check for duplicates
             if skip_duplicates and self.is_flashcard_imported(flashcard.id):
-                stats['skipped'] += 1
+                stats["skipped"] += 1
                 continue
 
             try:
@@ -668,17 +652,13 @@ class NoteCreator:
                         if card_ids:
                             mw.col.sched.suspend_cards(card_ids)
 
-                    stats['created'] += 1
+                    stats["created"] += 1
                 else:
-                    stats['failed'] += 1
-                    stats['errors'].append(
-                        f"Failed to create note for flashcard {flashcard.id}"
-                    )
+                    stats["failed"] += 1
+                    stats["errors"].append(f"Failed to create note for flashcard {flashcard.id}")
 
             except Exception as e:
-                stats['failed'] += 1
-                stats['errors'].append(
-                    f"Error importing flashcard {flashcard.id}: {str(e)}"
-                )
+                stats["failed"] += 1
+                stats["errors"].append(f"Error importing flashcard {flashcard.id}: {e!s}")
 
         return stats
