@@ -207,18 +207,15 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          release_name: Release v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          generate_release_notes: true
           body: |
-            ## Release v${{ steps.version.outputs.version }}
-
-            Docker image: `docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/crossbill:v${{ steps.version.outputs.version }}`
-
-            ### Changes
-            See commit history for details.
+            ## Docker Image
+            ```bash
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/crossbill:v${{ steps.version.outputs.version }}
+            ```
           draft: false
           prerelease: false
