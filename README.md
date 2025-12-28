@@ -16,9 +16,9 @@ Crossbill helps you centralize and manage your ebook highlights by providing:
 
 - **Backend API**: FastAPI server with PostgreSQL database for storing highlights
 - **Web Frontend**: Modern React interface for browsing, editing, and organizing your highlights
-- **KOReader Plugin**: Syncs highlights directly from your KOReader e-reader
-- **Obsidian Plugin**: Integrate highlights into your Obsidian notes
-- [**Anki Plugin**: Integrate highlights into your Anki flash cards](https://github.com/Crossbill-Highlights/anki-addon)
+- **[KOReader Plugin](https://github.com/Crossbill-Highlights/koreader-plugin)**: Syncs highlights directly from your KOReader e-reader
+- **[Obsidian Plugin](https://github.com/Crossbill-Highlights/obsidian-plugin)**: Integrate highlights into your Obsidian notes
+- [**Anki Plugin**](https://github.com/Crossbill-Highlights/anki-addon): Integrate highlights into your Anki flash cards
 
 ## Features
 
