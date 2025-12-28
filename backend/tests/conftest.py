@@ -13,13 +13,9 @@ from sqlalchemy.pool import StaticPool
 
 from src.database import Base, get_db
 from src.main import app
-from src.models import (  # noqa: F401 - Import to register models
+from src.models import (
     Book,
-    Chapter,
-    Flashcard,
     Highlight,
-    HighlightTag,
-    HighlightTagGroup,
     User,
 )
 from src.services.auth_service import get_current_user
@@ -135,7 +131,9 @@ def db_session() -> Generator[Session, None, None]:
 @pytest.fixture
 def test_user(db_session: Session) -> User:
     """Get the default test user."""
-    return db_session.query(User).filter_by(id=1).first()
+    user = db_session.query(User).filter_by(id=1).first()
+    assert user is not None
+    return user
 
 
 @pytest.fixture

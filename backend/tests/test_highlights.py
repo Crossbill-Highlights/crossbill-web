@@ -98,6 +98,7 @@ class TestHighlightsUpload:
             .filter_by(title="Test Book Without Chapters", author="Test Author")
             .first()
         )
+        assert book is not None
         chapters = db_session.query(models.Chapter).filter_by(book_id=book.id).all()
         assert len(chapters) == 0
 
@@ -142,6 +143,7 @@ class TestHighlightsUpload:
             .filter_by(title="Duplicate Test Book", author="Test Author")
             .first()
         )
+        assert book is not None
         highlights = db_session.query(models.Highlight).filter_by(book_id=book.id).all()
         assert len(highlights) == 1
 
@@ -224,6 +226,7 @@ class TestHighlightsUpload:
 
         # Simulate user editing the book metadata in the app
         book = db_session.query(models.Book).filter_by(id=book_id).first()
+        assert book is not None
         book.title = "User Edited Title"
         book.author = "User Edited Author"
         book.isbn = "9999999999"
@@ -380,6 +383,7 @@ class TestHighlightsUpload:
             .filter_by(title="Hash Test Book", author="Test Author")
             .first()
         )
+        assert book is not None
         highlight = db_session.query(models.Highlight).filter_by(book_id=book.id).first()
         assert highlight is not None
         assert highlight.content_hash is not None
@@ -459,6 +463,7 @@ class TestHighlightsUpload:
             .filter_by(title="Chapter Dedup Test Book", author="Test Author")
             .first()
         )
+        assert book is not None
         chapters = db_session.query(models.Chapter).filter_by(book_id=book.id).all()
         assert len(chapters) == 1
         assert chapters[0].name == "Chapter 1"
@@ -547,6 +552,7 @@ class TestHighlightsUpload:
             .filter_by(title="Rollback Bug Test Book", author="Test Author")
             .first()
         )
+        assert book is not None
         chapters = db_session.query(models.Chapter).filter_by(book_id=book.id).all()
         assert len(chapters) == 3
         chapter_names = {c.name for c in chapters}

@@ -8,7 +8,7 @@ from slowapi.util import get_remote_address
 from src.database import DatabaseSession
 from src.exceptions import CrossbillError
 from src.models import User
-from src.routers.auth import _set_refresh_cookie
+from src.routers.auth import set_refresh_cookie
 from src.schemas.user_schemas import UserDetailsResponse, UserRegisterRequest, UserUpdateRequest
 from src.services.auth_service import TokenWithRefresh, get_current_user
 from src.services.users_service import UserService
@@ -19,7 +19,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/register")
-@limiter.limit("5/minute")
+@limiter.limit("5/minute")  # type: ignore[misc]
 async def register(
     request: Request, response: Response, register_data: UserRegisterRequest, db: DatabaseSession
 ) -> TokenWithRefresh:
@@ -32,7 +32,7 @@ async def register(
     try:
         service = UserService(db)
         token_pair = service.register_user(register_data)
-        _set_refresh_cookie(response, token_pair.refresh_token)
+        set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers

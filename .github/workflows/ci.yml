@@ -93,6 +93,9 @@ jobs:
       - name: Lint with Ruff
         run: poetry run ruff check .
 
+      - name: Type check with Pyright
+        run: poetry run pyright
+
       - name: Run tests with pytest
         env:
           TESTING: "1"

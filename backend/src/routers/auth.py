@@ -31,7 +31,7 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str | None = None
 
 
-def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
+def set_refresh_cookie(response: Response, refresh_token: str) -> None:
     """Set the refresh token as an httpOnly cookie."""
     response.set_cookie(
         key="refresh_token",
@@ -56,7 +56,7 @@ def _clear_refresh_cookie(response: Response) -> None:
 
 
 @router.post("/login")
-@limiter.limit("5/minute")
+@limiter.limit("5/minute")  # type: ignore[misc]
 async def login(
     request: Request,
     response: Response,
@@ -73,12 +73,12 @@ async def login(
         )
 
     token_pair = create_token_pair(user.id)
-    _set_refresh_cookie(response, token_pair.refresh_token)
+    set_refresh_cookie(response, token_pair.refresh_token)
     return token_pair
 
 
 @router.post("/refresh")
-@limiter.limit("10/minute")
+@limiter.limit("10/minute")  # type: ignore[misc]
 async def refresh(
     request: Request,
     response: Response,
@@ -123,7 +123,7 @@ async def refresh(
         )
 
     token_pair = create_token_pair(user.id)
-    _set_refresh_cookie(response, token_pair.refresh_token)
+    set_refresh_cookie(response, token_pair.refresh_token)
     return token_pair
 
 
