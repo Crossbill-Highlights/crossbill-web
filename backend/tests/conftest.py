@@ -22,7 +22,7 @@ from src.services.auth_service import get_current_user
 from src.utils import compute_book_hash, compute_highlight_hash
 
 
-def create_test_book(  # noqa: PLR0913
+def create_test_book(
     db_session: Session,
     user_id: int,
     title: str,
@@ -55,7 +55,7 @@ def create_test_book(  # noqa: PLR0913
     return book
 
 
-def create_test_highlight(  # noqa: PLR0913
+def create_test_highlight(
     db_session: Session,
     book: Book,
     user_id: int,

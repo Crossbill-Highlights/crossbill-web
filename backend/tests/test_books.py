@@ -3,6 +3,7 @@
 import json
 from datetime import UTC, datetime
 
+import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -497,3 +498,55 @@ class TestGetBookDetails:
         tag_names = [tag["name"] for tag in highlight_data["highlight_tags"]]
         assert "Important" in tag_names
         assert "Review" in tag_names
+
+
+class TestGetBooksWithFlashcardFilter:
+    @pytest.fixture
+    def books_with_flashcards(self, db_session: Session) -> None:
+        """Create test books: one with flashcards, one without."""
+        book_with = create_test_book(
+            db_session=db_session,
+            user_id=DEFAULT_USER_ID,
+            title="Book with Flashcards",
+            author="Author 1",
+        )
+        create_test_book(
+            db_session=db_session,
+            user_id=DEFAULT_USER_ID,
+            title="Book without Flashcards",
+            author="Author 2",
+        )
+
+        # Add flashcard to first book
+        flashcard = models.Flashcard(
+            user_id=DEFAULT_USER_ID,
+            book_id=book_with.id,
+            question="Test question?",
+            answer="Test answer",
+        )
+        db_session.add(flashcard)
+        db_session.commit()
+
+    def test_get_books_without_filter_returns_all(
+        self, client: TestClient, books_with_flashcards: None
+    ) -> None:
+        """Test that without filter, all books are returned."""
+        response = client.get("/api/v1/books/")
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["total"] == 2
+        assert len(data["books"]) == 2
+
+    def test_get_books_with_flashcard_filter_returns_only_books_with_flashcards(
+        self, client: TestClient, books_with_flashcards: None
+    ) -> None:
+        """Test that only_with_flashcards=true returns only books with flashcards."""
+        response = client.get("/api/v1/books/?only_with_flashcards=true")
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["total"] == 1
+        assert len(data["books"]) == 1
+        assert data["books"][0]["title"] == "Book with Flashcards"
+        assert data["books"][0]["flashcard_count"] == 1

@@ -10,7 +10,12 @@ from src import schemas
 from src.database import DatabaseSession
 from src.exceptions import CrossbillError
 from src.models import User
-from src.services import BookmarkService, BookService, FlashcardService, HighlightTagService
+from src.services import (
+    BookmarkService,
+    BookService,
+    FlashcardService,
+    HighlightTagService,
+)
 from src.services.auth_service import get_current_user
 from src.services.highlight_service import HighlightService
 
@@ -25,6 +30,7 @@ def get_books(
     current_user: Annotated[User, Depends(get_current_user)],
     offset: int = Query(0, ge=0, description="Number of books to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of books to return"),
+    only_with_flashcards: bool = Query(False, description="Return only books with flashcards"),
     search: str | None = Query(None, description="Search text to filter books by title or author"),
 ) -> schemas.BooksListResponse:
     """
@@ -44,7 +50,9 @@ def get_books(
     """
     try:
         service = HighlightService(db)
-        return service.get_books_with_counts(current_user.id, offset, limit, search)
+        return service.get_books_with_counts(
+            current_user.id, offset, limit, only_with_flashcards, search
+        )
     except Exception as e:
         logger.error(f"Failed to fetch books: {e!s}", exc_info=True)
         raise HTTPException(

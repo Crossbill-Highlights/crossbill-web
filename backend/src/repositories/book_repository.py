@@ -94,6 +94,7 @@ class BookRepository:
         user_id: int,
         offset: int = 0,
         limit: int = 100,
+        include_only_with_flashcards: bool = False,
         search_text: str | None = None,
     ) -> tuple[Sequence[Row[tuple[models.Book, int, int]]], int]:
         """
@@ -105,6 +106,7 @@ class BookRepository:
             user_id: ID of the user whose books to retrieve
             offset: Number of books to skip (default: 0)
             limit: Maximum number of books to return (default: 100)
+            include_only_with_flashcards: Include only books which have flashcards
             search_text: Optional text to search for in book title or author (case-insensitive)
 
         Returns:
@@ -119,6 +121,11 @@ class BookRepository:
                 (models.Book.title.ilike(search_pattern))
                 | (models.Book.author.ilike(search_pattern))
             )
+
+        if include_only_with_flashcards:
+            # Use EXISTS to efficiently check if book has any flashcards
+            flashcard_exists = select(1).where(models.Flashcard.book_id == models.Book.id).exists()
+            filters.append(flashcard_exists)
 
         # Count query for total number of books
         total_stmt = select(func.count(models.Book.id)).where(*filters)

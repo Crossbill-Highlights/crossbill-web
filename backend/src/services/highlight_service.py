@@ -200,6 +200,7 @@ class HighlightService:
         user_id: int,
         offset: int = 0,
         limit: int = 100,
+        include_only_with_flashcards: bool = False,
         search_text: str | None = None,
     ) -> schemas.BooksListResponse:
         """
@@ -215,7 +216,7 @@ class HighlightService:
             BooksListResponse with list of books and pagination info
         """
         books_with_counts, total = self.book_repo.get_books_with_highlight_count(
-            user_id, offset, limit, search_text
+            user_id, offset, limit, include_only_with_flashcards, search_text
         )
 
         # Convert to response schema
