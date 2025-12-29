@@ -33,9 +33,9 @@ All linting errors must be fixed before committing. Use auto-fix when possible:
 poetry run ruff check --fix .
 ```
 
-### 2. Type Checks (mypy)
+### 2. Type Checks (pyright)
 ```bash
-poetry run mypy src
+poetry run pyright
 ```
 All type errors must be resolved before committing.
 
@@ -57,7 +57,7 @@ Run all checks in sequence:
 ```bash
 poetry run ruff format . && \
 poetry run ruff check --fix . && \
-poetry run mypy src && \
+poetry run pyright && \
 poetry run pytest
 ```
 
