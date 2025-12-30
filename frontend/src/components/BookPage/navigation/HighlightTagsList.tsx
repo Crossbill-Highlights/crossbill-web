@@ -318,25 +318,23 @@ const UngroupedTags = ({
 
 interface AddGroupFormProps {
   isVisible: boolean;
-  groupName: string;
   isProcessing: boolean;
-  onGroupNameChange: (name: string) => void;
-  onSubmit: () => void;
+  onSubmit: (newGroupName: string) => void;
   onCancel: () => void;
 }
 
-const AddGroupForm = ({
-  isVisible,
-  groupName,
-  isProcessing,
-  onGroupNameChange,
-  onSubmit,
-  onCancel,
-}: AddGroupFormProps) => {
+const AddGroupForm = ({ isVisible, isProcessing, onSubmit, onCancel }: AddGroupFormProps) => {
+  const [groupName, setGroupName] = useState('');
+
+  const handleSubmit = () => {
+    onSubmit(groupName);
+    setGroupName('');
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      onSubmit();
+      handleSubmit();
     } else if (e.key === 'Escape') {
       onCancel();
     }
@@ -362,10 +360,10 @@ const AddGroupForm = ({
               borderColor: 'divider',
             }}
           >
-            <ClickAwayListener onClickAway={onSubmit}>
+            <ClickAwayListener onClickAway={handleSubmit}>
               <TextField
                 value={groupName}
-                onChange={(e) => onGroupNameChange(e.target.value)}
+                onChange={(e) => setGroupName(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Group name..."
                 size="small"
@@ -389,7 +387,7 @@ const AddGroupForm = ({
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Box
                 component="button"
-                onClick={onSubmit}
+                onClick={handleSubmit}
                 disabled={isProcessing}
                 sx={{
                   flex: 1,
@@ -665,7 +663,6 @@ export const HighlightTagsList = ({
   const [editingGroupId, setEditingGroupId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
   const [showAddGroup, setShowAddGroup] = useState(false);
-  const [newGroupName, setNewGroupName] = useState('');
   const [activeTag, setActiveTag] = useState<HighlightTagInBook | null>(null);
   const [movingTagId, setMovingTagId] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -871,10 +868,9 @@ export const HighlightTagsList = ({
     }
   };
 
-  const handleAddGroup = async () => {
+  const handleAddGroup = async (newGroupName: string) => {
     if (!newGroupName.trim()) {
       setShowAddGroup(false);
-      setNewGroupName('');
       return;
     }
 
@@ -886,7 +882,6 @@ export const HighlightTagsList = ({
           name: newGroupName.trim(),
         },
       });
-      setNewGroupName('');
       setShowAddGroup(false);
     } finally {
       setIsProcessing(false);
@@ -898,16 +893,12 @@ export const HighlightTagsList = ({
       <Box>
         {!hideTitle && <ListTitle onAddGroupClick={() => setShowAddGroup(true)} />}
 
-        {/* Add New Group Form */}
         <AddGroupForm
           isVisible={showAddGroup}
-          groupName={newGroupName}
           isProcessing={isProcessing}
-          onGroupNameChange={setNewGroupName}
-          onSubmit={() => void handleAddGroup()}
+          onSubmit={handleAddGroup}
           onCancel={() => {
             setShowAddGroup(false);
-            setNewGroupName('');
           }}
         />
 
