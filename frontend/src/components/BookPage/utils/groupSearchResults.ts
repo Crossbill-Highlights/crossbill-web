@@ -7,7 +7,7 @@ import { chain, sortBy } from 'lodash';
  * TODO: maybe this can be removed if we just returned highlights grouped by chapter from the backend?
  */
 export function groupSearchResultsIntoChapters(highlights: HighlightSearchResult[] | undefined): {
-  id: string | number;
+  id: number;
   name: string;
   chapterNumber: number | undefined;
   highlights: Highlight[];
@@ -19,7 +19,7 @@ export function groupSearchResultsIntoChapters(highlights: HighlightSearchResult
   return chain(highlights)
     .groupBy((highlight) => highlight.chapter_id ?? 'null')
     .map((chapterHighlights, chapterIdStr) => ({
-      id: chapterIdStr === 'null' ? 'unknown' : Number(chapterIdStr),
+      id: chapterIdStr === 'null' ? 0 : parseInt(chapterIdStr),
       name: chapterHighlights[0]?.chapter_name ?? 'Unknown Chapter',
       chapterNumber: chapterHighlights[0]?.chapter_number ?? undefined,
       highlights: sortBy(
@@ -33,8 +33,7 @@ export function groupSearchResultsIntoChapters(highlights: HighlightSearchResult
       if (chapter.chapterNumber !== null && chapter.chapterNumber !== undefined) {
         return chapter.chapterNumber;
       }
-      const numericId = typeof chapter.id === 'number' ? chapter.id : 0;
-      return numericId + 1000000; // Large offset to put them at the end
+      return chapter.id + 1000000; // Large offset to put them at the end
     })
     .value();
 }

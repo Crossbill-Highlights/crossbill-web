@@ -2,11 +2,16 @@ import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
 import { ChapterListIcon, ExpandMoreIcon } from '@/components/common/Icons';
 import { Box, IconButton, Typography } from '@mui/material';
 import { useState } from 'react';
-import type { ChapterData } from './ChapterList.tsx';
+
+export interface ChapterNavigationData {
+  id: number;
+  name: string;
+  itemCount: number;
+}
 
 interface ChapterNavProps {
-  chapters: ChapterData[];
-  onChapterClick: (chapterId: number | string) => void;
+  chapters: ChapterNavigationData[];
+  onChapterClick: (chapterId: number) => void;
   hideTitle?: boolean;
 }
 
@@ -106,8 +111,8 @@ export const ChapterNav = ({ chapters, onChapterClick, hideTitle }: ChapterNavPr
                   color="text.secondary"
                   sx={{ fontSize: '0.75rem', mt: 0.25, display: 'block' }}
                 >
-                  {chapter.highlights.length} highlight
-                  {chapter.highlights.length !== 1 ? 's' : ''}
+                  {chapter.itemCount} highlight
+                  {chapter.itemCount !== 1 ? 's' : ''}
                 </Typography>
               </Box>
             </Box>

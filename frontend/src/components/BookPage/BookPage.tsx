@@ -221,7 +221,7 @@ const MobileNavigationWrapper = ({ book, activeTab }: MobileNavigationWrapperPro
     scrollToElementWithHighlight(`highlight-${highlightId}`, { behavior: 'smooth' });
   };
 
-  const handleChapterClick = (chapterId: number | string) => {
+  const handleChapterClick = (chapterId: number) => {
     if (urlSearch) {
       navigate({
         search: (prev) => ({
@@ -234,6 +234,10 @@ const MobileNavigationWrapper = ({ book, activeTab }: MobileNavigationWrapperPro
     scrollToElementWithHighlight(`chapter-${chapterId}`, { behavior: 'smooth', block: 'start' });
   };
 
+  const allHighlights = useMemo(() => {
+    return (book.chapters || []).flatMap((chapter) => chapter.highlights || []);
+  }, [book.chapters]);
+
   const data = activeTab === 'highlights' ? highlightsData : flashcardsData;
 
   return (
@@ -242,7 +246,7 @@ const MobileNavigationWrapper = ({ book, activeTab }: MobileNavigationWrapperPro
       onTagClick={handleTagClick}
       selectedTag={data.selectedTagId}
       bookmarks={activeTab === 'highlights' ? book.bookmarks || [] : []}
-      allHighlights={activeTab === 'highlights' ? highlightsData.allHighlights : []}
+      allHighlights={activeTab === 'highlights' ? allHighlights : []}
       onBookmarkClick={handleBookmarkClick}
       chapters={data.chapters}
       onChapterClick={handleChapterClick}

@@ -1,6 +1,8 @@
 import { BookDetails, Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
-import { ChapterData } from '@/components/BookPage/components/HighlightsTab/ChapterList.tsx';
-import { ChapterNav } from '@/components/BookPage/components/HighlightsTab/ChapterNav.tsx';
+import {
+  ChapterNav,
+  ChapterNavigationData,
+} from '@/components/BookPage/components/HighlightsTab/ChapterNav.tsx';
 import {
   BookmarkFilledIcon,
   ChapterListIcon,
@@ -106,8 +108,8 @@ const BookmarksDrawerContent = ({
 };
 
 interface ChaptersDrawerContentProps {
-  chapters: ChapterData[];
-  onChapterClick: (chapterId: number | string) => void;
+  chapters: ChapterNavigationData[];
+  onChapterClick: (chapterId: number) => void;
 }
 
 const ChaptersDrawerContent = ({ chapters, onChapterClick }: ChaptersDrawerContentProps) => {

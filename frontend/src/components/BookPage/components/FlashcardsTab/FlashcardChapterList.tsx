@@ -12,9 +12,10 @@ export interface FlashcardWithContext extends Flashcard {
 }
 
 export interface FlashcardChapterData {
-  id: number | string;
+  id: number;
   name: string;
   flashcards: FlashcardWithContext[];
+  chapter_number?: number;
 }
 
 interface FlashcardChapterListProps {

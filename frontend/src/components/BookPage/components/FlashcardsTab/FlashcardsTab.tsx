@@ -61,7 +61,7 @@ export const FlashcardsTab = ({ book, isDesktop }: FlashcardsTabProps) => {
     });
   };
 
-  const handleChapterClick = (chapterId: number | string) => {
+  const handleChapterClick = (chapterId: number) => {
     if (searchText) {
       navigate({
         search: (prev) => ({
@@ -289,11 +289,12 @@ interface DesktopFlashcardsContentProps {
   isReversed: boolean;
   onToggleReverse: () => void;
   chapters: FlashcardChapterData[];
-  navChapters: { id: number | string; name: string; highlights: Highlight[] }[];
+  // TODO: wtf is this
+  navChapters: { id: number; name: string; highlights: Highlight[] }[];
   bookId: number;
   emptyMessage: string;
   onEditFlashcard: (flashcard: FlashcardWithContext) => void;
-  onChapterClick: (chapterId: number | string) => void;
+  onChapterClick: (chapterId: number) => void;
 }
 
 const DesktopFlashcardsContent = ({
@@ -356,9 +357,15 @@ const DesktopFlashcardsContent = ({
     </Box>
 
     {/* Right Column - Chapters only (no bookmarks for flashcards) */}
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <ChapterNav chapters={navChapters} onChapterClick={onChapterClick} />
-    </Box>
+    {/* TODO: Use here the the hook data directly*/}
+    <ChapterNav
+      chapters={navChapters.map((ch) => ({
+        id: ch.id,
+        name: ch.name,
+        itemCount: ch.highlights.length,
+      }))}
+      onChapterClick={onChapterClick}
+    />
   </ThreeColumnLayout>
 );
 
@@ -378,6 +385,7 @@ export const useFlashcardsTabData = (book: BookDetails, selectedTagId: number | 
           highlightText: highlight.text,
           chapterName: chapter.name || 'Unknown Chapter',
           chapterId: chapter.id,
+          chapterNumber: chapter.chapter_number,
           highlightTags: highlight.highlight_tags,
         }))
       )
@@ -423,7 +431,7 @@ export const useFlashcardsTabData = (book: BookDetails, selectedTagId: number | 
   const navChapters = flashcardsByChapter.map((ch) => ({
     id: ch.id,
     name: ch.name,
-    highlights: ch.flashcards as unknown as Highlight[],
+    itemCount: ch.flashcards.length,
   }));
 
   return {

@@ -14,7 +14,7 @@ import { groupSearchResultsIntoChapters } from '../../utils/groupSearchResults.t
 import { BookmarkList } from '../BookmarkList.tsx';
 import { HighlightTags } from '../HighlightTags.tsx';
 import { ChapterList, type ChapterData } from './ChapterList.tsx';
-import { ChapterNav } from './ChapterNav.tsx';
+import { ChapterNav, ChapterNavigationData } from './ChapterNav.tsx';
 import { HighlightViewModal } from './HighlightViewModal';
 
 interface HighlightsTabProps {
@@ -72,7 +72,7 @@ export const HighlightsTab = ({ book, isDesktop, isMobile }: HighlightsTabProps)
     scrollToElementWithHighlight(`highlight-${highlightId}`, { behavior: 'smooth' });
   };
 
-  const handleChapterClick = (chapterId: number | string) => {
+  const handleChapterClick = (chapterId: number) => {
     if (searchText) {
       navigate({
         search: (prev) => ({
@@ -320,7 +320,7 @@ interface DesktopHighlightsContentProps {
   emptyMessage: string;
   onOpenHighlight: (highlightId: number) => void;
   onBookmarkClick: (highlightId: number) => void;
-  onChapterClick: (chapterId: number | string) => void;
+  onChapterClick: (chapterId: number) => void;
 }
 
 const DesktopHighlightsContent = ({
@@ -391,7 +391,15 @@ const DesktopHighlightsContent = ({
         allHighlights={allHighlights}
         onBookmarkClick={onBookmarkClick}
       />
-      <ChapterNav chapters={chapters} onChapterClick={onChapterClick} />
+      {/* TODO: Käytä tässä useHighlightsTabDataa  */}
+      <ChapterNav
+        chapters={chapters.map((ch) => ({
+          id: ch.id,
+          name: ch.name,
+          itemCount: ch.highlights.length,
+        }))}
+        onChapterClick={onChapterClick}
+      />
     </Box>
   </ThreeColumnLayout>
 );
@@ -422,22 +430,16 @@ export const useHighlightsTabData = (
       .filter((chapter) => chapter.highlights && chapter.highlights.length > 0);
   }, [book.chapters, selectedTagId]);
 
-  const chapters: ChapterData[] = useMemo(() => {
+  const chapters: ChapterNavigationData[] = useMemo(() => {
     return filteredChapters.map((chapter) => ({
       id: chapter.id,
       name: chapter.name || 'Unknown Chapter',
-      chapterNumber: chapter.chapter_number ?? undefined,
-      highlights: (chapter.highlights || []) as Highlight[],
+      itemCount: chapter.highlights?.length || 0,
     }));
   }, [filteredChapters]);
 
-  const allHighlights = useMemo(() => {
-    return chapters.flatMap((chapter) => chapter.highlights);
-  }, [chapters]);
-
   return {
     chapters,
-    allHighlights,
     tags: book.highlight_tags || [],
     searchText,
     selectedTagId,

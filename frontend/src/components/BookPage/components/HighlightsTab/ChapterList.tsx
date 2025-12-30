@@ -5,7 +5,7 @@ import { Box, Typography } from '@mui/material';
 import { HighlightCard } from './HighlightCard.tsx';
 
 export interface ChapterData {
-  id: number | string;
+  id: number;
   name: string;
   chapterNumber?: number;
   highlights: Highlight[];
