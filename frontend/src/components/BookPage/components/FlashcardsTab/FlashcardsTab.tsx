@@ -5,7 +5,11 @@ import type {
   Highlight,
   HighlightTagInBook,
 } from '@/api/generated/model';
-import { ChapterNav } from '@/components/BookPage/components/HighlightsTab/ChapterNav.tsx';
+import {
+  ChapterNav,
+  type ChapterNavigationData,
+} from '@/components/BookPage/components/HighlightsTab/ChapterNav.tsx';
+import { MobileNavigation } from '@/components/BookPage/components/MobileNavigation.tsx';
 import { SortIcon } from '@/components/common/Icons.tsx';
 import { SearchBar } from '@/components/common/SearchBar.tsx';
 import { ThreeColumnLayout } from '@/components/layout/Layouts.tsx';
@@ -121,19 +125,6 @@ export const FlashcardsTab = ({
     return result;
   }, [filteredFlashcards, isReversed]);
 
-  // Tags that have highlights with flashcards
-  const bookHighlightTags = book.highlight_tags;
-  const tagsWithFlashcards = useMemo(() => {
-    if (!bookHighlightTags) return [];
-
-    const tagIdsWithFlashcards = new Set<number>();
-    for (const fc of allFlashcardsWithContext) {
-      fc.highlightTags?.forEach((tag) => tagIdsWithFlashcards.add(tag.id));
-    }
-
-    return bookHighlightTags.filter((tag) => tagIdsWithFlashcards.has(tag.id));
-  }, [bookHighlightTags, allFlashcardsWithContext]);
-
   // Compute empty message based on state
   const emptyMessage = useMemo(() => {
     if (searchText) {
@@ -146,34 +137,48 @@ export const FlashcardsTab = ({
       : 'No flashcards yet. Create flashcards from your highlights to start studying.';
   }, [searchText, selectedTagId]);
 
-  // Chapters for ChapterNav (needs highlights array for count display)
-  const navChapters = flashcardChapters.map((ch) => ({
-    id: ch.id,
-    name: ch.name,
-    highlights: ch.flashcards as unknown as Highlight[],
-  }));
+  const navData = useFlashcardsTabData(
+    allFlashcardsWithContext,
+    flashcardChapters,
+    book.highlight_tags,
+    selectedTagId
+  );
 
   return (
     <>
       {/* Mobile Layout */}
       {!isDesktop && (
-        <MobileFlashcardsContent
-          searchText={searchText}
-          onSearch={onSearch}
-          isReversed={isReversed}
-          onToggleReverse={() => setIsReversed(!isReversed)}
-          chapters={flashcardChapters}
-          bookId={book.id}
-          emptyMessage={emptyMessage}
-          onEditFlashcard={setEditingFlashcard}
-        />
+        <>
+          <MobileFlashcardsContent
+            searchText={searchText}
+            onSearch={onSearch}
+            isReversed={isReversed}
+            onToggleReverse={() => setIsReversed(!isReversed)}
+            chapters={flashcardChapters}
+            bookId={book.id}
+            emptyMessage={emptyMessage}
+            onEditFlashcard={setEditingFlashcard}
+          />
+          <MobileNavigation
+            book={book}
+            onTagClick={handleTagClick}
+            selectedTag={selectedTagId}
+            bookmarks={[]}
+            allHighlights={[]}
+            onBookmarkClick={() => {}}
+            chapters={navData.chapters}
+            onChapterClick={onChapterClick}
+            displayTags={navData.tags}
+            currentTab="flashcards"
+          />
+        </>
       )}
 
       {/* Desktop Layout */}
       {isDesktop && (
         <DesktopFlashcardsContent
           book={book}
-          tags={tagsWithFlashcards}
+          tags={navData.tags}
           selectedTagId={selectedTagId}
           onTagClick={handleTagClick}
           searchText={searchText}
@@ -181,7 +186,7 @@ export const FlashcardsTab = ({
           isReversed={isReversed}
           onToggleReverse={() => setIsReversed(!isReversed)}
           chapters={flashcardChapters}
-          navChapters={navChapters}
+          navChapters={navData.chapters}
           bookId={book.id}
           emptyMessage={emptyMessage}
           onEditFlashcard={setEditingFlashcard}
@@ -267,8 +272,7 @@ interface DesktopFlashcardsContentProps {
   isReversed: boolean;
   onToggleReverse: () => void;
   chapters: FlashcardChapterData[];
-  // TODO: wtf is this
-  navChapters: { id: number; name: string; highlights: Highlight[] }[];
+  navChapters: ChapterNavigationData[];
   bookId: number;
   emptyMessage: string;
   onEditFlashcard: (flashcard: FlashcardWithContext) => void;
@@ -334,83 +338,36 @@ const DesktopFlashcardsContent = ({
       />
     </Box>
 
-    {/* Right Column - Chapters only (no bookmarks for flashcards) */}
-    {/* TODO: Use here the the hook data directly*/}
-    <ChapterNav
-      chapters={navChapters.map((ch) => ({
-        id: ch.id,
-        name: ch.name,
-        itemCount: ch.highlights.length,
-      }))}
-      onChapterClick={onChapterClick}
-    />
+    <ChapterNav chapters={navChapters} onChapterClick={onChapterClick} />
   </ThreeColumnLayout>
 );
 
 // Export hook for getting flashcard data needed by MobileNavigation
 // eslint-disable-next-line react-refresh/only-export-components
-export const useFlashcardsTabData = (book: BookDetails, selectedTagId: number | undefined) => {
-  const bookChapters = book.chapters;
-  const bookHighlightTags = book.highlight_tags;
-
-  const allFlashcardsWithContext = useMemo((): FlashcardWithContext[] => {
-    if (!bookChapters) return [];
-
-    return flatMap(bookChapters, (chapter: ChapterWithHighlights) =>
-      flatMap(chapter.highlights || [], (highlight: Highlight) =>
-        (highlight.flashcards || []).map((flashcard: Flashcard) => ({
-          ...flashcard,
-          highlightText: highlight.text,
-          chapterName: chapter.name || 'Unknown Chapter',
-          chapterId: chapter.id,
-          chapterNumber: chapter.chapter_number,
-          highlightTags: highlight.highlight_tags,
-        }))
-      )
-    );
-  }, [bookChapters]);
-
-  const filteredFlashcards = useMemo((): FlashcardWithContext[] => {
-    if (!selectedTagId) return allFlashcardsWithContext;
-    return allFlashcardsWithContext.filter((fc) =>
-      fc.highlightTags?.some((tag) => tag.id === selectedTagId)
-    );
-  }, [allFlashcardsWithContext, selectedTagId]);
-
-  const flashcardsByChapter = useMemo((): FlashcardChapterData[] => {
-    const grouped: Record<number, FlashcardWithContext[]> = {};
-    filteredFlashcards.forEach((fc) => {
-      if (fc.chapterId) {
-        if (!grouped[fc.chapterId]) {
-          grouped[fc.chapterId] = [];
-        }
-        grouped[fc.chapterId].push(fc);
-      }
-    });
-
-    return Object.entries(grouped).map(([chapterId, flashcards]) => ({
-      id: Number(chapterId),
-      name: flashcards[0]?.chapterName || 'Unknown Chapter',
-      flashcards,
-    }));
-  }, [filteredFlashcards]);
-
+export const useFlashcardsTabData = (
+  allFlashcardsWithContext: FlashcardWithContext[],
+  chapters: FlashcardChapterData[],
+  tagsInBook: HighlightTagInBook[] | undefined,
+  selectedTagId: number | undefined
+) => {
   const tagsWithFlashcards = useMemo(() => {
-    if (!bookHighlightTags) return [];
+    if (!tagsInBook) return [];
 
     const tagIdsWithFlashcards = new Set<number>();
     allFlashcardsWithContext.forEach((fc) =>
       fc.highlightTags?.forEach((tag) => tagIdsWithFlashcards.add(tag.id))
     );
 
-    return bookHighlightTags.filter((tag) => tagIdsWithFlashcards.has(tag.id));
-  }, [bookHighlightTags, allFlashcardsWithContext]);
+    return tagsInBook.filter((tag) => tagIdsWithFlashcards.has(tag.id));
+  }, [tagsInBook, allFlashcardsWithContext]);
 
-  const navChapters = flashcardsByChapter.map((ch) => ({
-    id: ch.id,
-    name: ch.name,
-    itemCount: ch.flashcards.length,
-  }));
+  const navChapters: ChapterNavigationData[] = useMemo(() => {
+    return chapters.map((ch) => ({
+      id: ch.id,
+      name: ch.name,
+      itemCount: ch.flashcards.length,
+    }));
+  }, [chapters]);
 
   return {
     chapters: navChapters,

@@ -12,6 +12,7 @@ import { useHighlightModal } from '../../hooks/useHighlightModal.ts';
 import { groupSearchResultsIntoChapters } from '../../utils/groupSearchResults.ts';
 import { BookmarkList } from '../BookmarkList.tsx';
 import { HighlightTags } from '../HighlightTags.tsx';
+import { MobileNavigation } from '../MobileNavigation.tsx';
 import { ChapterList, type ChapterData } from './ChapterList.tsx';
 import { ChapterNav, ChapterNavigationData } from './ChapterNav.tsx';
 import { HighlightViewModal } from './HighlightViewModal';
@@ -143,6 +144,10 @@ export const HighlightsTab = ({
     handleModalNavigate,
   } = useHighlightModal({ allHighlights, isMobile });
 
+  const tags = book.highlight_tags || [];
+
+  const navData = useHighlightsTabData(chapters);
+
   // Compute empty message based on state
   const emptyMessage = useMemo(() => {
     if (showSearchResults) {
@@ -155,23 +160,35 @@ export const HighlightsTab = ({
       : 'No chapters found for this book.';
   }, [showSearchResults, selectedTagId]);
 
-  const tags = book.highlight_tags || [];
-
   return (
     <>
       {/* Mobile Layout */}
       {!isDesktop && (
-        <MobileHighlightsContent
-          searchText={searchText}
-          onSearch={onSearch}
-          isReversed={isReversed}
-          onToggleReverse={() => setIsReversed(!isReversed)}
-          chapters={chapters}
-          bookmarksByHighlightId={bookmarksByHighlightId}
-          isSearching={showSearchResults && isSearching}
-          emptyMessage={emptyMessage}
-          onOpenHighlight={handleOpenHighlight}
-        />
+        <>
+          <MobileHighlightsContent
+            searchText={searchText}
+            onSearch={onSearch}
+            isReversed={isReversed}
+            onToggleReverse={() => setIsReversed(!isReversed)}
+            chapters={chapters}
+            bookmarksByHighlightId={bookmarksByHighlightId}
+            isSearching={showSearchResults && isSearching}
+            emptyMessage={emptyMessage}
+            onOpenHighlight={handleOpenHighlight}
+          />
+          <MobileNavigation
+            book={book}
+            onTagClick={handleTagClick}
+            selectedTag={selectedTagId}
+            bookmarks={book.bookmarks || []}
+            allHighlights={allHighlights}
+            onBookmarkClick={onBookmarkClick}
+            chapters={navData.chapters}
+            onChapterClick={onChapterClick}
+            displayTags={tags}
+            currentTab="highlights"
+          />
+        </>
       )}
 
       {/* Desktop Layout */}
@@ -186,6 +203,7 @@ export const HighlightsTab = ({
           isReversed={isReversed}
           onToggleReverse={() => setIsReversed(!isReversed)}
           chapters={chapters}
+          navChapters={navData.chapters}
           bookmarksByHighlightId={bookmarksByHighlightId}
           allHighlights={allHighlights}
           isSearching={showSearchResults && isSearching}
@@ -282,6 +300,7 @@ interface DesktopHighlightsContentProps {
   isReversed: boolean;
   onToggleReverse: () => void;
   chapters: ChapterData[];
+  navChapters: ChapterNavigationData[];
   bookmarksByHighlightId: Record<number, Bookmark>;
   allHighlights: Highlight[];
   isSearching: boolean;
@@ -301,6 +320,7 @@ const DesktopHighlightsContent = ({
   isReversed,
   onToggleReverse,
   chapters,
+  navChapters,
   bookmarksByHighlightId,
   allHighlights,
   isSearching,
@@ -359,57 +379,21 @@ const DesktopHighlightsContent = ({
         allHighlights={allHighlights}
         onBookmarkClick={onBookmarkClick}
       />
-      {/* TODO: Käytä tässä useHighlightsTabDataa  */}
-      <ChapterNav
-        chapters={chapters.map((ch) => ({
-          id: ch.id,
-          name: ch.name,
-          itemCount: ch.highlights.length,
-        }))}
-        onChapterClick={onChapterClick}
-      />
+      <ChapterNav chapters={navChapters} onChapterClick={onChapterClick} />
     </Box>
   </ThreeColumnLayout>
 );
 
-// Export types and data needed by MobileNavigation
-// eslint-disable-next-line react-refresh/only-export-components
-export const useHighlightsTabData = (
-  book: BookDetails,
-  searchText = '',
-  selectedTagId: number | undefined
-) => {
-  const filteredChapters = useMemo(() => {
-    const chaptersWithHighlights = (book.chapters || []).filter(
-      (chapter) => chapter.highlights && chapter.highlights.length > 0
-    );
-
-    if (!selectedTagId) {
-      return chaptersWithHighlights;
-    }
-
-    return chaptersWithHighlights
-      .map((chapter) => ({
-        ...chapter,
-        highlights: chapter.highlights?.filter((highlight) =>
-          highlight.highlight_tags?.some((tag) => tag.id === selectedTagId)
-        ),
-      }))
-      .filter((chapter) => chapter.highlights && chapter.highlights.length > 0);
-  }, [book.chapters, selectedTagId]);
-
-  const chapters: ChapterNavigationData[] = useMemo(() => {
-    return filteredChapters.map((chapter) => ({
+const useHighlightsTabData = (chapters: ChapterData[]) => {
+  const navChapters: ChapterNavigationData[] = useMemo(() => {
+    return chapters.map((chapter) => ({
       id: chapter.id,
-      name: chapter.name || 'Unknown Chapter',
-      itemCount: chapter.highlights?.length || 0,
+      name: chapter.name,
+      itemCount: chapter.highlights.length,
     }));
-  }, [filteredChapters]);
+  }, [chapters]);
 
   return {
-    chapters,
-    tags: book.highlight_tags || [],
-    searchText,
-    selectedTagId,
+    chapters: navChapters,
   };
 };

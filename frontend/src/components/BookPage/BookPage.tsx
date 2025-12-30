@@ -3,14 +3,8 @@ import {
   useGetBookDetailsApiV1BooksBookIdGet,
 } from '@/api/generated/books/books';
 import type { BookDetails } from '@/api/generated/model';
-import {
-  FlashcardsTab,
-  useFlashcardsTabData,
-} from '@/components/BookPage/components/FlashcardsTab/FlashcardsTab.tsx';
-import {
-  HighlightsTab,
-  useHighlightsTabData,
-} from '@/components/BookPage/components/HighlightsTab/HighlightsTab.tsx';
+import { FlashcardsTab } from '@/components/BookPage/components/FlashcardsTab/FlashcardsTab.tsx';
+import { HighlightsTab } from '@/components/BookPage/components/HighlightsTab/HighlightsTab.tsx';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils';
 import { FlashcardsIcon, HighlightsIcon } from '@/components/common/Icons.tsx';
@@ -32,7 +26,6 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { ScrollToTopButton } from '../common/ScrollToTopButton';
 import { Spinner } from '../common/Spinner';
 import { BookTitle } from './components/BookTitle';
-import { MobileNavigation } from './components/MobileNavigation.tsx';
 
 type TabValue = 'highlights' | 'flashcards';
 
@@ -129,7 +122,7 @@ interface BookPageContentProps {
 }
 
 const BookPageContent = ({ book }: BookPageContentProps) => {
-  const { tab, search: urlSearch, tagId } = useSearch({ from: '/book/$bookId' });
+  const { tab, search: urlSearch } = useSearch({ from: '/book/$bookId' });
 
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
@@ -215,60 +208,36 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
     [navigate, urlSearch]
   );
 
-  // TODO: refactor these to be universal and no mobile specific
-  const highlightsData = useHighlightsTabData(book, urlSearch, tagId);
-  const flashcardsData = useFlashcardsTabData(book, tagId);
-
-  const allHighlights = useMemo(() => {
-    return (book.chapters || []).flatMap((chapter) => chapter.highlights || []);
-  }, [book.chapters]);
-
-  const mobileNavData = activeTab === 'highlights' ? highlightsData : flashcardsData;
-
   return (
     <Container sx={{ minHeight: '100vh' }} maxWidth="xl">
       <ScrollToTopButton />
       <FadeInOut ekey={'book-title'}>
         {/* Mobile Layout */}
         {!isDesktop && (
-          <>
-            <Box sx={{ py: 8, maxWidth: '800px', mx: 'auto' }}>
-              <BookTitle book={book} />
-              <BookTabs activeTab={activeTab} handleTabChange={handleTabChange} book={book} />
+          <Box sx={{ py: 8, maxWidth: '800px', mx: 'auto' }}>
+            <BookTitle book={book} />
+            <BookTabs activeTab={activeTab} handleTabChange={handleTabChange} book={book} />
 
-              {activeTab === 'highlights' ? (
-                <HighlightsTab
-                  book={book}
-                  isDesktop={false}
-                  isMobile={isMobile}
-                  onSearch={handleSearch}
-                  onTagClick={handleTagClick}
-                  onBookmarkClick={handleBookmarkClick}
-                  onChapterClick={handleChapterClick}
-                />
-              ) : (
-                <FlashcardsTab
-                  book={book}
-                  isDesktop={false}
-                  onSearch={handleSearch}
-                  onTagClick={handleTagClick}
-                  onChapterClick={handleChapterClick}
-                />
-              )}
-            </Box>
-            <MobileNavigation
-              book={book}
-              onTagClick={handleTagClick}
-              selectedTag={mobileNavData.selectedTagId}
-              bookmarks={activeTab === 'highlights' ? book.bookmarks || [] : []}
-              allHighlights={activeTab === 'highlights' ? allHighlights : []}
-              onBookmarkClick={handleBookmarkClick}
-              chapters={mobileNavData.chapters}
-              onChapterClick={handleChapterClick}
-              displayTags={mobileNavData.tags}
-              currentTab={activeTab}
-            />
-          </>
+            {activeTab === 'highlights' ? (
+              <HighlightsTab
+                book={book}
+                isDesktop={false}
+                isMobile={isMobile}
+                onSearch={handleSearch}
+                onTagClick={handleTagClick}
+                onBookmarkClick={handleBookmarkClick}
+                onChapterClick={handleChapterClick}
+              />
+            ) : (
+              <FlashcardsTab
+                book={book}
+                isDesktop={false}
+                onSearch={handleSearch}
+                onTagClick={handleTagClick}
+                onChapterClick={handleChapterClick}
+              />
+            )}
+          </Box>
         )}
 
         {/* Desktop Layout */}
