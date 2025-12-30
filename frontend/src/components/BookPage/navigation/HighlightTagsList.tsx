@@ -168,12 +168,10 @@ const EmptyGroupPlaceholder = ({ message }: { message: string }) => (
 interface TagGroupProps {
   group: HighlightTagGroupInBook;
   tags: HighlightTagInBook[];
-  isCollapsed: boolean;
   isEditing: boolean;
   editValue: string;
   isProcessing: boolean;
   selectedTag: number | null | undefined;
-  onToggleCollapse: () => void;
   onStartEdit: () => void;
   onEditChange: (value: string) => void;
   onEditSubmit: () => void;
@@ -185,12 +183,10 @@ interface TagGroupProps {
 const TagGroup = ({
   group,
   tags,
-  isCollapsed,
   isEditing,
   editValue,
   isProcessing,
   selectedTag,
-  onToggleCollapse,
   onStartEdit,
   onEditChange,
   onEditSubmit,
@@ -198,6 +194,8 @@ const TagGroup = ({
   onDelete,
   onTagClick,
 }: TagGroupProps) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
   return (
     <Box
       sx={{
@@ -212,10 +210,10 @@ const TagGroup = ({
       <TagGroupHeader
         group={group}
         tagCount={tags.length}
-        isCollapsed={isCollapsed}
+        isExpanded={isExpanded}
         isEditing={isEditing}
         editValue={editValue}
-        onToggleCollapse={onToggleCollapse}
+        onToggleCollapse={() => setIsExpanded(!isExpanded)}
         onStartEdit={onStartEdit}
         onEditChange={onEditChange}
         onEditSubmit={onEditSubmit}
@@ -223,7 +221,7 @@ const TagGroup = ({
         onDelete={onDelete}
         isProcessing={isProcessing}
       />
-      <Collapsable isExpanded={!isCollapsed}>
+      <Collapsable isExpanded={isExpanded}>
         <DroppableGroup id={`group-${group.id}`} isEmpty={tags.length === 0}>
           {tags.length > 0 ? (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
@@ -250,8 +248,6 @@ interface UngroupedTagsProps {
   selectedTag: number | null | undefined;
   activeTag: HighlightTagInBook | null;
   movingTagId: number | null;
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
   onTagClick: (tagId: number | null) => void;
 }
 
@@ -260,10 +256,9 @@ const UngroupedTags = ({
   selectedTag,
   activeTag,
   movingTagId,
-  isCollapsed,
-  onToggleCollapse,
   onTagClick,
 }: UngroupedTagsProps) => {
+  const [isExpanded, setIsExpanded] = useState(true);
   const shouldHide = tags.length === 0 && activeTag === null && movingTagId === null;
 
   return (
@@ -285,15 +280,15 @@ const UngroupedTags = ({
           borderColor: 'divider',
         }}
       >
-        <Box sx={{ mb: isCollapsed ? 0 : 1 }}>
+        <Box sx={{ mb: isExpanded ? 1 : 0 }}>
           <TagGroupTitle
             title="Ungrouped"
             count={tags.length}
-            isCollapsed={isCollapsed}
-            onToggleCollapse={onToggleCollapse}
+            isExpanded={isExpanded}
+            onToggleCollapse={() => setIsExpanded(!isExpanded)}
           />
         </Box>
-        <Collapsable isExpanded={!isCollapsed}>
+        <Collapsable isExpanded={isExpanded}>
           <DroppableGroup id="ungrouped" isEmpty={tags.length === 0} emptyHeight={30}>
             {tags.length > 0 ? (
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
@@ -436,11 +431,11 @@ const AddGroupForm = ({ isVisible, isProcessing, onSubmit, onCancel }: AddGroupF
 interface TagGroupTitleProps {
   title: string;
   count: number;
-  isCollapsed: boolean;
+  isExpanded: boolean;
   onToggleCollapse: () => void;
 }
 
-const TagGroupTitle = ({ title, count, isCollapsed, onToggleCollapse }: TagGroupTitleProps) => {
+const TagGroupTitle = ({ title, count, isExpanded, onToggleCollapse }: TagGroupTitleProps) => {
   return (
     <Box
       onClick={onToggleCollapse}
@@ -456,7 +451,7 @@ const TagGroupTitle = ({ title, count, isCollapsed, onToggleCollapse }: TagGroup
         sx={{
           fontSize: 16,
           color: 'text.secondary',
-          transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+          transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
           transition: 'transform 0.15s',
         }}
       />
@@ -490,7 +485,7 @@ const TagGroupTitle = ({ title, count, isCollapsed, onToggleCollapse }: TagGroup
 interface TagGroupHeaderProps {
   group: HighlightTagGroupInBook;
   tagCount: number;
-  isCollapsed: boolean;
+  isExpanded: boolean;
   isEditing: boolean;
   editValue: string;
   onToggleCollapse: () => void;
@@ -505,7 +500,7 @@ interface TagGroupHeaderProps {
 const TagGroupHeader = ({
   group,
   tagCount,
-  isCollapsed,
+  isExpanded,
   isEditing,
   editValue,
   onToggleCollapse,
@@ -539,7 +534,7 @@ const TagGroupHeader = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        mb: isCollapsed ? 0 : 1,
+        mb: isExpanded ? 1 : 0,
         cursor: 'pointer',
         ...adaptiveStyles.container,
       }}
@@ -576,7 +571,7 @@ const TagGroupHeader = ({
         <TagGroupTitle
           title={group.name}
           count={tagCount}
-          isCollapsed={isCollapsed}
+          isExpanded={isExpanded}
           onToggleCollapse={onToggleCollapse}
         />
       )}
@@ -658,8 +653,6 @@ export const HighlightTagsList = ({
   hideTitle,
   hideEmptyGroups,
 }: HighlightTagsProps) => {
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<number, boolean>>({});
-  const [ungroupedCollapsed, setUngroupedCollapsed] = useState(false);
   const [editingGroupId, setEditingGroupId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
   const [showAddGroup, setShowAddGroup] = useState(false);
@@ -806,17 +799,6 @@ export const HighlightTagsList = ({
     }
   };
 
-  const handleToggleCollapse = (groupId: number) => {
-    setCollapsedGroups((prev) => ({
-      ...prev,
-      [groupId]: !prev[groupId],
-    }));
-  };
-
-  const handleToggleUngroupedCollapse = () => {
-    setUngroupedCollapsed((prev) => !prev);
-  };
-
   const handleStartEdit = (group: HighlightTagGroupInBook) => {
     setEditingGroupId(group.id);
     setEditValue(group.name);
@@ -912,12 +894,10 @@ export const HighlightTagsList = ({
                   key={group.id}
                   group={group}
                   tags={groupTags}
-                  isCollapsed={!!collapsedGroups[group.id]}
                   isEditing={editingGroupId === group.id}
                   editValue={editValue}
                   isProcessing={isProcessing}
                   selectedTag={selectedTag}
-                  onToggleCollapse={() => handleToggleCollapse(group.id)}
                   onStartEdit={() => handleStartEdit(group)}
                   onEditChange={setEditValue}
                   onEditSubmit={() => void handleEditSubmit()}
@@ -935,8 +915,6 @@ export const HighlightTagsList = ({
                 selectedTag={selectedTag}
                 activeTag={activeTag}
                 movingTagId={movingTagId}
-                isCollapsed={ungroupedCollapsed}
-                onToggleCollapse={handleToggleUngroupedCollapse}
                 onTagClick={onTagClick}
               />
             )}
