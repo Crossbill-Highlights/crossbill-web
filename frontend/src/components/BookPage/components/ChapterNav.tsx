@@ -1,5 +1,5 @@
 import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
-import { ChapterListIcon, ExpandMoreIcon } from '@/components/common/Icons';
+import { ChapterListIcon, ExpandMoreIcon } from '@/components/common/Icons.tsx';
 import { Box, IconButton, Typography } from '@mui/material';
 import { useState } from 'react';
 

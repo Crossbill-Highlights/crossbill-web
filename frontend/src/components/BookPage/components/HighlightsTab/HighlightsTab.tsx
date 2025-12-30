@@ -20,7 +20,7 @@ import { BookmarkList } from '../BookmarkList.tsx';
 import { HighlightTags } from '../HighlightTags.tsx';
 import { MobileNavigation } from '../MobileNavigation.tsx';
 import { ChapterList, type ChapterData } from './ChapterList.tsx';
-import { ChapterNav, ChapterNavigationData } from './ChapterNav.tsx';
+import { ChapterNav, ChapterNavigationData } from '../ChapterNav.tsx';
 import { HighlightViewModal } from './HighlightViewModal';
 
 interface HighlightsTabProps {

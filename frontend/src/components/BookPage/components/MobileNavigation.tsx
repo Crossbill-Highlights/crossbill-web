@@ -2,7 +2,7 @@ import { BookDetails, Bookmark, Highlight, HighlightTagInBook } from '@/api/gene
 import {
   ChapterNav,
   ChapterNavigationData,
-} from '@/components/BookPage/components/HighlightsTab/ChapterNav.tsx';
+} from '@/components/BookPage/components/ChapterNav.tsx';
 import {
   BookmarkFilledIcon,
   ChapterListIcon,

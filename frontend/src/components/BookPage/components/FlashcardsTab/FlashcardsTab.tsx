@@ -8,7 +8,7 @@ import type {
 import {
   ChapterNav,
   type ChapterNavigationData,
-} from '@/components/BookPage/components/HighlightsTab/ChapterNav.tsx';
+} from '@/components/BookPage/components/ChapterNav.tsx';
 import { MobileNavigation } from '@/components/BookPage/components/MobileNavigation.tsx';
 import { SortIcon } from '@/components/common/Icons.tsx';
 import { SearchBar } from '@/components/common/SearchBar.tsx';
