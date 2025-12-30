@@ -391,16 +391,16 @@ export const useFlashcardsTabData = (book: BookDetails, selectedTagId: number | 
     );
   }, [allFlashcardsWithContext, selectedTagId]);
 
-  const flashcardChapters = useMemo((): FlashcardChapterData[] => {
+  const flashcardsByChapter = useMemo((): FlashcardChapterData[] => {
     const grouped: Record<number, FlashcardWithContext[]> = {};
-    for (const fc of filteredFlashcards) {
+    filteredFlashcards.forEach((fc) => {
       if (fc.chapterId) {
         if (!grouped[fc.chapterId]) {
           grouped[fc.chapterId] = [];
         }
         grouped[fc.chapterId].push(fc);
       }
-    }
+    });
 
     return Object.entries(grouped).map(([chapterId, flashcards]) => ({
       id: Number(chapterId),
@@ -413,14 +413,14 @@ export const useFlashcardsTabData = (book: BookDetails, selectedTagId: number | 
     if (!bookHighlightTags) return [];
 
     const tagIdsWithFlashcards = new Set<number>();
-    for (const fc of allFlashcardsWithContext) {
-      fc.highlightTags?.forEach((tag) => tagIdsWithFlashcards.add(tag.id));
-    }
+    allFlashcardsWithContext.forEach((fc) =>
+      fc.highlightTags?.forEach((tag) => tagIdsWithFlashcards.add(tag.id))
+    );
 
     return bookHighlightTags.filter((tag) => tagIdsWithFlashcards.has(tag.id));
   }, [bookHighlightTags, allFlashcardsWithContext]);
 
-  const navChapters = flashcardChapters.map((ch) => ({
+  const navChapters = flashcardsByChapter.map((ch) => ({
     id: ch.id,
     name: ch.name,
     highlights: ch.flashcards as unknown as Highlight[],
