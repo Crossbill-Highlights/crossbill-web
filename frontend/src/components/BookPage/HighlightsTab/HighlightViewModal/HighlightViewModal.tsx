@@ -9,7 +9,7 @@ import { ArrowBackIcon, ArrowForwardIcon } from '@/components/common/Icons.tsx';
 import { Box, Button, IconButton, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { CommonDialog } from '../../../../common/CommonDialog.tsx';
+import { CommonDialog } from '../../../common/CommonDialog.tsx';
 import { HighlightContent } from '../../HighlightContent.tsx';
 import { FlashcardSection } from './components/FlashcardSection.tsx';
 import { HighlightNote } from './components/HighlightNote.tsx';

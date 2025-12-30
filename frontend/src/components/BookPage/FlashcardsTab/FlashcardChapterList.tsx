@@ -1,7 +1,7 @@
 import type { Flashcard, Highlight } from '@/api/generated/model';
-import { FlashcardListCard } from '@/components/BookPage/components/FlashcardsTab/FlashcardListCard.tsx';
-import { FadeInOut } from '@/components/common/animations/FadeInOut';
-import { SectionTitle } from '@/components/common/SectionTitle';
+import { FlashcardListCard } from '@/components/BookPage/FlashcardsTab/FlashcardListCard.tsx';
+import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
+import { SectionTitle } from '@/components/common/SectionTitle.tsx';
 import { Box, Typography } from '@mui/material';
 
 export interface FlashcardWithContext extends Flashcard {

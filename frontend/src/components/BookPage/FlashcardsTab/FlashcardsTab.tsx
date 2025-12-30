@@ -8,8 +8,8 @@ import type {
 import {
   ChapterNav,
   type ChapterNavigationData,
-} from '@/components/BookPage/components/navigation/ChapterNav.tsx';
-import { MobileNavigation } from '@/components/BookPage/components/navigation/MobileNavigation.tsx';
+} from '@/components/BookPage/navigation/ChapterNav.tsx';
+import { MobileNavigation } from '@/components/BookPage/navigation/MobileNavigation.tsx';
 import { SortIcon } from '@/components/common/Icons.tsx';
 import { SearchBar } from '@/components/common/SearchBar.tsx';
 import { ThreeColumnLayout } from '@/components/layout/Layouts.tsx';
@@ -22,7 +22,7 @@ import {
   FlashcardChapterList,
   type FlashcardChapterData,
   type FlashcardWithContext,
-} from './FlashcardChapterList';
+} from './FlashcardChapterList.tsx';
 import { FlashcardEditDialog } from './FlashcardEditDialog.tsx';
 
 interface FlashcardsTabProps {

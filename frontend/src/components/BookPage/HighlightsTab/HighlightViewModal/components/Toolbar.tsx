@@ -2,7 +2,7 @@ import {
   getGetBookDetailsApiV1BooksBookIdGetQueryKey,
   useCreateBookmarkApiV1BooksBookIdBookmarksPost,
   useDeleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete,
-} from '@/api/generated/books/books';
+} from '@/api/generated/books/books.ts';
 import type { Bookmark } from '@/api/generated/model';
 import {
   BookmarkFilledIcon,
@@ -12,7 +12,7 @@ import {
   FlashcardsIcon,
   LinkIcon,
   NotesIcon,
-} from '@/components/common/Icons';
+} from '@/components/common/Icons.tsx';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';

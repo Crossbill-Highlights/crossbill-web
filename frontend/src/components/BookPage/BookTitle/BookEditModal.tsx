@@ -11,9 +11,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { BookCover } from '../../../common/BookCover.tsx';
-import { CommonDialog } from '../../../common/CommonDialog.tsx';
-import { TagInput } from '../../../common/TagInput.tsx';
+import { BookCover } from '../../common/BookCover.tsx';
+import { CommonDialog } from '../../common/CommonDialog.tsx';
+import { TagInput } from '../../common/TagInput.tsx';
 
 interface BookEditFormData {
   tags: string[];

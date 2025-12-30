@@ -1,10 +1,10 @@
 import type { BookDetails } from '@/api/generated/model';
-import { BookTagList } from '@/components/BookPage/components/BookTitle/BookTagList.tsx';
+import { BookTagList } from '@/components/BookPage/BookTitle/BookTagList.tsx';
 import { EditIcon, ExpandLessIcon, ExpandMoreIcon } from '@/components/common/Icons.tsx';
 import { Box, Button, Typography } from '@mui/material';
 import DOMPurify from 'dompurify';
 import { useMemo, useState } from 'react';
-import { BookCover } from '../../../common/BookCover.tsx';
+import { BookCover } from '../../common/BookCover.tsx';
 import { BookEditModal } from './BookEditModal.tsx';
 
 // Strip HTML tags from description for plain text preview

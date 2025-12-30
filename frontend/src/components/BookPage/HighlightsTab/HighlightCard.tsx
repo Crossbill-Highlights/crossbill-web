@@ -1,12 +1,12 @@
 import type { Bookmark, Highlight } from '@/api/generated/model';
-import { BookTagList } from '@/components/BookPage/components/BookTitle/BookTagList.tsx';
+import { BookTagList } from '@/components/BookPage/BookTitle/BookTagList.tsx';
 import {
   BookmarkFilledIcon,
   DateIcon,
   FlashcardsIcon,
   NotesIcon,
   QuoteIcon,
-} from '@/components/common/Icons';
+} from '@/components/common/Icons.tsx';
 import { Box, CardActionArea, Typography } from '@mui/material';
 
 export interface HighlightCardProps {

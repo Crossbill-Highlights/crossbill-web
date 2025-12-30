@@ -3,8 +3,9 @@ import {
   useGetBookDetailsApiV1BooksBookIdGet,
 } from '@/api/generated/books/books';
 import type { BookDetails } from '@/api/generated/model';
-import { FlashcardsTab } from '@/components/BookPage/components/FlashcardsTab/FlashcardsTab.tsx';
-import { HighlightsTab } from '@/components/BookPage/components/HighlightsTab/HighlightsTab.tsx';
+import { BookTitle } from '@/components/BookPage/BookTitle/BookTitle.tsx';
+import { FlashcardsTab } from '@/components/BookPage/FlashcardsTab/FlashcardsTab.tsx';
+import { HighlightsTab } from '@/components/BookPage/HighlightsTab/HighlightsTab.tsx';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils';
 import { FlashcardsIcon, HighlightsIcon } from '@/components/common/Icons.tsx';
@@ -25,7 +26,6 @@ import { flatMap } from 'lodash';
 import { useCallback, useEffect, useMemo } from 'react';
 import { ScrollToTopButton } from '../common/ScrollToTopButton';
 import { Spinner } from '../common/Spinner';
-import { BookTitle } from './components/BookTitle/BookTitle.tsx';
 
 type TabValue = 'highlights' | 'flashcards';
 
