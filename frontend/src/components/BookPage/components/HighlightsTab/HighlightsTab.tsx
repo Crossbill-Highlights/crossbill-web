@@ -1,12 +1,11 @@
 import { useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet } from '@/api/generated/books/books.ts';
 import { useSearchHighlightsApiV1HighlightsSearchGet } from '@/api/generated/highlights/highlights.ts';
 import type { BookDetails, Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
-import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils.ts';
 import { SortIcon } from '@/components/common/Icons.tsx';
 import { SearchBar } from '@/components/common/SearchBar.tsx';
 import { ThreeColumnLayout } from '@/components/layout/Layouts.tsx';
 import { Box, IconButton, Tooltip } from '@mui/material';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';
 import { useEffect, useMemo, useState } from 'react';
 import { useHighlightModal } from '../../hooks/useHighlightModal.ts';
@@ -21,11 +20,22 @@ interface HighlightsTabProps {
   book: BookDetails;
   isDesktop: boolean;
   isMobile: boolean;
+  onSearch: (value: string) => void;
+  onTagClick: (tagId: number | null) => void;
+  onBookmarkClick: (highlightId: number) => void;
+  onChapterClick: (chapterId: number) => void;
 }
 
-export const HighlightsTab = ({ book, isDesktop, isMobile }: HighlightsTabProps) => {
+export const HighlightsTab = ({
+  book,
+  isDesktop,
+  isMobile,
+  onSearch,
+  onTagClick,
+  onBookmarkClick,
+  onChapterClick,
+}: HighlightsTabProps) => {
   const { search: urlSearch, tagId: urlTagId } = useSearch({ from: '/book/$bookId' });
-  const navigate = useNavigate({ from: '/book/$bookId' });
 
   const searchText = urlSearch || '';
   const [selectedTagId, setSelectedTagId] = useState<number | undefined>(urlTagId);
@@ -38,51 +48,9 @@ export const HighlightsTab = ({ book, isDesktop, isMobile }: HighlightsTabProps)
   // Fetch available tags for the highlight modal
   const { data: tagsResponse } = useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet(book.id);
 
-  const handleSearch = (value: string) => {
-    navigate({
-      search: (prev) => ({
-        ...prev,
-        search: value || undefined,
-      }),
-      replace: true,
-    });
-  };
-
   const handleTagClick = (newTagId: number | null) => {
     setSelectedTagId(newTagId || undefined);
-    navigate({
-      search: (prev) => ({
-        ...prev,
-        tagId: newTagId || undefined,
-      }),
-      replace: true,
-    });
-  };
-
-  const handleBookmarkClick = (highlightId: number) => {
-    if (searchText) {
-      navigate({
-        search: (prev) => ({
-          ...prev,
-          search: undefined,
-        }),
-        replace: true,
-      });
-    }
-    scrollToElementWithHighlight(`highlight-${highlightId}`, { behavior: 'smooth' });
-  };
-
-  const handleChapterClick = (chapterId: number) => {
-    if (searchText) {
-      navigate({
-        search: (prev) => ({
-          ...prev,
-          search: undefined,
-        }),
-        replace: true,
-      });
-    }
-    scrollToElementWithHighlight(`chapter-${chapterId}`, { behavior: 'smooth', block: 'start' });
+    onTagClick(newTagId);
   };
 
   // Highlight search
@@ -195,7 +163,7 @@ export const HighlightsTab = ({ book, isDesktop, isMobile }: HighlightsTabProps)
       {!isDesktop && (
         <MobileHighlightsContent
           searchText={searchText}
-          onSearch={handleSearch}
+          onSearch={onSearch}
           isReversed={isReversed}
           onToggleReverse={() => setIsReversed(!isReversed)}
           chapters={chapters}
@@ -214,7 +182,7 @@ export const HighlightsTab = ({ book, isDesktop, isMobile }: HighlightsTabProps)
           selectedTagId={selectedTagId}
           onTagClick={handleTagClick}
           searchText={searchText}
-          onSearch={handleSearch}
+          onSearch={onSearch}
           isReversed={isReversed}
           onToggleReverse={() => setIsReversed(!isReversed)}
           chapters={chapters}
@@ -223,8 +191,8 @@ export const HighlightsTab = ({ book, isDesktop, isMobile }: HighlightsTabProps)
           isSearching={showSearchResults && isSearching}
           emptyMessage={emptyMessage}
           onOpenHighlight={handleOpenHighlight}
-          onBookmarkClick={handleBookmarkClick}
-          onChapterClick={handleChapterClick}
+          onBookmarkClick={onBookmarkClick}
+          onChapterClick={onChapterClick}
         />
       )}
 

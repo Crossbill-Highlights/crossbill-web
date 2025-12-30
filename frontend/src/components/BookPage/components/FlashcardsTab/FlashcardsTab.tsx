@@ -6,12 +6,11 @@ import type {
   HighlightTagInBook,
 } from '@/api/generated/model';
 import { ChapterNav } from '@/components/BookPage/components/HighlightsTab/ChapterNav.tsx';
-import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils.ts';
 import { SortIcon } from '@/components/common/Icons.tsx';
 import { SearchBar } from '@/components/common/SearchBar.tsx';
 import { ThreeColumnLayout } from '@/components/layout/Layouts.tsx';
 import { Box, IconButton, Tooltip } from '@mui/material';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useSearch } from '@tanstack/react-router';
 import { flatMap } from 'lodash';
 import { useEffect, useMemo, useState } from 'react';
 import { HighlightTags } from '../HighlightTags.tsx';
@@ -25,11 +24,19 @@ import { FlashcardEditDialog } from './FlashcardEditDialog.tsx';
 interface FlashcardsTabProps {
   book: BookDetails;
   isDesktop: boolean;
+  onSearch: (value: string) => void;
+  onTagClick: (tagId: number | null) => void;
+  onChapterClick: (chapterId: number) => void;
 }
 
-export const FlashcardsTab = ({ book, isDesktop }: FlashcardsTabProps) => {
+export const FlashcardsTab = ({
+  book,
+  isDesktop,
+  onSearch,
+  onTagClick,
+  onChapterClick,
+}: FlashcardsTabProps) => {
   const { search: urlSearch, tagId: urlTagId } = useSearch({ from: '/book/$bookId' });
-  const navigate = useNavigate({ from: '/book/$bookId' });
 
   const searchText = urlSearch || '';
   const [selectedTagId, setSelectedTagId] = useState<number | undefined>(urlTagId);
@@ -40,38 +47,9 @@ export const FlashcardsTab = ({ book, isDesktop }: FlashcardsTabProps) => {
     setSelectedTagId(urlTagId);
   }, [urlTagId]);
 
-  const handleSearch = (value: string) => {
-    navigate({
-      search: (prev) => ({
-        ...prev,
-        search: value || undefined,
-      }),
-      replace: true,
-    });
-  };
-
   const handleTagClick = (newTagId: number | null) => {
     setSelectedTagId(newTagId || undefined);
-    navigate({
-      search: (prev) => ({
-        ...prev,
-        tagId: newTagId || undefined,
-      }),
-      replace: true,
-    });
-  };
-
-  const handleChapterClick = (chapterId: number) => {
-    if (searchText) {
-      navigate({
-        search: (prev) => ({
-          ...prev,
-          search: undefined,
-        }),
-        replace: true,
-      });
-    }
-    scrollToElementWithHighlight(`chapter-${chapterId}`, { behavior: 'smooth', block: 'start' });
+    onTagClick(newTagId);
   };
 
   const bookChapters = book.chapters;
@@ -181,7 +159,7 @@ export const FlashcardsTab = ({ book, isDesktop }: FlashcardsTabProps) => {
       {!isDesktop && (
         <MobileFlashcardsContent
           searchText={searchText}
-          onSearch={handleSearch}
+          onSearch={onSearch}
           isReversed={isReversed}
           onToggleReverse={() => setIsReversed(!isReversed)}
           chapters={flashcardChapters}
@@ -199,7 +177,7 @@ export const FlashcardsTab = ({ book, isDesktop }: FlashcardsTabProps) => {
           selectedTagId={selectedTagId}
           onTagClick={handleTagClick}
           searchText={searchText}
-          onSearch={handleSearch}
+          onSearch={onSearch}
           isReversed={isReversed}
           onToggleReverse={() => setIsReversed(!isReversed)}
           chapters={flashcardChapters}
@@ -207,7 +185,7 @@ export const FlashcardsTab = ({ book, isDesktop }: FlashcardsTabProps) => {
           bookId={book.id}
           emptyMessage={emptyMessage}
           onEditFlashcard={setEditingFlashcard}
-          onChapterClick={handleChapterClick}
+          onChapterClick={onChapterClick}
         />
       )}
 

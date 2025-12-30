@@ -28,7 +28,7 @@ import {
 } from '@mui/material';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { flatMap } from 'lodash';
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { ScrollToTopButton } from '../common/ScrollToTopButton';
 import { Spinner } from '../common/Spinner';
 import { BookTitle } from './components/BookTitle';
@@ -38,51 +38,7 @@ type TabValue = 'highlights' | 'flashcards';
 
 export const BookPage = () => {
   const { bookId } = useParams({ from: '/book/$bookId' });
-  const { tab } = useSearch({ from: '/book/$bookId' });
   const { data: book, isLoading, isError } = useGetBookDetailsApiV1BooksBookIdGet(Number(bookId));
-
-  const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  const navigate = useNavigate({ from: '/book/$bookId' });
-  const activeTab: TabValue = tab || 'highlights';
-
-  // Update recently viewed on mount
-  useEffect(() => {
-    if (book) {
-      void queryClient.invalidateQueries({
-        queryKey: getGetRecentlyViewedBooksApiV1BooksRecentlyViewedGetQueryKey(),
-      });
-    }
-  });
-
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: TabValue) => {
-    navigate({
-      search: (prev) => ({
-        ...prev,
-        tab: newValue === 'highlights' ? undefined : newValue,
-        search: undefined,
-        tagId: undefined,
-      }),
-      replace: true,
-    });
-  };
-
-  // Calculate totals for tab labels
-  const totalHighlights = useMemo(() => {
-    return (
-      book?.chapters?.reduce((sum, chapter) => sum + (chapter.highlights?.length || 0), 0) || 0
-    );
-  }, [book?.chapters]);
-
-  const bookChapters = book?.chapters;
-  const totalFlashcards = useMemo(() => {
-    if (!bookChapters) return 0;
-    return flatMap(bookChapters, (chapter) =>
-      flatMap(chapter.highlights || [], (highlight) => highlight.flashcards || [])
-    ).length;
-  }, [bookChapters]);
 
   if (isLoading) {
     return (
@@ -105,6 +61,122 @@ export const BookPage = () => {
       </Box>
     );
   }
+
+  return <BookPageContent book={book} />;
+};
+
+interface BookPageContentProps {
+  book: BookDetails;
+}
+
+const BookPageContent = ({ book }: BookPageContentProps) => {
+  const { tab, search: urlSearch, tagId } = useSearch({ from: '/book/$bookId' });
+
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const navigate = useNavigate({ from: '/book/$bookId' });
+  const activeTab: TabValue = tab || 'highlights';
+
+  // Update recently viewed on mount
+  useEffect(() => {
+    void queryClient.invalidateQueries({
+      queryKey: getGetRecentlyViewedBooksApiV1BooksRecentlyViewedGetQueryKey(),
+    });
+  }, []);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: TabValue) => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        tab: newValue === 'highlights' ? undefined : newValue,
+        search: undefined,
+        tagId: undefined,
+      }),
+      replace: true,
+    });
+  };
+
+  const handleSearch = useCallback(
+    (value: string) => {
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          search: value || undefined,
+        }),
+        replace: true,
+      });
+    },
+    [navigate]
+  );
+
+  const handleTagClick = useCallback(
+    (newTagId: number | null) => {
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          tagId: newTagId || undefined,
+        }),
+        replace: true,
+      });
+    },
+    [navigate]
+  );
+
+  const handleBookmarkClick = useCallback(
+    (highlightId: number) => {
+      if (urlSearch) {
+        navigate({
+          search: (prev) => ({
+            ...prev,
+            search: undefined,
+          }),
+          replace: true,
+        });
+      }
+      scrollToElementWithHighlight(`highlight-${highlightId}`, { behavior: 'smooth' });
+    },
+    [navigate, urlSearch]
+  );
+
+  const handleChapterClick = useCallback(
+    (chapterId: number) => {
+      if (urlSearch) {
+        navigate({
+          search: (prev) => ({
+            ...prev,
+            search: undefined,
+          }),
+          replace: true,
+        });
+      }
+      scrollToElementWithHighlight(`chapter-${chapterId}`, { behavior: 'smooth', block: 'start' });
+    },
+    [navigate, urlSearch]
+  );
+
+  // Calculate totals for tab labels
+  const totalHighlights = useMemo(() => {
+    return book.chapters?.reduce((sum, chapter) => sum + (chapter.highlights?.length || 0), 0) || 0;
+  }, [book.chapters]);
+
+  const totalFlashcards = useMemo(() => {
+    if (!book.chapters) return 0;
+    return flatMap(book.chapters, (chapter) =>
+      flatMap(chapter.highlights || [], (highlight) => highlight.flashcards || [])
+    ).length;
+  }, [book.chapters]);
+
+  // TODO: refactor these to be universal and no mobile specific
+  const highlightsData = useHighlightsTabData(book, urlSearch, tagId);
+  const flashcardsData = useFlashcardsTabData(book, tagId);
+
+  const allHighlights = useMemo(() => {
+    return (book.chapters || []).flatMap((chapter) => chapter.highlights || []);
+  }, [book.chapters]);
+
+  const mobileNavData = activeTab === 'highlights' ? highlightsData : flashcardsData;
 
   const TabsComponent = (
     <Tabs
@@ -156,12 +228,37 @@ export const BookPage = () => {
               {TabsComponent}
 
               {activeTab === 'highlights' ? (
-                <HighlightsTab book={book} isDesktop={false} isMobile={isMobile} />
+                <HighlightsTab
+                  book={book}
+                  isDesktop={false}
+                  isMobile={isMobile}
+                  onSearch={handleSearch}
+                  onTagClick={handleTagClick}
+                  onBookmarkClick={handleBookmarkClick}
+                  onChapterClick={handleChapterClick}
+                />
               ) : (
-                <FlashcardsTab book={book} isDesktop={false} />
+                <FlashcardsTab
+                  book={book}
+                  isDesktop={false}
+                  onSearch={handleSearch}
+                  onTagClick={handleTagClick}
+                  onChapterClick={handleChapterClick}
+                />
               )}
             </Box>
-            <MobileNavigationWrapper book={book} activeTab={activeTab} />
+            <MobileNavigation
+              book={book}
+              onTagClick={handleTagClick}
+              selectedTag={mobileNavData.selectedTagId}
+              bookmarks={activeTab === 'highlights' ? book.bookmarks || [] : []}
+              allHighlights={activeTab === 'highlights' ? allHighlights : []}
+              onBookmarkClick={handleBookmarkClick}
+              chapters={mobileNavData.chapters}
+              onChapterClick={handleChapterClick}
+              displayTags={mobileNavData.tags}
+              currentTab={activeTab}
+            />
           </>
         )}
 
@@ -175,83 +272,27 @@ export const BookPage = () => {
             </ThreeColumnLayout>
 
             {activeTab === 'highlights' ? (
-              <HighlightsTab book={book} isDesktop={true} isMobile={false} />
+              <HighlightsTab
+                book={book}
+                isDesktop={true}
+                isMobile={false}
+                onSearch={handleSearch}
+                onTagClick={handleTagClick}
+                onBookmarkClick={handleBookmarkClick}
+                onChapterClick={handleChapterClick}
+              />
             ) : (
-              <FlashcardsTab book={book} isDesktop={true} />
+              <FlashcardsTab
+                book={book}
+                isDesktop={true}
+                onSearch={handleSearch}
+                onTagClick={handleTagClick}
+                onChapterClick={handleChapterClick}
+              />
             )}
           </Box>
         )}
       </FadeInOut>
     </Container>
-  );
-};
-
-// Wrapper component that uses the appropriate hooks based on active tab
-interface MobileNavigationWrapperProps {
-  book: BookDetails;
-  activeTab: TabValue;
-}
-
-const MobileNavigationWrapper = ({ book, activeTab }: MobileNavigationWrapperProps) => {
-  const navigate = useNavigate({ from: '/book/$bookId' });
-  const { search: urlSearch, tagId } = useSearch({ from: '/book/$bookId' });
-  const highlightsData = useHighlightsTabData(book, urlSearch, tagId);
-  const flashcardsData = useFlashcardsTabData(book, tagId);
-
-  const handleTagClick = (newTagId: number | null) => {
-    navigate({
-      search: (prev) => ({
-        ...prev,
-        tagId: newTagId || undefined,
-      }),
-      replace: true,
-    });
-  };
-
-  const handleBookmarkClick = (highlightId: number) => {
-    if (urlSearch) {
-      navigate({
-        search: (prev) => ({
-          ...prev,
-          search: undefined,
-        }),
-        replace: true,
-      });
-    }
-    scrollToElementWithHighlight(`highlight-${highlightId}`, { behavior: 'smooth' });
-  };
-
-  const handleChapterClick = (chapterId: number) => {
-    if (urlSearch) {
-      navigate({
-        search: (prev) => ({
-          ...prev,
-          search: undefined,
-        }),
-        replace: true,
-      });
-    }
-    scrollToElementWithHighlight(`chapter-${chapterId}`, { behavior: 'smooth', block: 'start' });
-  };
-
-  const allHighlights = useMemo(() => {
-    return (book.chapters || []).flatMap((chapter) => chapter.highlights || []);
-  }, [book.chapters]);
-
-  const data = activeTab === 'highlights' ? highlightsData : flashcardsData;
-
-  return (
-    <MobileNavigation
-      book={book}
-      onTagClick={handleTagClick}
-      selectedTag={data.selectedTagId}
-      bookmarks={activeTab === 'highlights' ? book.bookmarks || [] : []}
-      allHighlights={activeTab === 'highlights' ? allHighlights : []}
-      onBookmarkClick={handleBookmarkClick}
-      chapters={data.chapters}
-      onChapterClick={handleChapterClick}
-      displayTags={data.tags}
-      currentTab={activeTab}
-    />
   );
 };
