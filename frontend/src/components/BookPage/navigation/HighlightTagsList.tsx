@@ -133,12 +133,13 @@ const DroppableGroup = ({ id, children, isEmpty, emptyHeight }: DroppableGroupPr
           : isEmpty
             ? 'rgba(0, 0, 0, 0.12)'
             : 'rgba(0, 0, 0, 0)',
+        borderWidth: isEmpty ? 1 : isOver ? 2 : 0,
+        padding: isEmpty ? 12 : isOver ? 8 : 0,
       }}
       transition={{ duration: 0.2 }}
       style={{
-        border: isEmpty ? '1px dashed' : isOver ? '2px solid' : 'none',
+        borderStyle: isEmpty ? 'dashed' : 'solid',
         borderRadius: 8,
-        padding: isEmpty ? 12 : isOver ? 8 : 0,
         minHeight: isEmpty ? emptyHeight || 40 : 'auto',
       }}
     >
