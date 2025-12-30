@@ -590,29 +590,33 @@ const TagGroupHeader = ({
           }}
         >
           <Tooltip title="Rename group">
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                onStartEdit();
-              }}
-              sx={{ ...touchTarget, color: 'text.disabled' }}
-            >
-              <EditIcon sx={{ fontSize: 14 }} />
-            </IconButton>
+            <span>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStartEdit();
+                }}
+                sx={{ ...touchTarget, color: 'text.disabled' }}
+              >
+                <EditIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </span>
           </Tooltip>
           <Tooltip title="Delete group">
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              disabled={isProcessing}
-              sx={{ ...touchTarget, color: 'text.disabled' }}
-            >
-              <DeleteIcon sx={{ fontSize: 14 }} />
-            </IconButton>
+            <span>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                disabled={isProcessing}
+                sx={{ ...touchTarget, color: 'text.disabled' }}
+              >
+                <DeleteIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </span>
           </Tooltip>
         </Box>
       )}
