@@ -168,14 +168,9 @@ const EmptyGroupPlaceholder = ({ message }: { message: string }) => (
 interface TagGroupProps {
   group: HighlightTagGroupInBook;
   tags: HighlightTagInBook[];
-  isEditing: boolean;
-  editValue: string;
   isProcessing: boolean;
   selectedTag: number | null | undefined;
-  onStartEdit: () => void;
-  onEditChange: (value: string) => void;
-  onEditSubmit: () => void;
-  onEditCancel: () => void;
+  onEditSubmit: (groupId: number, value: string) => void;
   onDelete: () => void;
   onTagClick: (tagId: number | null) => void;
 }
@@ -183,19 +178,30 @@ interface TagGroupProps {
 const TagGroup = ({
   group,
   tags,
-  isEditing,
-  editValue,
   isProcessing,
   selectedTag,
-  onStartEdit,
-  onEditChange,
   onEditSubmit,
-  onEditCancel,
   onDelete,
   onTagClick,
 }: TagGroupProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(group.name);
 
+  const handleStartEdit = () => {
+    setEditValue(group.name);
+    setIsEditing(true);
+  };
+
+  const handleEditCancel = () => {
+    setEditValue(group.name);
+    setIsEditing(false);
+  };
+
+  const handleEditSubmit = () => {
+    onEditSubmit(group.id, editValue);
+    setIsEditing(false);
+  };
   return (
     <Box
       sx={{
@@ -214,10 +220,10 @@ const TagGroup = ({
         isEditing={isEditing}
         editValue={editValue}
         onToggleCollapse={() => setIsExpanded(!isExpanded)}
-        onStartEdit={onStartEdit}
-        onEditChange={onEditChange}
-        onEditSubmit={onEditSubmit}
-        onEditCancel={onEditCancel}
+        onStartEdit={handleStartEdit}
+        onEditChange={setEditValue}
+        onEditSubmit={handleEditSubmit}
+        onEditCancel={handleEditCancel}
         onDelete={onDelete}
         isProcessing={isProcessing}
       />
@@ -653,8 +659,6 @@ export const HighlightTagsList = ({
   hideTitle,
   hideEmptyGroups,
 }: HighlightTagsProps) => {
-  const [editingGroupId, setEditingGroupId] = useState<number | null>(null);
-  const [editValue, setEditValue] = useState('');
   const [showAddGroup, setShowAddGroup] = useState(false);
   const [activeTag, setActiveTag] = useState<HighlightTagInBook | null>(null);
   const [movingTagId, setMovingTagId] = useState<number | null>(null);
@@ -799,22 +803,8 @@ export const HighlightTagsList = ({
     }
   };
 
-  const handleStartEdit = (group: HighlightTagGroupInBook) => {
-    setEditingGroupId(group.id);
-    setEditValue(group.name);
-  };
-
-  const handleEditSubmit = async () => {
-    if (!editingGroupId || !editValue.trim()) {
-      setEditingGroupId(null);
-      setEditValue('');
-      return;
-    }
-
-    const originalGroup = tagGroups.find((g) => g.id === editingGroupId);
-    if (originalGroup && originalGroup.name === editValue.trim()) {
-      setEditingGroupId(null);
-      setEditValue('');
+  const handleEditSubmit = async (groupId: number, value: string) => {
+    if (!value.trim()) {
       return;
     }
 
@@ -823,20 +813,13 @@ export const HighlightTagsList = ({
       await createOrUpdateGroupMutation.mutateAsync({
         data: {
           book_id: bookId,
-          id: editingGroupId,
-          name: editValue.trim(),
+          id: groupId,
+          name: value.trim(),
         },
       });
     } finally {
       setIsProcessing(false);
-      setEditingGroupId(null);
-      setEditValue('');
     }
-  };
-
-  const handleEditCancel = () => {
-    setEditingGroupId(null);
-    setEditValue('');
   };
 
   const handleDeleteGroup = async (groupId: number) => {
@@ -894,14 +877,9 @@ export const HighlightTagsList = ({
                   key={group.id}
                   group={group}
                   tags={groupTags}
-                  isEditing={editingGroupId === group.id}
-                  editValue={editValue}
                   isProcessing={isProcessing}
                   selectedTag={selectedTag}
-                  onStartEdit={() => handleStartEdit(group)}
-                  onEditChange={setEditValue}
-                  onEditSubmit={() => void handleEditSubmit()}
-                  onEditCancel={handleEditCancel}
+                  onEditSubmit={handleEditSubmit}
                   onDelete={() => void handleDeleteGroup(group.id)}
                   onTagClick={onTagClick}
                 />
