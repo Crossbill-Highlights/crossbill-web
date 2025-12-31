@@ -3,7 +3,7 @@ import { useUpdateHighlightNoteApiV1HighlightsHighlightIdNotePost } from '@/api/
 import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface HighlightNoteProps {
   highlightId: number;
@@ -20,43 +20,10 @@ export const HighlightNote = ({
   visible,
   disabled = false,
 }: HighlightNoteProps) => {
-  const queryClient = useQueryClient();
   const [noteText, setNoteText] = useState<string>(initialNote || '');
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Update note when initialNote changes
-  useEffect(() => {
-    setNoteText(initialNote || '');
-  }, [initialNote]);
-
-  const updateNoteMutation = useUpdateHighlightNoteApiV1HighlightsHighlightIdNotePost({
-    mutation: {
-      onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-        });
-      },
-      onError: (error) => {
-        console.error('Failed to update note:', error);
-        alert('Failed to update note. Please try again.');
-      },
-    },
-  });
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await updateNoteMutation.mutateAsync({
-        highlightId,
-        data: { note: noteText.trim() || null },
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
+  const { isProcessing, saveNote } = useNoteMutations(bookId, highlightId);
   const hasChanges = (noteText.trim() || null) !== (initialNote || null);
-  const isLoading = disabled || isSaving;
+  const isDisabled = disabled || isProcessing;
 
   return (
     <Collapsable isExpanded={visible}>
@@ -73,21 +40,57 @@ export const HighlightNote = ({
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
             placeholder="Add a note about this highlight..."
-            disabled={isLoading}
+            disabled={isDisabled}
           />
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
             <Button
               variant="text"
               size={'small'}
-              onClick={handleSave}
-              disabled={isLoading || !hasChanges}
+              onClick={() => saveNote(noteText)}
+              disabled={isDisabled || !hasChanges}
               sx={{ flexShrink: 0, height: 'fit-content', mt: 0.5 }}
             >
-              {isSaving ? 'Saving...' : 'Save'}
+              {isProcessing ? 'Saving...' : 'Save'}
             </Button>
           </Box>
         </Box>
       </Box>
     </Collapsable>
   );
+};
+
+const useNoteMutations = (bookId: number, highlightId: number) => {
+  const queryClient = useQueryClient();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const updateNoteMutation = useUpdateHighlightNoteApiV1HighlightsHighlightIdNotePost({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({
+          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
+        });
+      },
+      onError: (error) => {
+        console.error('Failed to update note:', error);
+        alert('Failed to update note. Please try again.');
+      },
+    },
+  });
+
+  const saveNote = async (noteText: string) => {
+    setIsProcessing(true);
+    try {
+      await updateNoteMutation.mutateAsync({
+        highlightId,
+        data: { note: noteText.trim() || null },
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return {
+    isProcessing,
+    saveNote,
+  };
 };
