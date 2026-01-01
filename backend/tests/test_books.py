@@ -2,6 +2,7 @@
 
 import json
 from datetime import UTC, datetime
+from typing import NamedTuple
 
 import pytest
 from fastapi import status
@@ -15,36 +16,144 @@ from tests.conftest import create_test_book, create_test_highlight
 DEFAULT_USER_ID = 1
 
 
+class BookWithChapter(NamedTuple):
+    book: models.Book
+    chapter: models.Chapter
+
+
+class BookWithHighlights(NamedTuple):
+    book: models.Book
+    highlights: list[models.Highlight]
+
+
+class BookWithChapterAndHighlights(NamedTuple):
+    book: models.Book
+    chapter: models.Chapter
+    highlights: list[models.Highlight]
+
+
+@pytest.fixture
+def test_book(db_session: Session) -> models.Book:
+    return create_test_book(
+        db_session=db_session,
+        user_id=DEFAULT_USER_ID,
+        title="Test Book",
+        author="Test Author",
+    )
+
+
+@pytest.fixture
+def test_book_with_isbn(db_session: Session) -> models.Book:
+    return create_test_book(
+        db_session=db_session,
+        user_id=DEFAULT_USER_ID,
+        title="Test Book",
+        author="Test Author",
+        isbn="1234567890",
+    )
+
+
+@pytest.fixture
+def book_with_chapter(db_session: Session) -> BookWithChapter:
+    book = create_test_book(
+        db_session=db_session,
+        user_id=DEFAULT_USER_ID,
+        title="Test Book",
+        author="Test Author",
+    )
+    chapter = models.Chapter(book_id=book.id, name="Chapter 1")
+    db_session.add(chapter)
+    db_session.commit()
+    db_session.refresh(chapter)
+    return BookWithChapter(book=book, chapter=chapter)
+
+
+@pytest.fixture
+def book_with_highlights(db_session: Session) -> BookWithHighlights:
+    book = create_test_book(
+        db_session=db_session,
+        user_id=DEFAULT_USER_ID,
+        title="Test Book",
+        author="Test Author",
+    )
+    highlight1 = create_test_highlight(
+        db_session=db_session,
+        book=book,
+        user_id=DEFAULT_USER_ID,
+        text="Highlight 1",
+        page=10,
+        datetime_str="2024-01-15 14:30:22",
+    )
+    highlight2 = create_test_highlight(
+        db_session=db_session,
+        book=book,
+        user_id=DEFAULT_USER_ID,
+        text="Highlight 2",
+        page=20,
+        datetime_str="2024-01-15 15:00:00",
+    )
+    return BookWithHighlights(book=book, highlights=[highlight1, highlight2])
+
+
+@pytest.fixture
+def book_with_chapter_and_highlight(db_session: Session) -> BookWithChapterAndHighlights:
+    book = create_test_book(
+        db_session=db_session,
+        user_id=DEFAULT_USER_ID,
+        title="Test Book",
+        author="Test Author",
+        isbn="1234567890",
+    )
+    chapter = models.Chapter(book_id=book.id, name="Chapter 1")
+    db_session.add(chapter)
+    db_session.commit()
+    db_session.refresh(chapter)
+
+    highlight = create_test_highlight(
+        db_session=db_session,
+        book=book,
+        user_id=DEFAULT_USER_ID,
+        chapter_id=chapter.id,
+        text="Test highlight",
+        page=10,
+        datetime_str="2024-01-15 14:30:22",
+    )
+    return BookWithChapterAndHighlights(book=book, chapter=chapter, highlights=[highlight])
+
+
+@pytest.fixture
+def book_with_soft_deleted_highlight(db_session: Session) -> BookWithHighlights:
+    book = create_test_book(
+        db_session=db_session,
+        user_id=DEFAULT_USER_ID,
+        title="Test Book",
+        author="Test Author",
+        isbn="1234567890",
+    )
+    highlight = create_test_highlight(
+        db_session=db_session,
+        book=book,
+        user_id=DEFAULT_USER_ID,
+        text="Deleted Highlight",
+        page=10,
+        datetime_str="2024-01-15 14:30:22",
+        deleted_at=datetime.now(UTC),
+    )
+    return BookWithHighlights(book=book, highlights=[highlight])
+
+
 class TestDeleteBook:
     """Test suite for DELETE /books/:id endpoint."""
 
-    def test_delete_book_success(self, client: TestClient, db_session: Session) -> None:
+    def test_delete_book_success(
+        self,
+        client: TestClient,
+        db_session: Session,
+        book_with_chapter_and_highlight: BookWithChapterAndHighlights,
+    ) -> None:
         """Test successful deletion of a book."""
-        # Create a book with chapters and highlights
-        book = create_test_book(
-            db_session=db_session,
-            user_id=DEFAULT_USER_ID,
-            title="Test Book",
-            author="Test Author",
-            isbn="1234567890",
-        )
+        book = book_with_chapter_and_highlight.book
 
-        chapter = models.Chapter(book_id=book.id, name="Chapter 1")
-        db_session.add(chapter)
-        db_session.commit()
-        db_session.refresh(chapter)
-
-        create_test_highlight(
-            db_session=db_session,
-            book=book,
-            user_id=DEFAULT_USER_ID,
-            chapter_id=chapter.id,
-            text="Test highlight",
-            page=10,
-            datetime_str="2024-01-15 14:30:22",
-        )
-
-        # Delete the book
         response = client.delete(f"/api/v1/books/{book.id}")
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -61,7 +170,7 @@ class TestDeleteBook:
         highlights = db_session.query(models.Highlight).filter_by(book_id=book.id).all()
         assert len(highlights) == 0
 
-    def test_delete_book_not_found(self, client: TestClient, db_session: Session) -> None:
+    def test_delete_book_not_found(self, client: TestClient) -> None:
         """Test deletion of non-existent book."""
         response = client.delete("/api/v1/books/99999")
 
@@ -70,7 +179,7 @@ class TestDeleteBook:
         assert "not found" in data["message"].lower()
         assert data["book_id"] == 99999
 
-    def test_delete_book_empty_database(self, client: TestClient, db_session: Session) -> None:
+    def test_delete_book_empty_database(self, client: TestClient) -> None:
         """Test deletion when database is empty."""
         response = client.delete("/api/v1/books/1")
 
@@ -80,34 +189,16 @@ class TestDeleteBook:
 class TestDeleteHighlights:
     """Test suite for DELETE /books/:id/highlight endpoint."""
 
-    def test_delete_highlights_success(self, client: TestClient, db_session: Session) -> None:
+    def test_delete_highlights_success(
+        self,
+        client: TestClient,
+        db_session: Session,
+        book_with_highlights: BookWithHighlights,
+    ) -> None:
         """Test successful soft deletion of highlights."""
-        # Create a book with highlights
-        book = create_test_book(
-            db_session=db_session,
-            user_id=DEFAULT_USER_ID,
-            title="Test Book",
-            author="Test Author",
-        )
+        book = book_with_highlights.book
+        highlight1, highlight2 = book_with_highlights.highlights
 
-        highlight1 = create_test_highlight(
-            db_session=db_session,
-            book=book,
-            user_id=DEFAULT_USER_ID,
-            text="Highlight 1",
-            page=10,
-            datetime_str="2024-01-15 14:30:22",
-        )
-        highlight2 = create_test_highlight(
-            db_session=db_session,
-            book=book,
-            user_id=DEFAULT_USER_ID,
-            text="Highlight 2",
-            page=20,
-            datetime_str="2024-01-15 15:00:00",
-        )
-
-        # Delete highlights
         payload = {"highlight_ids": [highlight1.id, highlight2.id]}
         response = client.request(
             "DELETE", f"/api/v1/books/{book.id}/highlight", content=json.dumps(payload)
@@ -125,34 +216,16 @@ class TestDeleteHighlights:
         assert highlight1.deleted_at is not None
         assert highlight2.deleted_at is not None
 
-    def test_delete_highlights_partial(self, client: TestClient, db_session: Session) -> None:
+    def test_delete_highlights_partial(
+        self,
+        client: TestClient,
+        db_session: Session,
+        book_with_highlights: BookWithHighlights,
+    ) -> None:
         """Test deletion of subset of highlights."""
-        # Create a book with highlights
-        book = create_test_book(
-            db_session=db_session,
-            user_id=DEFAULT_USER_ID,
-            title="Test Book",
-            author="Test Author",
-        )
+        book = book_with_highlights.book
+        highlight1, highlight2 = book_with_highlights.highlights
 
-        highlight1 = create_test_highlight(
-            db_session=db_session,
-            book=book,
-            user_id=DEFAULT_USER_ID,
-            text="Highlight 1",
-            page=10,
-            datetime_str="2024-01-15 14:30:22",
-        )
-        highlight2 = create_test_highlight(
-            db_session=db_session,
-            book=book,
-            user_id=DEFAULT_USER_ID,
-            text="Highlight 2",
-            page=20,
-            datetime_str="2024-01-15 15:00:00",
-        )
-
-        # Delete only first highlight
         payload = {"highlight_ids": [highlight1.id]}
         response = client.request(
             "DELETE", f"/api/v1/books/{book.id}/highlight", content=json.dumps(payload)
@@ -169,29 +242,14 @@ class TestDeleteHighlights:
         assert highlight2.deleted_at is None
 
     def test_delete_highlights_already_deleted(
-        self, client: TestClient, db_session: Session
+        self,
+        client: TestClient,
+        book_with_soft_deleted_highlight: BookWithHighlights,
     ) -> None:
         """Test deletion of already soft-deleted highlights."""
-        # Create a book with highlights
-        book = create_test_book(
-            db_session=db_session,
-            user_id=DEFAULT_USER_ID,
-            title="Test Book",
-            author="Test Author",
-        )
+        book = book_with_soft_deleted_highlight.book
+        highlight = book_with_soft_deleted_highlight.highlights[0]
 
-        # Create a highlight and soft-delete it
-        highlight = create_test_highlight(
-            db_session=db_session,
-            book=book,
-            user_id=DEFAULT_USER_ID,
-            text="Deleted Highlight",
-            page=10,
-            datetime_str="2024-01-15 14:30:22",
-            deleted_at=datetime.now(UTC),
-        )
-
-        # Try to delete it again
         payload = {"highlight_ids": [highlight.id]}
         response = client.request(
             "DELETE", f"/api/v1/books/{book.id}/highlight", content=json.dumps(payload)
@@ -203,7 +261,7 @@ class TestDeleteHighlights:
 
     def test_delete_highlights_wrong_book(self, client: TestClient, db_session: Session) -> None:
         """Test deletion of highlights with wrong book ID."""
-        # Create two books with highlights
+        # Create two books - this test needs specific setup for cross-book verification
         book1 = create_test_book(
             db_session=db_session,
             user_id=DEFAULT_USER_ID,
@@ -240,9 +298,7 @@ class TestDeleteHighlights:
         db_session.refresh(highlight1)
         assert highlight1.deleted_at is None
 
-    def test_delete_highlights_book_not_found(
-        self, client: TestClient, db_session: Session
-    ) -> None:
+    def test_delete_highlights_book_not_found(self, client: TestClient) -> None:
         """Test deletion of highlights for non-existent book."""
         payload = {"highlight_ids": [1, 2, 3]}
         response = client.request(
@@ -254,20 +310,11 @@ class TestDeleteHighlights:
         assert "not found" in data["message"].lower()
         assert data["book_id"] == 99999
 
-    def test_delete_highlights_empty_list(self, client: TestClient, db_session: Session) -> None:
+    def test_delete_highlights_empty_list(self, client: TestClient, test_book: models.Book) -> None:
         """Test deletion with empty highlight list."""
-        # Create a book
-        book = create_test_book(
-            db_session=db_session,
-            user_id=DEFAULT_USER_ID,
-            title="Test Book",
-            author="Test Author",
-        )
-
-        # Try to delete with empty list
         payload = {"highlight_ids": []}
         response = client.request(
-            "DELETE", f"/api/v1/books/{book.id}/highlight", content=json.dumps(payload)
+            "DELETE", f"/api/v1/books/{test_book.id}/highlight", content=json.dumps(payload)
         )
 
         # Should fail validation because of min_length=1
@@ -278,27 +325,13 @@ class TestHighlightSyncWithSoftDelete:
     """Test suite for highlight sync with soft-deleted highlights."""
 
     def test_sync_skips_soft_deleted_highlights(
-        self, client: TestClient, db_session: Session
+        self,
+        client: TestClient,
+        db_session: Session,
+        book_with_soft_deleted_highlight: BookWithHighlights,
     ) -> None:
         """Test that sync does not recreate soft-deleted highlights."""
-        # Create a book with a highlight and soft-delete it
-        book = create_test_book(
-            db_session=db_session,
-            user_id=DEFAULT_USER_ID,
-            title="Test Book",
-            author="Test Author",
-            isbn="1234567890",
-        )
-
-        create_test_highlight(
-            db_session=db_session,
-            book=book,
-            user_id=DEFAULT_USER_ID,
-            text="Deleted Highlight",
-            page=10,
-            datetime_str="2024-01-15 14:30:22",
-            deleted_at=datetime.now(UTC),
-        )
+        book = book_with_soft_deleted_highlight.book
 
         # Try to sync the same highlight again
         payload = {
@@ -332,7 +365,7 @@ class TestHighlightSyncWithSoftDelete:
         self, client: TestClient, db_session: Session
     ) -> None:
         """Test that sync creates new highlights but skips deleted ones."""
-        # Create a book with a soft-deleted highlight
+        # This test needs specific book without ISBN to test author-based matching
         book = create_test_book(
             db_session=db_session,
             user_id=DEFAULT_USER_ID,
@@ -394,22 +427,15 @@ class TestGetBookDetails:
     """Test suite for GET /books/:id endpoint to verify soft-delete filtering."""
 
     def test_get_book_details_excludes_deleted_highlights(
-        self, client: TestClient, db_session: Session
+        self,
+        client: TestClient,
+        db_session: Session,
+        book_with_chapter: BookWithChapter,
     ) -> None:
         """Test that book details endpoint excludes soft-deleted highlights."""
-        # Create a book with both active and deleted highlights
-        book = create_test_book(
-            db_session=db_session,
-            user_id=DEFAULT_USER_ID,
-            title="Test Book",
-            author="Test Author",
-        )
+        book, chapter = book_with_chapter
 
-        chapter = models.Chapter(book_id=book.id, name="Chapter 1")
-        db_session.add(chapter)
-        db_session.commit()
-        db_session.refresh(chapter)
-
+        # Add active and deleted highlights to the chapter
         create_test_highlight(
             db_session=db_session,
             book=book,
@@ -430,7 +456,6 @@ class TestGetBookDetails:
             deleted_at=datetime.now(UTC),
         )
 
-        # Get book details
         response = client.get(f"/api/v1/books/{book.id}")
 
         assert response.status_code == status.HTTP_200_OK
@@ -442,21 +467,13 @@ class TestGetBookDetails:
         assert data["chapters"][0]["highlights"][0]["text"] == "Active Highlight"
 
     def test_get_book_details_includes_highlight_tags(
-        self, client: TestClient, db_session: Session
+        self,
+        client: TestClient,
+        db_session: Session,
+        book_with_chapter: BookWithChapter,
     ) -> None:
         """Test that book details endpoint includes highlight tags for each highlight."""
-        # Create a book with a chapter and highlight
-        book = create_test_book(
-            db_session=db_session,
-            user_id=DEFAULT_USER_ID,
-            title="Test Book",
-            author="Test Author",
-        )
-
-        chapter = models.Chapter(book_id=book.id, name="Chapter 1")
-        db_session.add(chapter)
-        db_session.commit()
-        db_session.refresh(chapter)
+        book, chapter = book_with_chapter
 
         highlight = create_test_highlight(
             db_session=db_session,
@@ -481,7 +498,6 @@ class TestGetBookDetails:
         highlight.highlight_tags.append(tag2)
         db_session.commit()
 
-        # Get book details
         response = client.get(f"/api/v1/books/{book.id}")
 
         assert response.status_code == status.HTTP_200_OK

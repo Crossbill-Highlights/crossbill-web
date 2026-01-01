@@ -204,9 +204,7 @@ class TestDeleteBookmark:
         deleted_bookmark = db_session.query(models.Bookmark).filter_by(id=bookmark_id).first()
         assert deleted_bookmark is None
 
-    def test_delete_bookmark_idempotent(
-        self, client: TestClient, test_book: models.Book
-    ) -> None:
+    def test_delete_bookmark_idempotent(self, client: TestClient, test_book: models.Book) -> None:
         """Test that deleting a non-existent bookmark is idempotent (returns 200)."""
         response = client.delete(f"/api/v1/books/{test_book.id}/bookmarks/99999")
 
@@ -332,9 +330,7 @@ class TestBookDetailsWithBookmarks:
             assert "created_at" in bookmark
             assert bookmark["book_id"] == test_book.id
 
-    def test_book_details_empty_bookmarks(
-        self, client: TestClient, test_book: models.Book
-    ) -> None:
+    def test_book_details_empty_bookmarks(self, client: TestClient, test_book: models.Book) -> None:
         """Test that GET /books/:id returns empty bookmarks list when no bookmarks exist."""
         response = client.get(f"/api/v1/books/{test_book.id}")
 
