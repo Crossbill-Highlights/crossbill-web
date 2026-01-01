@@ -15,7 +15,10 @@ from src.database import Base, get_db
 from src.main import app
 from src.models import (
     Book,
+    Flashcard,
     Highlight,
+    HighlightTag,
+    HighlightTagGroup,
     User,
 )
 from src.services.auth_service import get_current_user
@@ -156,3 +159,66 @@ def client(db_session: Session, test_user: User) -> Generator[TestClient, Any, N
         yield test_client
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def test_book(db_session: Session, test_user: User) -> Book:
+    """Create a standard test book."""
+    return create_test_book(
+        db_session=db_session,
+        user_id=test_user.id,
+        title="Test Book",
+        author="Test Author",
+    )
+
+
+@pytest.fixture
+def test_highlight(db_session: Session, test_book: Book, test_user: User) -> Highlight:
+    """Create a standard test highlight attached to test_book."""
+    return create_test_highlight(
+        db_session=db_session,
+        book=test_book,
+        user_id=test_user.id,
+        text="Test highlight text",
+        page=10,
+        datetime_str="2024-01-15 14:30:22",
+    )
+
+
+@pytest.fixture
+def test_flashcard(db_session: Session, test_book: Book, test_user: User) -> Flashcard:
+    """Create a standard test flashcard attached to test_book."""
+    flashcard = Flashcard(
+        user_id=test_user.id,
+        book_id=test_book.id,
+        question="Test question",
+        answer="Test answer",
+    )
+    db_session.add(flashcard)
+    db_session.commit()
+    db_session.refresh(flashcard)
+    return flashcard
+
+
+@pytest.fixture
+def test_tag_group(db_session: Session, test_book: Book) -> HighlightTagGroup:
+    """Create a standard test tag group attached to test_book."""
+    tag_group = HighlightTagGroup(book_id=test_book.id, name="Test Group")
+    db_session.add(tag_group)
+    db_session.commit()
+    db_session.refresh(tag_group)
+    return tag_group
+
+
+@pytest.fixture
+def test_highlight_tag(db_session: Session, test_book: Book, test_user: User) -> HighlightTag:
+    """Create a standard test highlight tag attached to test_book."""
+    tag = HighlightTag(
+        book_id=test_book.id,
+        user_id=test_user.id,
+        name="Test Tag",
+    )
+    db_session.add(tag)
+    db_session.commit()
+    db_session.refresh(tag)
+    return tag
