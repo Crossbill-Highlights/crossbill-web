@@ -62,6 +62,13 @@ from src.schemas.highlight_tag_schemas import (
     HighlightTagsResponse,
     HighlightTagUpdateRequest,
 )
+from src.schemas.reading_session_schemas import (
+    ReadingSession,
+    ReadingSessionsResponse,
+    ReadingSessionUploadItem,
+    ReadingSessionUploadRequest,
+    ReadingSessionUploadResponse,
+)
 from src.schemas.tag_schemas import BookUpdateRequest, Tag
 from src.schemas.user_schemas import UserDetailsResponse, UserRegisterRequest, UserUpdateRequest
 
@@ -116,6 +123,11 @@ __all__ = [
     "HighlightTagsResponse",
     "HighlightUploadRequest",
     "HighlightUploadResponse",
+    "ReadingSession",
+    "ReadingSessionUploadItem",
+    "ReadingSessionUploadRequest",
+    "ReadingSessionUploadResponse",
+    "ReadingSessionsResponse",
     "RecentlyViewedBooksResponse",
     "Tag",
     "TagInBook",

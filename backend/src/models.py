@@ -94,6 +94,9 @@ class User(Base):
     flashcards: Mapped[list["Flashcard"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    reading_sessions: Mapped[list["ReadingSession"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         """String representation of User."""
@@ -153,6 +156,9 @@ class Book(Base):
         back_populates="book", cascade="all, delete-orphan"
     )
     flashcards: Mapped[list["Flashcard"]] = relationship(
+        back_populates="book", cascade="all, delete-orphan"
+    )
+    reading_sessions: Mapped[list["ReadingSession"]] = relationship(
         back_populates="book", cascade="all, delete-orphan"
     )
 
@@ -430,4 +436,46 @@ class Flashcard(Base):
         """String representation of Flashcard."""
         return (
             f"<Flashcard(id={self.id}, book_id={self.book_id}, highlight_id={self.highlight_id})>"
+        )
+
+
+class ReadingSession(Base):
+    """ReadingSession model for tracking reading sessions from KOReader."""
+
+    __tablename__ = "reading_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    book_id: Mapped[int] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    start_time: Mapped[dt] = mapped_column(DateTime(timezone=True), nullable=False)
+    end_time: Mapped[dt] = mapped_column(DateTime(timezone=True), nullable=False)
+    start_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
+    end_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
+    start_page: Mapped[int | None] = mapped_column(nullable=True)
+    end_page: Mapped[int | None] = mapped_column(nullable=True)
+    device_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    content_hash: Mapped[str] = mapped_column(
+        String(64), nullable=False, index=True
+    )  # SHA-256 hash for deduplication
+    created_at: Mapped[dt] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship(back_populates="reading_sessions")
+    book: Mapped["Book"] = relationship(back_populates="reading_sessions")
+
+    # Unique constraint for deduplication: same content hash for same user
+    __table_args__ = (
+        UniqueConstraint("user_id", "content_hash", name="uq_reading_session_content_hash"),
+    )
+
+    def __repr__(self) -> str:
+        """String representation of ReadingSession."""
+        return (
+            f"<ReadingSession(id={self.id}, book_id={self.book_id}, start_time={self.start_time})>"
         )

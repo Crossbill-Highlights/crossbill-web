@@ -18,6 +18,7 @@ from src.services import (
 )
 from src.services.auth_service import get_current_user
 from src.services.highlight_service import HighlightService
+from src.services.reading_session_service import ReadingSessionService
 
 logger = logging.getLogger(__name__)
 
@@ -873,6 +874,45 @@ def get_flashcards_for_book(
         raise
     except Exception as e:
         logger.error(f"Failed to get flashcards for book {book_id}: {e!s}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred. Please try again later.",
+        ) from e
+
+
+@router.get(
+    "/{book_id}/reading_sessions",
+    response_model=schemas.ReadingSessionsResponse,
+    status_code=status.HTTP_200_OK,
+)
+def get_book_reading_sessions(
+    book_id: int,
+    db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
+    limit: int = Query(100, ge=1, le=1000, description="Maximum sessions to return"),
+    offset: int = Query(0, ge=0, description="Number of sessions to skip"),
+) -> schemas.ReadingSessionsResponse:
+    """
+    Get reading sessions for a specific book.
+
+    Returns reading sessions ordered by start time (newest first).
+
+    Args:
+        book_id: ID of the book
+        db: Database session
+        limit: Maximum number of sessions
+        offset: Pagination offset
+
+    Returns:
+        ReadingSessionsResponse with sessions list
+    """
+    try:
+        service = ReadingSessionService(db)
+        return service.get_reading_sessions_for_book(book_id, current_user.id, limit, offset)
+    except CrossbillError:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get reading sessions for book {book_id}: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again later.",

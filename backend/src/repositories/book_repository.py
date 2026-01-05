@@ -28,6 +28,16 @@ class BookRepository:
         )
         return self.db.execute(stmt).scalar_one_or_none()
 
+    def find_by_content_hashes(
+        self, content_hashes: list[str], user_id: int
+    ) -> Sequence[models.Book]:
+        """Find a books by its content hashes and user."""
+        stmt = select(models.Book).where(
+            models.Book.content_hash.in_(content_hashes),
+            models.Book.user_id == user_id,
+        )
+        return self.db.execute(stmt).scalars().all()
+
     def create(self, book_data: schemas.BookCreate, content_hash: str, user_id: int) -> models.Book:
         """Create a new book."""
         # Exclude keywords as they are handled separately via TagService
