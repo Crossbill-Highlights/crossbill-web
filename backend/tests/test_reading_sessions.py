@@ -410,6 +410,80 @@ class TestUploadReadingSessions:
         assert session.start_xpoint is None
         assert session.end_xpoint is None
 
+    def test_filter_sessions_with_same_pages_for_start_and_end(
+        self, client: TestClient, db_session: Session, test_book: models.Book
+    ) -> None:
+        response = client.post(
+            "/api/v1/reading_sessions/upload",
+            json={
+                "book": {"title": test_book.title, "author": test_book.author},
+                "sessions": [
+                    {
+                        "start_time": "2024-01-15T10:00:00Z",
+                        "end_time": "2024-01-15T11:00:00Z",
+                        "start_page": 10,
+                        "end_page": 10,
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        # Verify session was created with correct page positions
+        session = db_session.query(models.ReadingSession).first()
+        assert session is None
+
+    def test_filter_sessions_with_same_xpoints_for_start_and_end(
+        self, client: TestClient, db_session: Session, test_book: models.Book
+    ) -> None:
+        response = client.post(
+            "/api/v1/reading_sessions/upload",
+            json={
+                "book": {"title": test_book.title, "author": test_book.author},
+                "sessions": [
+                    {
+                        "start_time": "2024-01-15T10:00:00Z",
+                        "end_time": "2024-01-15T11:00:00Z",
+                        "start_xpoint": "foobar",
+                        "end_xpoint": "foobar",
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        # Verify session was created with correct page positions
+        session = db_session.query(models.ReadingSession).first()
+        assert session is None
+
+    def test_not_filter_sessions_with_same_pages_for_start_and_end_but_different_points(
+        self, client: TestClient, db_session: Session, test_book: models.Book
+    ) -> None:
+        response = client.post(
+            "/api/v1/reading_sessions/upload",
+            json={
+                "book": {"title": test_book.title, "author": test_book.author},
+                "sessions": [
+                    {
+                        "start_time": "2024-01-15T10:00:00Z",
+                        "end_time": "2024-01-15T11:00:00Z",
+                        "start_xpoint": "foo",
+                        "end_xpoint": "bar",
+                        "start_page": 10,
+                        "end_page": 10,
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        # Verify session was created with correct page positions
+        session = db_session.query(models.ReadingSession).first()
+        assert session is not None
+
     def test_upload_validation_failure_missing_required_field(
         self, client: TestClient, db_session: Session, test_book: models.Book
     ) -> None:

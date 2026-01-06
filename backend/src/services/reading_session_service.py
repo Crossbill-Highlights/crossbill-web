@@ -67,6 +67,11 @@ class ReadingSessionService:
 
         to_save: list[ReadingSessionBase] = []
 
+        # Filter away sessions where start and end points are the same
+        sessions = [
+            s for s in sessions if s.start_xpoint != s.end_xpoint or s.start_page != s.end_page
+        ]
+
         for session in sessions:
             session_hash = compute_reading_session_hash(
                 book_title=book_data.title,
