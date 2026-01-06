@@ -151,11 +151,12 @@ class TestUploadReadingSessions:
             json={
                 "sessions": [
                     {
-                        "book_title": test_book.title,
-                        "book_author": test_book.author,
+                        "book": {
+                            "title": test_book.title,
+                            "author": test_book.author,
+                        },
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
-                        "position_type": "xpoint",
                         "start_xpoint": "/body/div[1]/p[1]",
                         "end_xpoint": "/body/div[1]/p[50]",
                         "device_id": "kindle-123",
@@ -183,17 +184,19 @@ class TestUploadReadingSessions:
         assert session.start_xpoint == "/body/div[1]/p[1]"
         assert session.end_xpoint == "/body/div[1]/p[50]"
 
-    def test_upload_session_fails_if_book_not_exists(
+    def test_upload_session_creates_book_if_not_exists(
         self, client: TestClient, db_session: Session
     ) -> None:
-        """Test that sessions for non-existent books are marked as failed."""
+        """Test that sessions for non-existent books create the book."""
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "sessions": [
                     {
-                        "book_title": "Non-existent Book",
-                        "book_author": "Unknown Author",
+                        "book": {
+                            "title": "New Book",
+                            "author": "New Author",
+                        },
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 1,
@@ -205,20 +208,52 @@ class TestUploadReadingSessions:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["success"] is False
-        assert data["created_count"] == 0
-        assert data["failed_count"] == 1
-        assert len(data["failed_sessions"]) == 1
-        assert data["failed_sessions"][0]["error"] == "Book not found"
-        assert data["failed_sessions"][0]["book_title"] == "Non-existent Book"
+        assert data["success"] is True
+        assert data["created_count"] == 1
+        assert data["failed_count"] == 0
 
-        # Verify no book was created
-        book = db_session.query(models.Book).filter_by(title="Non-existent Book").first()
-        assert book is None
+        # Verify book was created
+        book = db_session.query(models.Book).filter_by(title="New Book").first()
+        assert book is not None
+        assert book.author == "New Author"
 
-        # Verify no session was created
-        sessions = db_session.query(models.ReadingSession).all()
-        assert len(sessions) == 0
+        # Verify session was created and linked to new book
+        session = db_session.query(models.ReadingSession).first()
+        assert session is not None
+        assert session.book_id == book.id
+
+    def test_upload_session_creates_book_with_keywords_as_tags(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """Test that keywords from book metadata are added as tags when book is created."""
+        response = client.post(
+            "/api/v1/reading_sessions/upload",
+            json={
+                "sessions": [
+                    {
+                        "book": {
+                            "title": "Tagged Book",
+                            "author": "Tag Author",
+                            "keywords": ["fiction", "adventure"],
+                        },
+                        "start_time": "2024-01-15T10:00:00Z",
+                        "end_time": "2024-01-15T11:00:00Z",
+                        "start_page": 1,
+                        "end_page": 10,
+                    }
+                ]
+            },
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["success"] is True
+
+        # Verify book was created with tags
+        book = db_session.query(models.Book).filter_by(title="Tagged Book").first()
+        assert book is not None
+        tag_names = {tag.name for tag in book.tags}
+        assert tag_names == {"fiction", "adventure"}
 
     def test_upload_session_uses_existing_book(
         self, client: TestClient, db_session: Session, test_book: models.Book
@@ -229,8 +264,10 @@ class TestUploadReadingSessions:
             json={
                 "sessions": [
                     {
-                        "book_title": test_book.title,
-                        "book_author": test_book.author,
+                        "book": {
+                            "title": test_book.title,
+                            "author": test_book.author,
+                        },
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 10,
@@ -262,8 +299,7 @@ class TestUploadReadingSessions:
             json={
                 "sessions": [
                     {
-                        "book_title": book1.title,
-                        "book_author": book1.author,
+                        "book": {"title": book1.title, "author": book1.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "device_id": "device-1",
@@ -271,8 +307,7 @@ class TestUploadReadingSessions:
                         "end_page": 15,
                     },
                     {
-                        "book_title": book1.title,
-                        "book_author": book1.author,
+                        "book": {"title": book1.title, "author": book1.author},
                         "start_time": "2024-01-16T10:00:00Z",
                         "end_time": "2024-01-16T11:00:00Z",
                         "device_id": "device-1",
@@ -280,8 +315,7 @@ class TestUploadReadingSessions:
                         "end_page": 20,
                     },
                     {
-                        "book_title": book2.title,
-                        "book_author": book2.author,
+                        "book": {"title": book2.title, "author": book2.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "device_id": "device-2",
@@ -305,25 +339,29 @@ class TestUploadReadingSessions:
         assert book2_sessions[0].start_page == 1
         assert book2_sessions[0].end_page == 5
 
-    def test_upload_mixed_existing_and_missing_books(
+    def test_upload_mixed_existing_and_new_books(
         self, client: TestClient, db_session: Session, test_book: models.Book
     ) -> None:
-        """Test that sessions for existing books are created while missing books are skipped."""
+        """Test that sessions for existing and new books all succeed."""
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "sessions": [
                     {
-                        "book_title": test_book.title,
-                        "book_author": test_book.author,
+                        "book": {
+                            "title": test_book.title,
+                            "author": test_book.author,
+                        },
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 10,
                         "end_page": 15,
                     },
                     {
-                        "book_title": "Missing Book",
-                        "book_author": "Unknown Author",
+                        "book": {
+                            "title": "New Book",
+                            "author": "New Author",
+                        },
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 10,
@@ -334,13 +372,18 @@ class TestUploadReadingSessions:
         )
 
         assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["success"] is True
+        assert data["created_count"] == 2
+        assert data["failed_count"] == 0
 
-        # Verify only the session for the existing book was created
+        # Verify both sessions were created
         sessions = db_session.query(models.ReadingSession).all()
-        assert len(sessions) == 1
-        assert sessions[0].book_id == test_book.id
-        assert sessions[0].start_page == 10
-        assert sessions[0].end_page == 15
+        assert len(sessions) == 2
+
+        # Verify new book was created
+        new_book = db_session.query(models.Book).filter_by(title="New Book").first()
+        assert new_book is not None
 
     def test_upload_duplicate_sessions_skipped(
         self, client: TestClient, db_session: Session, test_book: models.Book
@@ -349,8 +392,7 @@ class TestUploadReadingSessions:
         session_data = {
             "sessions": [
                 {
-                    "book_title": test_book.title,
-                    "book_author": test_book.author,
+                    "book": {"title": test_book.title, "author": test_book.author},
                     "start_time": "2024-01-15T10:00:00Z",
                     "end_time": "2024-01-15T11:00:00Z",
                     "device_id": "kindle-123",
@@ -387,8 +429,7 @@ class TestUploadReadingSessions:
             json={
                 "sessions": [
                     {
-                        "book_title": test_book.title,
-                        "book_author": test_book.author,
+                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "device_id": "device-1",
@@ -396,8 +437,7 @@ class TestUploadReadingSessions:
                         "end_page": 15,
                     },
                     {
-                        "book_title": test_book.title,
-                        "book_author": test_book.author,
+                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "device_id": "device-2",
@@ -425,11 +465,9 @@ class TestUploadReadingSessions:
             json={
                 "sessions": [
                     {
-                        "book_title": test_book.title,
-                        "book_author": test_book.author,
+                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
-                        "position_type": "page",
                         "start_page": 10,
                         "end_page": 25,
                     }
@@ -457,8 +495,7 @@ class TestUploadReadingSessions:
             json={
                 "sessions": [
                     {
-                        # Missing book_title
-                        "book_author": test_book.author,
+                        # Missing book field entirely
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 10,
@@ -477,7 +514,7 @@ class TestUploadReadingSessions:
 
         failed = data["failed_sessions"][0]
         assert failed["index"] == 0
-        assert "book_title" in failed["error"]
+        assert "book" in failed["error"]
 
     def test_upload_validation_failure_missing_positions(
         self, client: TestClient, db_session: Session, test_book: models.Book
@@ -488,8 +525,7 @@ class TestUploadReadingSessions:
             json={
                 "sessions": [
                     {
-                        "book_title": test_book.title,
-                        "book_author": test_book.author,
+                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         # Missing both xpoint and page positions
@@ -520,8 +556,7 @@ class TestUploadReadingSessions:
                 "sessions": [
                     # Valid session
                     {
-                        "book_title": test_book.title,
-                        "book_author": test_book.author,
+                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 10,
@@ -529,16 +564,14 @@ class TestUploadReadingSessions:
                     },
                     # Invalid session (missing positions)
                     {
-                        "book_title": test_book.title,
-                        "book_author": test_book.author,
+                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-16T10:00:00Z",
                         "end_time": "2024-01-16T11:00:00Z",
                         # Missing positions
                     },
                     # Another valid session
                     {
-                        "book_title": test_book.title,
-                        "book_author": test_book.author,
+                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-17T10:00:00Z",
                         "end_time": "2024-01-17T11:00:00Z",
                         "start_page": 26,
@@ -565,24 +598,22 @@ class TestUploadReadingSessions:
     def test_upload_mixed_failures_and_successes(
         self, client: TestClient, db_session: Session, test_book: models.Book
     ) -> None:
-        """Test upload with validation failures, missing books, and successes."""
+        """Test upload with validation failures and successes (including book creation)."""
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "sessions": [
                     # Valid session for existing book
                     {
-                        "book_title": test_book.title,
-                        "book_author": test_book.author,
+                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 10,
                         "end_page": 25,
                     },
-                    # Session for non-existent book (failed)
+                    # Session for new book (will be created)
                     {
-                        "book_title": "Non-existent Book",
-                        "book_author": "Unknown Author",
+                        "book": {"title": "New Book", "author": "New Author"},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 1,
@@ -590,8 +621,7 @@ class TestUploadReadingSessions:
                     },
                     # Invalid session (validation failure)
                     {
-                        "book_title": test_book.title,
-                        "book_author": test_book.author,
+                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "not-a-date",  # Invalid datetime
                         "end_time": "2024-01-16T11:00:00Z",
                         "start_page": 10,
@@ -604,20 +634,21 @@ class TestUploadReadingSessions:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["success"] is False  # Has failures
-        assert data["created_count"] == 1
-        assert data["failed_count"] == 2  # Both missing book and validation failure
+        assert data["created_count"] == 2  # Both valid sessions created
+        assert data["failed_count"] == 1  # Only validation failure
 
-        # Verify failure details - both failures should be reported
-        failed_by_index = {f["index"]: f for f in data["failed_sessions"]}
-        assert 1 in failed_by_index  # Non-existent book
-        assert failed_by_index[1]["error"] == "Book not found"
-        assert 2 in failed_by_index  # Validation failure
-        assert "start_time" in failed_by_index[2]["error"]
+        # Verify only validation failure is reported
+        assert len(data["failed_sessions"]) == 1
+        assert data["failed_sessions"][0]["index"] == 2
+        assert "start_time" in data["failed_sessions"][0]["error"]
 
-        # Verify only one session was created
+        # Verify both valid sessions were created
         sessions = db_session.query(models.ReadingSession).all()
-        assert len(sessions) == 1
-        assert sessions[0].book_id == test_book.id
+        assert len(sessions) == 2
+
+        # Verify new book was created
+        new_book = db_session.query(models.Book).filter_by(title="New Book").first()
+        assert new_book is not None
 
     def test_upload_invalid_datetime_format(
         self, client: TestClient, db_session: Session, test_book: models.Book
@@ -628,8 +659,7 @@ class TestUploadReadingSessions:
             json={
                 "sessions": [
                     {
-                        "book_title": test_book.title,
-                        "book_author": test_book.author,
+                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "invalid-date",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 10,

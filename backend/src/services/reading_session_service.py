@@ -14,6 +14,7 @@ from src.schemas.reading_session_schemas import (
     ReadingSessionBase,
     ReadingSessionUploadItem,
 )
+from src.services.book_service import BookService
 from src.utils import compute_book_hash, compute_reading_session_hash
 
 logger = structlog.get_logger(__name__)
@@ -39,12 +40,9 @@ class ReadingSessionService:
         This method:
         1. Validates each session individually
         2. Groups valid sessions by book (title+author)
-        3. Finds existing books by content hash (fails sessions for unknown books)
+        3. Gets or creates books by content hash (with keywords as tags)
         4. Bulk creates sessions with deduplication
         5. Returns detailed statistics including failures
-
-        Note: Books are NOT created by this method. Sessions for books that don't
-        exist yet are marked as failed. Books are created via highlight upload.
 
         Args:
             sessions: list of raw session dicts (validated per-item)
@@ -67,21 +65,26 @@ class ReadingSessionService:
                 session = ReadingSessionUploadItem.model_validate(raw_session)
                 validated_sessions.append((index, session))
             except ValidationError as e:
+                book_data = (
+                    raw_session.get("book", {}) if isinstance(raw_session.get("book"), dict) else {}
+                )
                 failed_sessions.append(
                     FailedSessionItem(
                         index=index,
                         error=self._format_validation_error(e),
-                        book_title=raw_session.get("book_title"),
-                        book_author=raw_session.get("book_author"),
+                        book_title=book_data.get("title"),
+                        book_author=book_data.get("author"),
                     )
                 )
 
-        # Step 2: Group validated sessions by book hash
+        # Step 2: Group validated sessions by book hash and track book data for creation
         sessions_by_book: dict[str, list[tuple[int, ReadingSessionUploadItem]]] = {}
+        book_data_by_hash: dict[str, schemas.BookCreate] = {}
         for index, session in validated_sessions:
-            book_hash = compute_book_hash(session.book_title, session.book_author)
+            book_hash = compute_book_hash(session.book.title, session.book.author)
             if book_hash not in sessions_by_book:
                 sessions_by_book[book_hash] = []
+                book_data_by_hash[book_hash] = session.book  # Store first occurrence
             sessions_by_book[book_hash].append((index, session))
 
         # Step 3: Look up existing books
@@ -91,38 +94,23 @@ class ReadingSessionService:
 
         # Step 4: Process each book group
         to_save: list[ReadingSessionBase] = []
+        book_service = BookService(self.db)
 
         for book_hash, book_sessions in sessions_by_book.items():
-            # TODO: This is hacky. In future we likely want to create missing books when sessions
-            # get uploaded.
-            # Mark sessions for non-existent books as failed
-            if book_hash not in books_by_hash:
-                first_session = book_sessions[0][1]
-                logger.debug(
-                    "failed_sessions_no_book",
-                    book_title=first_session.book_title,
-                    book_author=first_session.book_author,
-                    session_count=len(book_sessions),
-                )
-                for index, session in book_sessions:
-                    failed_sessions.append(
-                        FailedSessionItem(
-                            index=index,
-                            error="Book not found",
-                            book_title=session.book_title,
-                            book_author=session.book_author,
-                        )
-                    )
-                continue
-
-            book = books_by_hash[book_hash]
+            # Get or create book
+            if book_hash in books_by_hash:
+                book = books_by_hash[book_hash]
+            else:
+                book_data = book_data_by_hash[book_hash]
+                book, _ = book_service.create_book(book_data, user_id)
+                books_by_hash[book_hash] = book  # Cache for later
 
             for index, session in book_sessions:
                 try:
                     # Compute session hash for deduplication
                     session_hash = compute_reading_session_hash(
-                        book_title=session.book_title,
-                        book_author=session.book_author,
+                        book_title=session.book.title,
+                        book_author=session.book.author,
                         start_time=session.start_time.isoformat(),
                         device_id=session.device_id,
                     )
@@ -145,8 +133,8 @@ class ReadingSessionService:
                         FailedSessionItem(
                             index=index,
                             error=self._format_validation_error(e),
-                            book_title=session.book_title,
-                            book_author=session.book_author,
+                            book_title=session.book.title,
+                            book_author=session.book.author,
                         )
                     )
 

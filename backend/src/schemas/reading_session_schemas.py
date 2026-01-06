@@ -1,9 +1,11 @@
 """Pydantic schemas for Reading Session API request/response validation."""
 
 from datetime import datetime as dt
-from typing import Any, Self
+from typing import Self
 
 from pydantic import BaseModel, Field, model_validator
+
+from src.schemas.book_schemas import BookCreate
 
 
 class ReadingSessionBase(BaseModel):
@@ -44,8 +46,7 @@ class ReadingSession(ReadingSessionBase):
 class ReadingSessionUploadItem(BaseModel):
     """Schema for a single reading session in the upload request."""
 
-    book_title: str = Field(..., min_length=1, description="Book title")
-    book_author: str | None = Field(None, description="Book author")
+    book: BookCreate = Field(..., description="Book metadata")
     start_time: dt = Field(..., description="Session start timestamp")
     end_time: dt = Field(..., description="Session end timestamp")
     start_xpoint: str | None = Field(None, description="Start position (xpoint string)")
@@ -58,7 +59,7 @@ class ReadingSessionUploadItem(BaseModel):
 class ReadingSessionUploadRequest(BaseModel):
     """Schema for uploading reading sessions from KOReader (bulk upload)."""
 
-    sessions: list[dict[str, Any]] = Field(
+    sessions: list[ReadingSessionUploadItem] = Field(
         ..., min_length=1, description="List of reading sessions to upload (validated per-item)"
     )
 

@@ -12,6 +12,7 @@ from src import models, repositories, schemas
 from src.exceptions import BookNotFoundError
 from src.schemas.highlight_schemas import ChapterWithHighlights
 from src.services.tag_service import TagService
+from src.utils import compute_book_hash
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,26 @@ class BookService:
         self.highlight_tag_repo = repositories.HighlightTagRepository(db)
         self.bookmark_repo = repositories.BookmarkRepository(db)
         self.flashcard_repo = repositories.FlashcardRepository(db)
+
+    def create_book(self, book_data: schemas.BookCreate, user_id: int) -> tuple[models.Book, bool]:
+        """
+        Get or create a book based on title+author hash.
+
+        Args:
+            book_data: Book creation data
+            user_id: ID of the user
+
+        Returns:
+            tuple[Book, bool]: (book, created) where created is True if new book was created
+        """
+        book_hash = compute_book_hash(book_data.title, book_data.author)
+        book, created = self.book_repo.get_or_create(book_data, book_hash, user_id)
+
+        if created and book_data.keywords:
+            tag_service = TagService(self.db)
+            tag_service.add_book_tags(book.id, book_data.keywords, user_id)
+
+        return book, created
 
     def _group_highlights_by_chapter(
         self, highlights: Sequence[models.Highlight]
