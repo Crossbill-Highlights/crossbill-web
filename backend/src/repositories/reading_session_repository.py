@@ -25,7 +25,7 @@ class ReadingSessionRepository:
         self,
         user_id: int,
         sessions: list[ReadingSessionBase],
-    ) -> None:
+    ) -> int:
         """
         Bulk create reading sessions with deduplication.
 
@@ -34,8 +34,11 @@ class ReadingSessionRepository:
             sessions: List of ReadingSessionBase instances.
 
         Returns:
-            tuple[int, int]: (created_count, skipped_count)
+            int: Number of sessions actually created (excludes duplicates)
         """
+        if not sessions:
+            return 0
+
         values = [
             {
                 "book_id": s.book_id,
@@ -64,12 +67,26 @@ class ReadingSessionRepository:
                 .on_conflict_do_nothing(index_elements=["user_id", "content_hash"])
                 .returning(models.ReadingSession.id)
             )
+            result = self.db.execute(stmt)
+            return len(result.fetchall())
 
-            self.db.execute(stmt)
-        elif dialect == "sqlite":
-            # Sqlite
-            stmt = insert(models.ReadingSession).values(values).prefix_with("OR IGNORE")
-            self.db.execute(stmt)
+        # Sqlite - count before and after to determine how many were inserted
+        count_before = self.db.execute(
+            select(func.count(models.ReadingSession.id)).where(
+                models.ReadingSession.user_id == user_id
+            )
+        ).scalar() or 0
+
+        stmt = insert(models.ReadingSession).values(values).prefix_with("OR IGNORE")
+        self.db.execute(stmt)
+
+        count_after = self.db.execute(
+            select(func.count(models.ReadingSession.id)).where(
+                models.ReadingSession.user_id == user_id
+            )
+        ).scalar() or 0
+
+        return count_after - count_before
 
     def get_by_book_id(
         self, book_id: int, user_id: int, limit: int = 100, offset: int = 0

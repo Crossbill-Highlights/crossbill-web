@@ -27,16 +27,17 @@ async def upload_reading_sessions(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.ReadingSessionUploadResponse:
     """
-    Upload reading sessions from KOReader.
+    Upload reading sessions from KOReader with per-item error handling.
+
+    Sessions are validated individually. Valid sessions are saved even if some
+    fail validation. The response includes detailed statistics and information
+    about any failures.
 
     Args:
         request: Upload request containing reading sessions
 
     Returns:
-        ReadingSessionUploadResponse with upload statistics
-
-    Raises:
-        HTTPException: If upload fails due to server error
+        ReadingSessionUploadResponse with upload statistics and failures
     """
     try:
         service = ReadingSessionService(db)

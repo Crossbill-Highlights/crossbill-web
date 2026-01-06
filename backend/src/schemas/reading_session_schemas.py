@@ -1,7 +1,7 @@
 """Pydantic schemas for Reading Session API request/response validation."""
 
 from datetime import datetime as dt
-from typing import Self
+from typing import Any, Self
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -58,9 +58,18 @@ class ReadingSessionUploadItem(BaseModel):
 class ReadingSessionUploadRequest(BaseModel):
     """Schema for uploading reading sessions from KOReader (bulk upload)."""
 
-    sessions: list[ReadingSessionUploadItem] = Field(
-        ..., min_length=1, description="List of reading sessions to upload"
+    sessions: list[dict[str, Any]] = Field(
+        ..., min_length=1, description="List of reading sessions to upload (validated per-item)"
     )
+
+
+class FailedSessionItem(BaseModel):
+    """Details about a session that failed validation."""
+
+    index: int = Field(..., description="Position in original request array")
+    error: str = Field(..., description="Human-readable error message")
+    book_title: str | None = Field(None, description="Book title for identification")
+    book_author: str | None = Field(None, description="Book author for identification")
 
 
 class ReadingSessionUploadResponse(BaseModel):
@@ -68,6 +77,17 @@ class ReadingSessionUploadResponse(BaseModel):
 
     success: bool = Field(..., description="Whether the upload was successful")
     message: str = Field(..., description="Response message")
+    created_count: int = Field(0, description="Number of sessions created")
+    skipped_no_book_count: int = Field(
+        0, description="Sessions skipped because book doesn't exist"
+    )
+    skipped_duplicate_count: int = Field(
+        0, description="Sessions skipped because already uploaded"
+    )
+    failed_count: int = Field(0, description="Number of sessions that failed validation")
+    failed_sessions: list[FailedSessionItem] = Field(
+        default_factory=list, description="Details of failed sessions"
+    )
 
 
 class ReadingSessionsResponse(BaseModel):
