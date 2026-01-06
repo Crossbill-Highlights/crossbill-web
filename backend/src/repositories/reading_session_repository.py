@@ -44,7 +44,7 @@ class ReadingSessionRepository:
                 "start_time": s.start_time,
                 "end_time": s.end_time,
                 "start_xpoint": s.start_xpoint,
-                "end_xpoint": s.start_xpoint,
+                "end_xpoint": s.end_xpoint,
                 "start_page": s.start_page,
                 "end_page": s.end_page,
                 "device_id": s.device_id,
