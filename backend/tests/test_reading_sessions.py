@@ -19,11 +19,6 @@ DEFAULT_USER_ID = 1
 # --- NamedTuples for composite fixtures ---
 
 
-class TwoBooks(NamedTuple):
-    book1: models.Book
-    book2: models.Book
-
-
 class BookWithSessions(NamedTuple):
     book: models.Book
     sessions: list[models.ReadingSession]
@@ -56,24 +51,6 @@ def test_reading_session(db_session: Session, test_book: models.Book) -> models.
         start_xpoint="/body/div[1]/p[1]",
         end_xpoint="/body/div[1]/p[50]",
     )
-
-
-@pytest.fixture
-def two_books(db_session: Session) -> TwoBooks:
-    """Create two test books for bulk upload tests."""
-    book1 = create_test_book(
-        db_session=db_session,
-        user_id=DEFAULT_USER_ID,
-        title="Book 1",
-        author="Author 1",
-    )
-    book2 = create_test_book(
-        db_session=db_session,
-        user_id=DEFAULT_USER_ID,
-        title="Book 2",
-        author="Author 2",
-    )
-    return TwoBooks(book1=book1, book2=book2)
 
 
 @pytest.fixture
@@ -149,19 +126,19 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
+                "book": {
+                    "title": test_book.title,
+                    "author": test_book.author,
+                },
                 "sessions": [
                     {
-                        "book": {
-                            "title": test_book.title,
-                            "author": test_book.author,
-                        },
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_xpoint": "/body/div[1]/p[1]",
                         "end_xpoint": "/body/div[1]/p[50]",
                         "device_id": "kindle-123",
                     }
-                ]
+                ],
             },
         )
 
@@ -170,8 +147,6 @@ class TestUploadReadingSessions:
         assert data["success"] is True
         assert data["created_count"] == 1
         assert data["skipped_duplicate_count"] == 0
-        assert data["failed_count"] == 0
-        assert data["failed_sessions"] == []
 
         # Verify session was created in database with correct values
         session = db_session.query(models.ReadingSession).first()
@@ -191,18 +166,18 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
+                "book": {
+                    "title": "New Book",
+                    "author": "New Author",
+                },
                 "sessions": [
                     {
-                        "book": {
-                            "title": "New Book",
-                            "author": "New Author",
-                        },
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 1,
                         "end_page": 10,
                     }
-                ]
+                ],
             },
         )
 
@@ -210,7 +185,6 @@ class TestUploadReadingSessions:
         data = response.json()
         assert data["success"] is True
         assert data["created_count"] == 1
-        assert data["failed_count"] == 0
 
         # Verify book was created
         book = db_session.query(models.Book).filter_by(title="New Book").first()
@@ -229,19 +203,19 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
+                "book": {
+                    "title": "Tagged Book",
+                    "author": "Tag Author",
+                    "keywords": ["fiction", "adventure"],
+                },
                 "sessions": [
                     {
-                        "book": {
-                            "title": "Tagged Book",
-                            "author": "Tag Author",
-                            "keywords": ["fiction", "adventure"],
-                        },
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 1,
                         "end_page": 10,
                     }
-                ]
+                ],
             },
         )
 
@@ -262,18 +236,18 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
+                "book": {
+                    "title": test_book.title,
+                    "author": test_book.author,
+                },
                 "sessions": [
                     {
-                        "book": {
-                            "title": test_book.title,
-                            "author": test_book.author,
-                        },
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 10,
                         "end_page": 15,
                     }
-                ]
+                ],
             },
         )
 
@@ -289,17 +263,15 @@ class TestUploadReadingSessions:
         assert len(books) == 1
 
     def test_upload_bulk_sessions_success(
-        self, client: TestClient, db_session: Session, two_books: TwoBooks
+        self, client: TestClient, db_session: Session, test_book: models.Book
     ) -> None:
-        """Test successful bulk upload of multiple sessions for existing books."""
-        book1, book2 = two_books
-
+        """Test successful bulk upload of multiple sessions for a single book."""
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
+                "book": {"title": test_book.title, "author": test_book.author},
                 "sessions": [
                     {
-                        "book": {"title": book1.title, "author": book1.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "device_id": "device-1",
@@ -307,7 +279,6 @@ class TestUploadReadingSessions:
                         "end_page": 15,
                     },
                     {
-                        "book": {"title": book1.title, "author": book1.author},
                         "start_time": "2024-01-16T10:00:00Z",
                         "end_time": "2024-01-16T11:00:00Z",
                         "device_id": "device-1",
@@ -315,91 +286,45 @@ class TestUploadReadingSessions:
                         "end_page": 20,
                     },
                     {
-                        "book": {"title": book2.title, "author": book2.author},
-                        "start_time": "2024-01-15T10:00:00Z",
-                        "end_time": "2024-01-15T11:00:00Z",
-                        "device_id": "device-2",
-                        "start_page": 1,
-                        "end_page": 5,
+                        "start_time": "2024-01-17T10:00:00Z",
+                        "end_time": "2024-01-17T11:00:00Z",
+                        "device_id": "device-1",
+                        "start_page": 21,
+                        "end_page": 25,
                     },
-                ]
-            },
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-
-        # Verify sessions were created with correct book associations
-        book1_sessions = db_session.query(models.ReadingSession).filter_by(book_id=book1.id).all()
-        book2_sessions = db_session.query(models.ReadingSession).filter_by(book_id=book2.id).all()
-        assert len(book1_sessions) == 2
-        assert len(book2_sessions) == 1
-
-        # Verify session details
-        assert book2_sessions[0].device_id == "device-2"
-        assert book2_sessions[0].start_page == 1
-        assert book2_sessions[0].end_page == 5
-
-    def test_upload_mixed_existing_and_new_books(
-        self, client: TestClient, db_session: Session, test_book: models.Book
-    ) -> None:
-        """Test that sessions for existing and new books all succeed."""
-        response = client.post(
-            "/api/v1/reading_sessions/upload",
-            json={
-                "sessions": [
-                    {
-                        "book": {
-                            "title": test_book.title,
-                            "author": test_book.author,
-                        },
-                        "start_time": "2024-01-15T10:00:00Z",
-                        "end_time": "2024-01-15T11:00:00Z",
-                        "start_page": 10,
-                        "end_page": 15,
-                    },
-                    {
-                        "book": {
-                            "title": "New Book",
-                            "author": "New Author",
-                        },
-                        "start_time": "2024-01-15T10:00:00Z",
-                        "end_time": "2024-01-15T11:00:00Z",
-                        "start_page": 10,
-                        "end_page": 15,
-                    },
-                ]
+                ],
             },
         )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["success"] is True
-        assert data["created_count"] == 2
-        assert data["failed_count"] == 0
+        assert data["created_count"] == 3
 
-        # Verify both sessions were created
-        sessions = db_session.query(models.ReadingSession).all()
-        assert len(sessions) == 2
+        # Verify all sessions were created for the same book
+        sessions = db_session.query(models.ReadingSession).filter_by(book_id=test_book.id).all()
+        assert len(sessions) == 3
 
-        # Verify new book was created
-        new_book = db_session.query(models.Book).filter_by(title="New Book").first()
-        assert new_book is not None
+        # Verify session details
+        assert sessions[0].device_id == "device-1"
+        assert sessions[0].start_page == 10
+        assert sessions[2].end_page == 25
 
     def test_upload_duplicate_sessions_skipped(
         self, client: TestClient, db_session: Session, test_book: models.Book
     ) -> None:
         """Test that duplicate sessions are skipped and reported in count."""
         session_data = {
+            "book": {"title": test_book.title, "author": test_book.author},
             "sessions": [
                 {
-                    "book": {"title": test_book.title, "author": test_book.author},
                     "start_time": "2024-01-15T10:00:00Z",
                     "end_time": "2024-01-15T11:00:00Z",
                     "device_id": "kindle-123",
                     "start_page": 10,
                     "end_page": 15,
                 }
-            ]
+            ],
         }
 
         # First upload
@@ -427,9 +352,9 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
+                "book": {"title": test_book.title, "author": test_book.author},
                 "sessions": [
                     {
-                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "device_id": "device-1",
@@ -437,14 +362,13 @@ class TestUploadReadingSessions:
                         "end_page": 15,
                     },
                     {
-                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "device_id": "device-2",
                         "start_page": 10,
                         "end_page": 15,
                     },
-                ]
+                ],
             },
         )
 
@@ -463,15 +387,15 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
+                "book": {"title": test_book.title, "author": test_book.author},
                 "sessions": [
                     {
-                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 10,
                         "end_page": 25,
                     }
-                ]
+                ],
             },
         )
 
@@ -489,74 +413,65 @@ class TestUploadReadingSessions:
     def test_upload_validation_failure_missing_required_field(
         self, client: TestClient, db_session: Session, test_book: models.Book
     ) -> None:
-        """Test that validation failures are reported with details."""
+        """Test that validation failures return 422 error."""
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
+                "book": {"title": test_book.title, "author": test_book.author},
                 "sessions": [
                     {
-                        # Missing book field entirely
-                        "start_time": "2024-01-15T10:00:00Z",
+                        # Missing required start_time field
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 10,
                         "end_page": 25,
                     }
-                ]
+                ],
             },
         )
 
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["success"] is False
-        assert data["created_count"] == 0
-        assert data["failed_count"] == 1
-        assert len(data["failed_sessions"]) == 1
+        # FastAPI validation error
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        failed = data["failed_sessions"][0]
-        assert failed["index"] == 0
-        assert "book" in failed["error"]
+        # Verify nothing was saved to database
+        sessions = db_session.query(models.ReadingSession).all()
+        assert len(sessions) == 0
 
     def test_upload_validation_failure_missing_positions(
         self, client: TestClient, db_session: Session, test_book: models.Book
     ) -> None:
-        """Test that sessions missing both position types fail validation."""
+        """Test that sessions missing both position types return 422 error."""
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
+                "book": {"title": test_book.title, "author": test_book.author},
                 "sessions": [
                     {
-                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         # Missing both xpoint and page positions
                     }
-                ]
+                ],
             },
         )
 
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["success"] is False
-        assert data["created_count"] == 0
-        assert data["failed_count"] == 1
+        # FastAPI validation error (caught by model validator)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        failed = data["failed_sessions"][0]
-        assert failed["index"] == 0
-        assert "start_xpoint" in failed["error"] or "start_page" in failed["error"]
-        assert failed["book_title"] == test_book.title
-        assert failed["book_author"] == test_book.author
+        # Verify nothing was saved to database
+        sessions = db_session.query(models.ReadingSession).all()
+        assert len(sessions) == 0
 
-    def test_upload_partial_success_with_validation_failures(
+    def test_upload_all_or_nothing_validation(
         self, client: TestClient, db_session: Session, test_book: models.Book
     ) -> None:
-        """Test that valid sessions are saved even when others fail."""
+        """Test that if any session is invalid, entire request fails and nothing is saved."""
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
+                "book": {"title": test_book.title, "author": test_book.author},
                 "sessions": [
                     # Valid session
                     {
-                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 10,
@@ -564,116 +479,53 @@ class TestUploadReadingSessions:
                     },
                     # Invalid session (missing positions)
                     {
-                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-16T10:00:00Z",
                         "end_time": "2024-01-16T11:00:00Z",
                         # Missing positions
                     },
                     # Another valid session
                     {
-                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "2024-01-17T10:00:00Z",
                         "end_time": "2024-01-17T11:00:00Z",
                         "start_page": 26,
                         "end_page": 40,
                     },
-                ]
+                ],
             },
         )
 
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["success"] is False  # Has failures
-        assert data["created_count"] == 2
-        assert data["failed_count"] == 1
+        # FastAPI rejects entire request with 422 if any session is invalid
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        # Verify the failed session details
-        assert len(data["failed_sessions"]) == 1
-        assert data["failed_sessions"][0]["index"] == 1  # Second session failed
-
-        # Verify only valid sessions were created
+        # Verify nothing was saved to database (all-or-nothing)
         sessions = db_session.query(models.ReadingSession).all()
-        assert len(sessions) == 2
-
-    def test_upload_mixed_failures_and_successes(
-        self, client: TestClient, db_session: Session, test_book: models.Book
-    ) -> None:
-        """Test upload with validation failures and successes (including book creation)."""
-        response = client.post(
-            "/api/v1/reading_sessions/upload",
-            json={
-                "sessions": [
-                    # Valid session for existing book
-                    {
-                        "book": {"title": test_book.title, "author": test_book.author},
-                        "start_time": "2024-01-15T10:00:00Z",
-                        "end_time": "2024-01-15T11:00:00Z",
-                        "start_page": 10,
-                        "end_page": 25,
-                    },
-                    # Session for new book (will be created)
-                    {
-                        "book": {"title": "New Book", "author": "New Author"},
-                        "start_time": "2024-01-15T10:00:00Z",
-                        "end_time": "2024-01-15T11:00:00Z",
-                        "start_page": 1,
-                        "end_page": 10,
-                    },
-                    # Invalid session (validation failure)
-                    {
-                        "book": {"title": test_book.title, "author": test_book.author},
-                        "start_time": "not-a-date",  # Invalid datetime
-                        "end_time": "2024-01-16T11:00:00Z",
-                        "start_page": 10,
-                        "end_page": 25,
-                    },
-                ]
-            },
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["success"] is False  # Has failures
-        assert data["created_count"] == 2  # Both valid sessions created
-        assert data["failed_count"] == 1  # Only validation failure
-
-        # Verify only validation failure is reported
-        assert len(data["failed_sessions"]) == 1
-        assert data["failed_sessions"][0]["index"] == 2
-        assert "start_time" in data["failed_sessions"][0]["error"]
-
-        # Verify both valid sessions were created
-        sessions = db_session.query(models.ReadingSession).all()
-        assert len(sessions) == 2
-
-        # Verify new book was created
-        new_book = db_session.query(models.Book).filter_by(title="New Book").first()
-        assert new_book is not None
+        assert len(sessions) == 0
 
     def test_upload_invalid_datetime_format(
         self, client: TestClient, db_session: Session, test_book: models.Book
     ) -> None:
-        """Test that invalid datetime format is reported as validation failure."""
+        """Test that invalid datetime format returns 422 error."""
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
+                "book": {"title": test_book.title, "author": test_book.author},
                 "sessions": [
                     {
-                        "book": {"title": test_book.title, "author": test_book.author},
                         "start_time": "invalid-date",
                         "end_time": "2024-01-15T11:00:00Z",
                         "start_page": 10,
                         "end_page": 25,
                     }
-                ]
+                ],
             },
         )
 
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["success"] is False
-        assert data["failed_count"] == 1
-        assert data["failed_sessions"][0]["book_title"] == test_book.title
+        # FastAPI validation error
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+        # Verify nothing was saved to database
+        sessions = db_session.query(models.ReadingSession).all()
+        assert len(sessions) == 0
 
 
 class TestGetBookReadingSessions:

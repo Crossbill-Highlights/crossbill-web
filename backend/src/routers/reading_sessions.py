@@ -27,21 +27,23 @@ async def upload_reading_sessions(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.ReadingSessionUploadResponse:
     """
-    Upload reading sessions from KOReader with per-item error handling.
+    Upload reading sessions from KOReader for a single book.
 
-    Sessions are validated individually. Valid sessions are saved even if some
-    fail validation. The response includes detailed statistics and information
-    about any failures.
+    All sessions in a request must be for the same book.
 
     Args:
-        request: Upload request containing reading sessions
+        request: Upload request containing book metadata and reading sessions
 
     Returns:
-        ReadingSessionUploadResponse with upload statistics and failures
+        ReadingSessionUploadResponse with upload statistics
     """
     try:
         service = ReadingSessionService(db)
-        return service.upload_reading_sessions(request.sessions, current_user.id)
+        return service.upload_reading_sessions(
+            book_data=request.book,
+            sessions=request.sessions,
+            user_id=current_user.id,
+        )
     except Exception as e:
         logger.error(f"Failed to upload reading sessions: {e!s}", exc_info=True)
         raise HTTPException(

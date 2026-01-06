@@ -43,10 +43,9 @@ class ReadingSession(ReadingSessionBase):
     model_config = {"from_attributes": True}
 
 
-class ReadingSessionUploadItem(BaseModel):
+class ReadingSessionUploadSessionItem(BaseModel):
     """Schema for a single reading session in the upload request."""
 
-    book: BookCreate = Field(..., description="Book metadata")
     start_time: dt = Field(..., description="Session start timestamp")
     end_time: dt = Field(..., description="Session end timestamp")
     start_xpoint: str | None = Field(None, description="Start position (xpoint string)")
@@ -55,35 +54,40 @@ class ReadingSessionUploadItem(BaseModel):
     end_page: int | None = Field(None, ge=0, description="End page for PDFs")
     device_id: str | None = Field(None, max_length=100, description="Device identifier")
 
+    @model_validator(mode="after")
+    def check_position_fields(self) -> Self:
+        """Validate that at least one position type is provided."""
+        has_xpoint = self.start_xpoint is not None and self.end_xpoint is not None
+        has_page = self.start_page is not None and self.end_page is not None
+
+        if not has_xpoint and not has_page:
+            raise ValueError(
+                "You must define at least either (start_xpoint & end_xpoint) "
+                "or (start_page & end_page)."
+            )
+        return self
+
 
 class ReadingSessionUploadRequest(BaseModel):
-    """Schema for uploading reading sessions from KOReader (bulk upload)."""
+    """Schema for uploading reading sessions from KOReader."""
 
-    sessions: list[ReadingSessionUploadItem] = Field(
-        ..., min_length=1, description="List of reading sessions to upload (validated per-item)"
+    book: BookCreate = Field(..., description="Book metadata for all sessions in this request")
+    sessions: list[ReadingSessionUploadSessionItem] = Field(
+        ..., min_length=1, description="List of reading sessions for this book"
     )
-
-
-class FailedSessionItem(BaseModel):
-    """Details about a session that failed validation."""
-
-    index: int = Field(..., description="Position in original request array")
-    error: str = Field(..., description="Human-readable error message")
-    book_title: str | None = Field(None, description="Book title for identification")
-    book_author: str | None = Field(None, description="Book author for identification")
 
 
 class ReadingSessionUploadResponse(BaseModel):
-    """Schema for reading session upload response."""
+    """Schema for reading session upload response.
 
-    success: bool = Field(..., description="Whether the upload was successful")
+    Note: If any session is invalid,
+    the entire request fails with 422 and this response is never returned.
+    """
+
+    success: bool = Field(..., description="Whether the upload was successful (always True)")
     message: str = Field(..., description="Response message")
     created_count: int = Field(0, description="Number of sessions created")
     skipped_duplicate_count: int = Field(0, description="Sessions skipped because already uploaded")
-    failed_count: int = Field(0, description="Number of sessions that failed")
-    failed_sessions: list[FailedSessionItem] = Field(
-        default_factory=list, description="Details of failed sessions"
-    )
 
 
 class ReadingSessionsResponse(BaseModel):
