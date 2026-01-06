@@ -71,20 +71,26 @@ class ReadingSessionRepository:
             return len(result.fetchall())
 
         # Sqlite - count before and after to determine how many were inserted
-        count_before = self.db.execute(
-            select(func.count(models.ReadingSession.id)).where(
-                models.ReadingSession.user_id == user_id
-            )
-        ).scalar() or 0
+        count_before = (
+            self.db.execute(
+                select(func.count(models.ReadingSession.id)).where(
+                    models.ReadingSession.user_id == user_id
+                )
+            ).scalar()
+            or 0
+        )
 
         stmt = insert(models.ReadingSession).values(values).prefix_with("OR IGNORE")
         self.db.execute(stmt)
 
-        count_after = self.db.execute(
-            select(func.count(models.ReadingSession.id)).where(
-                models.ReadingSession.user_id == user_id
-            )
-        ).scalar() or 0
+        count_after = (
+            self.db.execute(
+                select(func.count(models.ReadingSession.id)).where(
+                    models.ReadingSession.user_id == user_id
+                )
+            ).scalar()
+            or 0
+        )
 
         return count_after - count_before
 

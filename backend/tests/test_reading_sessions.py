@@ -168,7 +168,6 @@ class TestUploadReadingSessions:
         data = response.json()
         assert data["success"] is True
         assert data["created_count"] == 1
-        assert data["skipped_no_book_count"] == 0
         assert data["skipped_duplicate_count"] == 0
         assert data["failed_count"] == 0
         assert data["failed_sessions"] == []
@@ -184,10 +183,10 @@ class TestUploadReadingSessions:
         assert session.start_xpoint == "/body/div[1]/p[1]"
         assert session.end_xpoint == "/body/div[1]/p[50]"
 
-    def test_upload_session_skipped_if_book_not_exists(
+    def test_upload_session_fails_if_book_not_exists(
         self, client: TestClient, db_session: Session
     ) -> None:
-        """Test that sessions for non-existent books are skipped and reported."""
+        """Test that sessions for non-existent books are marked as failed."""
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
@@ -206,10 +205,12 @@ class TestUploadReadingSessions:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["success"] is True  # Skips are not failures
+        assert data["success"] is False
         assert data["created_count"] == 0
-        assert data["skipped_no_book_count"] == 1
-        assert data["failed_count"] == 0
+        assert data["failed_count"] == 1
+        assert len(data["failed_sessions"]) == 1
+        assert data["failed_sessions"][0]["error"] == "Book not found"
+        assert data["failed_sessions"][0]["book_title"] == "Non-existent Book"
 
         # Verify no book was created
         book = db_session.query(models.Book).filter_by(title="Non-existent Book").first()
@@ -561,7 +562,7 @@ class TestUploadReadingSessions:
         sessions = db_session.query(models.ReadingSession).all()
         assert len(sessions) == 2
 
-    def test_upload_mixed_failures_skips_and_successes(
+    def test_upload_mixed_failures_and_successes(
         self, client: TestClient, db_session: Session, test_book: models.Book
     ) -> None:
         """Test upload with validation failures, missing books, and successes."""
@@ -578,7 +579,7 @@ class TestUploadReadingSessions:
                         "start_page": 10,
                         "end_page": 25,
                     },
-                    # Session for non-existent book (skipped)
+                    # Session for non-existent book (failed)
                     {
                         "book_title": "Non-existent Book",
                         "book_author": "Unknown Author",
@@ -604,13 +605,14 @@ class TestUploadReadingSessions:
         data = response.json()
         assert data["success"] is False  # Has failures
         assert data["created_count"] == 1
-        assert data["skipped_no_book_count"] == 1
-        assert data["failed_count"] == 1
+        assert data["failed_count"] == 2  # Both missing book and validation failure
 
-        # Verify failure details
-        failed = data["failed_sessions"][0]
-        assert failed["index"] == 2
-        assert "start_time" in failed["error"]
+        # Verify failure details - both failures should be reported
+        failed_by_index = {f["index"]: f for f in data["failed_sessions"]}
+        assert 1 in failed_by_index  # Non-existent book
+        assert failed_by_index[1]["error"] == "Book not found"
+        assert 2 in failed_by_index  # Validation failure
+        assert "start_time" in failed_by_index[2]["error"]
 
         # Verify only one session was created
         sessions = db_session.query(models.ReadingSession).all()

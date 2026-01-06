@@ -78,13 +78,8 @@ class ReadingSessionUploadResponse(BaseModel):
     success: bool = Field(..., description="Whether the upload was successful")
     message: str = Field(..., description="Response message")
     created_count: int = Field(0, description="Number of sessions created")
-    skipped_no_book_count: int = Field(
-        0, description="Sessions skipped because book doesn't exist"
-    )
-    skipped_duplicate_count: int = Field(
-        0, description="Sessions skipped because already uploaded"
-    )
-    failed_count: int = Field(0, description="Number of sessions that failed validation")
+    skipped_duplicate_count: int = Field(0, description="Sessions skipped because already uploaded")
+    failed_count: int = Field(0, description="Number of sessions that failed")
     failed_sessions: list[FailedSessionItem] = Field(
         default_factory=list, description="Details of failed sessions"
     )

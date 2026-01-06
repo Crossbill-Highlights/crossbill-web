@@ -39,12 +39,12 @@ class ReadingSessionService:
         This method:
         1. Validates each session individually
         2. Groups valid sessions by book (title+author)
-        3. Finds existing books by content hash (skips sessions for unknown books)
+        3. Finds existing books by content hash (fails sessions for unknown books)
         4. Bulk creates sessions with deduplication
         5. Returns detailed statistics including failures
 
         Note: Books are NOT created by this method. Sessions for books that don't
-        exist yet are skipped. Books are created via highlight upload.
+        exist yet are marked as failed. Books are created via highlight upload.
 
         Args:
             sessions: list of raw session dicts (validated per-item)
@@ -90,20 +90,29 @@ class ReadingSessionService:
         books_by_hash = {b.content_hash: b for b in books}
 
         # Step 4: Process each book group
-        sessions_skipped_no_book = 0
         to_save: list[ReadingSessionBase] = []
 
         for book_hash, book_sessions in sessions_by_book.items():
-            # Skip sessions for books that don't exist yet
+            # TODO: This is hacky. In future we likely want to create missing books when sessions
+            # get uploaded.
+            # Mark sessions for non-existent books as failed
             if book_hash not in books_by_hash:
-                sessions_skipped_no_book += len(book_sessions)
                 first_session = book_sessions[0][1]
                 logger.debug(
-                    "skipping_sessions_no_book",
+                    "failed_sessions_no_book",
                     book_title=first_session.book_title,
                     book_author=first_session.book_author,
                     session_count=len(book_sessions),
                 )
+                for index, session in book_sessions:
+                    failed_sessions.append(
+                        FailedSessionItem(
+                            index=index,
+                            error="Book not found",
+                            book_title=session.book_title,
+                            book_author=session.book_author,
+                        )
+                    )
                 continue
 
             book = books_by_hash[book_hash]
@@ -150,7 +159,6 @@ class ReadingSessionService:
         logger.info(
             "reading_session_upload_complete",
             created=created_count,
-            skipped_no_book=sessions_skipped_no_book,
             skipped_duplicate=skipped_duplicate_count,
             failed=len(failed_sessions),
         )
@@ -159,12 +167,10 @@ class ReadingSessionService:
             success=len(failed_sessions) == 0,
             message=self._build_upload_message(
                 created_count,
-                sessions_skipped_no_book,
                 skipped_duplicate_count,
                 len(failed_sessions),
             ),
             created_count=created_count,
-            skipped_no_book_count=sessions_skipped_no_book,
             skipped_duplicate_count=skipped_duplicate_count,
             failed_count=len(failed_sessions),
             failed_sessions=failed_sessions,
@@ -177,14 +183,11 @@ class ReadingSessionService:
             err = errors[0]
             loc = ".".join(str(x) for x in err["loc"])
             return f"{loc}: {err['msg']}"
-        return "; ".join(
-            f"{'.'.join(str(x) for x in e['loc'])}: {e['msg']}" for e in errors
-        )
+        return "; ".join(f"{'.'.join(str(x) for x in e['loc'])}: {e['msg']}" for e in errors)
 
     def _build_upload_message(
         self,
         created: int,
-        skipped_no_book: int,
         skipped_duplicate: int,
         failed: int,
     ) -> str:
@@ -194,18 +197,11 @@ class ReadingSessionService:
         if created > 0:
             parts.append(f"Created {created} session{'s' if created != 1 else ''}")
 
-        if skipped_no_book > 0:
-            parts.append(
-                f"{skipped_no_book} skipped (book not found)"
-            )
-
         if skipped_duplicate > 0:
-            parts.append(
-                f"{skipped_duplicate} skipped (duplicate)"
-            )
+            parts.append(f"{skipped_duplicate} skipped (duplicate)")
 
         if failed > 0:
-            parts.append(f"{failed} failed validation")
+            parts.append(f"{failed} failed")
 
         if not parts:
             return "No sessions to process"
