@@ -103,6 +103,7 @@ class ReadingSessionService:
         return schemas.ReadingSessionUploadResponse(
             success=True,
             message=self._build_upload_message(created_count, skipped_duplicate_count),
+            book_id=book.id,
             created_count=created_count,
             skipped_duplicate_count=skipped_duplicate_count,
         )
