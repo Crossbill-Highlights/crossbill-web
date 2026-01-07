@@ -93,3 +93,10 @@ class CoverUploadResponse(BaseModel):
     success: bool = Field(..., description="Whether the upload was successful")
     message: str = Field(..., description="Response message")
     cover_url: str = Field(..., description="URL path to the uploaded cover image")
+
+
+class EpubUploadResponse(BaseModel):
+    """Schema for epub upload response."""
+
+    success: bool = Field(..., description="Whether the upload was successful")
+    message: str = Field(..., description="Response message")

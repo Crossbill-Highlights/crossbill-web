@@ -7,6 +7,7 @@ from src.schemas.book_schemas import (
     BooksListResponse,
     BookWithHighlightCount,
     CoverUploadResponse,
+    EpubUploadResponse,
     RecentlyViewedBooksResponse,
     TagInBook,
 )
@@ -89,6 +90,7 @@ __all__ = [
     "ChapterBase",
     "ChapterWithHighlights",
     "CoverUploadResponse",
+    "EpubUploadResponse",
     "Flashcard",
     "FlashcardBase",
     "FlashcardCreate",
