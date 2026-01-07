@@ -116,6 +116,7 @@ class Book(Base):
     author: Mapped[str | None] = mapped_column(String(500), nullable=True)
     isbn: Mapped[str | None] = mapped_column(String(20), nullable=True)
     cover: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    epub_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     language: Mapped[str | None] = mapped_column(String(10), nullable=True)
     page_count: Mapped[int | None] = mapped_column(nullable=True)
