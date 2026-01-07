@@ -57,6 +57,11 @@ class Settings:
         "yes",
     )
 
+    # Reading sessions
+    MINIMUM_READING_SESSION_DURATION: int = int(
+        os.getenv("MINIMUM_READING_SESSION_DURATION", "120")
+    )
+
 
 def configure_logging(environment: str = "development") -> None:
     """Configure structured logging with structlog."""

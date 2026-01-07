@@ -4,6 +4,7 @@ import structlog
 from sqlalchemy.orm import Session
 
 from src import repositories, schemas
+from src.config import get_settings
 from src.exceptions import BookNotFoundError
 from src.repositories.reading_session_repository import ReadingSessionRepository
 from src.schemas.book_schemas import BookCreate
@@ -70,6 +71,13 @@ class ReadingSessionService:
         # Filter away sessions where start and end points are the same
         sessions = [
             s for s in sessions if s.start_xpoint != s.end_xpoint or s.start_page != s.end_page
+        ]
+
+        # Filter out sessions shorter than minimum duration
+        settings = get_settings()
+        min_duration = settings.MINIMUM_READING_SESSION_DURATION
+        sessions = [
+            s for s in sessions if (s.end_time - s.start_time).total_seconds() >= min_duration
         ]
 
         for session in sessions:
