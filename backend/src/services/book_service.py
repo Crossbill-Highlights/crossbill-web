@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from src import models, repositories, schemas
 from src.exceptions import BookNotFoundError
 from src.schemas.highlight_schemas import ChapterWithHighlights
+from src.services.epub_service import EpubService
 from src.services.tag_service import TagService
 from src.utils import compute_book_hash
 
@@ -244,7 +245,8 @@ class BookService:
         """
         Delete a book and all its contents (hard delete).
 
-        This will permanently delete the book, all its chapters, and all its highlights.
+        This will permanently delete the book, all its chapters, highlights,
+        cover image, and epub file.
 
         Args:
             book_id: ID of the book to delete
@@ -259,6 +261,10 @@ class BookService:
 
         if not deleted:
             raise BookNotFoundError(book_id)
+
+        # Delete associated epub file if it exists
+        epub_service = EpubService(self.db)
+        epub_service.delete_epub(book_id)
 
         # Commit the deletion
         self.db.commit()
