@@ -215,7 +215,9 @@ class EpubService:
         book = self.book_repo.find_by_client_book_id(client_book_id, user_id)
 
         if not book:
-            raise BookNotFoundError(f"Book with client_book_id '{client_book_id}' not found")
+            raise BookNotFoundError(
+                message=f"Book with client_book_id '{client_book_id}' not found"
+            )
 
         # Delegate to the existing upload_epub method using book.id
         return self.upload_epub(book.id, epub_file, user_id)

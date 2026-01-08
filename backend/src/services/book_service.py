@@ -492,7 +492,9 @@ class BookService:
         book = self.book_repo.find_by_client_book_id(client_book_id, user_id)
 
         if not book:
-            raise BookNotFoundError(f"Book with client_book_id '{client_book_id}' not found")
+            raise BookNotFoundError(
+                message=f"Book with client_book_id '{client_book_id}' not found"
+            )
 
         # Check if cover file exists
         cover_filename = f"{book.id}.jpg"
@@ -534,7 +536,9 @@ class BookService:
         book = self.book_repo.find_by_client_book_id(client_book_id, user_id)
 
         if not book:
-            raise BookNotFoundError(f"Book with client_book_id '{client_book_id}' not found")
+            raise BookNotFoundError(
+                message=f"Book with client_book_id '{client_book_id}' not found"
+            )
 
         # Delegate to the existing upload_cover method using book.id
         return self.upload_cover(book.id, cover, user_id)
