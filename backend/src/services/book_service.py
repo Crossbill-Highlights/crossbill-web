@@ -508,8 +508,8 @@ class BookService:
             book_id=book.id,
             bookname=book.title,
             author=book.author,
-            hasCover=has_cover,
-            hasEpub=has_epub,
+            has_cover=has_cover,
+            has_epub=has_epub,
         )
 
     def upload_cover_by_client_book_id(
