@@ -54,4 +54,6 @@ Thumbs.db
 
 # Backend specific
 backend/book-covers/
+backend/epubs/
 backend/*.db
+*.epub
