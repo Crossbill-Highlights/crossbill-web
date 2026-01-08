@@ -13,7 +13,6 @@ from src.exceptions import BookNotFoundError
 from src.schemas.highlight_schemas import ChapterWithHighlights
 from src.services.epub_service import EpubService
 from src.services.tag_service import TagService
-from src.utils import compute_book_hash
 
 logger = logging.getLogger(__name__)
 
@@ -99,23 +98,8 @@ class BookService:
             logger.debug(f"Found existing book by client_book_id: {book.title} (id={book.id})")
             return book, False
 
-        # Fallback: content_hash lookup (deprecated, will be removed in future)
-        # This allows existing books without client_book_id to be found during migration
-        book_hash = compute_book_hash(book_data.title, book_data.author)
-        book = self.book_repo.find_by_content_hash(book_hash, user_id)
-
-        if book:
-            # Backfill client_book_id on existing book for future lookups
-            if not book.client_book_id:
-                book.client_book_id = book_data.client_book_id
-                self.db.flush()
-                logger.info(
-                    f"Backfilled client_book_id for book: {book.title} (id={book.id})"
-                )
-            return book, False
-
         # Create new book
-        book = self.book_repo.create(book_data, book_hash, user_id)
+        book = self.book_repo.create(book_data, user_id)
 
         if book_data.keywords:
             tag_service = TagService(self.db)

@@ -20,14 +20,6 @@ class BookRepository:
         """Initialize repository with database session."""
         self.db = db
 
-    def find_by_content_hash(self, content_hash: str, user_id: int) -> models.Book | None:
-        """Find a book by its content hash and user."""
-        stmt = select(models.Book).where(
-            models.Book.content_hash == content_hash,
-            models.Book.user_id == user_id,
-        )
-        return self.db.execute(stmt).scalar_one_or_none()
-
     def find_by_client_book_id(self, client_book_id: str, user_id: int) -> models.Book | None:
         """Find a book by its client_book_id and user.
 
@@ -44,42 +36,16 @@ class BookRepository:
         )
         return self.db.execute(stmt).scalar_one_or_none()
 
-    def create(self, book_data: schemas.BookCreate, content_hash: str, user_id: int) -> models.Book:
+    def create(self, book_data: schemas.BookCreate, user_id: int) -> models.Book:
         """Create a new book."""
         # Exclude keywords as they are handled separately via TagService
         book_dict = book_data.model_dump(exclude={"keywords"})
-        book = models.Book(**book_dict, content_hash=content_hash, user_id=user_id)
+        book = models.Book(**book_dict, user_id=user_id)
         self.db.add(book)
         self.db.flush()
         self.db.refresh(book)
         logger.info(f"Created book: {book.title} (id={book.id}, user_id={user_id})")
         return book
-
-    def get_or_create(
-        self, book_data: schemas.BookCreate, content_hash: str, user_id: int
-    ) -> tuple[models.Book, bool]:
-        """Get existing book by content hash and user or create a new one.
-
-        The content_hash is computed from the original title and author at upload time.
-        This allows book metadata (title, author) to be edited later without breaking
-        deduplication - the hash identifies the same book across uploads.
-
-        Note: When an existing book is found, its metadata is NOT updated. This preserves
-        any edits the user has made to the book's title/author in the app.
-
-        Returns:
-            tuple[Book, bool]: (book, created) where created is True if a new book was created
-        """
-        book = self.find_by_content_hash(content_hash, user_id)
-
-        if book:
-            # Return existing book without updating metadata
-            # This preserves any user edits to the book's title/author
-            logger.debug(f"Found existing book by hash: {book.title} (id={book.id})")
-            return book, False
-
-        # Create new book with the computed hash
-        return self.create(book_data, content_hash, user_id), True
 
     def get_books_with_highlight_count(
         self,

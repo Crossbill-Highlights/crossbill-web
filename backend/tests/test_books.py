@@ -372,6 +372,7 @@ class TestHighlightSyncWithSoftDelete:
             user_id=DEFAULT_USER_ID,
             title="Test Book",
             author="Test Author",
+            client_book_id="test-client-book-id-2"
         )
 
         create_test_highlight(
