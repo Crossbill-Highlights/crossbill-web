@@ -214,6 +214,7 @@ class HighlightService:
         books_list = [
             schemas.BookWithHighlightCount(
                 id=book.id,
+                client_book_id=book.client_book_id,
                 title=book.title,
                 author=book.author,
                 isbn=book.isbn,
@@ -254,6 +255,7 @@ class HighlightService:
         books_list = [
             schemas.BookWithHighlightCount(
                 id=book.id,
+                client_book_id=book.client_book_id,
                 title=book.title,
                 author=book.author,
                 isbn=book.isbn,

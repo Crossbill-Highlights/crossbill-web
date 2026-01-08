@@ -13,7 +13,7 @@ from src.schemas.reading_session_schemas import (
     ReadingSessionUploadSessionItem,
 )
 from src.services.book_service import BookService
-from src.utils import compute_book_hash, compute_reading_session_hash
+from src.utils import compute_reading_session_hash
 
 logger = structlog.get_logger(__name__)
 
@@ -59,12 +59,9 @@ class ReadingSessionService:
             book_title=book_data.title,
         )
 
-        book_hash = compute_book_hash(book_data.title, book_data.author)
-        book = self.book_repo.find_by_content_hash(book_hash, user_id)
-
-        if not book:
-            book_service = BookService(self.db)
-            book, _ = book_service.create_book(book_data, user_id)
+        # Get or create book using BookService (handles client_book_id lookup with content_hash fallback)
+        book_service = BookService(self.db)
+        book, _ = book_service.create_book(book_data, user_id)
 
         to_save: list[ReadingSessionBase] = []
 

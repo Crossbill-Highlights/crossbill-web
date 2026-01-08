@@ -135,6 +135,7 @@ class BookDetails(BaseModel):
     """Schema for detailed Book response with chapters and highlights."""
 
     id: int
+    client_book_id: str | None = None
     title: str
     author: str | None
     isbn: str | None

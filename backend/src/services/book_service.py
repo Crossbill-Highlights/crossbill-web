@@ -78,7 +78,13 @@ class BookService:
 
     def create_book(self, book_data: schemas.BookCreate, user_id: int) -> tuple[models.Book, bool]:
         """
-        Get or create a book based on title+author hash.
+        Get or create a book based on client_book_id (preferred) or content_hash (fallback).
+
+        Lookup strategy:
+        1. Look up by client_book_id first (required for new books)
+        2. If not found, fall back to content_hash lookup (deprecated, for migration period)
+        3. If found by content_hash, backfill client_book_id on the existing book
+        4. If not found by either, create a new book
 
         Args:
             book_data: Book creation data
@@ -87,14 +93,35 @@ class BookService:
         Returns:
             tuple[Book, bool]: (book, created) where created is True if new book was created
         """
-        book_hash = compute_book_hash(book_data.title, book_data.author)
-        book, created = self.book_repo.get_or_create(book_data, book_hash, user_id)
+        # Primary lookup: client_book_id
+        book = self.book_repo.find_by_client_book_id(book_data.client_book_id, user_id)
+        if book:
+            logger.debug(f"Found existing book by client_book_id: {book.title} (id={book.id})")
+            return book, False
 
-        if created and book_data.keywords:
+        # Fallback: content_hash lookup (deprecated, will be removed in future)
+        # This allows existing books without client_book_id to be found during migration
+        book_hash = compute_book_hash(book_data.title, book_data.author)
+        book = self.book_repo.find_by_content_hash(book_hash, user_id)
+
+        if book:
+            # Backfill client_book_id on existing book for future lookups
+            if not book.client_book_id:
+                book.client_book_id = book_data.client_book_id
+                self.db.flush()
+                logger.info(
+                    f"Backfilled client_book_id for book: {book.title} (id={book.id})"
+                )
+            return book, False
+
+        # Create new book
+        book = self.book_repo.create(book_data, book_hash, user_id)
+
+        if book_data.keywords:
             tag_service = TagService(self.db)
             tag_service.add_book_tags(book.id, book_data.keywords, user_id)
 
-        return book, created
+        return book, True
 
     def _group_highlights_by_chapter(
         self, highlights: Sequence[models.Highlight]
@@ -185,6 +212,7 @@ class BookService:
 
         return schemas.BookDetails(
             id=book.id,
+            client_book_id=book.client_book_id,
             title=book.title,
             author=book.author,
             isbn=book.isbn,
@@ -413,6 +441,7 @@ class BookService:
         # Return updated book with highlight and flashcard counts
         return schemas.BookWithHighlightCount(
             id=updated_book.id,
+            client_book_id=updated_book.client_book_id,
             title=updated_book.title,
             author=updated_book.author,
             isbn=updated_book.isbn,

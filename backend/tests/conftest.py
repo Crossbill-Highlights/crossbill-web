@@ -35,6 +35,7 @@ def create_test_book(
     description: str | None = None,
     language: str | None = None,
     page_count: int | None = None,
+    client_book_id: str | None = None,
 ) -> Book:
     """Create a test book with properly computed content_hash.
 
@@ -50,6 +51,7 @@ def create_test_book(
         description=description,
         language=language,
         page_count=page_count,
+        client_book_id=client_book_id,
         content_hash=content_hash,
     )
     db_session.add(book)

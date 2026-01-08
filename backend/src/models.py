@@ -120,6 +120,9 @@ class Book(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     language: Mapped[str | None] = mapped_column(String(10), nullable=True)
     page_count: Mapped[int | None] = mapped_column(nullable=True)
+    client_book_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, index=True
+    )  # Client-provided stable book identifier
     content_hash: Mapped[str] = mapped_column(
         String(64), nullable=False, index=True
     )  # SHA-256 hash for deduplication

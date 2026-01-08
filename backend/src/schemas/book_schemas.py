@@ -22,6 +22,12 @@ class BookBase(BaseModel):
 class BookCreate(BookBase):
     """Schema for creating a Book."""
 
+    client_book_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Client-provided stable book identifier for deduplication",
+    )
     keywords: list[str] | None = Field(
         None, description="Keywords from ebook metadata (will be converted to tags)"
     )
@@ -31,6 +37,7 @@ class Book(BookBase):
     """Schema for Book response."""
 
     id: int
+    client_book_id: str | None = None
     created_at: datetime
     updated_at: datetime
     last_viewed: datetime | None = None
@@ -51,6 +58,7 @@ class BookWithHighlightCount(BaseModel):
     """Schema for Book with highlight and flashcard counts."""
 
     id: int
+    client_book_id: str | None = None
     title: str
     author: str | None
     isbn: str | None

@@ -28,6 +28,22 @@ class BookRepository:
         )
         return self.db.execute(stmt).scalar_one_or_none()
 
+    def find_by_client_book_id(self, client_book_id: str, user_id: int) -> models.Book | None:
+        """Find a book by its client_book_id and user.
+
+        Args:
+            client_book_id: The client-provided book identifier
+            user_id: The user's ID
+
+        Returns:
+            The book if found, None otherwise
+        """
+        stmt = select(models.Book).where(
+            models.Book.client_book_id == client_book_id,
+            models.Book.user_id == user_id,
+        )
+        return self.db.execute(stmt).scalar_one_or_none()
+
     def create(self, book_data: schemas.BookCreate, content_hash: str, user_id: int) -> models.Book:
         """Create a new book."""
         # Exclude keywords as they are handled separately via TagService
