@@ -8,7 +8,7 @@
 [![CI](https://github.com/Tumetsu/Crossbill/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Tumetsu/Crossbill/actions/workflows/ci.yml)
 [![Docker Image Version](https://img.shields.io/docker/v/tumetsu/crossbill?sort=semver)](https://hub.docker.com/r/tumetsu/crossbill)
 
-A self-hosted web application for syncing, managing, and viewing book highlights from KOReader.
+A self-hosted web application for syncing, managing, creating flash cards and viewing book highlights from KOReader.
 
 ## Overview
 
@@ -37,68 +37,7 @@ Crossbill helps you centralize and manage your ebook highlights by providing:
 
 ## Installation
 
-Easiest way to install and run Crossbill is by using `docker-compose.yml` with PostgreSQL:
-
-```yaml
-services:
-  postgres:
-    image: postgres:18-alpine
-    container_name: crossbill-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: crossbill
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crossbill_secure_password}
-      POSTGRES_DB: crossbill
-      PGDATA: /var/lib/postgresql/data/pgdata
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U crossbill"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - crossbill-network
-
-  app:
-    image: tumetsu/crossbill:latest
-    container_name: crossbill-app
-    restart: unless-stopped
-    pull_policy: always
-    ports:
-      - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql://crossbill:${POSTGRES_PASSWORD:-crossbill_secure_password}@postgres:5432/crossbill
-      ENVIRONMENT: production
-      ADMIN_USERNAME: ${ADMIN_USERNAME}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      CORS_ORIGINS: "https://yourdomain.com"
-      SECRET_KEY: ${SECRET_KEY}
-      ACCESS_TOKEN_EXPIRE_MINUTES: 15
-      REFRESH_TOKEN_EXPIRE_DAYS: 30
-      REFRESH_TOKEN_SECRET_KEY: ${REFRESH_TOKEN_SECRET_KEY}
-COOKIE_SECURE=true
-      ALLOW_USER_REGISTRATIONS: false
-      PORT: 8000
-    volumes:
-      - book_covers:/app/book-covers
-      - type: bind
-        source: /path/on/host/for/crossbill/book_covers
-        target: /app/book-covers
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - crossbill-network
-
-volumes:
-  postgres_data:
-    driver: local
-  book_covers:
-    driver: local
-
-networks:
-  crossbill-network:
-    driver: bridge
-```
+Easiest way to install and run Crossbill is by using sample `docker-compose.yml` on top level of this repository.
 
 Then install the Koreader [plugin on your e-reader](clients/koreader-plugin/crossbill.koplugin/README.md).
 
