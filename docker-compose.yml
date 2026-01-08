@@ -1,4 +1,4 @@
-# Production sample config
+# Deployment sample config
 services:
   postgres:
     image: postgres:18-alpine
@@ -22,9 +22,9 @@ services:
     image: tumetsu/crossbill:latest
     container_name: crossbill-app
     restart: unless-stopped
-    pull_policy: never
+    pull_policy: always
     ports:
-      - "8001:8000"
+      - "8000:8000"
     environment:
       DATABASE_URL: postgresql://crossbill:${POSTGRES_PASSWORD:-crossbill_secure_password}@postgres:5432/crossbill
       ENVIRONMENT: production
@@ -39,11 +39,9 @@ services:
       ALLOW_USER_REGISTRATIONS: false
       PORT: 8000
     volumes:
-      - book_covers:/app/book-covers
       - type: bind
         source: /path/on/host/for/crossbill/book_covers
         target: /app/book-covers
-      - epub_files:/app/epubs
       - type: bind
         source: /path/on/host/for/crossbill/epubs
         target: /app/epubs
@@ -55,8 +53,6 @@ services:
 
 volumes:
   postgres_data:
-    driver: local
-  book_covers:
     driver: local
 
 networks:
