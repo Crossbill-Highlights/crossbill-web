@@ -525,3 +525,32 @@ class BookService:
             hasCover=has_cover,
             hasEpub=has_epub,
         )
+
+    def upload_cover_by_client_book_id(
+        self, client_book_id: str, cover: UploadFile, user_id: int
+    ) -> schemas.CoverUploadResponse:
+        """
+        Upload a book cover image using client_book_id.
+
+        This method looks up the book by client_book_id and then uploads the cover.
+        Used by KOReader which identifies books by client_book_id.
+
+        Args:
+            client_book_id: The client-provided book identifier
+            cover: Uploaded image file (JPEG, PNG, or WebP)
+            user_id: ID of the user uploading the cover
+
+        Returns:
+            CoverUploadResponse with success status and cover URL
+
+        Raises:
+            BookNotFoundError: If book is not found for the given client_book_id
+            HTTPException: If file validation fails or upload fails
+        """
+        book = self.book_repo.find_by_client_book_id(client_book_id, user_id)
+
+        if not book:
+            raise BookNotFoundError(f"Book with client_book_id '{client_book_id}' not found")
+
+        # Delegate to the existing upload_cover method using book.id
+        return self.upload_cover(book.id, cover, user_id)
