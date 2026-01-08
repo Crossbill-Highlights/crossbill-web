@@ -64,4 +64,6 @@ dmypy.json
 Thumbs.db
 
 # Media files
-book-covers/
+book-files/
+*.epub
+*.pdf

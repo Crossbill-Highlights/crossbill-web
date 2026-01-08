@@ -11,12 +11,13 @@ from sqlalchemy.orm import Session
 from src import models, repositories, schemas
 from src.exceptions import BookNotFoundError
 from src.schemas.highlight_schemas import ChapterWithHighlights
+from src.services.epub_service import EpubService
 from src.services.tag_service import TagService
 
 logger = logging.getLogger(__name__)
 
 # Directory for book cover images
-COVERS_DIR = Path(__file__).parent.parent.parent / "book-covers"
+COVERS_DIR = Path(__file__).parent.parent.parent / "book-files" / "book-covers"
 
 # Maximum cover image size (5MB)
 MAX_COVER_SIZE = 5 * 1024 * 1024
@@ -73,6 +74,38 @@ class BookService:
         self.highlight_tag_repo = repositories.HighlightTagRepository(db)
         self.bookmark_repo = repositories.BookmarkRepository(db)
         self.flashcard_repo = repositories.FlashcardRepository(db)
+
+    def create_book(self, book_data: schemas.BookCreate, user_id: int) -> tuple[models.Book, bool]:
+        """
+        Get or create a book based on client_book_id (preferred) or content_hash (fallback).
+
+        Lookup strategy:
+        1. Look up by client_book_id first (required for new books)
+        2. If not found, fall back to content_hash lookup (deprecated, for migration period)
+        3. If found by content_hash, backfill client_book_id on the existing book
+        4. If not found by either, create a new book
+
+        Args:
+            book_data: Book creation data
+            user_id: ID of the user
+
+        Returns:
+            tuple[Book, bool]: (book, created) where created is True if new book was created
+        """
+        # Primary lookup: client_book_id
+        book = self.book_repo.find_by_client_book_id(book_data.client_book_id, user_id)
+        if book:
+            logger.debug(f"Found existing book by client_book_id: {book.title} (id={book.id})")
+            return book, False
+
+        # Create new book
+        book = self.book_repo.create(book_data, user_id)
+
+        if book_data.keywords:
+            tag_service = TagService(self.db)
+            tag_service.add_book_tags(book.id, book_data.keywords, user_id)
+
+        return book, True
 
     def _group_highlights_by_chapter(
         self, highlights: Sequence[models.Highlight]
@@ -163,6 +196,7 @@ class BookService:
 
         return schemas.BookDetails(
             id=book.id,
+            client_book_id=book.client_book_id,
             title=book.title,
             author=book.author,
             isbn=book.isbn,
@@ -223,7 +257,8 @@ class BookService:
         """
         Delete a book and all its contents (hard delete).
 
-        This will permanently delete the book, all its chapters, and all its highlights.
+        This will permanently delete the book, all its chapters, highlights,
+        cover image, and epub file.
 
         Args:
             book_id: ID of the book to delete
@@ -238,6 +273,10 @@ class BookService:
 
         if not deleted:
             raise BookNotFoundError(book_id)
+
+        # Delete associated epub file if it exists
+        epub_service = EpubService(self.db)
+        epub_service.delete_epub(book_id)
 
         # Commit the deletion
         self.db.commit()
@@ -386,6 +425,7 @@ class BookService:
         # Return updated book with highlight and flashcard counts
         return schemas.BookWithHighlightCount(
             id=updated_book.id,
+            client_book_id=updated_book.client_book_id,
             title=updated_book.title,
             author=updated_book.author,
             isbn=updated_book.isbn,
@@ -429,3 +469,76 @@ class BookService:
             raise HTTPException(status_code=404, detail="Cover not found")
 
         return cover_path
+
+    def get_book_metadata_for_ereader(
+        self, client_book_id: str, user_id: int
+    ) -> schemas.EreaderBookMetadata:
+        """
+        Get basic book metadata for ereader operations.
+
+        This method returns lightweight book information that KOReader uses to
+        decide whether it needs to upload cover images, epub files, etc.
+
+        Args:
+            client_book_id: The client-provided book identifier
+            user_id: ID of the user
+
+        Returns:
+            EreaderBookMetadata with book_id, bookname, author, hasCover, hasEpub
+
+        Raises:
+            BookNotFoundError: If book is not found for the given client_book_id
+        """
+        book = self.book_repo.find_by_client_book_id(client_book_id, user_id)
+
+        if not book:
+            raise BookNotFoundError(
+                message=f"Book with client_book_id '{client_book_id}' not found"
+            )
+
+        # Check if cover file exists
+        cover_filename = f"{book.id}.jpg"
+        cover_path = COVERS_DIR / cover_filename
+        has_cover = cover_path.is_file()
+
+        # Check if epub exists
+        has_epub = book.epub_path is not None
+
+        return schemas.EreaderBookMetadata(
+            book_id=book.id,
+            bookname=book.title,
+            author=book.author,
+            has_cover=has_cover,
+            has_epub=has_epub,
+        )
+
+    def upload_cover_by_client_book_id(
+        self, client_book_id: str, cover: UploadFile, user_id: int
+    ) -> schemas.CoverUploadResponse:
+        """
+        Upload a book cover image using client_book_id.
+
+        This method looks up the book by client_book_id and then uploads the cover.
+        Used by KOReader which identifies books by client_book_id.
+
+        Args:
+            client_book_id: The client-provided book identifier
+            cover: Uploaded image file (JPEG, PNG, or WebP)
+            user_id: ID of the user uploading the cover
+
+        Returns:
+            CoverUploadResponse with success status and cover URL
+
+        Raises:
+            BookNotFoundError: If book is not found for the given client_book_id
+            HTTPException: If file validation fails or upload fails
+        """
+        book = self.book_repo.find_by_client_book_id(client_book_id, user_id)
+
+        if not book:
+            raise BookNotFoundError(
+                message=f"Book with client_book_id '{client_book_id}' not found"
+            )
+
+        # Delegate to the existing upload_cover method using book.id
+        return self.upload_cover(book.id, cover, user_id)

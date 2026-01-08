@@ -22,7 +22,7 @@ from src.models import (
     User,
 )
 from src.services.auth_service import get_current_user
-from src.utils import compute_book_hash, compute_highlight_hash
+from src.utils import compute_highlight_hash
 
 
 def create_test_book(
@@ -35,12 +35,12 @@ def create_test_book(
     description: str | None = None,
     language: str | None = None,
     page_count: int | None = None,
+    client_book_id: str | None = None,
 ) -> Book:
     """Create a test book with properly computed content_hash.
 
     This helper ensures all test books have valid content_hash values.
     """
-    content_hash = compute_book_hash(title=title, author=author)
     book = Book(
         user_id=user_id,
         title=title,
@@ -50,7 +50,7 @@ def create_test_book(
         description=description,
         language=language,
         page_count=page_count,
-        content_hash=content_hash,
+        client_book_id=client_book_id,
     )
     db_session.add(book)
     db_session.commit()

@@ -4,8 +4,8 @@ import structlog
 from sqlalchemy.orm import Session
 
 from src import models, repositories, schemas
-from src.services.tag_service import TagService
-from src.utils import compute_book_hash, compute_highlight_hash
+from src.services.book_service import BookService
+from src.utils import compute_highlight_hash
 
 logger = structlog.get_logger(__name__)
 
@@ -48,18 +48,9 @@ class HighlightService:
             highlight_count=len(request.highlights),
         )
 
-        # Step 1: Compute book hash and get or create book
-        book_hash = compute_book_hash(
-            title=request.book.title,
-            author=request.book.author,
-        )
-        book, created = self.book_repo.get_or_create(request.book, book_hash, user_id)
-
-        # Only add keywords as tags on first upload (book creation)
-        # This preserves user's tag edits on subsequent syncs
-        if created and request.book.keywords:
-            tag_service = TagService(self.db)
-            tag_service.add_book_tags(book.id, request.book.keywords, user_id)
+        # Step 1: Get or create book (with keywords as tags on creation)
+        book_service = BookService(self.db)
+        book, _ = book_service.create_book(request.book, user_id)
 
         # Step 2: Batch process chapters
         # Collect unique chapter data from highlights
@@ -223,6 +214,7 @@ class HighlightService:
         books_list = [
             schemas.BookWithHighlightCount(
                 id=book.id,
+                client_book_id=book.client_book_id,
                 title=book.title,
                 author=book.author,
                 isbn=book.isbn,
@@ -263,6 +255,7 @@ class HighlightService:
         books_list = [
             schemas.BookWithHighlightCount(
                 id=book.id,
+                client_book_id=book.client_book_id,
                 title=book.title,
                 author=book.author,
                 isbn=book.isbn,

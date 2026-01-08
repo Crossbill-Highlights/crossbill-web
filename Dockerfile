@@ -54,7 +54,9 @@ COPY backend/alembic ./alembic
 COPY --from=frontend-builder /app/frontend/dist ./static
 
 # Create directory for book covers
-RUN mkdir -p /app/book-covers
+RUN mkdir -p /app/book-files/book-covers
+# Create directory for epub files
+RUN mkdir -p /app/book-files/epubs
 
 # Expose port
 EXPOSE 8000

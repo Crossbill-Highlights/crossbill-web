@@ -24,7 +24,7 @@ from src.config import configure_logging, get_settings
 from src.database import get_engine
 from src.exceptions import BookNotFoundError, CrossbillError, NotFoundError
 from src.repositories import UserRepository
-from src.routers import auth, books, flashcards, highlights, users
+from src.routers import auth, books, ereader, flashcards, highlights, reading_sessions, users
 from src.routers import settings as settings_router
 
 settings = get_settings()
@@ -232,6 +232,8 @@ app.include_router(books.router, prefix=settings.API_V1_PREFIX)
 app.include_router(flashcards.router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(users.router, prefix=settings.API_V1_PREFIX)
+app.include_router(reading_sessions.router, prefix=settings.API_V1_PREFIX)
+app.include_router(ereader.router, prefix=settings.API_V1_PREFIX)
 app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)
 
 

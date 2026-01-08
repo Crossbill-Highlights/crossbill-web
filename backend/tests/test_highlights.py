@@ -15,6 +15,7 @@ class TestHighlightsUpload:
         """Test successful upload of highlights."""
         payload = {
             "book": {
+                "client_book_id": "test-client-book-id",
                 "title": "Test Book",
                 "author": "Test Author",
                 "isbn": "1234567890",
@@ -72,6 +73,7 @@ class TestHighlightsUpload:
         """Test uploading highlights without chapter information."""
         payload = {
             "book": {
+                "client_book_id": "test-client-book-id-no-chapters",
                 "title": "Test Book Without Chapters",
                 "author": "Test Author",
             },
@@ -111,6 +113,7 @@ class TestHighlightsUpload:
         """Test that duplicate highlights are properly skipped."""
         payload = {
             "book": {
+                "client_book_id": "test-client-duplicate-book",
                 "title": "Duplicate Test Book",
                 "author": "Test Author",
             },
@@ -152,6 +155,7 @@ class TestHighlightsUpload:
         # First upload
         payload1 = {
             "book": {
+                "client_book_id": "test-client-partial-dup",
                 "title": "Partial Duplicate Test Book",
                 "author": "Test Author",
             },
@@ -174,6 +178,7 @@ class TestHighlightsUpload:
         # Second upload with mix of new and duplicate
         payload2 = {
             "book": {
+                "client_book_id": "test-client-partial-dup",
                 "title": "Partial Duplicate Test Book",
                 "author": "Test Author",
             },
@@ -208,6 +213,7 @@ class TestHighlightsUpload:
         # First upload - creates the book with original metadata
         payload1 = {
             "book": {
+                "client_book_id": "test-client-original",
                 "title": "Original Title",
                 "author": "Original Author",
                 "isbn": "1111111111",
@@ -236,6 +242,7 @@ class TestHighlightsUpload:
         # This should NOT overwrite the user's edits
         payload2 = {
             "book": {
+                "client_book_id": "test-client-original",
                 "title": "Original Title",  # Original title from device
                 "author": "Original Author",  # Original author from device
                 "isbn": "1111111111",
@@ -266,6 +273,7 @@ class TestHighlightsUpload:
         """Test uploading with empty highlights list."""
         payload = {
             "book": {
+                "client_book_id": "test-client-empty",
                 "title": "Empty Highlights Book",
                 "author": "Test Author",
             },
@@ -290,6 +298,7 @@ class TestHighlightsUpload:
         """
         payload = {
             "book": {
+                "client_book_id": "test-client-same-text",
                 "title": "Same Text Test Book",
                 "author": "Test Author",
             },
@@ -324,6 +333,7 @@ class TestHighlightsUpload:
         # First book
         payload1 = {
             "book": {
+                "client_book_id": "test-client-first-book",
                 "title": "First Book",
                 "author": "Author A",
             },
@@ -342,6 +352,7 @@ class TestHighlightsUpload:
         # Second book with same text
         payload2 = {
             "book": {
+                "client_book_id": "test-client-second-book",
                 "title": "Second Book",
                 "author": "Author B",
             },
@@ -363,6 +374,7 @@ class TestHighlightsUpload:
         """Test that created highlights have a content_hash field populated."""
         payload = {
             "book": {
+                "client_book_id": "test-client-hash-test",
                 "title": "Hash Test Book",
                 "author": "Test Author",
             },
@@ -408,6 +420,7 @@ class TestHighlightsUpload:
         """Test upload with missing required fields."""
         payload = {
             "book": {
+                "client_book_id": "test-client-minimal",
                 "title": "Test Book",
                 # Missing required fields are okay (author, isbn are optional)
             },
@@ -429,6 +442,7 @@ class TestHighlightsUpload:
         """Test that multiple highlights in same chapter only create one chapter."""
         payload = {
             "book": {
+                "client_book_id": "test-client-chapter-dedup",
                 "title": "Chapter Dedup Test Book",
                 "author": "Test Author",
             },
@@ -487,6 +501,7 @@ class TestHighlightsUpload:
         # First upload with some highlights in Chapter 1
         payload1 = {
             "book": {
+                "client_book_id": "test-client-rollback-bug",
                 "title": "Rollback Bug Test Book",
                 "author": "Test Author",
             },
@@ -513,6 +528,7 @@ class TestHighlightsUpload:
         # the creation of new chapters for subsequent highlights
         payload2 = {
             "book": {
+                "client_book_id": "test-client-rollback-bug",
                 "title": "Rollback Bug Test Book",
                 "author": "Test Author",
             },
@@ -576,6 +592,7 @@ class TestHighlightsUpload:
         """Test uploading highlights with language and page_count metadata."""
         payload = {
             "book": {
+                "client_book_id": "test-client-metadata",
                 "title": "Test Book with Metadata",
                 "author": "Test Author",
                 "language": "en",
@@ -612,6 +629,7 @@ class TestHighlightsUpload:
         """Test that uploading with keywords creates corresponding tags."""
         payload = {
             "book": {
+                "client_book_id": "test-client-keywords",
                 "title": "Test Book with Keywords",
                 "author": "Test Author",
                 "keywords": ["Fiction", "Science", "Adventure"],
@@ -656,6 +674,7 @@ class TestHighlightsUpload:
         """Test that resyncing with same keywords doesn't create duplicate tags."""
         payload = {
             "book": {
+                "client_book_id": "test-client-dup-keywords",
                 "title": "Duplicate Keywords Test Book",
                 "author": "Test Author",
                 "keywords": ["Tag1", "Tag2"],
@@ -706,6 +725,7 @@ class TestHighlightsUpload:
         # First upload with initial keywords - these should be added
         payload1 = {
             "book": {
+                "client_book_id": "test-client-keywords-first",
                 "title": "Keywords First Upload Test Book",
                 "author": "Test Author",
                 "keywords": ["Original1", "Original2"],
@@ -733,6 +753,7 @@ class TestHighlightsUpload:
         # Second upload with different keywords - these should NOT be added
         payload2 = {
             "book": {
+                "client_book_id": "test-client-keywords-first",
                 "title": "Keywords First Upload Test Book",
                 "author": "Test Author",
                 "keywords": ["NewTag1", "NewTag2"],  # Different keywords

@@ -21,10 +21,15 @@ class NotFoundError(CrossbillError):
 class BookNotFoundError(NotFoundError):
     """Book not found error."""
 
-    def __init__(self, book_id: int) -> None:
-        """Initialize with book ID."""
+    def __init__(self, book_id: int | None = None, *, message: str | None = None) -> None:
+        """Initialize with book ID or custom message."""
         self.book_id = book_id
-        super().__init__(f"Book with id {book_id} not found")
+        if message:
+            super().__init__(message)
+        elif book_id is not None:
+            super().__init__(f"Book with id {book_id} not found")
+        else:
+            super().__init__("Book not found")
 
 
 class ValidationError(CrossbillError):
