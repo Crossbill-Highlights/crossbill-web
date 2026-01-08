@@ -55,6 +55,8 @@ COPY --from=frontend-builder /app/frontend/dist ./static
 
 # Create directory for book covers
 RUN mkdir -p /app/book-covers
+# Create directory for epub files
+RUN mkdir -p /app/epubs
 
 # Expose port
 EXPOSE 8000
