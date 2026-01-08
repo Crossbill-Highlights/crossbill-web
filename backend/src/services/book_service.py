@@ -485,3 +485,43 @@ class BookService:
             raise HTTPException(status_code=404, detail="Cover not found")
 
         return cover_path
+
+    def get_book_metadata_for_ereader(
+        self, client_book_id: str, user_id: int
+    ) -> schemas.EreaderBookMetadata:
+        """
+        Get basic book metadata for ereader operations.
+
+        This method returns lightweight book information that KOReader uses to
+        decide whether it needs to upload cover images, epub files, etc.
+
+        Args:
+            client_book_id: The client-provided book identifier
+            user_id: ID of the user
+
+        Returns:
+            EreaderBookMetadata with book_id, bookname, author, hasCover, hasEpub
+
+        Raises:
+            BookNotFoundError: If book is not found for the given client_book_id
+        """
+        book = self.book_repo.find_by_client_book_id(client_book_id, user_id)
+
+        if not book:
+            raise BookNotFoundError(f"Book with client_book_id '{client_book_id}' not found")
+
+        # Check if cover file exists
+        cover_filename = f"{book.id}.jpg"
+        cover_path = COVERS_DIR / cover_filename
+        has_cover = cover_path.is_file()
+
+        # Check if epub exists
+        has_epub = book.epub_path is not None
+
+        return schemas.EreaderBookMetadata(
+            book_id=book.id,
+            bookname=book.title,
+            author=book.author,
+            hasCover=has_cover,
+            hasEpub=has_epub,
+        )

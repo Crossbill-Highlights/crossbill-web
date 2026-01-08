@@ -108,3 +108,17 @@ class EpubUploadResponse(BaseModel):
 
     success: bool = Field(..., description="Whether the upload was successful")
     message: str = Field(..., description="Response message")
+
+
+class EreaderBookMetadata(BaseModel):
+    """Schema for ereader book metadata response.
+
+    This lightweight response is used by KOReader to get basic book information
+    for deciding whether to upload cover images, epub files, etc.
+    """
+
+    book_id: int = Field(..., description="Internal book ID")
+    bookname: str = Field(..., description="Book title")
+    author: str | None = Field(None, description="Book author")
+    hasCover: bool = Field(..., description="Whether the book has a cover image")
+    hasEpub: bool = Field(..., description="Whether the book has an EPUB file")
