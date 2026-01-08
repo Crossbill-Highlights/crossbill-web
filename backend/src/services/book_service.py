@@ -17,7 +17,7 @@ from src.services.tag_service import TagService
 logger = logging.getLogger(__name__)
 
 # Directory for book cover images
-COVERS_DIR = Path(__file__).parent.parent.parent / "book-covers"
+COVERS_DIR = Path(__file__).parent.parent.parent / "book-files" / "book-covers"
 
 # Maximum cover image size (5MB)
 MAX_COVER_SIZE = 5 * 1024 * 1024

@@ -53,7 +53,7 @@ frontend/dist/
 Thumbs.db
 
 # Backend specific
-backend/book-covers/
+backend/book-files/
 backend/epubs/
 backend/*.db
 *.epub

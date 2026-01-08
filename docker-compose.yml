@@ -40,11 +40,8 @@ services:
       PORT: 8000
     volumes:
       - type: bind
-        source: /path/on/host/for/crossbill/book_covers
-        target: /app/book-covers
-      - type: bind
-        source: /path/on/host/for/crossbill/epubs
-        target: /app/epubs
+        source: /path/on/host/for/crossbill/book-files
+        target: /app/book-files
     depends_on:
       postgres:
         condition: service_healthy

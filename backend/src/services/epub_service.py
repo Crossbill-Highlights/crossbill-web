@@ -15,7 +15,7 @@ from src.exceptions import BookNotFoundError
 logger = logging.getLogger(__name__)
 
 # Directory for epub files (parallel to book-covers)
-EPUBS_DIR = Path(__file__).parent.parent.parent / "epubs"
+EPUBS_DIR = Path(__file__).parent.parent.parent / "book-files" / "epubs"
 
 # Maximum epub file size (50MB - epubs are larger than covers)
 MAX_EPUB_SIZE = 50 * 1024 * 1024
