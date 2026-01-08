@@ -191,6 +191,35 @@ class EpubService:
 
         return epub_path
 
+    def upload_epub_by_client_book_id(
+        self, client_book_id: str, epub_file: UploadFile, user_id: int
+    ) -> tuple[str, str]:
+        """
+        Upload and validate an epub file for a book using client_book_id.
+
+        This method looks up the book by client_book_id and then uploads the epub.
+        Used by KOReader which identifies books by client_book_id.
+
+        Args:
+            client_book_id: The client-provided book identifier
+            epub_file: Uploaded epub file
+            user_id: ID of the user uploading the epub
+
+        Returns:
+            tuple[str, str]: (epub_path_for_db, absolute_file_path)
+
+        Raises:
+            BookNotFoundError: If book not found for the given client_book_id
+            HTTPException: If validation fails or upload fails
+        """
+        book = self.book_repo.find_by_client_book_id(client_book_id, user_id)
+
+        if not book:
+            raise BookNotFoundError(f"Book with client_book_id '{client_book_id}' not found")
+
+        # Delegate to the existing upload_epub method using book.id
+        return self.upload_epub(book.id, epub_file, user_id)
+
     def delete_epub(self, book_id: int) -> bool:
         """
         Delete the epub file for a book.
