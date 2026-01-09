@@ -120,9 +120,5 @@ class EreaderBookMetadata(BaseModel):
     book_id: int = Field(..., description="Internal book ID")
     bookname: str = Field(..., description="Book title")
     author: str | None = Field(None, description="Book author")
-    has_cover: bool = Field(
-        ..., serialization_alias="hasCover", description="Whether the book has a cover image"
-    )
-    has_epub: bool = Field(
-        ..., serialization_alias="hasEpub", description="Whether the book has an EPUB file"
-    )
+    has_cover: bool = Field(..., description="Whether the book has a cover image")
+    has_epub: bool = Field(..., description="Whether the book has an EPUB file")
