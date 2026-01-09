@@ -109,6 +109,63 @@ class TestHighlightsUpload:
         assert highlight is not None
         assert highlight.chapter_id is None
 
+    def test_upload_highlights_with_xpoints(self, client: TestClient, db_session: Session) -> None:
+        """Test uploading highlights with start_xpoint and end_xpoint fields."""
+        payload = {
+            "book": {
+                "client_book_id": "test-client-book-xpoints",
+                "title": "Test Book With Xpoints",
+                "author": "Test Author",
+            },
+            "highlights": [
+                {
+                    "text": "Highlight with xpoints",
+                    "chapter": "Chapter 1",
+                    "page": 10,
+                    "start_xpoint": "/body/div[1]/p[5]/text()[1].0",
+                    "end_xpoint": "/body/div[1]/p[5]/text()[1].42",
+                    "datetime": "2024-01-15 14:30:22",
+                },
+                {
+                    "text": "Highlight without xpoints",
+                    "chapter": "Chapter 2",
+                    "page": 20,
+                    "datetime": "2024-01-15 15:00:00",
+                },
+            ],
+        }
+
+        response = client.post("/api/v1/highlights/upload", json=payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["success"] is True
+        assert data["highlights_created"] == 2
+
+        # Verify xpoints were stored in database
+        book = (
+            db_session.query(models.Book)
+            .filter_by(title="Test Book With Xpoints", author="Test Author")
+            .first()
+        )
+        assert book is not None
+
+        highlights = (
+            db_session.query(models.Highlight)
+            .filter_by(book_id=book.id)
+            .order_by(models.Highlight.page)
+            .all()
+        )
+        assert len(highlights) == 2
+
+        # First highlight should have xpoints
+        assert highlights[0].start_xpoint == "/body/div[1]/p[5]/text()[1].0"
+        assert highlights[0].end_xpoint == "/body/div[1]/p[5]/text()[1].42"
+
+        # Second highlight should have null xpoints
+        assert highlights[1].start_xpoint is None
+        assert highlights[1].end_xpoint is None
+
     def test_upload_duplicate_highlights(self, client: TestClient, db_session: Session) -> None:
         """Test that duplicate highlights are properly skipped."""
         payload = {

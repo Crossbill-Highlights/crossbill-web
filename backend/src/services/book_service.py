@@ -133,6 +133,8 @@ class BookService:
                 highlight_tags=[
                     schemas.HighlightTagInBook.model_validate(ht) for ht in h.highlight_tags
                 ],
+                start_xpoint=h.start_xpoint,
+                end_xpoint=h.end_xpoint,
                 created_at=h.created_at,
                 updated_at=h.updated_at,
             )

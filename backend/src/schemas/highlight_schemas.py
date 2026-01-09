@@ -21,6 +21,8 @@ class HighlightBase(BaseModel):
     chapter: str | None = Field(None, max_length=500, description="Chapter name")
     chapter_number: int | None = Field(None, ge=1, description="Chapter order number from TOC")
     page: int | None = Field(None, ge=0, description="Page number")
+    start_xpoint: str | None = Field(None, description="Highlight start position in XML document")
+    end_xpoint: str | None = Field(None, description="Highlight start position in XML document")
     note: str | None = Field(None, description="Note/annotation")
     datetime: str = Field(..., min_length=1, max_length=50, description="KOReader datetime format")
 

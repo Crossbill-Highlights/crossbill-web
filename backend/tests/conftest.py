@@ -68,6 +68,8 @@ def create_test_highlight(
     note: str | None = None,
     chapter_id: int | None = None,
     deleted_at: dt | None = None,
+    start_xpoint: str | None = None,
+    end_xpoint: str | None = None,
 ) -> Highlight:
     """Create a test highlight with properly computed content_hash.
 
@@ -85,6 +87,8 @@ def create_test_highlight(
         text=text,
         page=page,
         note=note,
+        start_xpoint=start_xpoint,
+        end_xpoint=end_xpoint,
         datetime=datetime_str,
         content_hash=content_hash,
         deleted_at=deleted_at,
