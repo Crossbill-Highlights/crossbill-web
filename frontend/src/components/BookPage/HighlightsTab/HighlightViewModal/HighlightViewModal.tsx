@@ -10,6 +10,7 @@ import { Box, Button, IconButton, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { CommonDialog } from '../../../common/CommonDialog.tsx';
+import { ConfirmationDialog } from '../../../common/ConfirmationDialog.tsx';
 import { HighlightContent } from '../../common/HighlightContent.tsx';
 import { FlashcardSection } from './components/FlashcardSection.tsx';
 import { HighlightNote } from './components/HighlightNote.tsx';
@@ -44,6 +45,7 @@ export const HighlightViewModal = ({
   const queryClient = useQueryClient();
   const [noteVisibleWhenEmpty, setNoteVisibleWhenEmpty] = useState(false);
   const [flashcardVisibleWhenEmpty, setFlashcardVisibleWhenEmpty] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const currentBookmark = bookmarksByHighlightId[highlight.id] ?? undefined;
 
@@ -86,16 +88,15 @@ export const HighlightViewModal = ({
   });
 
   const handleDelete = () => {
-    if (
-      confirm(
-        'Are you sure you want to delete this highlight? This will soft-delete the highlight and prevent it from being recreated during sync.'
-      )
-    ) {
-      deleteHighlightMutation.mutate({
-        bookId,
-        data: { highlight_ids: [highlight.id] },
-      });
-    }
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setDeleteConfirmOpen(false);
+    deleteHighlightMutation.mutate({
+      bookId,
+      data: { highlight_ids: [highlight.id] },
+    });
   };
 
   const handleClose = () => {
@@ -255,6 +256,17 @@ export const HighlightViewModal = ({
           </Box>
         )}
       </Box>
+
+      <ConfirmationDialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Highlight"
+        message="Are you sure you want to delete this highlight?"
+        confirmText="Delete"
+        confirmColor="error"
+        isLoading={isLoading}
+      />
     </CommonDialog>
   );
 };

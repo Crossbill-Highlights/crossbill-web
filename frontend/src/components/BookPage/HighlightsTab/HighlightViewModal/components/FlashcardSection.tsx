@@ -3,6 +3,7 @@ import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/genera
 import { useCreateFlashcardForHighlightApiV1HighlightsHighlightIdFlashcardsPost } from '@/api/generated/highlights/highlights.ts';
 import type { Flashcard } from '@/api/generated/model';
 import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
+import { ConfirmationDialog } from '@/components/common/ConfirmationDialog.tsx';
 import { DeleteIcon } from '@/components/common/Icons.tsx';
 import {
   Box,
@@ -82,10 +83,24 @@ export const FlashcardSection = ({
 }: FlashcardSectionProps) => {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const { isProcessing, saveFlashcard, deleteFlashcard } = useFlashcardMutations(
     bookId,
     highlightId
   );
+
+  const handleDeleteRequest = (flashcardId: number) => {
+    setPendingDeleteId(flashcardId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (pendingDeleteId === null) return;
+    setDeleteConfirmOpen(false);
+    await deleteFlashcard(pendingDeleteId);
+    setPendingDeleteId(null);
+  };
 
   const isDisabled = disabled || isProcessing;
   const canSave = question.trim() && answer.trim() && !isDisabled;
@@ -117,7 +132,7 @@ export const FlashcardSection = ({
                 {flashcards.map((flashcard) => (
                   <Flashcard
                     key={flashcard.id}
-                    onDelete={() => deleteFlashcard(flashcard.id)}
+                    onDelete={() => handleDeleteRequest(flashcard.id)}
                     isLoading={isDisabled}
                     {...flashcard}
                   />
@@ -163,6 +178,20 @@ export const FlashcardSection = ({
           </Box>
         </motion.div>
       )}
+
+      <ConfirmationDialog
+        open={deleteConfirmOpen}
+        onClose={() => {
+          setDeleteConfirmOpen(false);
+          setPendingDeleteId(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Flashcard"
+        message="Are you sure you want to delete this flashcard?"
+        confirmText="Delete"
+        confirmColor="error"
+        isLoading={isProcessing}
+      />
     </AnimatePresence>
   );
 };
@@ -214,8 +243,6 @@ const useFlashcardMutations = (bookId: number, highlightId: number) => {
   };
 
   const deleteFlashcard = async (flashcardId: number) => {
-    if (!confirm('Are you sure you want to delete this flashcard?')) return;
-
     await deleteFlashcardMutation.mutateAsync({ flashcardId });
   };
 

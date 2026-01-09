@@ -2,6 +2,7 @@ import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/bo
 import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/generated/flashcards/flashcards.ts';
 import { FlashcardWithContext } from '@/components/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
 import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
+import { ConfirmationDialog } from '@/components/common/ConfirmationDialog.tsx';
 import { DeleteIcon, EditIcon, QuoteIcon } from '@/components/common/Icons.tsx';
 import {
   Box,
@@ -53,6 +54,7 @@ const ActionButtonsStyled = styled(Box)(() => ({
 export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const deleteMutation = useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete({
@@ -69,10 +71,13 @@ export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardPr
     },
   });
 
-  const handleDelete = async (e: React.MouseEvent) => {
+  const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this flashcard?')) return;
+    setDeleteConfirmOpen(true);
+  };
 
+  const handleConfirmDelete = async () => {
+    setDeleteConfirmOpen(false);
     setIsDeleting(true);
     try {
       await deleteMutation.mutateAsync({ flashcardId: flashcard.id });
@@ -90,7 +95,7 @@ export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardPr
           </IconButton>
         </Tooltip>
         <Tooltip title="Delete">
-          <IconButton size="small" onClick={handleDelete} disabled={isDeleting}>
+          <IconButton size="small" onClick={handleDeleteClick} disabled={isDeleting}>
             <DeleteIcon fontSize="small" />
           </IconButton>
         </Tooltip>
@@ -185,6 +190,17 @@ export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardPr
           </Collapsable>
         </CardContent>
       </CardActionArea>
+
+      <ConfirmationDialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Flashcard"
+        message="Are you sure you want to delete this flashcard?"
+        confirmText="Delete"
+        confirmColor="error"
+        isLoading={isDeleting}
+      />
     </FlashcardStyled>
   );
 };
