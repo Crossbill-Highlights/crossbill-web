@@ -457,7 +457,6 @@ const TagGroupTitle = ({ title, count, isExpanded, onToggleCollapse }: TagGroupT
           sx={{
             fontSize: '0.7rem',
             fontWeight: 400,
-            color: 'text.disabled',
             ml: 0.5,
           }}
         >
