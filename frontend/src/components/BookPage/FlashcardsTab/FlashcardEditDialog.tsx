@@ -2,6 +2,7 @@ import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/bo
 import { useUpdateFlashcardApiV1FlashcardsFlashcardIdPut } from '@/api/generated/flashcards/flashcards.ts';
 import { HighlightContent } from '@/components/BookPage/common/HighlightContent.tsx';
 import { CommonDialog } from '@/components/common/CommonDialog.tsx';
+import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -24,6 +25,7 @@ export const FlashcardEditDialog = ({
   const [answer, setAnswer] = useState(flashcard.answer);
   const [isSaving, setIsSaving] = useState(false);
   const queryClient = useQueryClient();
+  const { showSnackbar } = useSnackbar();
 
   // Reset form when flashcard changes
   useEffect(() => {
@@ -41,7 +43,7 @@ export const FlashcardEditDialog = ({
       },
       onError: (error) => {
         console.error('Failed to update flashcard:', error);
-        alert('Failed to update flashcard. Please try again.');
+        showSnackbar('Failed to update flashcard. Please try again.', 'error');
       },
     },
   });

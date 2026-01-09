@@ -13,6 +13,7 @@ import {
   LinkIcon,
   NotesIcon,
 } from '@/components/common/Icons.tsx';
+import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
@@ -67,10 +68,12 @@ export const Toolbar = ({
   onDelete,
   disabled = false,
 }: ToolbarProps) => {
+  const { showSnackbar } = useSnackbar();
   const { handleBookmarkToggle, isProcessing } = useBookmarkMutations(
     bookmark,
     bookId,
-    highlightId
+    highlightId,
+    showSnackbar
   );
 
   const handleCopyLink = async () => {
@@ -136,7 +139,8 @@ export const Toolbar = ({
 const useBookmarkMutations = (
   bookmark: Bookmark | undefined,
   bookId: number,
-  highlightId: number
+  highlightId: number,
+  showSnackbar: (message: string, severity: 'error' | 'warning' | 'info' | 'success') => void
 ) => {
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -150,7 +154,7 @@ const useBookmarkMutations = (
       },
       onError: (error) => {
         console.error('Failed to create bookmark:', error);
-        alert('Failed to create bookmark. Please try again.');
+        showSnackbar('Failed to create bookmark. Please try again.', 'error');
       },
     },
   });
@@ -164,7 +168,7 @@ const useBookmarkMutations = (
       },
       onError: (error) => {
         console.error('Failed to delete bookmark:', error);
-        alert('Failed to delete bookmark. Please try again.');
+        showSnackbar('Failed to delete bookmark. Please try again.', 'error');
       },
     },
   });

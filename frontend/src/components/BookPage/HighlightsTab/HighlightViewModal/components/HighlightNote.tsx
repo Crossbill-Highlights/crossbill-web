@@ -1,6 +1,7 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import { useUpdateHighlightNoteApiV1HighlightsHighlightIdNotePost } from '@/api/generated/highlights/highlights.ts';
 import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
+import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -21,7 +22,8 @@ export const HighlightNote = ({
   disabled = false,
 }: HighlightNoteProps) => {
   const [noteText, setNoteText] = useState<string>(initialNote || '');
-  const { isProcessing, saveNote } = useNoteMutations(bookId, highlightId);
+  const { showSnackbar } = useSnackbar();
+  const { isProcessing, saveNote } = useNoteMutations(bookId, highlightId, showSnackbar);
   const hasChanges = (noteText.trim() || null) !== (initialNote || null);
   const isDisabled = disabled || isProcessing;
 
@@ -59,7 +61,11 @@ export const HighlightNote = ({
   );
 };
 
-const useNoteMutations = (bookId: number, highlightId: number) => {
+const useNoteMutations = (
+  bookId: number,
+  highlightId: number,
+  showSnackbar: (message: string, severity: 'error' | 'warning' | 'info' | 'success') => void
+) => {
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -72,7 +78,7 @@ const useNoteMutations = (bookId: number, highlightId: number) => {
       },
       onError: (error) => {
         console.error('Failed to update note:', error);
-        alert('Failed to update note. Please try again.');
+        showSnackbar('Failed to update note. Please try again.', 'error');
       },
     },
   });

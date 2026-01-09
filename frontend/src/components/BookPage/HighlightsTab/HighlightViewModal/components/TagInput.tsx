@@ -5,6 +5,7 @@ import {
   useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete,
 } from '@/api/generated/books/books.ts';
 import type { HighlightTagInBook } from '@/api/generated/model';
+import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
 import { Autocomplete, Box, Chip, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -24,10 +25,12 @@ export const TagInput = ({
   availableTags,
   disabled = false,
 }: TagInputProps) => {
+  const { showSnackbar } = useSnackbar();
   const { isProcessing, currentTags, updateTagList } = useTagState(
     bookId,
     highlightId,
-    initialTags
+    initialTags,
+    showSnackbar
   );
 
   const isDisabled = disabled || isProcessing;
@@ -72,7 +75,12 @@ export const TagInput = ({
   );
 };
 
-const useTagState = (bookId: number, highlightId: number, initialTags: HighlightTagInBook[]) => {
+const useTagState = (
+  bookId: number,
+  highlightId: number,
+  initialTags: HighlightTagInBook[],
+  showSnackbar: (message: string, severity: 'error' | 'warning' | 'info' | 'success') => void
+) => {
   const queryClient = useQueryClient();
   const [currentTags, setCurrentTags] = useState<HighlightTagInBook[]>(initialTags);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -90,7 +98,7 @@ const useTagState = (bookId: number, highlightId: number, initialTags: Highlight
       },
       onError: (error) => {
         console.error('Failed to add tag:', error);
-        alert('Failed to add tag. Please try again.');
+        showSnackbar('Failed to add tag. Please try again.', 'error');
       },
     },
   });
@@ -109,7 +117,7 @@ const useTagState = (bookId: number, highlightId: number, initialTags: Highlight
         },
         onError: (error) => {
           console.error('Failed to remove tag:', error);
-          alert('Failed to remove tag. Please try again.');
+          showSnackbar('Failed to remove tag. Please try again.', 'error');
         },
       },
     });

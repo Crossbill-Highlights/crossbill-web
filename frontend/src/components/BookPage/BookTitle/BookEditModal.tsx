@@ -6,13 +6,15 @@ import {
 } from '@/api/generated/books/books.ts';
 import { BookDetails } from '@/api/generated/model';
 import { DeleteIcon } from '@/components/common/Icons.tsx';
+import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
 import { Box, Button, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { BookCover } from '../../common/BookCover.tsx';
 import { CommonDialog } from '../../common/CommonDialog.tsx';
+import { ConfirmationDialog } from '../../common/ConfirmationDialog.tsx';
 import { TagInput } from '../../common/TagInput.tsx';
 
 interface BookEditFormData {
@@ -28,6 +30,8 @@ interface BookEditModalProps {
 export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { showSnackbar } = useSnackbar();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const { control, handleSubmit, reset } = useForm<BookEditFormData>({
     defaultValues: {
       tags: book.tags.map((tag) => tag.name),
@@ -66,7 +70,7 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
       },
       onError: (error) => {
         console.error('Failed to delete book:', error);
-        alert('Failed to delete book. Please try again.');
+        showSnackbar('Failed to delete book. Please try again.', 'error');
       },
     },
   });
@@ -93,13 +97,12 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
   };
 
   const handleDelete = () => {
-    if (
-      confirm(
-        `Are you sure you want to delete "${book.title}"? This will permanently delete the book and all its highlights.`
-      )
-    ) {
-      deleteBookMutation.mutate({ bookId: book.id });
-    }
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setDeleteConfirmOpen(false);
+    deleteBookMutation.mutate({ bookId: book.id });
   };
 
   const isSaving = updateBookMutation.isPending;
@@ -186,6 +189,17 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
           </Typography>
         )}
       </Box>
+
+      <ConfirmationDialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Book"
+        message={`Are you sure you want to delete "${book.title}"? This will permanently delete the book and all its highlights.`}
+        confirmText="Delete"
+        confirmColor="error"
+        isLoading={isDeleting}
+      />
     </CommonDialog>
   );
 };
