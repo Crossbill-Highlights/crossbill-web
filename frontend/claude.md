@@ -3,9 +3,11 @@
 ## Code Quality Requirements
 
 ### Working style
+
 - Always make logically separated commits when working on big changes
 
 ### Pre-Commit Checklist
+
 - **ALWAYS** run linter before making commits: `npm run lint:fix`
 - **ALWAYS** run formatter before making commits: `npm run format`
 - Verify no TypeScript errors: `npm run type-check`
@@ -16,18 +18,21 @@
 ## Programming Style
 
 ### Functional Programming Principles
+
 - **PREFER** functional programming style over imperative
 - Use pure functions whenever possible (no side effects)
 - Avoid mutations - prefer immutable data structures
 - Use functional composition for complex logic
 
 ### Component Patterns
+
 - **PREFER** functional components over class components
 - Use hooks for state management and side effects
 - Keep components small and focused (single responsibility)
 - Extract reusable logic into custom hooks
 
 ### Lodash Usage
+
 - **USE** lodash for functional utilities when necessary:
   - `map`, `filter`, `reduce` for array transformations
   - `groupBy`, `sortBy`, `uniqBy` for data manipulation
@@ -38,6 +43,7 @@
 ### Examples
 
 #### Good - Functional Style with Lodash
+
 ```typescript
 import { map, filter, sortBy } from 'lodash';
 
@@ -65,6 +71,7 @@ const HighlightsList = ({ bookId }: Props) => {
 ```
 
 #### Bad - Imperative Style
+
 ```typescript
 // Avoid mutations and imperative loops
 const HighlightsList = ({ bookId }: Props) => {
@@ -136,6 +143,58 @@ const HighlightsList = ({ bookId }: Props) => {
 - **PROVIDE** user-friendly error messages
 - **LOG** errors to console for debugging
 - **USE** error boundaries for component failures
+
+## User Feedback & Confirmations
+
+### Notifications (Snackbar)
+
+- **NEVER** use native `alert()` - use `useSnackbar` from `@/contexts/SnackbarContext.tsx`
+- **USE** for error notifications, success messages, and transient feedback
+- Snackbar auto-dismisses after 6 seconds
+
+```typescript
+import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
+
+const MyComponent = () => {
+  const { showSnackbar } = useSnackbar();
+
+  const handleError = () => {
+    showSnackbar('Failed to save. Please try again.', 'error');
+  };
+
+  const handleSuccess = () => {
+    showSnackbar('Saved successfully!', 'success');
+  };
+};
+```
+
+### Confirmation Dialogs
+
+- **NEVER** use native `confirm()` - use `ConfirmationDialog` from `@/components/common/ConfirmationDialog.tsx`
+- **USE** for destructive actions (delete, discard changes, etc.)
+
+```typescript
+import { ConfirmationDialog } from '@/components/common/ConfirmationDialog.tsx';
+
+const MyComponent = () => {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  return (
+    <>
+      <Button onClick={() => setConfirmOpen(true)}>Delete</Button>
+      <ConfirmationDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Item"
+        message="Are you sure you want to delete this item?"
+        confirmText="Delete"
+        confirmColor="error"
+      />
+    </>
+  );
+};
+```
 
 ## Accessibility
 

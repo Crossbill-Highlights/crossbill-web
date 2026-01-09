@@ -4,6 +4,7 @@ import { FlashcardWithContext } from '@/components/BookPage/FlashcardsTab/Flashc
 import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog.tsx';
 import { DeleteIcon, EditIcon, QuoteIcon } from '@/components/common/Icons.tsx';
+import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
 import {
   Box,
   Card,
@@ -56,6 +57,7 @@ export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardPr
   const [isExpanded, setIsExpanded] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { showSnackbar } = useSnackbar();
 
   const deleteMutation = useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete({
     mutation: {
@@ -66,7 +68,7 @@ export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardPr
       },
       onError: (error) => {
         console.error('Failed to delete flashcard:', error);
-        alert('Failed to delete flashcard. Please try again.');
+        showSnackbar('Failed to delete flashcard. Please try again.', 'error');
       },
     },
   });

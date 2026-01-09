@@ -6,6 +6,7 @@ import {
 import type { Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { ArrowBackIcon, ArrowForwardIcon } from '@/components/common/Icons.tsx';
+import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
 import { Box, Button, IconButton, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -43,6 +44,7 @@ export const HighlightViewModal = ({
   onNavigate,
 }: HighlightViewModalProps) => {
   const queryClient = useQueryClient();
+  const { showSnackbar } = useSnackbar();
   const [noteVisibleWhenEmpty, setNoteVisibleWhenEmpty] = useState(false);
   const [flashcardVisibleWhenEmpty, setFlashcardVisibleWhenEmpty] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -82,7 +84,7 @@ export const HighlightViewModal = ({
       },
       onError: (error) => {
         console.error('Failed to delete highlight:', error);
-        alert('Failed to delete highlight. Please try again.');
+        showSnackbar('Failed to delete highlight. Please try again.', 'error');
       },
     },
   });

@@ -6,6 +6,7 @@ import {
 } from '@/api/generated/books/books.ts';
 import { BookDetails } from '@/api/generated/model';
 import { DeleteIcon } from '@/components/common/Icons.tsx';
+import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
 import { Box, Button, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -29,6 +30,7 @@ interface BookEditModalProps {
 export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { showSnackbar } = useSnackbar();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const { control, handleSubmit, reset } = useForm<BookEditFormData>({
     defaultValues: {
@@ -68,7 +70,7 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
       },
       onError: (error) => {
         console.error('Failed to delete book:', error);
-        alert('Failed to delete book. Please try again.');
+        showSnackbar('Failed to delete book. Please try again.', 'error');
       },
     },
   });

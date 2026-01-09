@@ -5,6 +5,7 @@ import type { Flashcard } from '@/api/generated/model';
 import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog.tsx';
 import { DeleteIcon } from '@/components/common/Icons.tsx';
+import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
 import {
   Box,
   Button,
@@ -85,9 +86,11 @@ export const FlashcardSection = ({
   const [answer, setAnswer] = useState('');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const { showSnackbar } = useSnackbar();
   const { isProcessing, saveFlashcard, deleteFlashcard } = useFlashcardMutations(
     bookId,
-    highlightId
+    highlightId,
+    showSnackbar
   );
 
   const handleDeleteRequest = (flashcardId: number) => {
@@ -196,7 +199,11 @@ export const FlashcardSection = ({
   );
 };
 
-const useFlashcardMutations = (bookId: number, highlightId: number) => {
+const useFlashcardMutations = (
+  bookId: number,
+  highlightId: number,
+  showSnackbar: (message: string, severity: 'error' | 'warning' | 'info' | 'success') => void
+) => {
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
   const createFlashcardMutation =
@@ -209,7 +216,7 @@ const useFlashcardMutations = (bookId: number, highlightId: number) => {
         },
         onError: (error) => {
           console.error('Failed to create flashcard:', error);
-          alert('Failed to create flashcard. Please try again.');
+          showSnackbar('Failed to create flashcard. Please try again.', 'error');
         },
       },
     });
@@ -223,7 +230,7 @@ const useFlashcardMutations = (bookId: number, highlightId: number) => {
       },
       onError: (error) => {
         console.error('Failed to delete flashcard:', error);
-        alert('Failed to delete flashcard. Please try again.');
+        showSnackbar('Failed to delete flashcard. Please try again.', 'error');
       },
     },
   });
