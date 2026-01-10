@@ -141,7 +141,7 @@ class ReadingSessionService:
         self,
         book_id: int,
         user_id: int,
-        limit: int = 100,
+        limit: int = 30,
         offset: int = 0,
     ) -> schemas.ReadingSessionsResponse:
         """Get reading sessions for a specific book."""
@@ -156,4 +156,6 @@ class ReadingSessionService:
         return schemas.ReadingSessionsResponse(
             sessions=[schemas.ReadingSession.model_validate(s) for s in sessions],
             total=total,
+            offset=offset,
+            limit=limit,
         )
