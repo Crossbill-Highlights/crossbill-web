@@ -17,8 +17,9 @@ import { flatMap } from 'lodash';
 import { useCallback, useEffect, useMemo } from 'react';
 import { ScrollToTopButton } from '../common/ScrollToTopButton';
 import { Spinner } from '../common/Spinner';
+import { ReadingSessionsTab } from './ReadingSessionsTab/ReadingSessionsTab';
 
-type TabValue = 'highlights' | 'flashcards';
+type TabValue = 'highlights' | 'flashcards' | 'readingSessions';
 
 const BookTabs = ({
   activeTab,
@@ -69,6 +70,18 @@ const BookTabs = ({
             <FlashcardsIcon sx={{ fontSize: 20 }} />
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               Flashcards ({totalFlashcards})
+            </Typography>
+          </Box>
+        }
+        sx={{ textTransform: 'none' }}
+      />
+      <Tab
+        value="readingSessions"
+        label={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FlashcardsIcon sx={{ fontSize: 20 }} />
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Reading Sessions
             </Typography>
           </Box>
         }
@@ -215,7 +228,7 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
             <BookTabs activeTab={activeTab} handleTabChange={handleTabChange} book={book} />
           </Box>
         )}
-        {activeTab === 'highlights' ? (
+        {activeTab === 'highlights' && (
           <HighlightsTab
             book={book}
             isDesktop={isDesktop}
@@ -224,7 +237,8 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
             onBookmarkClick={handleBookmarkClick}
             onChapterClick={handleChapterClick}
           />
-        ) : (
+        )}
+        {activeTab === 'flashcards' && (
           <FlashcardsTab
             book={book}
             isDesktop={isDesktop}
@@ -233,6 +247,7 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
             onChapterClick={handleChapterClick}
           />
         )}
+        {activeTab === 'readingSessions' && <ReadingSessionsTab />}
       </FadeInOut>
     </PageContainer>
   );
