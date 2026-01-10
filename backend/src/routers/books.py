@@ -941,7 +941,7 @@ def get_book_reading_sessions(
     book_id: int,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-    limit: int = Query(100, ge=1, le=1000, description="Maximum sessions to return"),
+    limit: int = Query(30, ge=1, le=1000, description="Maximum sessions to return"),
     offset: int = Query(0, ge=0, description="Number of sessions to skip"),
 ) -> schemas.ReadingSessionsResponse:
     """

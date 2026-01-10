@@ -92,7 +92,9 @@ class ReadingSessionUploadResponse(BaseModel):
 
 
 class ReadingSessionsResponse(BaseModel):
-    """Schema for list of reading sessions response."""
+    """Schema for paginated reading sessions response."""
 
     sessions: list[ReadingSession] = Field(..., description="List of reading sessions")
     total: int = Field(..., ge=0, description="Total number of sessions")
+    offset: int = Field(..., ge=0, description="Current offset")
+    limit: int = Field(..., ge=1, description="Current limit")

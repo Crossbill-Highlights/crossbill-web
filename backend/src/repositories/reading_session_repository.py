@@ -95,7 +95,7 @@ class ReadingSessionRepository:
         return count_after - count_before
 
     def get_by_book_id(
-        self, book_id: int, user_id: int, limit: int = 100, offset: int = 0
+        self, book_id: int, user_id: int, limit: int = 30, offset: int = 0
     ) -> Sequence[models.ReadingSession]:
         """Get reading sessions for a specific book, ordered by start_time descending."""
         stmt = (
