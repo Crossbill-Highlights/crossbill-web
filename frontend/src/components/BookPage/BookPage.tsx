@@ -44,6 +44,8 @@ const BookTabs = ({
     <Tabs
       value={activeTab}
       onChange={handleTabChange}
+      variant="scrollable"
+      scrollButtons="auto"
       sx={{
         mb: 3,
         '& .MuiTabs-indicator': {
