@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BookDetailsAuthor } from './bookDetailsAuthor';
+import type { BookDetailsClientBookId } from './bookDetailsClientBookId';
 import type { BookDetailsCover } from './bookDetailsCover';
 import type { BookDetailsDescription } from './bookDetailsDescription';
 import type { BookDetailsIsbn } from './bookDetailsIsbn';
@@ -22,6 +23,7 @@ import type { TagInBook } from './tagInBook';
  */
 export interface BookDetails {
   id: number;
+  client_book_id?: BookDetailsClientBookId;
   title: string;
   author: BookDetailsAuthor;
   isbn: BookDetailsIsbn;

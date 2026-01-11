@@ -7,8 +7,10 @@
 import type { HighlightResponseBaseChapter } from './highlightResponseBaseChapter';
 import type { HighlightResponseBaseChapterId } from './highlightResponseBaseChapterId';
 import type { HighlightResponseBaseChapterNumber } from './highlightResponseBaseChapterNumber';
+import type { HighlightResponseBaseEndXpoint } from './highlightResponseBaseEndXpoint';
 import type { HighlightResponseBaseNote } from './highlightResponseBaseNote';
 import type { HighlightResponseBasePage } from './highlightResponseBasePage';
+import type { HighlightResponseBaseStartXpoint } from './highlightResponseBaseStartXpoint';
 import type { HighlightTagInBook } from './highlightTagInBook';
 
 /**
@@ -28,6 +30,10 @@ export interface HighlightResponseBase {
   chapter_number?: HighlightResponseBaseChapterNumber;
   /** Page number */
   page?: HighlightResponseBasePage;
+  /** Highlight start position in XML document */
+  start_xpoint?: HighlightResponseBaseStartXpoint;
+  /** Highlight start position in XML document */
+  end_xpoint?: HighlightResponseBaseEndXpoint;
   /** Note/annotation */
   note?: HighlightResponseBaseNote;
   /**
