@@ -8,8 +8,10 @@ import type { Flashcard } from './flashcard';
 import type { HighlightChapter } from './highlightChapter';
 import type { HighlightChapterId } from './highlightChapterId';
 import type { HighlightChapterNumber } from './highlightChapterNumber';
+import type { HighlightEndXpoint } from './highlightEndXpoint';
 import type { HighlightNote } from './highlightNote';
 import type { HighlightPage } from './highlightPage';
+import type { HighlightStartXpoint } from './highlightStartXpoint';
 import type { HighlightTagInBook } from './highlightTagInBook';
 
 /**
@@ -27,6 +29,10 @@ export interface Highlight {
   chapter_number?: HighlightChapterNumber;
   /** Page number */
   page?: HighlightPage;
+  /** Highlight start position in XML document */
+  start_xpoint?: HighlightStartXpoint;
+  /** Highlight start position in XML document */
+  end_xpoint?: HighlightEndXpoint;
   /** Note/annotation */
   note?: HighlightNote;
   /**

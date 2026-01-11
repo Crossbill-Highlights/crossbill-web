@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BookWithHighlightCountAuthor } from './bookWithHighlightCountAuthor';
+import type { BookWithHighlightCountClientBookId } from './bookWithHighlightCountClientBookId';
 import type { BookWithHighlightCountCover } from './bookWithHighlightCountCover';
 import type { BookWithHighlightCountDescription } from './bookWithHighlightCountDescription';
 import type { BookWithHighlightCountIsbn } from './bookWithHighlightCountIsbn';
@@ -18,6 +19,7 @@ import type { TagInBook } from './tagInBook';
  */
 export interface BookWithHighlightCount {
   id: number;
+  client_book_id?: BookWithHighlightCountClientBookId;
   title: string;
   author: BookWithHighlightCountAuthor;
   isbn: BookWithHighlightCountIsbn;

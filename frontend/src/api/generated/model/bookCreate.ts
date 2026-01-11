@@ -34,6 +34,12 @@ export interface BookCreate {
   language?: BookCreateLanguage;
   /** Total page count from ebook metadata */
   page_count?: BookCreatePageCount;
+  /**
+   * Client-provided stable book identifier for deduplication
+   * @minLength 1
+   * @maxLength 255
+   */
+  client_book_id: string;
   /** Keywords from ebook metadata (will be converted to tags) */
   keywords?: BookCreateKeywords;
 }

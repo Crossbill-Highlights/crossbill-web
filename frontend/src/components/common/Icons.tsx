@@ -24,6 +24,7 @@ export {
   MenuBook as HighlightsIcon,
   Notes as NotesIcon,
   FormatQuote as QuoteIcon,
+  AutoStories as ReadingSessionIcon,
   LocalOffer as TagIcon,
 } from '@mui/icons-material';
 
@@ -41,4 +42,8 @@ export {
 export { Logout as LogoutIcon, Settings as SettingsIcon } from '@mui/icons-material';
 
 // Date/Time icons
-export { CalendarMonth as DateIcon } from '@mui/icons-material';
+export {
+  CalendarMonth as DateIcon,
+  Timer as DurationIcon,
+  AccessTime as TimeIcon,
+} from '@mui/icons-material';

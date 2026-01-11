@@ -22,6 +22,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
   BodyUploadBookCoverApiV1BooksBookIdMetadataCoverPost,
+  BodyUploadBookEpubApiV1BooksBookIdEpubPost,
   BookDetails,
   BookHighlightSearchResponse,
   BookUpdateRequest,
@@ -31,9 +32,11 @@ import type {
   BookmarksResponse,
   BooksListResponse,
   CoverUploadResponse,
+  EpubUploadResponse,
   FlashcardCreateRequest,
   FlashcardCreateResponse,
   FlashcardsWithHighlightsResponse,
+  GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
   GetBooksApiV1BooksGetParams,
   GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams,
   HTTPValidationError,
@@ -45,6 +48,7 @@ import type {
   HighlightTagCreateRequest,
   HighlightTagUpdateRequest,
   HighlightTagsResponse,
+  ReadingSessionsResponse,
   RecentlyViewedBooksResponse,
   SearchBookHighlightsApiV1BooksBookIdHighlightsGetParams,
 } from '.././model';
@@ -1197,6 +1201,110 @@ export function useGetBookCoverApiV1BooksBookIdCoverGet<
   return query;
 }
 
+/**
+ * Upload an EPUB file for a book.
+
+This endpoint accepts an uploaded EPUB file and saves it for the book.
+The file is validated using ebooklib before being saved.
+If the book already has an EPUB file, it will be replaced.
+
+Args:
+    book_id: ID of the book
+    epub: Uploaded EPUB file
+    current_user: Authenticated user
+
+Returns:
+    EpubUploadResponse with success status and epub path
+
+Raises:
+    HTTPException: If book is not found, validation fails, or upload fails
+ * @summary Upload Book Epub
+ */
+export const uploadBookEpubApiV1BooksBookIdEpubPost = (
+  bookId: number,
+  bodyUploadBookEpubApiV1BooksBookIdEpubPost: BodyUploadBookEpubApiV1BooksBookIdEpubPost,
+  signal?: AbortSignal
+) => {
+  const formData = new FormData();
+  formData.append(`epub`, bodyUploadBookEpubApiV1BooksBookIdEpubPost.epub);
+
+  return axiosInstance<EpubUploadResponse>({
+    url: `/api/v1/books/${bookId}/epub`,
+    method: 'POST',
+    headers: { 'Content-Type': 'multipart/form-data' },
+    data: formData,
+    signal,
+  });
+};
+
+export const getUploadBookEpubApiV1BooksBookIdEpubPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadBookEpubApiV1BooksBookIdEpubPost>>,
+    TError,
+    { bookId: number; data: BodyUploadBookEpubApiV1BooksBookIdEpubPost },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof uploadBookEpubApiV1BooksBookIdEpubPost>>,
+  TError,
+  { bookId: number; data: BodyUploadBookEpubApiV1BooksBookIdEpubPost },
+  TContext
+> => {
+  const mutationKey = ['uploadBookEpubApiV1BooksBookIdEpubPost'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof uploadBookEpubApiV1BooksBookIdEpubPost>>,
+    { bookId: number; data: BodyUploadBookEpubApiV1BooksBookIdEpubPost }
+  > = (props) => {
+    const { bookId, data } = props ?? {};
+
+    return uploadBookEpubApiV1BooksBookIdEpubPost(bookId, data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UploadBookEpubApiV1BooksBookIdEpubPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uploadBookEpubApiV1BooksBookIdEpubPost>>
+>;
+export type UploadBookEpubApiV1BooksBookIdEpubPostMutationBody =
+  BodyUploadBookEpubApiV1BooksBookIdEpubPost;
+export type UploadBookEpubApiV1BooksBookIdEpubPostMutationError = HTTPValidationError;
+
+/**
+ * @summary Upload Book Epub
+ */
+export const useUploadBookEpubApiV1BooksBookIdEpubPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof uploadBookEpubApiV1BooksBookIdEpubPost>>,
+      TError,
+      { bookId: number; data: BodyUploadBookEpubApiV1BooksBookIdEpubPost },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof uploadBookEpubApiV1BooksBookIdEpubPost>>,
+  TError,
+  { bookId: number; data: BodyUploadBookEpubApiV1BooksBookIdEpubPost },
+  TContext
+> => {
+  const mutationOptions = getUploadBookEpubApiV1BooksBookIdEpubPostMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 /**
  * Get all highlight tags for a book.
 
@@ -2478,6 +2586,184 @@ export function useGetFlashcardsForBookApiV1BooksBookIdFlashcardsGet<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getGetFlashcardsForBookApiV1BooksBookIdFlashcardsGetQueryOptions(
     bookId,
+    options
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Get reading sessions for a specific book.
+
+Returns reading sessions ordered by start time (newest first).
+
+Args:
+    book_id: ID of the book
+    db: Database session
+    limit: Maximum number of sessions
+    offset: Pagination offset
+
+Returns:
+    ReadingSessionsResponse with sessions list
+ * @summary Get Book Reading Sessions
+ */
+export const getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet = (
+  bookId: number,
+  params?: GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<ReadingSessionsResponse>({
+    url: `/api/v1/books/${bookId}/reading_sessions`,
+    method: 'GET',
+    params,
+    signal,
+  });
+};
+
+export const getGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetQueryKey = (
+  bookId?: number,
+  params?: GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams
+) => {
+  return [`/api/v1/books/${bookId}/reading_sessions`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  params?: GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetQueryKey(bookId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>
+  > = ({ signal }) =>
+    getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet(bookId, params, signal);
+
+  return { queryKey, queryFn, enabled: !!bookId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>
+>;
+export type GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetQueryError =
+  HTTPValidationError;
+
+export function useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet<
+  TData = Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  params: undefined | GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet<
+  TData = Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  params?: GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet<
+  TData = Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  params?: GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Book Reading Sessions
+ */
+
+export function useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet<
+  TData = Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  params?: GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetQueryOptions(
+    bookId,
+    params,
     options
   );
 

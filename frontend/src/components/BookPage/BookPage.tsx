@@ -8,7 +8,7 @@ import { FlashcardsTab } from '@/components/BookPage/FlashcardsTab/FlashcardsTab
 import { HighlightsTab } from '@/components/BookPage/HighlightsTab/HighlightsTab.tsx';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils';
-import { FlashcardsIcon, HighlightsIcon } from '@/components/common/Icons.tsx';
+import { FlashcardsIcon, HighlightsIcon, ReadingSessionIcon } from '@/components/common/Icons.tsx';
 import { PageContainer, ThreeColumnLayout } from '@/components/layout/Layouts.tsx';
 import { queryClient } from '@/lib/queryClient';
 import { Alert, Box, Tab, Tabs, Typography, useMediaQuery, useTheme } from '@mui/material';
@@ -17,8 +17,9 @@ import { flatMap } from 'lodash';
 import { useCallback, useEffect, useMemo } from 'react';
 import { ScrollToTopButton } from '../common/ScrollToTopButton';
 import { Spinner } from '../common/Spinner';
+import { ReadingSessionsTab } from './ReadingSessionsTab/ReadingSessionsTab';
 
-type TabValue = 'highlights' | 'flashcards';
+type TabValue = 'highlights' | 'flashcards' | 'readingSessions';
 
 const BookTabs = ({
   activeTab,
@@ -43,6 +44,8 @@ const BookTabs = ({
     <Tabs
       value={activeTab}
       onChange={handleTabChange}
+      variant="scrollable"
+      scrollButtons="auto"
       sx={{
         mb: 3,
         '& .MuiTabs-indicator': {
@@ -69,6 +72,18 @@ const BookTabs = ({
             <FlashcardsIcon sx={{ fontSize: 20 }} />
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               Flashcards ({totalFlashcards})
+            </Typography>
+          </Box>
+        }
+        sx={{ textTransform: 'none' }}
+      />
+      <Tab
+        value="readingSessions"
+        label={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ReadingSessionIcon sx={{ fontSize: 20 }} />
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Reading Sessions
             </Typography>
           </Box>
         }
@@ -215,7 +230,7 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
             <BookTabs activeTab={activeTab} handleTabChange={handleTabChange} book={book} />
           </Box>
         )}
-        {activeTab === 'highlights' ? (
+        {activeTab === 'highlights' && (
           <HighlightsTab
             book={book}
             isDesktop={isDesktop}
@@ -224,7 +239,8 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
             onBookmarkClick={handleBookmarkClick}
             onChapterClick={handleChapterClick}
           />
-        ) : (
+        )}
+        {activeTab === 'flashcards' && (
           <FlashcardsTab
             book={book}
             isDesktop={isDesktop}
@@ -232,6 +248,9 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
             onTagClick={handleTagClick}
             onChapterClick={handleChapterClick}
           />
+        )}
+        {activeTab === 'readingSessions' && (
+          <ReadingSessionsTab bookId={book.id} isDesktop={isDesktop} />
         )}
       </FadeInOut>
     </PageContainer>

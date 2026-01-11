@@ -6,8 +6,10 @@
  */
 import type { HighlightCreateChapter } from './highlightCreateChapter';
 import type { HighlightCreateChapterNumber } from './highlightCreateChapterNumber';
+import type { HighlightCreateEndXpoint } from './highlightCreateEndXpoint';
 import type { HighlightCreateNote } from './highlightCreateNote';
 import type { HighlightCreatePage } from './highlightCreatePage';
+import type { HighlightCreateStartXpoint } from './highlightCreateStartXpoint';
 
 /**
  * Schema for creating a Highlight.
@@ -24,6 +26,10 @@ export interface HighlightCreate {
   chapter_number?: HighlightCreateChapterNumber;
   /** Page number */
   page?: HighlightCreatePage;
+  /** Highlight start position in XML document */
+  start_xpoint?: HighlightCreateStartXpoint;
+  /** Highlight start position in XML document */
+  end_xpoint?: HighlightCreateEndXpoint;
   /** Note/annotation */
   note?: HighlightCreateNote;
   /**

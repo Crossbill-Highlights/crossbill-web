@@ -5,7 +5,8 @@ type BookPageSearch = {
   search?: string;
   tagId?: number;
   highlightId?: number;
-  tab?: 'highlights' | 'flashcards';
+  tab?: 'highlights' | 'flashcards' | 'readingSessions';
+  sessionPage?: number;
 };
 export const Route = createFileRoute('/book/$bookId')({
   component: BookPage,
@@ -14,7 +15,8 @@ export const Route = createFileRoute('/book/$bookId')({
       search: (search.search as string | undefined) || undefined,
       tagId: (search.tagId as number | undefined) || undefined,
       highlightId: (search.highlightId as number | undefined) || undefined,
-      tab: (search.tab as 'highlights' | 'flashcards' | undefined) || undefined,
+      tab: (search.tab as 'highlights' | 'flashcards' | 'readingSessions' | undefined) || undefined,
+      sessionPage: search.sessionPage ? Number(search.sessionPage) : undefined,
     };
   },
 });
