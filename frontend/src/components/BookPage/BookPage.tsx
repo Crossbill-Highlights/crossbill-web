@@ -8,7 +8,7 @@ import { FlashcardsTab } from '@/components/BookPage/FlashcardsTab/FlashcardsTab
 import { HighlightsTab } from '@/components/BookPage/HighlightsTab/HighlightsTab.tsx';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { scrollToElementWithHighlight } from '@/components/common/animations/scrollUtils';
-import { FlashcardsIcon, HighlightsIcon } from '@/components/common/Icons.tsx';
+import { FlashcardsIcon, HighlightsIcon, ReadingSessionIcon } from '@/components/common/Icons.tsx';
 import { PageContainer, ThreeColumnLayout } from '@/components/layout/Layouts.tsx';
 import { queryClient } from '@/lib/queryClient';
 import { Alert, Box, Tab, Tabs, Typography, useMediaQuery, useTheme } from '@mui/material';
@@ -79,7 +79,7 @@ const BookTabs = ({
         value="readingSessions"
         label={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FlashcardsIcon sx={{ fontSize: 20 }} />
+            <ReadingSessionIcon sx={{ fontSize: 20 }} />
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               Reading Sessions
             </Typography>
@@ -247,7 +247,9 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
             onChapterClick={handleChapterClick}
           />
         )}
-        {activeTab === 'readingSessions' && <ReadingSessionsTab />}
+        {activeTab === 'readingSessions' && (
+          <ReadingSessionsTab bookId={book.id} isDesktop={isDesktop} />
+        )}
       </FadeInOut>
     </PageContainer>
   );
