@@ -333,57 +333,43 @@ class EpubService:
         parser = etree.HTMLParser()
         return etree.fromstring(content, parser)
 
-    def _get_text_nodes_for_element(
-        self,
-        tree: etree._Element,
-        parsed: ParsedXPoint,
-    ) -> tuple[list[str], int]:
-        """Navigate to element and get text nodes.
-
-        Args:
-            tree: Parsed HTML tree
-            parsed: Parsed xpoint
-
-        Returns:
-            Tuple of (list of text strings from text nodes, target text node index)
-
-        Raises:
-            XPointNavigationError: If navigation fails
-        """
-        element = self._find_element(tree, parsed)
-        text_nodes = element.xpath("text()")
-
-        if not text_nodes:
-            raise XPointNavigationError(
-                f"{parsed.xpath}/text().{parsed.char_offset}",
-                "element contains no text nodes",
-            )
-
-        text_idx = parsed.text_node_index - 1
-        if text_idx < 0 or text_idx >= len(text_nodes):
-            raise XPointNavigationError(
-                f"{parsed.xpath}/text()[{parsed.text_node_index}].{parsed.char_offset}",
-                f"text()[{parsed.text_node_index}] out of range "
-                f"(element has {len(text_nodes)} text nodes)",
-            )
-
-        return [str(t) for t in text_nodes], text_idx
-
     def _extract_within_fragment(
         self,
         book: epub.EpubBook,
         start: ParsedXPoint,
         end: ParsedXPoint,
     ) -> str:
-        """Extract text when start and end are in same DocFragment."""
+        """Extract text when start and end are in same DocFragment.
+
+        Uses streaming approach to correctly handle mixed content where
+        child elements appear between text nodes.
+        """
         tree = self._get_spine_item_content(book, start.doc_fragment_index)
 
-        if start.xpath == end.xpath and start.text_node_index == end.text_node_index:
-            text_nodes, idx = self._get_text_nodes_for_element(tree, start)
-            text = text_nodes[idx]
-            return text[start.char_offset : end.char_offset]
+        # Resolve xpoints to actual element/attribute locations
+        start_elem = self._find_element(tree, start)
+        start_target_elem, start_attr = self._resolve_text_node_location(
+            start_elem, start.text_node_index
+        )
 
-        return self._extract_text_range(tree, start, end)
+        end_elem = self._find_element(tree, end)
+        end_target_elem, end_attr = self._resolve_text_node_location(end_elem, end.text_node_index)
+
+        # Get the body element for iteration
+        body = tree.xpath("//body")
+        if not body:
+            return ""
+
+        # Use streaming extraction to maintain document order
+        return self._extract_between_locations(
+            body[0],
+            start_target_elem,
+            start_attr,
+            start.char_offset,
+            end_target_elem,
+            end_attr,
+            end.char_offset,
+        )
 
     def _convert_xpath(self, xpath: str) -> str:
         """Convert xpoint xpath to lxml-compatible xpath."""
@@ -402,81 +388,115 @@ class EpubService:
             )
         return elements[0]
 
-    def _extract_same_element_text(
+    def _resolve_text_node_location(
         self,
-        text_nodes: list[str],
-        start_idx: int,
-        end_idx: int,
+        element: etree._Element,
+        text_node_index: int,
+    ) -> tuple[etree._Element, str]:
+        """Resolve a 1-based text node index to (element, attribute) pair.
+
+        In lxml's tree model, text content is stored in two places:
+        - element.text: text before the first child
+        - child.tail: text after each child element
+
+        This method maps the XPath text() node index to the actual location.
+
+        Args:
+            element: The element containing the text nodes
+            text_node_index: 1-based index of the text node (as used by XPath)
+
+        Returns:
+            Tuple of (element, attribute) where attribute is 'text' or 'tail'
+
+        Raises:
+            XPointNavigationError: If text_node_index is out of range
+        """
+        current_idx = 1  # text_node_index is 1-based
+
+        # First text node is element.text (if it exists)
+        if element.text:
+            if current_idx == text_node_index:
+                return element, "text"
+            current_idx += 1
+
+        # Subsequent text nodes are child.tail values
+        for child in element:
+            if child.tail:
+                if current_idx == text_node_index:
+                    return child, "tail"
+                current_idx += 1
+
+        raise XPointNavigationError(
+            f"text()[{text_node_index}]",
+            f"text node index out of range (element has {current_idx - 1} text nodes)",
+        )
+
+    def _iter_text_locations(self, root: etree._Element) -> list[tuple[etree._Element, str, str]]:
+        """Iterate through all text content in document order.
+
+        Yields tuples of (element, attribute, text) for each text segment.
+        This respects document order by following the tree structure.
+
+        Args:
+            root: Root element to iterate from
+
+        Returns:
+            List of (element, attribute_name, text_content) tuples
+        """
+        locations = []
+        for elem in root.iter():
+            if elem.text:
+                locations.append((elem, "text", elem.text))
+            if elem.tail:
+                locations.append((elem, "tail", elem.tail))
+        return locations
+
+    def _extract_between_locations(
+        self,
+        root: etree._Element,
+        start_elem: etree._Element | None,
+        start_attr: str | None,
         start_offset: int,
-        end_offset: int,
+        end_elem: etree._Element | None,
+        end_attr: str | None,
+        end_offset: int | None,
     ) -> str:
-        """Extract text from same element between text node indices and offsets."""
+        """Extract text between two resolved locations in document order.
+
+        This method correctly handles mixed content by iterating through
+        the document in tree order, respecting the text/tail structure.
+
+        Args:
+            root: Root element to search within
+            start_elem: Element containing start position (None = start from beginning)
+            start_attr: Attribute ('text' or 'tail') for start position
+            start_offset: Character offset within start text
+            end_elem: Element containing end position (None = continue to end)
+            end_attr: Attribute ('text' or 'tail') for end position
+            end_offset: Character offset within end text
+
+        Returns:
+            Extracted text content
+        """
         result_parts = []
-        for i in range(start_idx, end_idx + 1):
-            text = text_nodes[i]
-            if i == start_idx and i == end_idx:
-                result_parts.append(text[start_offset:end_offset])
-            elif i == start_idx:
-                result_parts.append(text[start_offset:])
-            elif i == end_idx:
+        capturing = start_elem is None  # If no start specified, capture from beginning
+
+        for elem, attr, text in self._iter_text_locations(root):
+            if not capturing:
+                # Check if this is the start location
+                if elem == start_elem and attr == start_attr:
+                    capturing = True
+                    # Check if start and end are at the same location
+                    if end_elem is not None and elem == end_elem and attr == end_attr:
+                        result_parts.append(text[start_offset:end_offset])
+                        break
+                    result_parts.append(text[start_offset:])
+            # Check if this is the end location
+            elif end_elem is not None and elem == end_elem and attr == end_attr:
                 result_parts.append(text[:end_offset])
+                break
             else:
                 result_parts.append(text)
-        return "".join(result_parts)
-
-    def _collect_text_between_elements(
-        self,
-        tree: etree._Element,
-        start_elem: etree._Element,
-        end_elem: etree._Element,
-    ) -> list[str]:
-        """Collect all text from elements between start and end in document order."""
-        result_parts: list[str] = []
-        body = tree.xpath("//body")
-        if not body:
-            return result_parts
-
-        all_elements = list(body[0].iter())
-        try:
-            start_pos = all_elements.index(start_elem)
-            end_pos = all_elements.index(end_elem)
-            for elem in all_elements[start_pos + 1 : end_pos]:
-                if elem.text:
-                    result_parts.append(elem.text)
-                if elem.tail:
-                    result_parts.append(elem.tail)
-        except ValueError:
-            pass
-        return result_parts
-
-    def _extract_text_range(
-        self,
-        tree: etree._Element,
-        start: ParsedXPoint,
-        end: ParsedXPoint,
-    ) -> str:
-        """Extract text between two positions that may span multiple elements."""
-        start_elem = self._find_element(tree, start)
-        end_elem = self._find_element(tree, end)
-
-        text_nodes = [str(t) for t in start_elem.xpath("text()")]
-        start_idx = start.text_node_index - 1
-        end_idx = end.text_node_index - 1
-
-        if start_elem == end_elem:
-            return self._extract_same_element_text(
-                text_nodes, start_idx, end_idx, start.char_offset, end.char_offset
-            )
-
-        result_parts = []
-        result_parts.append(text_nodes[start_idx][start.char_offset :])
-        result_parts.extend(text_nodes[start_idx + 1 :])
-
-        result_parts.extend(self._collect_text_between_elements(tree, start_elem, end_elem))
-
-        end_text_nodes = [str(t) for t in end_elem.xpath("text()")]
-        result_parts.extend(end_text_nodes[:end_idx])
-        result_parts.append(end_text_nodes[end_idx][: end.char_offset])
 
         return "".join(result_parts)
 
@@ -509,85 +529,62 @@ class EpubService:
 
         return "".join(result_parts)
 
-    def _collect_text_after_element(
-        self,
-        tree: etree._Element,
-        start_elem: etree._Element,
-    ) -> list[str]:
-        """Collect all text from elements after start_elem to end of body."""
-        result_parts: list[str] = []
-        body = tree.xpath("//body")
-        if not body:
-            return result_parts
-
-        all_elements = list(body[0].iter())
-        try:
-            start_pos = all_elements.index(start_elem)
-            for elem in all_elements[start_pos + 1 :]:
-                if elem.text:
-                    result_parts.append(elem.text)
-                if elem.tail:
-                    result_parts.append(elem.tail)
-        except ValueError:
-            pass
-        return result_parts
-
-    def _collect_text_before_element(
-        self,
-        tree: etree._Element,
-        end_elem: etree._Element,
-    ) -> list[str]:
-        """Collect all text from elements before end_elem from start of body."""
-        result_parts: list[str] = []
-        body = tree.xpath("//body")
-        if not body:
-            return result_parts
-
-        all_elements = list(body[0].iter())
-        try:
-            end_pos = all_elements.index(end_elem)
-            for elem in all_elements[:end_pos]:
-                if elem.text:
-                    result_parts.append(elem.text)
-                if elem.tail:
-                    result_parts.append(elem.tail)
-        except ValueError:
-            pass
-        return result_parts
-
     def _extract_from_position_to_end(
         self,
         tree: etree._Element,
         start: ParsedXPoint,
     ) -> str:
-        """Extract text from xpoint position to end of document body."""
+        """Extract text from xpoint position to end of document body.
+
+        Uses streaming approach to correctly handle mixed content.
+        """
+        # Resolve start xpoint to element/attribute location
         start_elem = self._find_element(tree, start)
-        result_parts = []
+        start_target_elem, start_attr = self._resolve_text_node_location(
+            start_elem, start.text_node_index
+        )
 
-        text_nodes = [str(t) for t in start_elem.xpath("text()")]
-        start_idx = start.text_node_index - 1
-        if start_idx < len(text_nodes):
-            result_parts.append(text_nodes[start_idx][start.char_offset :])
-            result_parts.extend(text_nodes[start_idx + 1 :])
+        # Get the body element for iteration
+        body = tree.xpath("//body")
+        if not body:
+            return ""
 
-        result_parts.extend(self._collect_text_after_element(tree, start_elem))
-        return "".join(result_parts)
+        # Extract from start to end (None end means extract to end of document)
+        return self._extract_between_locations(
+            body[0],
+            start_target_elem,
+            start_attr,
+            start.char_offset,
+            None,  # No end element - extract to end
+            None,
+            None,
+        )
 
     def _extract_from_start_to_position(
         self,
         tree: etree._Element,
         end: ParsedXPoint,
     ) -> str:
-        """Extract text from start of document body to xpoint position."""
+        """Extract text from start of document body to xpoint position.
+
+        Uses streaming approach to correctly handle mixed content.
+        """
+        # Resolve end xpoint to element/attribute location
         end_elem = self._find_element(tree, end)
-        result_parts = []
+        end_target_elem, end_attr = self._resolve_text_node_location(end_elem, end.text_node_index)
 
-        result_parts.extend(self._collect_text_before_element(tree, end_elem))
+        # Get the body element for iteration
+        body = tree.xpath("//body")
+        if not body:
+            return ""
 
-        text_nodes = [str(t) for t in end_elem.xpath("text()")]
-        end_idx = end.text_node_index - 1
-        result_parts.extend(text_nodes[:end_idx])
-        if end_idx < len(text_nodes):
-            result_parts.append(text_nodes[end_idx][: end.char_offset])
-
-        return "".join(result_parts)
+        # Extract from start to end (None start means extract from beginning)
+        return self._extract_between_locations(
+            body[0],
+            None,  # No start element - extract from beginning
+            None,
+            0,
+            end_target_elem,
+            end_attr,
+            end.char_offset,
+        )
