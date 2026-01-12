@@ -13,6 +13,7 @@ from src.schemas.reading_session_schemas import (
     ReadingSessionUploadSessionItem,
 )
 from src.services.book_service import BookService
+from src.services.epub_service import EpubService
 from src.utils import compute_reading_session_hash
 
 logger = structlog.get_logger(__name__)
@@ -26,6 +27,7 @@ class ReadingSessionService:
         self.db = db
         self.book_repo = repositories.BookRepository(db)
         self.session_repo = ReadingSessionRepository(db)
+        self.epub_service = EpubService(db)
 
     def upload_reading_sessions(
         self,
@@ -150,11 +152,20 @@ class ReadingSessionService:
         if not book:
             raise BookNotFoundError(book_id)
 
-        sessions = self.session_repo.get_by_book_id(book_id, user_id, limit, offset)
+        session_models = self.session_repo.get_by_book_id(book_id, user_id, limit, offset)
         total = self.session_repo.count_by_book_id(book_id, user_id)
 
+        sessions = [schemas.ReadingSession.model_validate(s) for s in session_models]
+
+        for s in sessions:
+            if s.start_xpoint and s.end_xpoint:
+                text_content = self.epub_service.extract_text_between_xpoints(
+                    book_id, user_id, s.start_xpoint, s.end_xpoint
+                )
+                s.content = text_content
+
         return schemas.ReadingSessionsResponse(
-            sessions=[schemas.ReadingSession.model_validate(s) for s in sessions],
+            sessions=sessions,
             total=total,
             offset=offset,
             limit=limit,
