@@ -341,7 +341,7 @@ class EpubService:
     ) -> str:
         """Extract text when start and end are in same DocFragment.
 
-        Uses streaming approach to correctly handle mixed content where
+        Uses streaming approach to handle mixed content where
         child elements appear between text nodes.
         """
         tree = self._get_spine_item_content(book, start.doc_fragment_index)
@@ -349,11 +349,13 @@ class EpubService:
         # Resolve xpoints to actual element/attribute locations
         start_elem = self._find_element(tree, start)
         start_target_elem, start_attr = self._resolve_text_node_location(
-            start_elem, start.text_node_index
+            start_elem, start.text_node_index, tree
         )
 
         end_elem = self._find_element(tree, end)
-        end_target_elem, end_attr = self._resolve_text_node_location(end_elem, end.text_node_index)
+        end_target_elem, end_attr = self._resolve_text_node_location(
+            end_elem, end.text_node_index, tree
+        )
 
         # Get the body element for iteration
         body = tree.xpath("//body")
@@ -392,6 +394,7 @@ class EpubService:
         self,
         element: etree._Element,
         text_node_index: int,
+        root: etree._Element | None = None,
     ) -> tuple[etree._Element, str]:
         """Resolve a 1-based text node index to (element, attribute) pair.
 
@@ -404,12 +407,14 @@ class EpubService:
         Args:
             element: The element containing the text nodes
             text_node_index: 1-based index of the text node (as used by XPath)
+            root: Optional root element to allow searching for next text node
+                  if the element itself is empty (fallback for empty anchors)
 
         Returns:
             Tuple of (element, attribute) where attribute is 'text' or 'tail'
 
         Raises:
-            XPointNavigationError: If text_node_index is out of range
+            XPointNavigationError: If text_node_index is out of range and no fallback possible
         """
         current_idx = 1  # text_node_index is 1-based
 
@@ -426,10 +431,37 @@ class EpubService:
                     return child, "tail"
                 current_idx += 1
 
+        # Fallback: if element has 0 text nodes and we asked for index 1,
+        # it might be an empty anchor acting as a marker.
+        # Find the next text node in the document.
+        if current_idx == 1 and text_node_index == 1 and root is not None:
+            next_loc = self._find_next_text_node(root, element)
+            if next_loc:
+                return next_loc
+
         raise XPointNavigationError(
             f"text()[{text_node_index}]",
             f"text node index out of range (element has {current_idx - 1} text nodes)",
         )
+
+    def _find_next_text_node(
+        self, root: etree._Element, start_from: etree._Element
+    ) -> tuple[etree._Element, str] | None:
+        """Find the next text node in document order starting after start_from."""
+        found_start = False
+        for elem in root.iter():
+            if elem == start_from:
+                found_start = True
+                if elem.tail:
+                    return elem, "tail"
+                continue
+
+            if found_start:
+                if elem.text:
+                    return elem, "text"
+                if elem.tail:
+                    return elem, "tail"
+        return None
 
     def _iter_text_locations(self, root: etree._Element) -> list[tuple[etree._Element, str, str]]:
         """Iterate through all text content in document order.
@@ -541,7 +573,7 @@ class EpubService:
         # Resolve start xpoint to element/attribute location
         start_elem = self._find_element(tree, start)
         start_target_elem, start_attr = self._resolve_text_node_location(
-            start_elem, start.text_node_index
+            start_elem, start.text_node_index, tree
         )
 
         # Get the body element for iteration
@@ -571,7 +603,9 @@ class EpubService:
         """
         # Resolve end xpoint to element/attribute location
         end_elem = self._find_element(tree, end)
-        end_target_elem, end_attr = self._resolve_text_node_location(end_elem, end.text_node_index)
+        end_target_elem, end_attr = self._resolve_text_node_location(
+            end_elem, end.text_node_index, tree
+        )
 
         # Get the body element for iteration
         body = tree.xpath("//body")

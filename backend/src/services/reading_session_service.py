@@ -98,6 +98,7 @@ class ReadingSessionService:
                     end_xpoint=session.end_xpoint,
                     start_page=session.start_page,
                     end_page=session.end_page,
+                    content=None,
                 )
             )
 

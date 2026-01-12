@@ -53,6 +53,33 @@ class TestParsedXPoint:
         assert result.text_node_index == 2
         assert result.char_offset == 50
 
+    def test_parse_element_boundary_without_text(self) -> None:
+        """Parse xpoint pointing to element boundary (no /text().offset)."""
+        result = ParsedXPoint.parse("/body/DocFragment[14]/body/a")
+
+        assert result.doc_fragment_index == 14
+        assert result.xpath == "/body/a"
+        assert result.text_node_index == 1  # Default
+        assert result.char_offset == 0  # Default
+
+    def test_parse_element_boundary_simple(self) -> None:
+        """Parse simple element boundary xpoint."""
+        result = ParsedXPoint.parse("/body/div/p")
+
+        assert result.doc_fragment_index is None
+        assert result.xpath == "/body/div/p"
+        assert result.text_node_index == 1
+        assert result.char_offset == 0
+
+    def test_parse_element_boundary_with_index(self) -> None:
+        """Parse element boundary with indexed element."""
+        result = ParsedXPoint.parse("/body/div[3]/span[2]")
+
+        assert result.doc_fragment_index is None
+        assert result.xpath == "/body/div[3]/span[2]"
+        assert result.text_node_index == 1
+        assert result.char_offset == 0
+
     def test_parse_invalid_xpoint_missing_text(self) -> None:
         """Invalid xpoint missing text() raises error."""
         with pytest.raises(XPointParseError) as exc_info:
