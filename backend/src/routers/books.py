@@ -937,7 +937,7 @@ def get_flashcards_for_book(
     response_model=schemas.ReadingSessionsResponse,
     status_code=status.HTTP_200_OK,
 )
-def get_book_reading_sessions(
+async def get_book_reading_sessions(
     book_id: int,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -960,7 +960,7 @@ def get_book_reading_sessions(
     """
     try:
         service = ReadingSessionService(db)
-        return service.get_reading_sessions_for_book(book_id, current_user.id, limit, offset)
+        return await service.get_reading_sessions_for_book(book_id, current_user.id, limit, offset)
     except CrossbillError:
         raise
     except Exception as e:

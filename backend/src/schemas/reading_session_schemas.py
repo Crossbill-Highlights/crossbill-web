@@ -21,6 +21,7 @@ class ReadingSessionBase(BaseModel):
     start_page: int | None = Field(None, ge=0, description="Start page number (for PDFs)")
     end_page: int | None = Field(None, ge=0, description="End page number (for PDFs)")
     content: str | None = Field(None, description="Extracted text content of the session")
+    ai_summary: str | None = Field(None, description="AI generated summary of the read content")
 
     @model_validator(mode="after")
     def check_position_fields(self) -> Self:

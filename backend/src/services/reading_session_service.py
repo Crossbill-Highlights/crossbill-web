@@ -99,6 +99,7 @@ class ReadingSessionService:
                     start_page=session.start_page,
                     end_page=session.end_page,
                     content=None,
+                    ai_summary=None,
                 )
             )
 
@@ -140,7 +141,7 @@ class ReadingSessionService:
 
         return ". ".join(parts) + "."
 
-    def get_reading_sessions_for_book(
+    async def get_reading_sessions_for_book(
         self,
         book_id: int,
         user_id: int,
