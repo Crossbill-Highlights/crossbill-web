@@ -40,6 +40,26 @@ class ServiceError(CrossbillError):
     """Service layer error."""
 
 
+class XPointParseError(ValidationError):
+    """Invalid xpoint format."""
+
+    def __init__(self, xpoint: str, reason: str) -> None:
+        """Initialize with the invalid xpoint and reason for failure."""
+        self.xpoint = xpoint
+        self.reason = reason
+        super().__init__(f"Invalid xpoint '{xpoint}': {reason}", status_code=400)
+
+
+class XPointNavigationError(CrossbillError):
+    """Could not navigate to xpoint location in EPUB."""
+
+    def __init__(self, xpoint: str, reason: str) -> None:
+        """Initialize with the xpoint and reason for navigation failure."""
+        self.xpoint = xpoint
+        self.reason = reason
+        super().__init__(f"Cannot navigate to xpoint '{xpoint}': {reason}", status_code=400)
+
+
 CredentialsException = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Could not validate credentials",

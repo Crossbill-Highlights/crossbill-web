@@ -1,5 +1,12 @@
 """Service layer for epub-related operations."""
 
+# pyright: reportPrivateUsage=false, reportArgumentType=false
+# pyright: reportReturnType=false, reportGeneralTypeIssues=false
+# pyright: reportIndexIssue=false, reportAttributeAccessIssue=false
+# pyright: reportCallIssue=false
+# The above ignores are needed because lxml type stubs don't accurately
+# represent xpath() return types which depend on the query string content.
+
 import logging
 import re
 from io import BytesIO
@@ -7,10 +14,12 @@ from pathlib import Path
 
 from ebooklib import epub
 from fastapi import HTTPException, UploadFile
+from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
 from sqlalchemy.orm import Session
 
 from src import repositories
-from src.exceptions import BookNotFoundError
+from src.exceptions import BookNotFoundError, XPointNavigationError
+from src.utils import ParsedXPoint
 
 logger = logging.getLogger(__name__)
 
@@ -250,3 +259,335 @@ class EpubService:
         except Exception as e:
             logger.error(f"Failed to delete epub file {epub_path}: {e!s}")
             return False
+
+    def extract_text_between_xpoints(
+        self,
+        book_id: int,
+        user_id: int,
+        start_xpoint: str,
+        end_xpoint: str,
+    ) -> str:
+        """Extract text content between two xpoint positions in an EPUB.
+
+        Args:
+            book_id: ID of the book
+            user_id: ID of the user (for ownership verification)
+            start_xpoint: KOReader xpoint string for start position
+            end_xpoint: KOReader xpoint string for end position
+
+        Returns:
+            The text content between the two positions
+
+        Raises:
+            BookNotFoundError: If book not found or user doesn't own it
+            HTTPException: If EPUB file doesn't exist on disk
+            XPointParseError: If xpoint format is invalid
+            XPointNavigationError: If cannot navigate to xpoint in EPUB
+        """
+        epub_path = self.get_epub_path(book_id, user_id)
+
+        start = ParsedXPoint.parse(start_xpoint)
+        end = ParsedXPoint.parse(end_xpoint)
+
+        book = epub.read_epub(str(epub_path))
+
+        if start.doc_fragment_index == end.doc_fragment_index:
+            return self._extract_within_fragment(book, start, end)
+        return self._extract_across_fragments(book, start, end)
+
+    def _get_spine_item_content(
+        self,
+        book: epub.EpubBook,
+        fragment_index: int | None,
+    ) -> etree._Element:
+        """Get parsed HTML content for a spine item.
+
+        Args:
+            book: The loaded EpubBook
+            fragment_index: 1-based index into spine, or None for first item
+
+        Returns:
+            Parsed lxml element tree for the document
+
+        Raises:
+            XPointNavigationError: If index out of range
+        """
+        spine_index = (fragment_index or 1) - 1
+
+        if spine_index < 0 or spine_index >= len(book.spine):
+            raise XPointNavigationError(
+                f"DocFragment[{fragment_index or 1}]",
+                f"index out of range (spine has {len(book.spine)} items)",
+            )
+
+        item_id = book.spine[spine_index][0]
+        item = book.get_item_with_id(item_id)
+
+        if item is None:
+            raise XPointNavigationError(
+                f"DocFragment[{fragment_index or 1}]",
+                f"spine item '{item_id}' not found in EPUB",
+            )
+
+        content = item.get_content()
+        parser = etree.HTMLParser()
+        return etree.fromstring(content, parser)
+
+    def _get_text_nodes_for_element(
+        self,
+        tree: etree._Element,
+        parsed: ParsedXPoint,
+    ) -> tuple[list[str], int]:
+        """Navigate to element and get text nodes.
+
+        Args:
+            tree: Parsed HTML tree
+            parsed: Parsed xpoint
+
+        Returns:
+            Tuple of (list of text strings from text nodes, target text node index)
+
+        Raises:
+            XPointNavigationError: If navigation fails
+        """
+        element = self._find_element(tree, parsed)
+        text_nodes = element.xpath("text()")
+
+        if not text_nodes:
+            raise XPointNavigationError(
+                f"{parsed.xpath}/text().{parsed.char_offset}",
+                "element contains no text nodes",
+            )
+
+        text_idx = parsed.text_node_index - 1
+        if text_idx < 0 or text_idx >= len(text_nodes):
+            raise XPointNavigationError(
+                f"{parsed.xpath}/text()[{parsed.text_node_index}].{parsed.char_offset}",
+                f"text()[{parsed.text_node_index}] out of range "
+                f"(element has {len(text_nodes)} text nodes)",
+            )
+
+        return [str(t) for t in text_nodes], text_idx
+
+    def _extract_within_fragment(
+        self,
+        book: epub.EpubBook,
+        start: ParsedXPoint,
+        end: ParsedXPoint,
+    ) -> str:
+        """Extract text when start and end are in same DocFragment."""
+        tree = self._get_spine_item_content(book, start.doc_fragment_index)
+
+        if start.xpath == end.xpath and start.text_node_index == end.text_node_index:
+            text_nodes, idx = self._get_text_nodes_for_element(tree, start)
+            text = text_nodes[idx]
+            return text[start.char_offset : end.char_offset]
+
+        return self._extract_text_range(tree, start, end)
+
+    def _convert_xpath(self, xpath: str) -> str:
+        """Convert xpoint xpath to lxml-compatible xpath."""
+        if xpath.startswith("/body"):
+            return "//body" + xpath[5:]
+        return xpath
+
+    def _find_element(self, tree: etree._Element, parsed: ParsedXPoint) -> etree._Element:
+        """Find element by xpath, raising XPointNavigationError if not found."""
+        xpath = self._convert_xpath(parsed.xpath)
+        elements = tree.xpath(xpath)
+        if not elements:
+            raise XPointNavigationError(
+                f"{parsed.xpath}/text().{parsed.char_offset}",
+                f"XPath '{parsed.xpath}' matched no elements",
+            )
+        return elements[0]
+
+    def _extract_same_element_text(
+        self,
+        text_nodes: list[str],
+        start_idx: int,
+        end_idx: int,
+        start_offset: int,
+        end_offset: int,
+    ) -> str:
+        """Extract text from same element between text node indices and offsets."""
+        result_parts = []
+        for i in range(start_idx, end_idx + 1):
+            text = text_nodes[i]
+            if i == start_idx and i == end_idx:
+                result_parts.append(text[start_offset:end_offset])
+            elif i == start_idx:
+                result_parts.append(text[start_offset:])
+            elif i == end_idx:
+                result_parts.append(text[:end_offset])
+            else:
+                result_parts.append(text)
+        return "".join(result_parts)
+
+    def _collect_text_between_elements(
+        self,
+        tree: etree._Element,
+        start_elem: etree._Element,
+        end_elem: etree._Element,
+    ) -> list[str]:
+        """Collect all text from elements between start and end in document order."""
+        result_parts: list[str] = []
+        body = tree.xpath("//body")
+        if not body:
+            return result_parts
+
+        all_elements = list(body[0].iter())
+        try:
+            start_pos = all_elements.index(start_elem)
+            end_pos = all_elements.index(end_elem)
+            for elem in all_elements[start_pos + 1 : end_pos]:
+                if elem.text:
+                    result_parts.append(elem.text)
+                if elem.tail:
+                    result_parts.append(elem.tail)
+        except ValueError:
+            pass
+        return result_parts
+
+    def _extract_text_range(
+        self,
+        tree: etree._Element,
+        start: ParsedXPoint,
+        end: ParsedXPoint,
+    ) -> str:
+        """Extract text between two positions that may span multiple elements."""
+        start_elem = self._find_element(tree, start)
+        end_elem = self._find_element(tree, end)
+
+        text_nodes = [str(t) for t in start_elem.xpath("text()")]
+        start_idx = start.text_node_index - 1
+        end_idx = end.text_node_index - 1
+
+        if start_elem == end_elem:
+            return self._extract_same_element_text(
+                text_nodes, start_idx, end_idx, start.char_offset, end.char_offset
+            )
+
+        result_parts = []
+        result_parts.append(text_nodes[start_idx][start.char_offset :])
+        result_parts.extend(text_nodes[start_idx + 1 :])
+
+        result_parts.extend(self._collect_text_between_elements(tree, start_elem, end_elem))
+
+        end_text_nodes = [str(t) for t in end_elem.xpath("text()")]
+        result_parts.extend(end_text_nodes[:end_idx])
+        result_parts.append(end_text_nodes[end_idx][: end.char_offset])
+
+        return "".join(result_parts)
+
+    def _extract_across_fragments(
+        self,
+        book: epub.EpubBook,
+        start: ParsedXPoint,
+        end: ParsedXPoint,
+    ) -> str:
+        """Extract text when start and end are in different DocFragments."""
+        if start.doc_fragment_index is None or end.doc_fragment_index is None:
+            raise XPointNavigationError(
+                "cross-fragment",
+                "cannot extract across fragments when DocFragment index is missing",
+            )
+
+        result_parts = []
+
+        start_tree = self._get_spine_item_content(book, start.doc_fragment_index)
+        result_parts.append(self._extract_from_position_to_end(start_tree, start))
+
+        for frag_idx in range(start.doc_fragment_index + 1, end.doc_fragment_index):
+            tree = self._get_spine_item_content(book, frag_idx)
+            body = tree.xpath("//body")
+            if body:
+                result_parts.append("".join(body[0].itertext()))
+
+        end_tree = self._get_spine_item_content(book, end.doc_fragment_index)
+        result_parts.append(self._extract_from_start_to_position(end_tree, end))
+
+        return "".join(result_parts)
+
+    def _collect_text_after_element(
+        self,
+        tree: etree._Element,
+        start_elem: etree._Element,
+    ) -> list[str]:
+        """Collect all text from elements after start_elem to end of body."""
+        result_parts: list[str] = []
+        body = tree.xpath("//body")
+        if not body:
+            return result_parts
+
+        all_elements = list(body[0].iter())
+        try:
+            start_pos = all_elements.index(start_elem)
+            for elem in all_elements[start_pos + 1 :]:
+                if elem.text:
+                    result_parts.append(elem.text)
+                if elem.tail:
+                    result_parts.append(elem.tail)
+        except ValueError:
+            pass
+        return result_parts
+
+    def _collect_text_before_element(
+        self,
+        tree: etree._Element,
+        end_elem: etree._Element,
+    ) -> list[str]:
+        """Collect all text from elements before end_elem from start of body."""
+        result_parts: list[str] = []
+        body = tree.xpath("//body")
+        if not body:
+            return result_parts
+
+        all_elements = list(body[0].iter())
+        try:
+            end_pos = all_elements.index(end_elem)
+            for elem in all_elements[:end_pos]:
+                if elem.text:
+                    result_parts.append(elem.text)
+                if elem.tail:
+                    result_parts.append(elem.tail)
+        except ValueError:
+            pass
+        return result_parts
+
+    def _extract_from_position_to_end(
+        self,
+        tree: etree._Element,
+        start: ParsedXPoint,
+    ) -> str:
+        """Extract text from xpoint position to end of document body."""
+        start_elem = self._find_element(tree, start)
+        result_parts = []
+
+        text_nodes = [str(t) for t in start_elem.xpath("text()")]
+        start_idx = start.text_node_index - 1
+        if start_idx < len(text_nodes):
+            result_parts.append(text_nodes[start_idx][start.char_offset :])
+            result_parts.extend(text_nodes[start_idx + 1 :])
+
+        result_parts.extend(self._collect_text_after_element(tree, start_elem))
+        return "".join(result_parts)
+
+    def _extract_from_start_to_position(
+        self,
+        tree: etree._Element,
+        end: ParsedXPoint,
+    ) -> str:
+        """Extract text from start of document body to xpoint position."""
+        end_elem = self._find_element(tree, end)
+        result_parts = []
+
+        result_parts.extend(self._collect_text_before_element(tree, end_elem))
+
+        text_nodes = [str(t) for t in end_elem.xpath("text()")]
+        end_idx = end.text_node_index - 1
+        result_parts.extend(text_nodes[:end_idx])
+        if end_idx < len(text_nodes):
+            result_parts.append(text_nodes[end_idx][: end.char_offset])
+
+        return "".join(result_parts)
