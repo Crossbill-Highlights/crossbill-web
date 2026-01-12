@@ -4,6 +4,8 @@
  * crossbill API
  * OpenAPI spec version: 0.1.0
  */
+import type { ReadingSessionAiSummary } from './readingSessionAiSummary';
+import type { ReadingSessionContent } from './readingSessionContent';
 import type { ReadingSessionDeviceId } from './readingSessionDeviceId';
 import type { ReadingSessionEndPage } from './readingSessionEndPage';
 import type { ReadingSessionEndXpoint } from './readingSessionEndXpoint';
@@ -29,6 +31,10 @@ export interface ReadingSession {
   start_page?: ReadingSessionStartPage;
   /** End page number (for PDFs) */
   end_page?: ReadingSessionEndPage;
+  /** Extracted text content of the session */
+  content?: ReadingSessionContent;
+  /** AI generated summary of the read content */
+  ai_summary?: ReadingSessionAiSummary;
   id: number;
   created_at: string;
 }

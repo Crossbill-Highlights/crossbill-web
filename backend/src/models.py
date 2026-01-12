@@ -464,6 +464,7 @@ class ReadingSession(Base):
     created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+    ai_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="reading_sessions")

@@ -100,3 +100,9 @@ class ReadingSessionsResponse(BaseModel):
     total: int = Field(..., ge=0, description="Total number of sessions")
     offset: int = Field(..., ge=0, description="Current offset")
     limit: int = Field(..., ge=1, description="Current limit")
+
+
+class ReadingSessionAISummaryResponse(BaseModel):
+    """Schema for AI summary response."""
+
+    summary: str = Field(..., description="AI-generated summary of the reading session")

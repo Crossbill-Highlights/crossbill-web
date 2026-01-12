@@ -13,8 +13,7 @@ def get_summary_agent() -> Agent[None, str]:
         ai_model,
         output_type=str,  # SummaryAgentModel,
         instructions="""
-        You are given a content of user's last reading session from their book.
-        Create concise summary of the read content to help user remember what they read. List key ideas,
-        topics or events in the content and brief summary of the theme.
+        Create a short summary of the given text. Focus on key ideas,
+        topics, characters and events in the text. The summary should help user to remember text they have read earlier. Keep summary short with 2-3 sentences and bullet points of important events and themes.
         """,
     )
