@@ -1,7 +1,7 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import { useUpdateHighlightNoteApiV1HighlightsHighlightIdNotePost } from '@/api/generated/highlights/highlights.ts';
 import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
-import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
+import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';

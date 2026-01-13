@@ -5,7 +5,7 @@ import {
   useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete,
 } from '@/api/generated/books/books.ts';
 import type { HighlightTagInBook } from '@/api/generated/model';
-import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
+import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { Autocomplete, Box, Chip, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';

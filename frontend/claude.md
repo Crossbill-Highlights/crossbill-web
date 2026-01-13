@@ -148,12 +148,12 @@ const HighlightsList = ({ bookId }: Props) => {
 
 ### Notifications (Snackbar)
 
-- **NEVER** use native `alert()` - use `useSnackbar` from `@/contexts/SnackbarContext.tsx`
+- **NEVER** use native `alert()` - use `useSnackbar` from `@/context/SnackbarContext.tsx`
 - **USE** for error notifications, success messages, and transient feedback
 - Snackbar auto-dismisses after 6 seconds
 
 ```typescript
-import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
+import { useSnackbar } from '@/context/SnackbarContext.tsx';
 
 const MyComponent = () => {
   const { showSnackbar } = useSnackbar();

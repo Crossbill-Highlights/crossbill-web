@@ -5,7 +5,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { configureApiClient } from './api/config';
 import App from './App';
-import { SnackbarProvider } from './contexts/SnackbarContext';
+import { SnackbarProvider } from './context/SnackbarContext';
 import { queryClient } from './lib/queryClient';
 import { theme } from './theme/theme';
 

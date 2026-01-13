@@ -14,7 +14,7 @@ import {
   NotesIcon,
 } from '@/components/common/Icons.tsx';
 import { ToolbarIconButton } from '@/components/common/ToolbarIconButton';
-import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
+import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { Box } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';

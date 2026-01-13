@@ -4,7 +4,7 @@ import { FlashcardWithContext } from '@/components/BookPage/FlashcardsTab/Flashc
 import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog.tsx';
 import { DeleteIcon, EditIcon, QuoteIcon } from '@/components/common/Icons.tsx';
-import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
+import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import {
   Box,
   Card,
