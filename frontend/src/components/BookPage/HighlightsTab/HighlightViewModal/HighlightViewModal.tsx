@@ -6,7 +6,7 @@ import {
 import type { Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { ArrowBackIcon, ArrowForwardIcon } from '@/components/common/Icons.tsx';
-import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
+import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { Box, Button, IconButton, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';

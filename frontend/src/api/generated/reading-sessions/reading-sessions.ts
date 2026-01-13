@@ -5,15 +5,24 @@
  * OpenAPI spec version: 0.1.0
  */
 import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
   MutationFunction,
   QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
   UseMutationOptions,
   UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult,
 } from '@tanstack/react-query';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
   HTTPValidationError,
+  ReadingSessionAISummaryResponse,
   ReadingSessionUploadRequest,
   ReadingSessionUploadResponse,
 } from '.././model';
@@ -114,3 +123,239 @@ export const useUploadReadingSessionsApiV1ReadingSessionsUploadPost = <
 
   return useMutation(mutationOptions, queryClient);
 };
+/**
+ * Get AI-generated summary for a reading session.
+
+Returns cached summary if available, otherwise generates new summary
+from the read content and caches it.
+
+Args:
+    reading_session_id: ID of the reading session
+    db: Database session
+    current_user: Authenticated user
+
+Returns:
+    ReadingSessionAISummaryResponse with the AI summary
+
+Raises:
+    HTTPException 404: If reading session not found or not owned by user
+    HTTPException 400: If session has no position data or PDF not supported
+    HTTPException 500: For unexpected errors
+ * @summary Get Reading Session Ai Summary
+ */
+export const getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet = (
+  readingSessionId: number,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<ReadingSessionAISummaryResponse>({
+    url: `/api/v1/reading_sessions/${readingSessionId}/ai_summary`,
+    method: 'GET',
+    signal,
+  });
+};
+
+export const getGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGetQueryKey =
+  (readingSessionId?: number) => {
+    return [`/api/v1/reading_sessions/${readingSessionId}/ai_summary`] as const;
+  };
+
+export const getGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGetQueryOptions =
+  <
+    TData = Awaited<
+      ReturnType<typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet>
+    >,
+    TError = HTTPValidationError,
+  >(
+    readingSessionId: number,
+    options?: {
+      query?: Partial<
+        UseQueryOptions<
+          Awaited<
+            ReturnType<
+              typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet
+            >
+          >,
+          TError,
+          TData
+        >
+      >;
+    }
+  ) => {
+    const { query: queryOptions } = options ?? {};
+
+    const queryKey =
+      queryOptions?.queryKey ??
+      getGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGetQueryKey(
+        readingSessionId
+      );
+
+    const queryFn: QueryFunction<
+      Awaited<
+        ReturnType<
+          typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet
+        >
+      >
+    > = ({ signal }) =>
+      getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet(
+        readingSessionId,
+        signal
+      );
+
+    return { queryKey, queryFn, enabled: !!readingSessionId, ...queryOptions } as UseQueryOptions<
+      Awaited<
+        ReturnType<
+          typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet
+        >
+      >,
+      TError,
+      TData
+    > & { queryKey: DataTag<QueryKey, TData, TError> };
+  };
+
+export type GetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGetQueryResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet>
+    >
+  >;
+export type GetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGetQueryError =
+  HTTPValidationError;
+
+export function useGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet<
+  TData = Awaited<
+    ReturnType<typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  readingSessionId: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet
+            >
+          >
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet<
+  TData = Awaited<
+    ReturnType<typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  readingSessionId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet
+            >
+          >
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet<
+  TData = Awaited<
+    ReturnType<typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  readingSessionId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Reading Session Ai Summary
+ */
+
+export function useGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet<
+  TData = Awaited<
+    ReturnType<typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  readingSessionId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions =
+    getGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGetQueryOptions(
+      readingSessionId,
+      options
+    );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}

@@ -66,6 +66,7 @@ from src.schemas.highlight_tag_schemas import (
 )
 from src.schemas.reading_session_schemas import (
     ReadingSession,
+    ReadingSessionAISummaryResponse,
     ReadingSessionsResponse,
     ReadingSessionUploadRequest,
     ReadingSessionUploadResponse,
@@ -128,6 +129,7 @@ __all__ = [
     "HighlightUploadRequest",
     "HighlightUploadResponse",
     "ReadingSession",
+    "ReadingSessionAISummaryResponse",
     "ReadingSessionUploadRequest",
     "ReadingSessionUploadResponse",
     "ReadingSessionUploadSessionItem",

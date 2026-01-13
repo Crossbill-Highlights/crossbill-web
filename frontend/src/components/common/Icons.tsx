@@ -30,6 +30,7 @@ export {
 
 // Action icons
 export {
+  AutoAwesome as AISummaryIcon,
   Add as AddIcon,
   ContentCopy as CopyIcon,
   Delete as DeleteIcon,

@@ -1,8 +1,8 @@
 import { useAuth } from '@/context/AuthContext';
-import { useSettings } from '@/context/SettingsContext';
 import { Alert, Box, Button, Container, Link, Paper, TextField, Typography } from '@mui/material';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
 import { FormEvent, useState } from 'react';
+import { FeatureGate } from '../common/FeatureGate';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -10,7 +10,6 @@ export const LoginPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
-  const { settings } = useSettings();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent) => {
@@ -97,7 +96,7 @@ export const LoginPage = () => {
             </Button>
           </Box>
 
-          {settings?.allow_user_registrations && (
+          <FeatureGate flag="allow_user_registrations" value={true}>
             <Box sx={{ mt: 3, textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">
                 Don't have an account?{' '}
@@ -106,7 +105,7 @@ export const LoginPage = () => {
                 </Link>
               </Typography>
             </Box>
-          )}
+          </FeatureGate>
         </Paper>
       </Box>
     </Container>

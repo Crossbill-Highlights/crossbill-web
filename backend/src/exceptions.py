@@ -32,6 +32,20 @@ class BookNotFoundError(NotFoundError):
             super().__init__("Book not found")
 
 
+class ReadingSessionNotFoundError(NotFoundError):
+    """Reading session not found error."""
+
+    def __init__(self, session_id: int | None = None, *, message: str | None = None) -> None:
+        """Initialize with session ID or custom message."""
+        self.session_id = session_id
+        if message:
+            super().__init__(message)
+        elif session_id is not None:
+            super().__init__(f"Reading session with id {session_id} not found")
+        else:
+            super().__init__("Reading session not found")
+
+
 class ValidationError(CrossbillError):
     """Validation error."""
 

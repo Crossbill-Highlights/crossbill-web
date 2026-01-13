@@ -21,6 +21,7 @@ class ReadingSessionBase(BaseModel):
     start_page: int | None = Field(None, ge=0, description="Start page number (for PDFs)")
     end_page: int | None = Field(None, ge=0, description="End page number (for PDFs)")
     content: str | None = Field(None, description="Extracted text content of the session")
+    ai_summary: str | None = Field(None, description="AI generated summary of the read content")
 
     @model_validator(mode="after")
     def check_position_fields(self) -> Self:
@@ -99,3 +100,9 @@ class ReadingSessionsResponse(BaseModel):
     total: int = Field(..., ge=0, description="Total number of sessions")
     offset: int = Field(..., ge=0, description="Current offset")
     limit: int = Field(..., ge=1, description="Current limit")
+
+
+class ReadingSessionAISummaryResponse(BaseModel):
+    """Schema for AI summary response."""
+
+    summary: str = Field(..., description="AI-generated summary of the reading session")

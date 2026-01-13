@@ -6,7 +6,7 @@ import {
 } from '@/api/generated/books/books.ts';
 import { BookDetails } from '@/api/generated/model';
 import { DeleteIcon } from '@/components/common/Icons.tsx';
-import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
+import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { Box, Button, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';

@@ -62,6 +62,13 @@ class Settings:
         os.getenv("MINIMUM_READING_SESSION_DURATION", "120")
     )
 
+    # AI configuration
+    AI_PROVIDER: str | None = os.getenv("AI_PROVIDER", None)  # Accepted values: ollama
+    OPENAI_BASE_URL: str | None = os.getenv("OPENAI_BASE_URL", None)
+    AI_MODEL_NAME: str | None = os.getenv("AI_MODEL_NAME", None)
+
+    AI_ENABLED: bool = AI_PROVIDER is not None
+
 
 def configure_logging(environment: str = "development") -> None:
     """Configure structured logging with structlog."""

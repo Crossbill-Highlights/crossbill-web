@@ -117,3 +117,41 @@ class ReadingSessionRepository:
             models.ReadingSession.user_id == user_id,
         )
         return self.db.execute(stmt).scalar() or 0
+
+    def get_by_id(self, session_id: int, user_id: int) -> models.ReadingSession | None:
+        """Get a reading session by its ID for a specific user.
+
+        Args:
+            session_id: ID of the reading session
+            user_id: ID of the user (for ownership verification)
+
+        Returns:
+            Reading session if found and owned by user, None otherwise
+        """
+        stmt = select(models.ReadingSession).where(
+            models.ReadingSession.id == session_id,
+            models.ReadingSession.user_id == user_id,
+        )
+        return self.db.execute(stmt).scalar_one_or_none()
+
+    def update_ai_summary(
+        self, session_id: int, user_id: int, ai_summary: str
+    ) -> models.ReadingSession | None:
+        """Update the ai_summary field of a reading session.
+
+        Args:
+            session_id: ID of the reading session
+            user_id: ID of the user (for ownership verification)
+            ai_summary: Generated AI summary text
+
+        Returns:
+            Updated reading session or None if not found
+        """
+        session = self.get_by_id(session_id, user_id)
+        if session is None:
+            return None
+
+        session.ai_summary = ai_summary
+        self.db.flush()
+        self.db.refresh(session)
+        return session

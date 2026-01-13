@@ -5,13 +5,14 @@ from sqlalchemy.orm import Session
 
 from src import repositories, schemas
 from src.config import get_settings
-from src.exceptions import BookNotFoundError
+from src.exceptions import BookNotFoundError, ReadingSessionNotFoundError, ValidationError
 from src.repositories.reading_session_repository import ReadingSessionRepository
 from src.schemas.book_schemas import BookCreate
 from src.schemas.reading_session_schemas import (
     ReadingSessionBase,
     ReadingSessionUploadSessionItem,
 )
+from src.services.ai.ai_service import get_ai_summary_from_text
 from src.services.book_service import BookService
 from src.services.epub_service import EpubService
 from src.utils import compute_reading_session_hash
@@ -99,6 +100,7 @@ class ReadingSessionService:
                     start_page=session.start_page,
                     end_page=session.end_page,
                     content=None,
+                    ai_summary=None,
                 )
             )
 
@@ -140,7 +142,7 @@ class ReadingSessionService:
 
         return ". ".join(parts) + "."
 
-    def get_reading_sessions_for_book(
+    async def get_reading_sessions_for_book(
         self,
         book_id: int,
         user_id: int,
@@ -171,3 +173,97 @@ class ReadingSessionService:
             offset=offset,
             limit=limit,
         )
+
+    async def get_ai_summary(
+        self,
+        session_id: int,
+        user_id: int,
+    ) -> str:
+        """Get or generate AI summary for a reading session.
+
+        This method implements caching:
+        - If ai_summary exists in DB, return it immediately
+        - If null, extract content, generate summary via AI, save to DB, return result
+
+        Args:
+            session_id: ID of the reading session
+            user_id: ID of the user (for ownership verification)
+
+        Returns:
+            The AI-generated summary text
+
+        Raises:
+            ReadingSessionNotFoundError: If session not found or user doesn't own it
+            ValidationError: If session has no position data (no xpoints or pages)
+            BookNotFoundError: If book not found (from epub_service)
+            XPointParseError: If xpoint format is invalid (from epub_service)
+            XPointNavigationError: If cannot navigate to xpoint (from epub_service)
+        """
+        session = self.session_repo.get_by_id(session_id, user_id)
+        if not session:
+            raise ReadingSessionNotFoundError(session_id)
+
+        if session.ai_summary:
+            logger.info(
+                "returning_cached_ai_summary",
+                session_id=session_id,
+                user_id=user_id,
+            )
+            return session.ai_summary
+
+        content = None
+
+        # Try EPUB xpoints first
+        if session.start_xpoint and session.end_xpoint:
+            logger.info(
+                "extracting_epub_content_for_ai_summary",
+                session_id=session_id,
+                book_id=session.book_id,
+            )
+            content = self.epub_service.extract_text_between_xpoints(
+                session.book_id,
+                user_id,
+                session.start_xpoint,
+                session.end_xpoint,
+            )
+            # TODO: PDF page numbers not yet supported
+        elif session.start_page is not None and session.end_page is not None:
+            logger.warning(
+                "pdf_summary_not_supported",
+                session_id=session_id,
+                book_id=session.book_id,
+            )
+            raise ValidationError(
+                "AI summaries for PDF-based reading sessions are not yet supported"
+            )
+        else:
+            # Session has neither xpoints nor pages (shouldn't happen due to validation)
+            raise ValidationError("Reading session has no position data (no xpoints or pages)")
+
+        # Check if content was extracted
+        if not content or not content.strip():
+            logger.warning(
+                "empty_content_extracted",
+                session_id=session_id,
+            )
+            raise ValidationError("No content could be extracted from the reading session")
+
+        # Generate AI summary
+        logger.info(
+            "generating_ai_summary",
+            session_id=session_id,
+            content_length=len(content),
+        )
+        ai_summary = await get_ai_summary_from_text(content)
+
+        # Save to database
+        self.session_repo.update_ai_summary(session_id, user_id, ai_summary)
+        self.db.commit()
+
+        logger.info(
+            "ai_summary_generated_and_cached",
+            session_id=session_id,
+            summary_length=len(ai_summary),
+        )
+
+        return ai_summary
