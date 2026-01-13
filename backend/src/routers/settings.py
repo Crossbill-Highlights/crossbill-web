@@ -16,4 +16,6 @@ async def get_app_settings() -> AppSettingsResponse:
     """
     settings = get_settings()
 
-    return AppSettingsResponse(allow_user_registrations=settings.ALLOW_USER_REGISTRATIONS)
+    return AppSettingsResponse(
+        allow_user_registrations=settings.ALLOW_USER_REGISTRATIONS, ai_features=settings.AI_ENABLED
+    )

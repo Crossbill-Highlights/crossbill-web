@@ -11,4 +11,6 @@
 export interface AppSettingsResponse {
   /** Whether user registration is enabled */
   allow_user_registrations: boolean;
+  /** Whether AI features are enabled */
+  ai_features: boolean;
 }
