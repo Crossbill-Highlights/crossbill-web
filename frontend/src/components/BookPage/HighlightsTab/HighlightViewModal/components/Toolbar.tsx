@@ -13,35 +13,11 @@ import {
   LinkIcon,
   NotesIcon,
 } from '@/components/common/Icons.tsx';
+import { ToolbarIconButton } from '@/components/common/ToolbarIconButton';
 import { useSnackbar } from '@/contexts/SnackbarContext.tsx';
-import { Box, IconButton, Tooltip } from '@mui/material';
+import { Box } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
 import { useState } from 'react';
-
-interface ToolbarIconButtonProps {
-  title: string;
-  onClick: () => void;
-  disabled: boolean;
-  ariaLabel: string;
-  icon: ReactNode;
-}
-
-const ToolbarIconButton = ({
-  title,
-  onClick,
-  disabled,
-  ariaLabel,
-  icon,
-}: ToolbarIconButtonProps) => {
-  return (
-    <Tooltip title={title}>
-      <IconButton onClick={onClick} disabled={disabled} aria-label={ariaLabel} size="small">
-        {icon}
-      </IconButton>
-    </Tooltip>
-  );
-};
 
 interface ToolbarProps {
   highlightId: number;
