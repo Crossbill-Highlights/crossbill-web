@@ -24,7 +24,16 @@ from src.config import configure_logging, get_settings
 from src.database import get_engine
 from src.exceptions import BookNotFoundError, CrossbillError, NotFoundError
 from src.repositories import UserRepository
-from src.routers import auth, books, ereader, flashcards, highlights, reading_sessions, users
+from src.routers import (
+    auth,
+    books,
+    ereader,
+    flashcards,
+    highlights,
+    reading_sessions,
+    reading_sessions_ai,
+    users,
+)
 from src.routers import settings as settings_router
 
 settings = get_settings()
@@ -235,6 +244,10 @@ app.include_router(users.router, prefix=settings.API_V1_PREFIX)
 app.include_router(reading_sessions.router, prefix=settings.API_V1_PREFIX)
 app.include_router(ereader.router, prefix=settings.API_V1_PREFIX)
 app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)
+
+# Register AI-powered routers conditionally
+if settings.AI_ENABLED:
+    app.include_router(reading_sessions_ai.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health")

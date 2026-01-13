@@ -1,5 +1,6 @@
 import type { ReadingSession } from '@/api/generated/model';
 import { useGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet } from '@/api/generated/reading-sessions/reading-sessions';
+import { FeatureGate } from '@/components/common/FeatureGate';
 import { AISummaryIcon, DateIcon, DurationIcon, TimeIcon } from '@/components/common/Icons.tsx';
 import { ToolbarIconButton } from '@/components/common/ToolbarIconButton';
 import { formatDate, formatDuration, formatTime } from '@/utils/date';
@@ -133,24 +134,28 @@ export const ReadingSessionCard = ({ session }: ReadingSessionCardProps) => {
           )}
         </Box>
 
-        {!hasSummary && (
-          <ToolbarIconButton
-            title="Generate AI Summary"
-            onClick={() => setShouldFetch(true)}
-            disabled={isLoading}
-            ariaLabel="Generate AI summary for this reading session"
-            icon={
-              isLoading ? (
-                <CircularProgress size={16} sx={{ color: 'primary.main' }} />
-              ) : (
-                <AISummaryIcon sx={{ fontSize: 18 }} />
-              )
-            }
-          />
-        )}
+        <FeatureGate flag="ai_features" value={true}>
+          {!hasSummary && (
+            <ToolbarIconButton
+              title="Generate AI Summary"
+              onClick={() => setShouldFetch(true)}
+              disabled={isLoading}
+              ariaLabel="Generate AI summary for this reading session"
+              icon={
+                isLoading ? (
+                  <CircularProgress size={16} sx={{ color: 'primary.main' }} />
+                ) : (
+                  <AISummaryIcon sx={{ fontSize: 18 }} />
+                )
+              }
+            />
+          )}
+        </FeatureGate>
       </Box>
 
-      <AISummary summary={summary} error={error} />
+      <FeatureGate flag="ai_features" value={true}>
+        <AISummary summary={summary} error={error} />
+      </FeatureGate>
     </Box>
   );
 };

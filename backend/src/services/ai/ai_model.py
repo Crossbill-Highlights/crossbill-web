@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from pydantic_ai.models.openai import Model, OpenAIChatModel
 from pydantic_ai.providers.ollama import OllamaProvider
 
@@ -6,7 +8,7 @@ from src.config import get_settings
 settings = get_settings()
 
 
-def get_model() -> Model:
+def _get_model() -> Model:
     """
     Get Pydantic AI model depending on environment settings.
     """
@@ -23,4 +25,10 @@ def get_model() -> Model:
     raise Exception("No such AI model provider available")
 
 
-ai_model = get_model()
+@lru_cache
+def get_ai_model() -> Model:
+    """
+    Get cached AI model. This pattern allows us to lazily load the AI model only if AI features
+    are enabled without having to worry about importing this or other AI related modules.
+    """
+    return _get_model()

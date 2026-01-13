@@ -22,7 +22,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error('Failed to fetch app settings:', error);
         // Set default settings on error
-        setSettings({ allow_user_registrations: true });
+        setSettings({ allow_user_registrations: true, ai_features: false });
       } finally {
         setIsLoading(false);
       }
