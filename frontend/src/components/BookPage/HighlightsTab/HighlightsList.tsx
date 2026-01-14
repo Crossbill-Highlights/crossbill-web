@@ -53,17 +53,24 @@ export const HighlightsList = ({
               {chapter.highlights.length > 0 ? (
                 <Box
                   component="ul"
-                  sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, listStyle: 'none', p: 0, m: 0 }}
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2.5,
+                    listStyle: 'none',
+                    p: 0,
+                    m: 0,
+                  }}
                   aria-label={`Highlights in ${chapter.name}`}
                 >
                   {chapter.highlights.map((highlight) => (
-                    <HighlightCard
-                      key={highlight.id}
-                      component="li"
-                      highlight={highlight}
-                      bookmark={bookmarksByHighlightId[highlight.id]}
-                      onOpenModal={onOpenHighlight}
-                    />
+                    <li key={highlight.id}>
+                      <HighlightCard
+                        highlight={highlight}
+                        bookmark={bookmarksByHighlightId[highlight.id]}
+                        onOpenModal={onOpenHighlight}
+                      />
+                    </li>
                   ))}
                 </Box>
               ) : (
