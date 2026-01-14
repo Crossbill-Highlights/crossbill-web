@@ -1,6 +1,6 @@
 import type { ReadingSession } from '@/api/generated/model';
 import { useGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet } from '@/api/generated/reading-sessions/reading-sessions';
-import { FeatureGate } from '@/components/common/FeatureGate';
+import { AIFeature } from '@/components/common/AIFeature';
 import { AISummaryIcon, DateIcon, DurationIcon, TimeIcon } from '@/components/common/Icons.tsx';
 import { ToolbarIconButton } from '@/components/common/ToolbarIconButton';
 import { formatDate, formatDuration, formatTime } from '@/utils/date';
@@ -134,7 +134,7 @@ export const ReadingSessionCard = ({ session }: ReadingSessionCardProps) => {
           )}
         </Box>
 
-        <FeatureGate flag="ai_features" value={true}>
+        <AIFeature>
           {!hasSummary && (
             <ToolbarIconButton
               title="Generate AI Summary"
@@ -150,12 +150,12 @@ export const ReadingSessionCard = ({ session }: ReadingSessionCardProps) => {
               }
             />
           )}
-        </FeatureGate>
+        </AIFeature>
       </Box>
 
-      <FeatureGate flag="ai_features" value={true}>
+      <AIFeature>
         <AISummary summary={summary} error={error} />
-      </FeatureGate>
+      </AIFeature>
     </Box>
   );
 };
