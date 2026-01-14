@@ -92,19 +92,6 @@ export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardPr
   return (
     <li key={flashcard.id}>
       <FlashcardStyled>
-        <ActionButtonsStyled>
-          <Tooltip title="Edit">
-            <IconButton size="small" onClick={onEdit} disabled={isDeleting}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete">
-            <IconButton size="small" onClick={handleDeleteClick} disabled={isDeleting}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </ActionButtonsStyled>
-
         <CardActionArea
           onClick={() => setIsExpanded(!isExpanded)}
           sx={{
@@ -194,6 +181,18 @@ export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardPr
             </Collapsable>
           </CardContent>
         </CardActionArea>
+        <ActionButtonsStyled>
+          <Tooltip title="Edit">
+            <IconButton size="small" onClick={onEdit} disabled={isDeleting}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton size="small" onClick={handleDeleteClick} disabled={isDeleting}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </ActionButtonsStyled>
 
         <ConfirmationDialog
           open={deleteConfirmOpen}
