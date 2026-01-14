@@ -77,6 +77,7 @@ export const BookmarkList = ({
           </Box>
           <IconButton
             size="small"
+            aria-label={isExpanded ? 'Collapse bookmark list' : 'Expand bookmark list'}
             sx={{
               transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s',

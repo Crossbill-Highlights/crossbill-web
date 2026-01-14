@@ -52,6 +52,7 @@ export const ChapterNav = ({ chapters, onChapterClick, hideTitle, countType }: C
           </Box>
           <IconButton
             size="small"
+            aria-label={isExpanded ? 'Collapse chapters list' : 'Expand chapters list'}
             sx={{
               transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s',
