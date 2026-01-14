@@ -15,20 +15,18 @@ def _get_model() -> Model:
     """
 
     if settings.AI_PROVIDER == "ollama":
-        if settings.AI_MODEL_NAME is None or settings.OPENAI_BASE_URL is None:
-            raise Exception(
-                "Please provide AI_MODEL_NAME and OPENAI_BASE_URL environment variables!"
-            )
+        # These assertions are guaranteed by the settings validator
+        assert settings.AI_MODEL_NAME is not None
+        assert settings.OPENAI_BASE_URL is not None
         return OpenAIChatModel(
             model_name=settings.AI_MODEL_NAME,
             provider=OllamaProvider(base_url=settings.OPENAI_BASE_URL),
         )
 
     if settings.AI_PROVIDER == "openai":
-        if settings.AI_MODEL_NAME is None or settings.OPENAI_API_KEY is None:
-            raise Exception(
-                "Please provide AI_MODEL_NAME and OPENAI_API_KEY environment variables!"
-            )
+        # These assertions are guaranteed by the settings validator
+        assert settings.AI_MODEL_NAME is not None
+        assert settings.OPENAI_API_KEY is not None
         return OpenAIChatModel(
             model_name=settings.AI_MODEL_NAME,
             provider=OpenAIProvider(api_key=settings.OPENAI_API_KEY),

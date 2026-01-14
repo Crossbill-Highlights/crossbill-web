@@ -7,7 +7,7 @@ from functools import lru_cache
 from typing import Any, Literal
 
 import structlog
-from pydantic import computed_field, field_validator
+from pydantic import computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -68,6 +68,25 @@ class Settings(BaseSettings):
     def strip_admin_password(cls, value: str) -> str:
         """Strip whitespace from admin password."""
         return value.strip()
+
+    @model_validator(mode="after")
+    def validate_ai_provider_config(self) -> "Settings":
+        """Validate AI provider configuration."""
+        if self.AI_PROVIDER == "ollama":
+            if not self.OPENAI_BASE_URL:
+                msg = "OPENAI_BASE_URL is required when AI_PROVIDER is 'ollama'"
+                raise ValueError(msg)
+            if not self.AI_MODEL_NAME:
+                msg = "AI_MODEL_NAME is required when AI_PROVIDER is 'ollama'"
+                raise ValueError(msg)
+        if self.AI_PROVIDER == "openai":
+            if not self.OPENAI_API_KEY:
+                msg = "OPENAI_API_KEY is required when AI_PROVIDER is 'openai'"
+                raise ValueError(msg)
+            if not self.AI_MODEL_NAME:
+                msg = "AI_MODEL_NAME is required when AI_PROVIDER is 'openai'"
+                raise ValueError(msg)
+        return self
 
 
 def configure_logging(environment: str = "development") -> None:
