@@ -1,7 +1,7 @@
 import type { Bookmark, Highlight } from '@/api/generated/model';
 import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
 import { BookmarkFilledIcon, ExpandMoreIcon } from '@/components/common/Icons.tsx';
-import { Box, IconButton, Typography } from '@mui/material';
+import { Box, Button, IconButton, Typography } from '@mui/material';
 import { useState } from 'react';
 
 interface BookmarkListProps {
@@ -117,49 +117,58 @@ export const BookmarkList = ({
               const truncatedText = prefix + truncateText(highlight.text);
 
               return (
-                <Box
-                  component="li"
-                  key={bookmark.id}
-                  onClick={() => onBookmarkClick(highlight.id)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'start',
-                    gap: 1,
-                    py: 0.75,
-                    px: 0.5,
-                    borderRadius: 0.5,
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s ease',
-                    '@media (hover: hover)': {
-                      '&:hover': {
-                        bgcolor: 'action.hover',
+                <Box component="li" key={bookmark.id}>
+                  <Button
+                    fullWidth
+                    disableRipple
+                    onClick={() => onBookmarkClick(highlight.id)}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'start',
+                      justifyContent: 'flex-start',
+                      textAlign: 'left',
+                      gap: 1,
+                      py: 0.75,
+                      px: 0.5,
+                      borderRadius: 0.5,
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s ease',
+                      '@media (hover: hover)': {
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                        },
                       },
-                    },
-                  }}
-                >
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontSize: '0.875rem',
-                        color: 'text.primary',
-                        lineHeight: 1.4,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {truncatedText}
-                    </Typography>
-                    {highlight.page && (
+                      '&:focus-visible': {
+                        outline: '2px solid',
+                        outlineOffset: '-2px',
+                        outlineColor: 'primary.main',
+                      },
+                    }}
+                  >
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ fontSize: '0.75rem', mt: 0.25, display: 'block' }}
+                        variant="body2"
+                        sx={{
+                          fontSize: '0.875rem',
+                          color: 'text.primary',
+                          lineHeight: 1.4,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
                       >
-                        Page {highlight.page}
+                        {truncatedText}
                       </Typography>
-                    )}
-                  </Box>
+                      {highlight.page && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: '0.75rem', mt: 0.25, display: 'block' }}
+                        >
+                          Page {highlight.page}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Button>
                 </Box>
               );
             })}
