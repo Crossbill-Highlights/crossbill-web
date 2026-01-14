@@ -1,73 +1,69 @@
 """Application configuration."""
 
 import logging
-import os
 import sys
 from collections.abc import Callable
 from functools import lru_cache
-from typing import Any, ClassVar, Literal
+from typing import Any, Literal
 
 import structlog
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
+from pydantic import computed_field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings:
+class Settings(BaseSettings):
     """Application settings."""
 
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
     # Database
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "postgresql://crossbill:crossbill_dev_password@localhost:5432/crossbill",
-    )
+    DATABASE_URL: str = "postgresql://crossbill:crossbill_dev_password@localhost:5432/crossbill"
 
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "")
+    SECRET_KEY: str = ""
 
-    # API
+    # API (constants, not from env)
     API_V1_PREFIX: str = "/api/v1"
     PROJECT_NAME: str = "crossbill API"
     VERSION: str = "0.1.0"
 
     # Environment
-    ENVIRONMENT: Literal["development", "production", "test"] = os.getenv(
-        "ENVIRONMENT", "development"
-    )  # type: ignore[assignment]
+    ENVIRONMENT: Literal["development", "production", "test"] = "development"
 
     # CORS
-    CORS_ORIGINS: ClassVar[list[str]] = (
-        os.getenv("CORS_ORIGINS", "*").split(",") if os.getenv("CORS_ORIGINS") != "*" else ["*"]
-    )
+    CORS_ORIGINS: list[str] = ["*"]
 
     # Admin setup (for first-time initialization)
-    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
-    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "admin").strip()
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_PASSWORD: str = "admin"  # noqa: S105
 
     # Auth
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
-    REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "30"))
-    REFRESH_TOKEN_SECRET_KEY: str = os.getenv("REFRESH_TOKEN_SECRET_KEY", "")
-    COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "true").lower() == "true"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    REFRESH_TOKEN_SECRET_KEY: str = ""
+    COOKIE_SECURE: bool = True
 
     # Registration
-    ALLOW_USER_REGISTRATIONS: bool = os.getenv("ALLOW_USER_REGISTRATIONS", "true").lower() in (
-        "true",
-        "1",
-        "yes",
-    )
+    ALLOW_USER_REGISTRATIONS: bool = True
 
     # Reading sessions
-    MINIMUM_READING_SESSION_DURATION: int = int(
-        os.getenv("MINIMUM_READING_SESSION_DURATION", "120")
-    )
+    MINIMUM_READING_SESSION_DURATION: int = 120
 
     # AI configuration
-    AI_PROVIDER: str | None = os.getenv("AI_PROVIDER", None)  # Accepted values: ollama
-    OPENAI_BASE_URL: str | None = os.getenv("OPENAI_BASE_URL", None)
-    AI_MODEL_NAME: str | None = os.getenv("AI_MODEL_NAME", None)
+    AI_PROVIDER: Literal["ollama"] | None = None
+    OPENAI_BASE_URL: str | None = None
+    AI_MODEL_NAME: str | None = None
 
-    AI_ENABLED: bool = AI_PROVIDER is not None
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def ai_enabled(self) -> bool:
+        """Whether AI features are enabled."""
+        return self.AI_PROVIDER is not None
+
+    @field_validator("ADMIN_PASSWORD", mode="after")
+    @classmethod
+    def strip_admin_password(cls, value: str) -> str:
+        """Strip whitespace from admin password."""
+        return value.strip()
 
 
 def configure_logging(environment: str = "development") -> None:
