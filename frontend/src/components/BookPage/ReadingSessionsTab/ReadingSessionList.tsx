@@ -16,15 +16,21 @@ export const ReadingSessionList = ({
 }: ReadingSessionListProps) => {
   return (
     <FadeInOut ekey={animationKey}>
-      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-        {sessions.length === 0 ? (
-          <Typography variant="body1" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-            {emptyMessage}
-          </Typography>
-        ) : (
-          sessions.map((session) => <ReadingSessionCard key={session.id} session={session} />)
-        )}
-      </Box>
+      {sessions.length === 0 ? (
+        <Typography variant="body1" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
+          {emptyMessage}
+        </Typography>
+      ) : (
+        <Box
+          component="ul"
+          sx={{ display: 'flex', flexDirection: 'column', listStyle: 'none', p: 0, m: 0 }}
+          aria-label="Reading sessions"
+        >
+          {sessions.map((session) => (
+            <ReadingSessionCard key={session.id} session={session} />
+          ))}
+        </Box>
+      )}
     </FadeInOut>
   );
 };

@@ -91,13 +91,18 @@ export const BookmarkList = ({
       <Collapsable isExpanded={effectiveIsExpanded}>
         {bookmarkedHighlights.length > 0 ? (
           <Box
+            component="ul"
             sx={{
               display: 'flex',
               flexDirection: 'column',
               gap: 0.5,
               flex: '1 1 auto',
               minHeight: 0,
+              listStyle: 'none',
+              p: 0,
+              m: 0,
             }}
+            aria-label="Bookmarks"
           >
             {bookmarkedHighlights.map(({ bookmark, highlight }) => {
               if (!highlight) return null;
@@ -112,6 +117,7 @@ export const BookmarkList = ({
 
               return (
                 <Box
+                  component="li"
                   key={bookmark.id}
                   onClick={() => onBookmarkClick(highlight.id)}
                   sx={{

@@ -65,16 +65,22 @@ export const ChapterNav = ({ chapters, onChapterClick, hideTitle, countType }: C
 
       <Collapsable isExpanded={effectiveIsExpanded}>
         <Box
+          component="ul"
           sx={{
             display: 'flex',
             flexDirection: 'column',
             gap: 0.5,
             flex: '1 1 auto',
             minHeight: 0,
+            listStyle: 'none',
+            p: 0,
+            m: 0,
           }}
+          aria-label="Chapters"
         >
           {chapters.map((chapter) => (
             <Box
+              component="li"
               key={chapter.id}
               onClick={() => onChapterClick(chapter.id)}
               sx={{

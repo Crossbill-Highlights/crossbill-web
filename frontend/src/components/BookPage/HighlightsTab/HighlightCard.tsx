@@ -13,6 +13,7 @@ export interface HighlightCardProps {
   highlight: Highlight;
   bookmark?: Bookmark;
   onOpenModal?: (highlightId: number) => void;
+  component?: React.ElementType;
 }
 
 interface FooterProps {
@@ -94,7 +95,7 @@ const Footer = ({ highlight, bookmark }: FooterProps) => {
 
 const previewWordCount = 40;
 
-export const HighlightCard = ({ highlight, bookmark, onOpenModal }: HighlightCardProps) => {
+export const HighlightCard = ({ highlight, bookmark, onOpenModal, component }: HighlightCardProps) => {
   const startsWithLowercase =
     highlight.text.length > 0 &&
     highlight.text[0] === highlight.text[0].toLowerCase() &&
@@ -114,6 +115,7 @@ export const HighlightCard = ({ highlight, bookmark, onOpenModal }: HighlightCar
 
   return (
     <CardActionArea
+      component={component}
       id={`highlight-${highlight.id}`}
       onClick={handleOpenModal}
       sx={{

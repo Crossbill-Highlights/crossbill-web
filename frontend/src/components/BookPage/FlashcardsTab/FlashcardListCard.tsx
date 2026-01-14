@@ -22,6 +22,7 @@ export interface FlashcardCardProps {
   flashcard: FlashcardWithContext;
   bookId: number;
   onEdit: () => void;
+  component?: React.ElementType;
 }
 
 const FlashcardStyled = styled(Card)(({ theme }) => ({
@@ -89,120 +90,122 @@ export const FlashcardListCard = ({ flashcard, bookId, onEdit }: FlashcardCardPr
   };
 
   return (
-    <FlashcardStyled>
-      <ActionButtonsStyled>
-        <Tooltip title="Edit">
-          <IconButton size="small" onClick={onEdit} disabled={isDeleting}>
-            <EditIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Delete">
-          <IconButton size="small" onClick={handleDeleteClick} disabled={isDeleting}>
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </ActionButtonsStyled>
+    <li key={flashcard.id}>
+      <FlashcardStyled>
+        <ActionButtonsStyled>
+          <Tooltip title="Edit">
+            <IconButton size="small" onClick={onEdit} disabled={isDeleting}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton size="small" onClick={handleDeleteClick} disabled={isDeleting}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </ActionButtonsStyled>
 
-      <CardActionArea
-        onClick={() => setIsExpanded(!isExpanded)}
-        sx={{
-          flexGrow: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'stretch',
-          justifyContent: 'flex-start',
-        }}
-      >
-        <CardContent sx={{ width: '100%', pt: 2 }}>
-          {/* Question */}
-          <Box
-            sx={{
-              mb: isExpanded ? 2 : 1,
-              pr: 6,
-            }}
-          >
-            <Typography
-              variant="caption"
+        <CardActionArea
+          onClick={() => setIsExpanded(!isExpanded)}
+          sx={{
+            flexGrow: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            justifyContent: 'flex-start',
+          }}
+        >
+          <CardContent sx={{ width: '100%', pt: 2 }}>
+            {/* Question */}
+            <Box
               sx={{
-                color: 'primary.main',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                display: 'block',
-                mb: 0.5,
+                mb: isExpanded ? 2 : 1,
+                pr: 6,
               }}
             >
-              Question
-            </Typography>
-            <Typography variant="body1" sx={{ lineHeight: 1.5 }}>
-              {flashcard.question}
-            </Typography>
-          </Box>
-
-          <Collapsable isExpanded={isExpanded}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
               <Typography
                 variant="caption"
                 sx={{
-                  color: 'secondary.main',
+                  color: 'primary.main',
                   fontWeight: 600,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
+                  display: 'block',
+                  mb: 0.5,
                 }}
               >
-                Answer
+                Question
+              </Typography>
+              <Typography variant="body1" sx={{ lineHeight: 1.5 }}>
+                {flashcard.question}
               </Typography>
             </Box>
 
-            <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
-              {flashcard.answer}
-            </Typography>
-
-            {/* Source highlight preview */}
-            {flashcard.highlight.text && (
-              <Box
-                sx={{
-                  mt: 2,
-                  pt: 2,
-                  borderTop: '1px dashed',
-                  borderColor: 'divider',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                  <QuoteIcon
-                    sx={{ fontSize: 14, color: 'text.disabled', mt: 0.25, flexShrink: 0 }}
-                  />
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: 'text.disabled',
-                      fontStyle: 'italic',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {flashcard.highlight.text}
-                  </Typography>
-                </Box>
+            <Collapsable isExpanded={isExpanded}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'secondary.main',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  Answer
+                </Typography>
               </Box>
-            )}
-          </Collapsable>
-        </CardContent>
-      </CardActionArea>
 
-      <ConfirmationDialog
-        open={deleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="Delete Flashcard"
-        message="Are you sure you want to delete this flashcard?"
-        confirmText="Delete"
-        confirmColor="error"
-        isLoading={isDeleting}
-      />
-    </FlashcardStyled>
+              <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
+                {flashcard.answer}
+              </Typography>
+
+              {/* Source highlight preview */}
+              {flashcard.highlight.text && (
+                <Box
+                  sx={{
+                    mt: 2,
+                    pt: 2,
+                    borderTop: '1px dashed',
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                    <QuoteIcon
+                      sx={{ fontSize: 14, color: 'text.disabled', mt: 0.25, flexShrink: 0 }}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'text.disabled',
+                        fontStyle: 'italic',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {flashcard.highlight.text}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+            </Collapsable>
+          </CardContent>
+        </CardActionArea>
+
+        <ConfirmationDialog
+          open={deleteConfirmOpen}
+          onClose={() => setDeleteConfirmOpen(false)}
+          onConfirm={handleConfirmDelete}
+          title="Delete Flashcard"
+          message="Are you sure you want to delete this flashcard?"
+          confirmText="Delete"
+          confirmColor="error"
+          isLoading={isDeleting}
+        />
+      </FlashcardStyled>
+    </li>
   );
 };

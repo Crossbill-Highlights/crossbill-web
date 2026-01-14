@@ -51,10 +51,15 @@ export const HighlightsList = ({
               <SectionTitle showDivider>{chapter.name}</SectionTitle>
 
               {chapter.highlights.length > 0 ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                <Box
+                  component="ul"
+                  sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, listStyle: 'none', p: 0, m: 0 }}
+                  aria-label={`Highlights in ${chapter.name}`}
+                >
                   {chapter.highlights.map((highlight) => (
                     <HighlightCard
                       key={highlight.id}
+                      component="li"
                       highlight={highlight}
                       bookmark={bookmarksByHighlightId[highlight.id]}
                       onOpenModal={onOpenHighlight}

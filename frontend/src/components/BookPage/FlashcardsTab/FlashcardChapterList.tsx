@@ -58,6 +58,7 @@ export const FlashcardChapterList = ({
               <SectionTitle showDivider>{chapter.name}</SectionTitle>
 
               <Box
+                component="ul"
                 sx={{
                   display: 'grid',
                   gridTemplateColumns: {
@@ -65,7 +66,11 @@ export const FlashcardChapterList = ({
                     sm: 'repeat(2, 1fr)',
                   },
                   gap: 2,
+                  listStyle: 'none',
+                  p: 0,
+                  m: 0,
                 }}
+                aria-label={`Flashcards in ${chapter.name}`}
               >
                 {chapter.flashcards.map((flashcard) => (
                   <FlashcardListCard
