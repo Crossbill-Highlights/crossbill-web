@@ -81,6 +81,7 @@ const SessionPageRange = ({ startPage, endPage }: SessionPageRangeProps) => {
 
 interface ReadingSessionCardProps {
   session: ReadingSession;
+  component?: React.ElementType;
 }
 
 export const ReadingSessionCard = ({ session }: ReadingSessionCardProps) => {
@@ -98,64 +99,66 @@ export const ReadingSessionCard = ({ session }: ReadingSessionCardProps) => {
   const hasSummary = Boolean(summary);
 
   return (
-    <Box
-      sx={{
-        py: 2.5,
-        px: 2.5,
-        borderBottom: 1,
-        borderColor: 'divider',
-        '&:last-child': {
-          borderBottom: 0,
-        },
-      }}
-    >
+    <li key={session.id}>
       <Box
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 3,
-          flexWrap: 'wrap',
+          py: 2.5,
+          px: 2.5,
+          borderBottom: 1,
+          borderColor: 'divider',
+          '&:last-child': {
+            borderBottom: 0,
+          },
         }}
       >
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: 3,
             flexWrap: 'wrap',
           }}
         >
-          <SessionDate startTime={session.start_time} />
-          <SessionStartTime startTime={session.start_time} />
-          <SessionDuration startTime={session.start_time} endTime={session.end_time} />
-          {hasPageInfo && (
-            <SessionPageRange startPage={session.start_page!} endPage={session.end_page!} />
-          )}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+              flexWrap: 'wrap',
+            }}
+          >
+            <SessionDate startTime={session.start_time} />
+            <SessionStartTime startTime={session.start_time} />
+            <SessionDuration startTime={session.start_time} endTime={session.end_time} />
+            {hasPageInfo && (
+              <SessionPageRange startPage={session.start_page!} endPage={session.end_page!} />
+            )}
+          </Box>
+
+          <AIFeature>
+            {!hasSummary && (
+              <ToolbarIconButton
+                title="Generate AI Summary"
+                onClick={() => setShouldFetch(true)}
+                disabled={isLoading}
+                ariaLabel="Generate AI summary for this reading session"
+                icon={
+                  isLoading ? (
+                    <CircularProgress size={16} sx={{ color: 'primary.main' }} />
+                  ) : (
+                    <AISummaryIcon sx={{ fontSize: 18 }} />
+                  )
+                }
+              />
+            )}
+          </AIFeature>
         </Box>
 
         <AIFeature>
-          {!hasSummary && (
-            <ToolbarIconButton
-              title="Generate AI Summary"
-              onClick={() => setShouldFetch(true)}
-              disabled={isLoading}
-              ariaLabel="Generate AI summary for this reading session"
-              icon={
-                isLoading ? (
-                  <CircularProgress size={16} sx={{ color: 'primary.main' }} />
-                ) : (
-                  <AISummaryIcon sx={{ fontSize: 18 }} />
-                )
-              }
-            />
-          )}
+          <AISummary summary={summary} error={error} />
         </AIFeature>
       </Box>
-
-      <AIFeature>
-        <AISummary summary={summary} error={error} />
-      </AIFeature>
-    </Box>
+    </li>
   );
 };

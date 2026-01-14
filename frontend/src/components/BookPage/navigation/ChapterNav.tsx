@@ -1,6 +1,6 @@
 import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
 import { ChapterListIcon, ExpandMoreIcon } from '@/components/common/Icons.tsx';
-import { Box, IconButton, Typography } from '@mui/material';
+import { Box, Button, IconButton, Typography } from '@mui/material';
 import { useState } from 'react';
 
 export interface ChapterNavigationData {
@@ -52,6 +52,7 @@ export const ChapterNav = ({ chapters, onChapterClick, hideTitle, countType }: C
           </Box>
           <IconButton
             size="small"
+            aria-label={isExpanded ? 'Collapse chapters list' : 'Expand chapters list'}
             sx={{
               transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s',
@@ -65,56 +66,71 @@ export const ChapterNav = ({ chapters, onChapterClick, hideTitle, countType }: C
 
       <Collapsable isExpanded={effectiveIsExpanded}>
         <Box
+          component="ul"
           sx={{
             display: 'flex',
             flexDirection: 'column',
             gap: 0.5,
             flex: '1 1 auto',
             minHeight: 0,
+            listStyle: 'none',
+            p: 0,
+            m: 0,
           }}
+          aria-label="Chapters"
         >
           {chapters.map((chapter) => (
-            <Box
-              key={chapter.id}
-              onClick={() => onChapterClick(chapter.id)}
-              sx={{
-                display: 'flex',
-                alignItems: 'start',
-                gap: 1,
-                py: 0.75,
-                px: 0.5,
-                borderRadius: 0.5,
-                cursor: 'pointer',
-                transition: 'background-color 0.2s ease',
-                '@media (hover: hover)': {
-                  '&:hover': {
-                    bgcolor: 'action.hover',
+            <Box component="li" key={chapter.id}>
+              <Button
+                fullWidth
+                disableRipple
+                onClick={() => onChapterClick(chapter.id)}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'start',
+                  justifyContent: 'flex-start',
+                  textAlign: 'left',
+                  gap: 1,
+                  py: 0.75,
+                  px: 0.5,
+                  borderRadius: 0.5,
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s ease',
+                  '@media (hover: hover)': {
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
                   },
-                },
-              }}
-            >
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontSize: '0.875rem',
-                    color: 'text.primary',
-                    lineHeight: 1.4,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {chapter.name}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ fontSize: '0.75rem', mt: 0.25, display: 'block' }}
-                >
-                  {chapter.itemCount} {countType === 'highlight' ? 'highlight' : 'flashcard'}
-                  {chapter.itemCount !== 1 ? 's' : ''}
-                </Typography>
-              </Box>
+                  '&:focus-visible': {
+                    outline: '2px solid',
+                    outlineOffset: '-2px',
+                    outlineColor: 'primary.main',
+                  },
+                }}
+              >
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontSize: '0.875rem',
+                      color: 'text.primary',
+                      lineHeight: 1.4,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {chapter.name}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ fontSize: '0.75rem', mt: 0.25, display: 'block' }}
+                  >
+                    {chapter.itemCount} {countType === 'highlight' ? 'highlight' : 'flashcard'}
+                    {chapter.itemCount !== 1 ? 's' : ''}
+                  </Typography>
+                </Box>
+              </Button>
             </Box>
           ))}
         </Box>

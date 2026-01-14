@@ -102,6 +102,7 @@ export function AppBar() {
           {/* Hamburger menu */}
           <IconButton
             color="inherit"
+            aria-label="Menu"
             onClick={handleMenuOpen}
             sx={{
               color: 'primary.contrastText',
