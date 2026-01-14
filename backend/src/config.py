@@ -49,9 +49,13 @@ class Settings(BaseSettings):
     MINIMUM_READING_SESSION_DURATION: int = 120
 
     # AI configuration
-    AI_PROVIDER: Literal["ollama"] | None = None
-    OPENAI_BASE_URL: str | None = None
+    AI_PROVIDER: Literal["ollama"] | Literal["openai"] | None = None
     AI_MODEL_NAME: str | None = None
+
+    # ollama
+    OPENAI_BASE_URL: str | None = None
+    # openai
+    OPENAI_API_KEY: str | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property
