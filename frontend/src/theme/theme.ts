@@ -1,4 +1,4 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, type Theme } from '@mui/material/styles';
 
 const colors = {
   amber: {
@@ -54,6 +54,56 @@ const customColors = {
     subtle: 'rgba(0, 0, 0, 0.05)', // Very subtle background (HighlightViewModal progress bar)
   },
 };
+
+/**
+ * Shared markdown styles for consistent rendering across the application.
+ * Used in components that render markdown content (e.g., AI summaries).
+ */
+export const markdownStyles = (theme: Theme) => ({
+  ...theme.typography.body1,
+  color: theme.palette.text.primary,
+
+  '& p': {
+    margin: 0,
+    marginBottom: '0.5em',
+    '&:last-child': {
+      marginBottom: 0,
+    },
+  },
+  '& ul, & ol': {
+    marginTop: '0.5em',
+    marginBottom: '0.5em',
+    paddingLeft: '1.5em',
+  },
+  '& li': {
+    marginBottom: '0.25em',
+  },
+  '& strong': {
+    fontWeight: 600,
+  },
+  '& em': {
+    fontStyle: 'italic',
+  },
+  '& code': {
+    fontFamily: 'monospace',
+    backgroundColor: customColors.backgrounds.subtle,
+    padding: '0.125em 0.25em',
+    borderRadius: '0.25em',
+    fontSize: '0.9em',
+  },
+  '& pre': {
+    backgroundColor: customColors.backgrounds.subtle,
+    padding: '0.75em',
+    borderRadius: '0.5em',
+    overflow: 'auto',
+    marginTop: '0.5em',
+    marginBottom: '0.5em',
+  },
+  '& pre code': {
+    backgroundColor: 'transparent',
+    padding: 0,
+  },
+});
 
 // Extend the MUI Theme interface to include custom colors
 declare module '@mui/material/styles' {
