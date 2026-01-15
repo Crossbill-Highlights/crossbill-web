@@ -1,79 +1,51 @@
 import type { ReadingSession } from '@/api/generated/model';
 import { useGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet } from '@/api/generated/reading-sessions/reading-sessions';
 import { AIFeature } from '@/components/common/AIFeature';
-import { AISummaryIcon, DateIcon, DurationIcon, TimeIcon } from '@/components/common/Icons.tsx';
-import { ToolbarIconButton } from '@/components/common/ToolbarIconButton';
+import { useSettings } from '@/context/SettingsContext';
+import { useSnackbar } from '@/context/SnackbarContext';
 import { formatDate, formatDuration, formatTime } from '@/utils/date';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import { Box, CircularProgress, Typography } from '@mui/material';
-import { useState } from 'react';
+import { Box, Button, Typography } from '@mui/material';
+import type { AxiosError } from 'axios';
+import { useEffect } from 'react';
 import { AISummary } from './AISummary';
 
-interface SessionDateProps {
-  startTime: string;
-}
-
-const SessionDate = ({ startTime }: SessionDateProps) => (
-  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-    <DateIcon
-      sx={{
-        fontSize: 18,
-        color: 'text.secondary',
-        opacity: 0.7,
-      }}
-    />
-    <Typography variant="body1">{formatDate(startTime)}</Typography>
-  </Box>
-);
-
-interface SessionStartTimeProps {
-  startTime: string;
-}
-
-const SessionStartTime = ({ startTime }: SessionStartTimeProps) => (
-  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-    <TimeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-    <Typography variant="body1" color="text.secondary">
-      {formatTime(startTime)}
-    </Typography>
-  </Box>
-);
-
-interface SessionDurationProps {
+interface SessionMetadataProps {
   startTime: string;
   endTime: string;
+  startPage: number | null | undefined;
+  endPage: number | null | undefined;
 }
 
-const SessionDuration = ({ startTime, endTime }: SessionDurationProps) => (
-  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-    <DurationIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-    <Typography variant="body1" color="text.secondary">
-      {formatDuration(startTime, endTime)}
-    </Typography>
-  </Box>
-);
-
-interface SessionPageRangeProps {
-  startPage: number;
-  endPage: number;
-}
-
-const SessionPageRange = ({ startPage, endPage }: SessionPageRangeProps) => {
-  const pagesRead = endPage - startPage;
+const SessionMetadata = ({ startTime, endTime, startPage, endPage }: SessionMetadataProps) => {
+  const pagesRead = startPage != null && endPage != null ? endPage - startPage : 0;
 
   return (
     <Box
       sx={{
         display: 'flex',
+        flexWrap: 'wrap',
         alignItems: 'center',
-        gap: 1,
-        pl: 0.5,
+        gap: 1.5,
+        mb: 1.5,
       }}
     >
-      <MenuBookIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-      <Typography variant="body1">
-        Pages {startPage} - {endPage}
-        {pagesRead > 0 && ` (${pagesRead} pages)`}
+      <Typography
+        variant="body2"
+        sx={{
+          color: 'text.secondary',
+        }}
+      >
+        <span>
+          {formatDate(startTime)}
+          &nbsp;&nbsp;•&nbsp;&nbsp;{formatTime(startTime)}
+          &nbsp;&nbsp;•&nbsp;&nbsp;{formatDuration(startTime, endTime)}
+        </span>
+        {startPage != null && endPage != null && (
+          <span>
+            &nbsp;&nbsp;•&nbsp;&nbsp;Pages {startPage}-{endPage}
+            {pagesRead > 0 && ` (${pagesRead} page${pagesRead !== 1 ? 's' : ''})`}
+          </span>
+        )}
       </Typography>
     </Box>
   );
@@ -84,79 +56,87 @@ interface ReadingSessionCardProps {
   component?: React.ElementType;
 }
 
-export const ReadingSessionCard = ({ session }: ReadingSessionCardProps) => {
-  const hasPageInfo = session.start_page != null && session.end_page != null;
-  const [shouldFetch, setShouldFetch] = useState(false);
+interface SummaryPlaceholderProps {
+  onGenerate: () => void;
+  isLoading: boolean;
+}
 
-  const { data, isLoading, error } =
+const SummaryPlaceholder = ({ onGenerate, isLoading }: SummaryPlaceholderProps) => (
+  <Box
+    sx={{
+      padding: 1.5,
+      alignItems: 'center',
+      gap: 2,
+      flexWrap: 'wrap',
+      backgroundColor: 'transparent',
+      '@media (max-width: 768px)': {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+      },
+    }}
+  >
+    <Button onClick={onGenerate} disabled={isLoading} variant="contained" sx={{ borderRadius: 2 }}>
+      {isLoading ? 'Generating...' : 'Generate Summary'}
+    </Button>
+  </Box>
+);
+
+export const ReadingSessionCard = ({ session }: ReadingSessionCardProps) => {
+  const { showSnackbar } = useSnackbar();
+
+  const { data, isLoading, error, refetch } =
     useGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet(session.id, {
       query: {
-        enabled: shouldFetch && !session.ai_summary,
+        enabled: false,
+        retry: false,
       },
     });
 
+  useEffect(() => {
+    if (error) {
+      const axiosError = error as AxiosError;
+      const errorMessage =
+        axiosError.response?.status === 400
+          ? 'Cannot generate summary - no content available for this session'
+          : 'Failed to generate summary. Please try again.';
+      showSnackbar(errorMessage, 'error');
+    }
+  }, [error, showSnackbar]);
+
   const summary = session.ai_summary || data?.summary;
   const hasSummary = Boolean(summary);
+  const aiEnabled = !!useSettings().settings?.ai_features;
 
   return (
     <li key={session.id}>
       <Box
         sx={{
-          py: 2.5,
+          py: aiEnabled ? 3.5 : 1,
           px: 2.5,
           borderBottom: 1,
           borderColor: 'divider',
           '&:last-child': {
             borderBottom: 0,
           },
+          '@media (max-width: 768px)': {
+            px: 2,
+            py: 2,
+          },
         }}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 3,
-            flexWrap: 'wrap',
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 3,
-              flexWrap: 'wrap',
-            }}
-          >
-            <SessionDate startTime={session.start_time} />
-            <SessionStartTime startTime={session.start_time} />
-            <SessionDuration startTime={session.start_time} endTime={session.end_time} />
-            {hasPageInfo && (
-              <SessionPageRange startPage={session.start_page!} endPage={session.end_page!} />
-            )}
-          </Box>
-
-          <AIFeature>
-            {!hasSummary && (
-              <ToolbarIconButton
-                title="Generate AI Summary"
-                onClick={() => setShouldFetch(true)}
-                disabled={isLoading}
-                ariaLabel="Generate AI summary for this reading session"
-                icon={
-                  isLoading ? (
-                    <CircularProgress size={16} sx={{ color: 'primary.main' }} />
-                  ) : (
-                    <AISummaryIcon sx={{ fontSize: 18 }} />
-                  )
-                }
-              />
-            )}
-          </AIFeature>
-        </Box>
+        <SessionMetadata
+          startTime={session.start_time}
+          endTime={session.end_time}
+          startPage={session.start_page}
+          endPage={session.end_page}
+        />
 
         <AIFeature>
-          <AISummary summary={summary} error={error} />
+          {hasSummary ? (
+            <AISummary summary={summary} />
+          ) : (
+            <SummaryPlaceholder onGenerate={() => refetch()} isLoading={isLoading} />
+          )}
         </AIFeature>
       </Box>
     </li>
