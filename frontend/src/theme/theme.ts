@@ -216,7 +216,7 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           textTransform: 'none',
-          borderRadius: 12,
+          borderRadius: 24,
           fontWeight: 500,
         },
       },

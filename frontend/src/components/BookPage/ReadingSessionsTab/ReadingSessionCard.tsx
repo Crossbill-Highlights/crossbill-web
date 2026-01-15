@@ -67,7 +67,7 @@ const SummaryPlaceholder = ({ onGenerate, isLoading }: SummaryPlaceholderProps) 
       padding: 1.5,
     }}
   >
-    <Button onClick={onGenerate} disabled={isLoading} variant="contained" sx={{ borderRadius: 2 }}>
+    <Button onClick={onGenerate} disabled={isLoading} variant="contained">
       {isLoading ? 'Generating...' : 'Generate Summary'}
     </Button>
   </Box>

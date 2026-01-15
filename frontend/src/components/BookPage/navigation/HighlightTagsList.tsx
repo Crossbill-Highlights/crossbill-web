@@ -374,7 +374,6 @@ const AddGroupForm = ({ isVisible, isProcessing, onSubmit, onCancel }: AddGroupF
                 sx={{
                   flex: 1,
                   fontSize: '0.75rem',
-                  borderRadius: 2,
                 }}
               >
                 Add
@@ -385,7 +384,6 @@ const AddGroupForm = ({ isVisible, isProcessing, onSubmit, onCancel }: AddGroupF
                 sx={{
                   flex: 1,
                   fontSize: '0.75rem',
-                  borderRadius: 2,
                 }}
               >
                 Cancel
