@@ -31,6 +31,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   Box,
+  Button,
   Chip,
   ClickAwayListener,
   IconButton,
@@ -366,46 +367,29 @@ const AddGroupForm = ({ isVisible, isProcessing, onSubmit, onCancel }: AddGroupF
               />
             </ClickAwayListener>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Box
-                component="button"
+              <Button
+                variant="contained"
                 onClick={handleSubmit}
                 disabled={isProcessing}
                 sx={{
                   flex: 1,
-                  py: 0.75,
-                  px: 1.5,
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
-                  border: 'none',
-                  borderRadius: 1.5,
                   fontSize: '0.75rem',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  '&:hover': { bgcolor: 'primary.dark' },
-                  '&:disabled': { opacity: 0.6, cursor: 'not-allowed' },
+                  borderRadius: 2,
                 }}
               >
                 Add
-              </Box>
-              <Box
-                component="button"
+              </Button>
+              <Button
+                variant="outlined"
                 onClick={onCancel}
                 sx={{
                   flex: 1,
-                  py: 0.75,
-                  px: 1.5,
-                  bgcolor: 'transparent',
-                  color: 'text.secondary',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 1.5,
                   fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  '&:hover': { bgcolor: 'action.hover' },
+                  borderRadius: 2,
                 }}
               >
                 Cancel
-              </Box>
+              </Button>
             </Box>
           </Box>
         </motion.div>
