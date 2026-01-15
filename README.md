@@ -25,7 +25,8 @@ Crossbill helps you centralize and manage your ebook highlights by providing:
 - Sync highlights from KOReader with automatic deduplication
 - Web interface for viewing and managing highlights by book
 - Organize highlights with notes and metadata
-- Export highlights to various apps
+- Create flash cards from your highlights and sync them to Anki
+- Create AI summaries from your reading sessions
 - Self-hosted - your data stays on your server
 - Multi-user support
 

@@ -26,6 +26,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      # Refer to all possible environment variables in /backend/.env.example
       DATABASE_URL: postgresql://crossbill:${POSTGRES_PASSWORD:-crossbill_secure_password}@postgres:5432/crossbill
       ENVIRONMENT: production
       ADMIN_USERNAME: ${ADMIN_USERNAME}
