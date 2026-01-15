@@ -52,3 +52,11 @@ Each component has its own installation instructions for development:
 - **Obsidian Plugin**: See [clients/obsidian-plugin/README.md](clients/obsidian-plugin/README.md)
 
 API documentation can be found from URL `<backend host>/api/v1/docs` when running the backend server.
+
+## Contributions
+
+Contributions are welcome. Few guide lines:
+
+- Check if there is an issue you would like to work on and comment on it to discuss
+- Add first issue about the feature etc. you'd like to see in the application (and work on if possible!)
+- AI-assisted coding is welcome as long as you review your contributions before submitting them to the review.
