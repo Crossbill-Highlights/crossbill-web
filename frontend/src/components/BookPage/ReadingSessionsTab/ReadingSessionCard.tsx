@@ -105,11 +105,6 @@ export const ReadingSessionCard = ({ session }: ReadingSessionCardProps) => {
         sx={{
           py: aiEnabled ? 3.5 : 1,
           px: 2.5,
-          borderBottom: 1,
-          borderColor: 'divider',
-          '&:last-child': {
-            borderBottom: 0,
-          },
           '@media (max-width: 768px)': {
             px: 2,
             py: 2,
