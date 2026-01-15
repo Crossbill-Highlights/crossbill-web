@@ -1,66 +1,33 @@
-import { AISummaryIcon, ExpandLessIcon, ExpandMoreIcon } from '@/components/common/Icons';
+import { ExpandLessIcon, ExpandMoreIcon } from '@/components/common/Icons';
 import { Collapsable } from '@/components/common/animations/Collapsable';
-import { Box, Button, Typography, styled } from '@mui/material';
+import { Box, Button, CardActionArea, styled } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
-import type { AxiosError } from 'axios';
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 interface AISummaryProps {
   summary?: string | null;
-  error?: unknown;
 }
 
-const SummaryCard = styled(Box)(({ theme }) => ({
-  marginTop: theme.spacing(2),
-  padding: theme.spacing(2.5),
-  borderRadius: theme.spacing(2),
-  border: `1px solid ${theme.palette.divider}`,
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  '&:hover': {
-    boxShadow: theme.shadows[2],
-    borderColor: theme.palette.primary.light,
+const SummaryCard = styled(CardActionArea)(({ theme }) => ({
+  padding: theme.spacing(1.5, 2),
+  borderRadius: theme.spacing(0.75),
+  borderLeft: `3px solid transparent`,
+  transition: 'all 0.2s ease',
+  cursor: 'pointer',
+  '@media (hover: hover)': {
+    '&:hover': {
+      backgroundColor: theme.palette.action.hover,
+      borderLeftColor: theme.palette.primary.main,
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+    },
   },
 }));
 
-const HeaderContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: theme.spacing(1.25),
-  marginBottom: theme.spacing(2),
-}));
-
-const StyledAISummaryIcon = styled(AISummaryIcon)(({ theme }) => ({
-  fontSize: 20,
-  color: theme.palette.primary.main,
-}));
-
-const HeaderLabel = styled(Typography)(({ theme }) => ({
-  fontWeight: 700,
-  color: theme.palette.primary.main,
-  textTransform: 'uppercase',
-  letterSpacing: '0.1em',
-  fontSize: '0.75rem',
-}));
-
-const ErrorContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  marginBottom: theme.spacing(1.5),
-}));
-
-const ErrorText = styled(Typography)(({ theme }) => ({
-  color: theme.palette.error.main,
-  fontWeight: 500,
-}));
-
 const markdownStyles = (theme: Theme) => ({
-  lineHeight: 1.75,
+  ...theme.typography.body1,
   color: theme.palette.text.primary,
-  fontWeight: 300,
-  letterSpacing: '0.01em',
-  textAlign: 'justify' as const,
-  fontSize: '0.875rem',
+
   '& p': {
     margin: 0,
     marginBottom: '0.5em',
@@ -116,76 +83,51 @@ const ExpandedContent = styled(Box)(({ theme }) => ({
 }));
 
 const ToggleButton = styled(Button)(({ theme }) => ({
-  marginTop: theme.spacing(1.5),
-  color: theme.palette.primary.main,
-  fontWeight: 600,
+  marginTop: theme.spacing(1),
+  color: theme.palette.text.secondary,
+  fontWeight: 500,
   textTransform: 'none',
-  fontSize: '0.875rem',
+  padding: 0,
+  minWidth: 'auto',
   '&:hover': {
-    backgroundColor: theme.customColors.dragDrop.hoverBg,
+    backgroundColor: 'transparent',
+    color: theme.palette.primary.main,
   },
 }));
 
-export const AISummary = ({ summary, error }: AISummaryProps) => {
+export const AISummary = ({ summary }: AISummaryProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const getErrorMessage = (err: unknown): string => {
-    const axiosError = err as AxiosError;
-    if (axiosError.response?.status === 400) {
-      return 'Cannot generate summary - no content available for this session';
-    }
-    return 'Failed to generate summary. Please try again.';
-  };
-
-  const errorMessage = error ? getErrorMessage(error) : null;
-
-  // Don't render anything if there's no summary and no error
-  if (!summary && !error) {
+  if (!summary) {
     return null;
   }
 
-  // Full card view when summary exists
   return (
-    <SummaryCard>
-      {/* Header with icon and label */}
-      <HeaderContainer>
-        <StyledAISummaryIcon />
-        <HeaderLabel variant="caption">AI Summary</HeaderLabel>
-      </HeaderContainer>
+    <SummaryCard onClick={() => setIsExpanded(!isExpanded)}>
+      <Box sx={{ pointerEvents: 'none' }}>
+        {!isExpanded && summary && (
+          <PreviewContent>
+            <ReactMarkdown>{summary}</ReactMarkdown>
+          </PreviewContent>
+        )}
 
-      {/* Error state */}
-      {errorMessage && (
-        <ErrorContainer>
-          <ErrorText variant="caption">{errorMessage}</ErrorText>
-        </ErrorContainer>
-      )}
+        {summary && (
+          <>
+            <Collapsable isExpanded={isExpanded}>
+              <ExpandedContent>
+                <ReactMarkdown>{summary}</ReactMarkdown>
+              </ExpandedContent>
+            </Collapsable>
 
-      {/* Collapsed preview (first 3 lines) */}
-      {!isExpanded && summary && (
-        <PreviewContent>
-          <ReactMarkdown>{summary}</ReactMarkdown>
-        </PreviewContent>
-      )}
-
-      {/* Expanded content */}
-      {summary && (
-        <>
-          <Collapsable isExpanded={isExpanded}>
-            <ExpandedContent>
-              <ReactMarkdown>{summary}</ReactMarkdown>
-            </ExpandedContent>
-          </Collapsable>
-
-          {/* Toggle button */}
-          <ToggleButton
-            size="small"
-            onClick={() => setIsExpanded(!isExpanded)}
-            endIcon={isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-          >
-            {isExpanded ? 'Show less' : 'Show more'}
-          </ToggleButton>
-        </>
-      )}
+            <ToggleButton
+              size="small"
+              endIcon={isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            >
+              {isExpanded ? 'Show less' : 'Show more'}
+            </ToggleButton>
+          </>
+        )}
+      </Box>
     </SummaryCard>
   );
 };

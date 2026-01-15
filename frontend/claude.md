@@ -122,6 +122,12 @@ const HighlightsList = ({ bookId }: Props) => {
 - **USE** theme tokens for consistent spacing/colors
 - **AVOID** inline styles except for dynamic values
 
+### Component Usage
+
+- **ALWAYS** use semantic MUI components (`Button`, `IconButton`, etc.) instead of `Box` with `component="button"`
+- **NEVER** use `<Box component="button">` - use `<Button>` instead for proper accessibility, keyboard navigation, and built-in interactions
+- Proper MUI components provide better accessibility (focus management, ARIA attributes) and user experience (ripple effects, disabled states)
+
 ## File Organization
 
 - **GROUP** related components in feature folders
