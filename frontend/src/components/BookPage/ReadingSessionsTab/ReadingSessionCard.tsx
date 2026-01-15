@@ -65,14 +65,6 @@ const SummaryPlaceholder = ({ onGenerate, isLoading }: SummaryPlaceholderProps) 
   <Box
     sx={{
       padding: 1.5,
-      alignItems: 'center',
-      gap: 2,
-      flexWrap: 'wrap',
-      backgroundColor: 'transparent',
-      '@media (max-width: 768px)': {
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-      },
     }}
   >
     <Button onClick={onGenerate} disabled={isLoading} variant="contained" sx={{ borderRadius: 2 }}>
