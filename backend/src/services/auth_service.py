@@ -20,6 +20,7 @@ REFRESH_TOKEN_SECRET_KEY = settings.REFRESH_TOKEN_SECRET_KEY or SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
+PASSWORD_PEPPER = settings.PASSWORD_PEPPER
 DUMMY_HASH = "fasdflkdfjdlkfjlfdjsdlkasfsf"
 
 
@@ -43,17 +44,28 @@ password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
-def _verify_password(plain_password: str, hashed_password: str) -> bool:
-    return password_hash.verify(plain_password, hashed_password)
-
-
 def hash_password(plain_password: str) -> str:
-    """Hash a plain password for storage."""
-    return password_hash.hash(plain_password)
+    """Hash a plain password for storage with pepper."""
+    peppered_password = plain_password + PASSWORD_PEPPER
+    return password_hash.hash(peppered_password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plain password against a hashed password."""
+    """Verify a plain password against a hashed password.
+
+    Tries with pepper first (current standard), then falls back to non-peppered
+    for backward compatibility with existing passwords.
+
+    DEPRECATED: Non-peppered password verification will be removed in a future release.
+    Users should change their passwords to migrate to peppered hashes.
+    """
+    # Try with pepper first (current standard)
+    peppered_password = plain_password + PASSWORD_PEPPER
+    if password_hash.verify(peppered_password, hashed_password):
+        return True
+
+    # Fallback to non-peppered for backward compatibility (DEPRECATED)
+    # This allows existing users to login and change their password
     return password_hash.verify(plain_password, hashed_password)
 
 
@@ -70,9 +82,9 @@ def _get_user_by_id(db: DatabaseSession, id: int) -> User | None:
 def authenticate_user(email: str, password: str, db: DatabaseSession) -> User | None:
     user = _get_user_by_email(db, email)
     if not user:
-        _verify_password(password, DUMMY_HASH)  # Constant time to avoid timing difference
+        verify_password(password, DUMMY_HASH)  # Constant time to avoid timing difference
         return None
-    if not user.hashed_password or not _verify_password(password, user.hashed_password):
+    if not user.hashed_password or not verify_password(password, user.hashed_password):
         return None
     return user
 

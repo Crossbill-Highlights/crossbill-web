@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     REFRESH_TOKEN_SECRET_KEY: str = ""
     COOKIE_SECURE: bool = True
+    PASSWORD_PEPPER: str = ""
 
     # Registration
     ALLOW_USER_REGISTRATIONS: bool = True
