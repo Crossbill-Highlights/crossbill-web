@@ -19,6 +19,7 @@ import { ProgressBar } from './components/ProgressBar.tsx';
 import { TagInput } from './components/TagInput.tsx';
 import { Toolbar } from './components/Toolbar.tsx';
 import { useHighlightNavigation } from './hooks/useHighlightNavigation.ts';
+import { useVisibilityToggle } from './hooks/useVisibilityToggle.ts';
 
 export interface HighlightViewModalProps {
   highlight: Highlight;
@@ -45,8 +46,6 @@ export const HighlightViewModal = ({
 }: HighlightViewModalProps) => {
   const queryClient = useQueryClient();
   const { showSnackbar } = useSnackbar();
-  const [noteVisibleWhenEmpty, setNoteVisibleWhenEmpty] = useState(false);
-  const [flashcardVisibleWhenEmpty, setFlashcardVisibleWhenEmpty] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const currentBookmark = bookmarksByHighlightId[highlight.id] ?? undefined;
@@ -59,19 +58,14 @@ export const HighlightViewModal = ({
       onNavigate,
     });
 
-  const hasNote = !!highlight.note;
-  const noteVisible = hasNote || noteVisibleWhenEmpty;
-
-  const hasFlashcards = !!highlight.flashcards.length;
-  const flashcardVisible = hasFlashcards || flashcardVisibleWhenEmpty;
-
-  const handleNoteToggle = () => {
-    setNoteVisibleWhenEmpty((prev) => !prev);
-  };
-
-  const handleFlashcardToggle = () => {
-    setFlashcardVisibleWhenEmpty((prev) => !prev);
-  };
+  const { visible: noteVisible, toggle: handleNoteToggle } = useVisibilityToggle(
+    highlight.id,
+    !!highlight.note
+  );
+  const { visible: flashcardVisible, toggle: handleFlashcardToggle } = useVisibilityToggle(
+    highlight.id,
+    !!highlight.flashcards.length
+  );
 
   const deleteHighlightMutation = useDeleteHighlightsApiV1BooksBookIdHighlightDelete({
     mutation: {
