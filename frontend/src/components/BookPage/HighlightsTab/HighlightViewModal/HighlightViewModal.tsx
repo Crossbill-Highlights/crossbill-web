@@ -160,9 +160,8 @@ export const HighlightViewModal = ({
         disabled={isLoading}
       />
       <FlashcardSection
-        highlightId={highlight.id}
+        highlight={highlight}
         bookId={bookId}
-        flashcards={highlight.flashcards}
         visible={flashcardVisible}
         disabled={isLoading}
       />

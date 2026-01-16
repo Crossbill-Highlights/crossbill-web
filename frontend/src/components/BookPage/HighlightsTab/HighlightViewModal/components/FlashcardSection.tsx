@@ -1,118 +1,81 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
-import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/generated/flashcards/flashcards.ts';
-import { useCreateFlashcardForHighlightApiV1HighlightsHighlightIdFlashcardsPost } from '@/api/generated/highlights/highlights.ts';
-import type { Flashcard } from '@/api/generated/model';
-import { Collapsable } from '@/components/common/animations/Collapsable.tsx';
-import { ConfirmationDialog } from '@/components/common/ConfirmationDialog.tsx';
-import { DeleteIcon } from '@/components/common/Icons.tsx';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import {
-  Box,
-  Button,
-  Card,
-  CardActionArea,
-  IconButton,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+  useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete,
+  useUpdateFlashcardApiV1FlashcardsFlashcardIdPut,
+} from '@/api/generated/flashcards/flashcards.ts';
+import { useCreateFlashcardForHighlightApiV1HighlightsHighlightIdFlashcardsPost } from '@/api/generated/highlights/highlights.ts';
+import type { Highlight } from '@/api/generated/model';
+import { FlashcardCard } from '@/components/BookPage/FlashcardsTab/FlashcardCard.tsx';
+import type { FlashcardWithContext } from '@/components/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
+import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { Box, Button, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
+import { sortBy } from 'lodash';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 
 interface FlashcardSectionProps {
-  highlightId: number;
+  highlight: Highlight;
   bookId: number;
-  flashcards: Flashcard[];
   visible: boolean;
   disabled?: boolean;
 }
 
-const Flashcard = ({
-  id,
-  question,
-  answer,
-  isLoading,
-  onDelete,
-}: Flashcard & {
-  isLoading: boolean;
-  onDelete: (id: number) => void;
-}) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  return (
-    <Card
-      sx={{
-        p: 1.5,
-        borderRadius: 1,
-        bgcolor: 'action.hover',
-        position: 'relative',
-        border: 0,
-        boxShadow: 0,
-      }}
-    >
-      <CardActionArea onClick={() => setIsExpanded(!isExpanded)}>
-        <Typography variant="body2" fontWeight="medium">
-          Q: {question}
-        </Typography>
-        <Collapsable isExpanded={isExpanded}>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            A: {answer}
-          </Typography>
-        </Collapsable>
-      </CardActionArea>
-      <Tooltip title="Delete flashcard">
-        <IconButton
-          size="small"
-          onClick={() => onDelete(id)}
-          disabled={isLoading}
-          sx={{ position: 'absolute', top: 8, right: 8 }}
-        >
-          <DeleteIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
-    </Card>
-  );
-};
-
 export const FlashcardSection = ({
-  highlightId,
+  highlight,
   bookId,
-  flashcards,
   visible,
   disabled = false,
 }: FlashcardSectionProps) => {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [editingFlashcardId, setEditingFlashcardId] = useState<number | null>(null);
   const { showSnackbar } = useSnackbar();
-  const { isProcessing, saveFlashcard, deleteFlashcard } = useFlashcardMutations(
+  const { isProcessing, saveFlashcard, updateFlashcard } = useFlashcardMutations(
     bookId,
-    highlightId,
+    highlight.id,
     showSnackbar
   );
 
-  const handleDeleteRequest = (flashcardId: number) => {
-    setPendingDeleteId(flashcardId);
-    setDeleteConfirmOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (pendingDeleteId === null) return;
-    setDeleteConfirmOpen(false);
-    await deleteFlashcard(pendingDeleteId);
-    setPendingDeleteId(null);
+  const handleEditFlashcard = (flashcardId: number) => {
+    const flashcard = highlight.flashcards.find((f) => f.id === flashcardId);
+    if (flashcard) {
+      setEditingFlashcardId(flashcardId);
+      setQuestion(flashcard.question);
+      setAnswer(flashcard.answer);
+    }
   };
 
   const isDisabled = disabled || isProcessing;
   const canSave = question.trim() && answer.trim() && !isDisabled;
 
   const handleSave = async () => {
-    await saveFlashcard(question, answer);
+    if (editingFlashcardId) {
+      await updateFlashcard(editingFlashcardId, question, answer);
+    } else {
+      await saveFlashcard(question, answer);
+    }
     setQuestion('');
     setAnswer('');
+    setEditingFlashcardId(null);
   };
+
+  const handleCancelEdit = () => {
+    setQuestion('');
+    setAnswer('');
+    setEditingFlashcardId(null);
+  };
+
+  const flashcardsWithContext: FlashcardWithContext[] = sortBy(
+    highlight.flashcards.map((flashcard) => ({
+      ...flashcard,
+      highlight,
+      chapterName: highlight.chapter || '',
+      chapterId: highlight.chapter_id || 0,
+      highlightTags: highlight.highlight_tags,
+    })),
+    (f) => f.question.toLowerCase()
+  );
 
   return (
     <AnimatePresence initial={false}>
@@ -124,21 +87,37 @@ export const FlashcardSection = ({
           transition={{ duration: 0.2, ease: 'easeInOut' }}
           style={{ overflow: 'hidden' }}
         >
-          <Box>
+          <Box sx={{ mt: 3 }}>
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Flashcards
             </Typography>
 
             {/* Existing flashcards */}
-            {flashcards.length > 0 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
-                {flashcards.map((flashcard) => (
-                  <Flashcard
-                    key={flashcard.id}
-                    onDelete={() => handleDeleteRequest(flashcard.id)}
-                    isLoading={isDisabled}
-                    {...flashcard}
-                  />
+            {flashcardsWithContext.length > 0 && (
+              <Box
+                component="ul"
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(2, 1fr)',
+                  },
+                  gap: 2,
+                  listStyle: 'none',
+                  p: 0,
+                  m: 0,
+                  mb: 2,
+                }}
+              >
+                {flashcardsWithContext.map((flashcard) => (
+                  <li key={flashcard.id}>
+                    <FlashcardCard
+                      flashcard={flashcard}
+                      bookId={bookId}
+                      onEdit={() => handleEditFlashcard(flashcard.id)}
+                      showSourceHighlight={false}
+                    />
+                  </li>
                 ))}
               </Box>
             )}
@@ -166,7 +145,18 @@ export const FlashcardSection = ({
                 placeholder="Answer..."
                 disabled={isDisabled}
               />
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, width: '100%' }}>
+                {editingFlashcardId && (
+                  <Button
+                    variant="text"
+                    size="small"
+                    onClick={handleCancelEdit}
+                    disabled={isDisabled}
+                    sx={{ flexShrink: 0, height: 'fit-content', mt: 0.5 }}
+                  >
+                    Cancel
+                  </Button>
+                )}
                 <Button
                   variant="text"
                   size="small"
@@ -174,27 +164,17 @@ export const FlashcardSection = ({
                   disabled={!canSave}
                   sx={{ flexShrink: 0, height: 'fit-content', mt: 0.5 }}
                 >
-                  {isProcessing ? 'Saving...' : 'Add Flashcard'}
+                  {isProcessing
+                    ? 'Saving...'
+                    : editingFlashcardId
+                      ? 'Update Flashcard'
+                      : 'Add Flashcard'}
                 </Button>
               </Box>
             </Box>
           </Box>
         </motion.div>
       )}
-
-      <ConfirmationDialog
-        open={deleteConfirmOpen}
-        onClose={() => {
-          setDeleteConfirmOpen(false);
-          setPendingDeleteId(null);
-        }}
-        onConfirm={handleConfirmDelete}
-        title="Delete Flashcard"
-        message="Are you sure you want to delete this flashcard?"
-        confirmText="Delete"
-        confirmColor="error"
-        isLoading={isProcessing}
-      />
     </AnimatePresence>
   );
 };
@@ -220,6 +200,20 @@ const useFlashcardMutations = (
         },
       },
     });
+
+  const updateFlashcardMutation = useUpdateFlashcardApiV1FlashcardsFlashcardIdPut({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({
+          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
+        });
+      },
+      onError: (error) => {
+        console.error('Failed to update flashcard:', error);
+        showSnackbar('Failed to update flashcard. Please try again.', 'error');
+      },
+    },
+  });
 
   const deleteFlashcardMutation = useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete({
     mutation: {
@@ -249,6 +243,20 @@ const useFlashcardMutations = (
     }
   };
 
+  const updateFlashcard = async (flashcardId: number, question: string, answer: string) => {
+    if (!question.trim() || !answer.trim()) return;
+
+    setIsProcessing(true);
+    try {
+      await updateFlashcardMutation.mutateAsync({
+        flashcardId,
+        data: { question: question.trim(), answer: answer.trim() },
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const deleteFlashcard = async (flashcardId: number) => {
     await deleteFlashcardMutation.mutateAsync({ flashcardId });
   };
@@ -256,6 +264,7 @@ const useFlashcardMutations = (
   return {
     isProcessing,
     saveFlashcard,
+    updateFlashcard,
     deleteFlashcard,
   };
 };

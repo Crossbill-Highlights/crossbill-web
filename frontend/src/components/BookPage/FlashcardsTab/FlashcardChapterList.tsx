@@ -1,5 +1,5 @@
 import type { Flashcard, Highlight } from '@/api/generated/model';
-import { FlashcardListCard } from '@/components/BookPage/FlashcardsTab/FlashcardListCard.tsx';
+import { FlashcardCard } from '@/components/BookPage/FlashcardsTab/FlashcardCard.tsx';
 import { FadeInOut } from '@/components/common/animations/FadeInOut.tsx';
 import { SectionTitle } from '@/components/common/SectionTitle.tsx';
 import { Box, Typography } from '@mui/material';
@@ -73,12 +73,13 @@ export const FlashcardChapterList = ({
                 aria-label={`Flashcards in ${chapter.name}`}
               >
                 {chapter.flashcards.map((flashcard) => (
-                  <FlashcardListCard
-                    key={flashcard.id}
-                    flashcard={flashcard}
-                    bookId={bookId}
-                    onEdit={() => onEditFlashcard(flashcard)}
-                  />
+                  <li key={flashcard.id}>
+                    <FlashcardCard
+                      flashcard={flashcard}
+                      bookId={bookId}
+                      onEdit={() => onEditFlashcard(flashcard)}
+                    />
+                  </li>
                 ))}
               </Box>
             </Box>
