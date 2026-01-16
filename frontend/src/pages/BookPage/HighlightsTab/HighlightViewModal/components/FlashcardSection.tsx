@@ -5,9 +5,9 @@ import {
 } from '@/api/generated/flashcards/flashcards.ts';
 import { useCreateFlashcardForHighlightApiV1HighlightsHighlightIdFlashcardsPost } from '@/api/generated/highlights/highlights.ts';
 import type { Highlight } from '@/api/generated/model';
+import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { FlashcardCard } from '@/pages/BookPage/FlashcardsTab/FlashcardCard.tsx';
 import type { FlashcardWithContext } from '@/pages/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { sortBy } from 'lodash';
@@ -87,7 +87,7 @@ export const FlashcardSection = ({
           transition={{ duration: 0.2, ease: 'easeInOut' }}
           style={{ overflow: 'hidden' }}
         >
-          <Box sx={{ mt: 3 }}>
+          <Box>
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Flashcards
             </Typography>
@@ -124,7 +124,12 @@ export const FlashcardSection = ({
 
             {/* Create form */}
             <Box
-              sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-start' }}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+                alignItems: 'flex-start',
+              }}
             >
               <TextField
                 fullWidth

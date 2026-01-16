@@ -5,13 +5,13 @@ import {
 } from '@/api/generated/books/books.ts';
 import type { Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
-import { ArrowBackIcon, ArrowForwardIcon } from '@/theme/Icons.tsx';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
-import { Box, Button, IconButton, Typography } from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
+import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { ArrowBackIcon, ArrowForwardIcon } from '@/theme/Icons.tsx';
+import { Box, Button, IconButton, Stack, Typography } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { HighlightContent } from '../../common/HighlightContent.tsx';
 import { FlashcardSection } from './components/FlashcardSection.tsx';
 import { HighlightNote } from './components/HighlightNote.tsx';
@@ -127,38 +127,40 @@ export const HighlightViewModal = ({
   // Shared content for both layouts
   const renderContent = () => (
     <Box key={highlight.id}>
-      <Toolbar
-        highlightId={highlight.id}
-        bookId={bookId}
-        highlightText={highlight.text}
-        bookmark={currentBookmark}
-        noteVisible={noteVisible}
-        onNoteToggle={handleNoteToggle}
-        flashcardVisible={flashcardVisible}
-        onFlashcardToggle={handleFlashcardToggle}
-        onDelete={handleDelete}
-        disabled={isLoading}
-      />
-      <TagInput
-        highlightId={highlight.id}
-        bookId={bookId}
-        initialTags={highlight.highlight_tags}
-        availableTags={availableTags}
-        disabled={isLoading}
-      />
-      <HighlightNote
-        highlightId={highlight.id}
-        bookId={bookId}
-        initialNote={highlight.note}
-        visible={noteVisible}
-        disabled={isLoading}
-      />
-      <FlashcardSection
-        highlight={highlight}
-        bookId={bookId}
-        visible={flashcardVisible}
-        disabled={isLoading}
-      />
+      <Stack gap={2}>
+        <Toolbar
+          highlightId={highlight.id}
+          bookId={bookId}
+          highlightText={highlight.text}
+          bookmark={currentBookmark}
+          noteVisible={noteVisible}
+          onNoteToggle={handleNoteToggle}
+          flashcardVisible={flashcardVisible}
+          onFlashcardToggle={handleFlashcardToggle}
+          onDelete={handleDelete}
+          disabled={isLoading}
+        />
+        <TagInput
+          highlightId={highlight.id}
+          bookId={bookId}
+          initialTags={highlight.highlight_tags}
+          availableTags={availableTags}
+          disabled={isLoading}
+        />
+        <HighlightNote
+          highlightId={highlight.id}
+          bookId={bookId}
+          initialNote={highlight.note}
+          visible={noteVisible}
+          disabled={isLoading}
+        />
+        <FlashcardSection
+          highlight={highlight}
+          bookId={bookId}
+          visible={flashcardVisible}
+          disabled={isLoading}
+        />
+      </Stack>
     </Box>
   );
 
