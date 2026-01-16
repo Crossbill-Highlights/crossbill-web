@@ -144,18 +144,18 @@ export const theme = createTheme({
     fontFamily: ['"Lora"', 'Georgia', 'serif'].join(','),
     h1: {
       fontSize: '2rem',
-      fontWeight: 900, // Extreme weight for impact
+      fontWeight: 900,
       letterSpacing: '-0.02em',
       lineHeight: 1.2,
     },
     h2: {
       fontSize: '1.4rem',
-      fontWeight: 200, // Light weight for contrast
+      fontWeight: 200,
       lineHeight: 1.3,
     },
     h3: {
       fontSize: '1.1rem',
-      fontWeight: 800, // Heavy weight
+      fontWeight: 800,
       letterSpacing: '0.01em',
     },
     h4: {
@@ -182,7 +182,7 @@ export const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 12, // rounded-xl as default
+    borderRadius: 12,
   },
   shadows: [
     'none',
@@ -224,7 +224,7 @@ export const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 16, // rounded-2xl
+          borderRadius: 16,
           border: `1px solid ${colors.stone[400]}`,
         },
       },
@@ -232,7 +232,7 @@ export const theme = createTheme({
     MuiPaper: {
       styleOverrides: {
         rounded: {
-          borderRadius: 16, // rounded-2xl
+          borderRadius: 16,
         },
       },
     },
@@ -247,7 +247,7 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: 12, // rounded-xl
+            borderRadius: 12,
             '&:hover .MuiOutlinedInput-notchedOutline': {
               borderColor: colors.amber[700],
             },
@@ -255,6 +255,11 @@ export const theme = createTheme({
               borderColor: colors.amber[700],
               borderWidth: 2,
             },
+          },
+          '& .MuiInputBase-input': {
+            fontSize: '1rem',
+            fontWeight: 400,
+            letterSpacing: '0.01em',
           },
         },
       },
