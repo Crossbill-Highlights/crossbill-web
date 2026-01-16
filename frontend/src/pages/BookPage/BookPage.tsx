@@ -8,15 +8,15 @@ import { FlashcardsTab } from '@/pages/BookPage/FlashcardsTab/FlashcardsTab.tsx'
 import { HighlightsTab } from '@/pages/BookPage/HighlightsTab/HighlightsTab.tsx';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { scrollToElementWithHighlight } from '@/components/animations/scrollUtils';
-import { FlashcardsIcon, HighlightsIcon, ReadingSessionIcon } from '@/components/Icons.tsx';
+import { FlashcardsIcon, HighlightsIcon, ReadingSessionIcon } from '@/theme/Icons.tsx';
 import { PageContainer, ThreeColumnLayout } from '@/components/layout/Layouts.tsx';
 import { queryClient } from '@/lib/queryClient';
 import { Alert, Box, Tab, Tabs, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { flatMap } from 'lodash';
 import { useCallback, useEffect, useMemo } from 'react';
-import { ScrollToTopButton } from '@/components/ScrollToTopButton';
-import { Spinner } from '@/components/Spinner';
+import { ScrollToTopButton } from '@/components/buttons/ScrollToTopButton.tsx';
+import { Spinner } from '@/components/animations/Spinner.tsx';
 import { ReadingSessionsTab } from './ReadingSessionsTab/ReadingSessionsTab';
 
 type TabValue = 'highlights' | 'flashcards' | 'readingSessions';

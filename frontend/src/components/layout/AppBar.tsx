@@ -1,4 +1,4 @@
-import { LogoutIcon, MenuIcon, SettingsIcon } from '@/components/Icons.tsx';
+import { LogoutIcon, MenuIcon, SettingsIcon } from '@/theme/Icons.tsx';
 import {
   Box,
   Button,

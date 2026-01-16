@@ -1,4 +1,4 @@
-import { ScrollToTopIcon } from '@/components/Icons.tsx';
+import { ScrollToTopIcon } from '@/theme/Icons.tsx';
 import { Fab, Zoom } from '@mui/material';
 import { useEffect, useState } from 'react';
 

@@ -1,4 +1,4 @@
-import { ExpandLessIcon, ExpandMoreIcon } from '@/components/Icons';
+import { ExpandLessIcon, ExpandMoreIcon } from '@/theme/Icons.tsx';
 import { Collapsable } from '@/components/animations/Collapsable';
 import { markdownStyles } from '@/theme/theme';
 import { Box, Button, CardActionArea, styled } from '@mui/material';

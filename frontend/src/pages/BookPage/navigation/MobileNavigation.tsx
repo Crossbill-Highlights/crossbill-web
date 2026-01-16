@@ -5,7 +5,7 @@ import {
   ChapterListIcon,
   CloseIcon,
   TagIcon,
-} from '@/components/Icons.tsx';
+} from '@/theme/Icons.tsx';
 import {
   BottomNavigation,
   BottomNavigationAction,

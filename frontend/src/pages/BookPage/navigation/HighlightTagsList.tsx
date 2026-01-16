@@ -14,7 +14,7 @@ import {
   EditIcon,
   ExpandMoreIcon,
   TagIcon,
-} from '@/components/Icons.tsx';
+} from '@/theme/Icons.tsx';
 import { createAdaptiveHoverStyles, createAdaptiveTouchTarget } from '@/utils/adaptiveHover.ts';
 import {
   DndContext,

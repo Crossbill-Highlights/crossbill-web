@@ -12,8 +12,8 @@ import {
   FlashcardsIcon,
   LinkIcon,
   NotesIcon,
-} from '@/components/Icons.tsx';
-import { ToolbarIconButton } from '@/components/ToolbarIconButton';
+} from '@/theme/Icons.tsx';
+import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { Box } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
@@ -66,42 +66,42 @@ export const Toolbar = ({
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-      <ToolbarIconButton
+      <IconButtonWithTooltip
         title="Copy link"
         onClick={handleCopyLink}
         disabled={isDisabled}
         ariaLabel="Copy link to highlight"
         icon={<LinkIcon />}
       />
-      <ToolbarIconButton
+      <IconButtonWithTooltip
         title="Copy highlight content"
         onClick={handleCopyContent}
         disabled={isDisabled}
         ariaLabel="Copy highlight text"
         icon={<CopyIcon />}
       />
-      <ToolbarIconButton
+      <IconButtonWithTooltip
         title={bookmark ? 'Remove bookmark' : 'Add bookmark'}
         onClick={handleBookmarkToggle}
         disabled={isDisabled}
         ariaLabel={bookmark ? 'Remove bookmark' : 'Add bookmark'}
         icon={bookmark ? <BookmarkFilledIcon /> : <BookmarkIcon />}
       />
-      <ToolbarIconButton
+      <IconButtonWithTooltip
         title={noteVisible ? 'Hide note' : 'Show note'}
         onClick={onNoteToggle}
         disabled={isDisabled}
         ariaLabel={noteVisible ? 'Hide note' : 'Show note'}
         icon={<NotesIcon />}
       />
-      <ToolbarIconButton
+      <IconButtonWithTooltip
         title={flashcardVisible ? 'Hide flashcards' : 'Show flashcards'}
         onClick={onFlashcardToggle}
         disabled={isDisabled}
         ariaLabel={flashcardVisible ? 'Hide flashcards' : 'Show flashcards'}
         icon={<FlashcardsIcon />}
       />
-      <ToolbarIconButton
+      <IconButtonWithTooltip
         title="Delete highlight"
         onClick={onDelete}
         disabled={isDisabled}

@@ -5,7 +5,7 @@ import {
   useUpdateBookApiV1BooksBookIdPost,
 } from '@/api/generated/books/books.ts';
 import { BookDetails } from '@/api/generated/model';
-import { DeleteIcon } from '@/components/Icons.tsx';
+import { DeleteIcon } from '@/theme/Icons.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { Box, Button, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
@@ -15,7 +15,7 @@ import { useForm } from 'react-hook-form';
 import { BookCover } from '@/components/BookCover.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
-import { TagInput } from '@/components/TagInput.tsx';
+import { TagInput } from '@/components/inputs/TagInput.tsx';
 
 interface BookEditFormData {
   tags: string[];

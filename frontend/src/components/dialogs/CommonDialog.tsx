@@ -1,4 +1,4 @@
-import { CloseIcon } from '@/components/Icons.tsx';
+import { CloseIcon } from '@/theme/Icons.tsx';
 import {
   Box,
   Dialog,

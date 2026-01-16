@@ -1,6 +1,6 @@
 import type { Bookmark, Highlight } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
-import { SectionTitle } from '@/components/SectionTitle.tsx';
+import { SectionTitle } from '@/components/typography/SectionTitle.tsx';
 import { Box, Typography } from '@mui/material';
 import { HighlightCard } from './HighlightCard.tsx';
 

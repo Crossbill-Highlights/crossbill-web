@@ -1,5 +1,5 @@
-import { BookCoverIcon } from '@/components/Icons.tsx';
 import { useAuthenticatedImage } from '@/hooks/useAuthenticatedImage.ts';
+import { BookCoverIcon } from '@/theme/Icons.tsx';
 import { Box, CircularProgress, type SxProps, type Theme, useTheme } from '@mui/material';
 
 export interface BookCoverProps {

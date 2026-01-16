@@ -1,7 +1,7 @@
 import { useGetRecentlyViewedBooksApiV1BooksRecentlyViewedGet } from '@/api/generated/books/books';
 import { Alert, Box } from '@mui/material';
-import { SectionTitle } from '@/components/SectionTitle';
-import { Spinner } from '@/components/Spinner';
+import { SectionTitle } from '@/components/typography/SectionTitle.tsx';
+import { Spinner } from '@/components/animations/Spinner.tsx';
 import { BookList } from './BookList';
 
 const RECENTLY_VIEWED_LIMIT = 8;

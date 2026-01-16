@@ -2,9 +2,9 @@ import { useGetBooksApiV1BooksGet } from '@/api/generated/books/books';
 import { PageContainer } from '@/components/layout/Layouts.tsx';
 import { Alert, Box, Pagination, Typography } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { SearchBar } from '@/components/SearchBar';
-import { SectionTitle } from '@/components/SectionTitle';
-import { Spinner } from '@/components/Spinner';
+import { SearchBar } from '@/components/inputs/SearchBar.tsx';
+import { SectionTitle } from '@/components/typography/SectionTitle.tsx';
+import { Spinner } from '@/components/animations/Spinner.tsx';
 import { BookList } from './components/BookList';
 import { RecentlyViewedBooks } from './components/RecentlyViewedBooks';
 

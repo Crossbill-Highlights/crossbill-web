@@ -6,7 +6,7 @@ import {
   FlashcardsIcon,
   NotesIcon,
   QuoteIcon,
-} from '@/components/Icons.tsx';
+} from '@/theme/Icons.tsx';
 import { Box, CardActionArea, Typography } from '@mui/material';
 
 export interface HighlightCardProps {

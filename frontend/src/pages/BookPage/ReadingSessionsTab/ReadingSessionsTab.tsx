@@ -1,5 +1,5 @@
 import { useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet } from '@/api/generated/books/books';
-import { Spinner } from '@/components/Spinner';
+import { Spinner } from '@/components/animations/Spinner.tsx';
 import { ThreeColumnLayout } from '@/components/layout/Layouts';
 import { Alert, Box, Pagination } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
