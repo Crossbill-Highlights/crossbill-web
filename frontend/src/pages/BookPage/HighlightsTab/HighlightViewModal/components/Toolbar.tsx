@@ -4,17 +4,18 @@ import {
   useDeleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete,
 } from '@/api/generated/books/books.ts';
 import type { Bookmark } from '@/api/generated/model';
+import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip.tsx';
+import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import {
   BookmarkFilledIcon,
   BookmarkIcon,
   CopyIcon,
   DeleteIcon,
+  FlashcardsFilledIcon,
   FlashcardsIcon,
   LinkIcon,
   NotesIcon,
 } from '@/theme/Icons.tsx';
-import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip.tsx';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { Box } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -99,7 +100,7 @@ export const Toolbar = ({
         onClick={onFlashcardToggle}
         disabled={isDisabled}
         ariaLabel={flashcardVisible ? 'Hide flashcards' : 'Show flashcards'}
-        icon={<FlashcardsIcon />}
+        icon={flashcardVisible ? <FlashcardsFilledIcon /> : <FlashcardsIcon />}
       />
       <IconButtonWithTooltip
         title="Delete highlight"

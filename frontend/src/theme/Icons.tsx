@@ -20,6 +20,7 @@ export {
   Bookmark as BookmarkFilledIcon,
   BookmarkBorder as BookmarkIcon,
   List as ChapterListIcon,
+  Style as FlashcardsFilledIcon,
   StyleOutlined as FlashcardsIcon,
   MenuBook as HighlightsIcon,
   Notes as NotesIcon,
