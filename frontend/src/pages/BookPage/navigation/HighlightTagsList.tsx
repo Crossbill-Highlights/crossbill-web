@@ -8,13 +8,7 @@ import {
 } from '@/api/generated/highlights/highlights.ts';
 import { HighlightTagGroupInBook, HighlightTagInBook } from '@/api/generated/model';
 import { Collapsable } from '@/components/animations/Collapsable.tsx';
-import {
-  AddIcon,
-  DeleteIcon,
-  EditIcon,
-  ExpandMoreIcon,
-  TagIcon,
-} from '@/theme/Icons.tsx';
+import { AddIcon, DeleteIcon, EditIcon, ExpandMoreIcon, TagIcon } from '@/theme/Icons.tsx';
 import { createAdaptiveHoverStyles, createAdaptiveTouchTarget } from '@/utils/adaptiveHover.ts';
 import {
   DndContext,

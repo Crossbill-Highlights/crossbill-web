@@ -1,8 +1,8 @@
+import { FeatureGate } from '@/components/features/FeatureGate.tsx';
 import { useAuth } from '@/context/AuthContext';
 import { Alert, Box, Button, Container, Link, Paper, TextField, Typography } from '@mui/material';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
 import { FormEvent, useState } from 'react';
-import { FeatureGate } from '@/components/features/FeatureGate.tsx';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');

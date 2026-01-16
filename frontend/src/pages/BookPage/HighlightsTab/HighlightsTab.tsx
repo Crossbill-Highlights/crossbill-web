@@ -9,10 +9,10 @@ import type {
   Highlight,
   HighlightTagInBook,
 } from '@/api/generated/model';
-import { useHighlightModal } from '@/pages/BookPage/HighlightsTab/hooks/useHighlightModal.ts';
-import { SortIcon } from '@/theme/Icons.tsx';
 import { SearchBar } from '@/components/inputs/SearchBar.tsx';
 import { ThreeColumnLayout } from '@/components/layout/Layouts.tsx';
+import { useHighlightModal } from '@/pages/BookPage/HighlightsTab/hooks/useHighlightModal.ts';
+import { SortIcon } from '@/theme/Icons.tsx';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';

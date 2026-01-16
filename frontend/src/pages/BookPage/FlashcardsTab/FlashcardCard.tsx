@@ -1,10 +1,10 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/generated/flashcards/flashcards.ts';
-import { FlashcardWithContext } from '@/pages/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
 import { Collapsable } from '@/components/animations/Collapsable.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
-import { DeleteIcon, EditIcon, QuoteIcon } from '@/theme/Icons.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { FlashcardWithContext } from '@/pages/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
+import { DeleteIcon, EditIcon, QuoteIcon } from '@/theme/Icons.tsx';
 import {
   Box,
   Card,

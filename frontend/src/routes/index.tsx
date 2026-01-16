@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router';
 import { LandingPage } from '@/pages/LandingPage/LandingPage';
+import { createFileRoute } from '@tanstack/react-router';
 
 type LandingPageSearch = {
   search?: string;

@@ -5,17 +5,17 @@ import {
   useUpdateBookApiV1BooksBookIdPost,
 } from '@/api/generated/books/books.ts';
 import { BookDetails } from '@/api/generated/model';
-import { DeleteIcon } from '@/theme/Icons.tsx';
+import { BookCover } from '@/components/BookCover.tsx';
+import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
+import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
+import { TagInput } from '@/components/inputs/TagInput.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { DeleteIcon } from '@/theme/Icons.tsx';
 import { Box, Button, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { BookCover } from '@/components/BookCover.tsx';
-import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
-import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
-import { TagInput } from '@/components/inputs/TagInput.tsx';
 
 interface BookEditFormData {
   tags: string[];

@@ -1,11 +1,6 @@
 import { BookDetails, Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
 import { ChapterNav, ChapterNavigationData } from '@/pages/BookPage/navigation/ChapterNav.tsx';
-import {
-  BookmarkFilledIcon,
-  ChapterListIcon,
-  CloseIcon,
-  TagIcon,
-} from '@/theme/Icons.tsx';
+import { BookmarkFilledIcon, ChapterListIcon, CloseIcon, TagIcon } from '@/theme/Icons.tsx';
 import {
   BottomNavigation,
   BottomNavigationAction,

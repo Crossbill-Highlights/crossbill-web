@@ -5,14 +5,11 @@ import type {
   Highlight,
   HighlightTagInBook,
 } from '@/api/generated/model';
-import {
-  ChapterNav,
-  type ChapterNavigationData,
-} from '@/pages/BookPage/navigation/ChapterNav.tsx';
-import { MobileNavigation } from '@/pages/BookPage/navigation/MobileNavigation.tsx';
-import { SortIcon } from '@/theme/Icons.tsx';
 import { SearchBar } from '@/components/inputs/SearchBar.tsx';
 import { ThreeColumnLayout } from '@/components/layout/Layouts.tsx';
+import { ChapterNav, type ChapterNavigationData } from '@/pages/BookPage/navigation/ChapterNav.tsx';
+import { MobileNavigation } from '@/pages/BookPage/navigation/MobileNavigation.tsx';
+import { SortIcon } from '@/theme/Icons.tsx';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { useSearch } from '@tanstack/react-router';
 import { flatMap } from 'lodash';

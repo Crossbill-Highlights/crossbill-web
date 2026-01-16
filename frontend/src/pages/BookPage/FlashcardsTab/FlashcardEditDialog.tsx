@@ -1,8 +1,8 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import { useUpdateFlashcardApiV1FlashcardsFlashcardIdPut } from '@/api/generated/flashcards/flashcards.ts';
-import { HighlightContent } from '@/pages/BookPage/common/HighlightContent.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { HighlightContent } from '@/pages/BookPage/common/HighlightContent.tsx';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';

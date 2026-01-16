@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router';
 import { BookPage } from '@/pages/BookPage/BookPage';
+import { createFileRoute } from '@tanstack/react-router';
 
 type BookPageSearch = {
   search?: string;

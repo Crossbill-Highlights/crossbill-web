@@ -1,10 +1,10 @@
 import type { BookWithHighlightCount } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
+import { BookCover } from '@/components/BookCover';
 import { BookmarkIcon } from '@/theme/Icons.tsx';
 import { theme } from '@/theme/theme.ts';
 import { Box, Typography } from '@mui/material';
 import { Link } from '@tanstack/react-router';
-import { BookCover } from '@/components/BookCover';
 
 export interface BookCardProps {
   book: BookWithHighlightCount;
