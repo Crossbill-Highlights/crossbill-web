@@ -352,18 +352,7 @@ const AddGroupForm = ({ isVisible, isProcessing, onSubmit, onCancel }: AddGroupF
                 autoFocus
                 disabled={isProcessing}
                 fullWidth
-                sx={{
-                  mb: 1,
-                  '& .MuiInputBase-input': {
-                    py: 0.75,
-                    px: 1.5,
-                    fontSize: '0.813rem',
-                  },
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 1.5,
-                    bgcolor: 'background.paper',
-                  },
-                }}
+                sx={{ mb: 1 }}
               />
             </ClickAwayListener>
             <Box sx={{ display: 'flex', gap: 1 }}>
@@ -488,21 +477,7 @@ const TagGroupNameEditForm = ({
         size="small"
         autoFocus
         disabled={isProcessing}
-        sx={{
-          flex: 1,
-          mr: 1,
-          '& .MuiInputBase-input': {
-            py: 0.5,
-            px: 1,
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          },
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 1,
-          },
-        }}
+        sx={{ flex: 1, mr: 1 }}
       />
     </ClickAwayListener>
   );

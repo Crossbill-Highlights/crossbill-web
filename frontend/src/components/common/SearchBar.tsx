@@ -76,13 +76,6 @@ export const SearchBar = ({
             ),
           },
         }}
-        sx={{
-          '& .MuiOutlinedInput-root': {
-            '& fieldset': {
-              borderColor: 'divider',
-            },
-          },
-        }}
       />
     </Box>
   );
