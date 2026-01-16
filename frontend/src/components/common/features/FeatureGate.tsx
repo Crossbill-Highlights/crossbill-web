@@ -1,5 +1,5 @@
 import type { AppSettingsResponse } from '@/api/generated/model';
-import { useSettings } from '@/context/SettingsContext';
+import { useSettings } from '@/context/SettingsContext.tsx';
 import type { ReactNode } from 'react';
 
 interface FeatureGateProps<K extends keyof AppSettingsResponse> {

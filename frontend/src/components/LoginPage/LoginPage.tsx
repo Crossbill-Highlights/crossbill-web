@@ -2,7 +2,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Alert, Box, Button, Container, Link, Paper, TextField, Typography } from '@mui/material';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
 import { FormEvent, useState } from 'react';
-import { FeatureGate } from '../common/FeatureGate';
+import { FeatureGate } from '../common/features/FeatureGate.tsx';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');

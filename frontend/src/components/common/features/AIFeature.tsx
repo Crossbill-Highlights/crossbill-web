@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { FeatureGate } from './FeatureGate';
+import { FeatureGate } from './FeatureGate.tsx';
 
 interface AIFeatureProps {
   children: ReactNode;

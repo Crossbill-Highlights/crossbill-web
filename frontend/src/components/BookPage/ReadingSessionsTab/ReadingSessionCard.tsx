@@ -1,6 +1,6 @@
 import type { ReadingSession } from '@/api/generated/model';
 import { useGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet } from '@/api/generated/reading-sessions/reading-sessions';
-import { AIFeature } from '@/components/common/AIFeature';
+import { AIFeature } from '@/components/common/features/AIFeature.tsx';
 import { useSettings } from '@/context/SettingsContext';
 import { useSnackbar } from '@/context/SnackbarContext';
 import { formatDate, formatDuration, formatTime } from '@/utils/date';
