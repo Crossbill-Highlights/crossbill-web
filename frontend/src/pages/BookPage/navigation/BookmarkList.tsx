@@ -1,0 +1,184 @@
+import type { Bookmark, Highlight } from '@/api/generated/model';
+import { Collapsable } from '@/components/animations/Collapsable.tsx';
+import { BookmarkFilledIcon, ExpandMoreIcon } from '@/components/Icons.tsx';
+import { Box, Button, IconButton, Typography } from '@mui/material';
+import { useState } from 'react';
+
+interface BookmarkListProps {
+  bookmarks: Bookmark[];
+  allHighlights: Highlight[];
+  onBookmarkClick: (highlightId: number) => void;
+  hideTitle?: boolean;
+}
+
+export const BookmarkList = ({
+  bookmarks,
+  allHighlights,
+  onBookmarkClick,
+  hideTitle,
+}: BookmarkListProps) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const effectiveIsExpanded = hideTitle ? true : isExpanded;
+
+  // Create a map of highlight IDs to highlights for quick lookup
+  const highlightMap = new Map(allHighlights.map((h) => [h.id, h]));
+
+  // Get highlights for bookmarks and sort by page number
+  const bookmarkedHighlights =
+    bookmarks.length > 0
+      ? bookmarks
+          .map((bookmark) => ({
+            bookmark,
+            highlight: highlightMap.get(bookmark.highlight_id),
+          }))
+          .filter((item) => item.highlight !== undefined)
+          .sort((a, b) => {
+            const pageA = a.highlight?.page ?? Infinity;
+            const pageB = b.highlight?.page ?? Infinity;
+            return pageA - pageB;
+          })
+      : [];
+
+  // Truncate highlight text to first few words
+  const truncateText = (text: string, wordCount: number = 5): string => {
+    const words = text.split(/\s+/);
+    if (words.length <= wordCount) {
+      return text;
+    }
+    return words.slice(0, wordCount).join(' ') + '...';
+  };
+
+  return (
+    <Box
+      sx={{
+        flex: '1 1 auto',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {!hideTitle && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mb: 2,
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
+          onClick={() => setIsExpanded((prev) => !prev)}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <BookmarkFilledIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+            <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600 }}>
+              Bookmarks
+            </Typography>
+          </Box>
+          <IconButton
+            size="small"
+            aria-label={isExpanded ? 'Collapse bookmark list' : 'Expand bookmark list'}
+            sx={{
+              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s',
+              display: { xs: 'none', lg: 'block' },
+            }}
+          >
+            <ExpandMoreIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      )}
+
+      <Collapsable isExpanded={effectiveIsExpanded}>
+        {bookmarkedHighlights.length > 0 ? (
+          <Box
+            component="ul"
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0.5,
+              flex: '1 1 auto',
+              minHeight: 0,
+              listStyle: 'none',
+              p: 0,
+              m: 0,
+            }}
+            aria-label="Bookmarks"
+          >
+            {bookmarkedHighlights.map(({ bookmark, highlight }) => {
+              if (!highlight) return null;
+
+              const startsWithLowercase =
+                highlight.text.length > 0 &&
+                highlight.text[0] === highlight.text[0].toLowerCase() &&
+                highlight.text[0] !== highlight.text[0].toUpperCase();
+
+              const prefix = startsWithLowercase ? '...' : '';
+              const truncatedText = prefix + truncateText(highlight.text);
+
+              return (
+                <Box component="li" key={bookmark.id}>
+                  <Button
+                    fullWidth
+                    disableRipple
+                    onClick={() => onBookmarkClick(highlight.id)}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'start',
+                      justifyContent: 'flex-start',
+                      textAlign: 'left',
+                      gap: 1,
+                      py: 0.75,
+                      px: 0.5,
+                      borderRadius: 0.5,
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s ease',
+                      '@media (hover: hover)': {
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                        },
+                      },
+                      '&:focus-visible': {
+                        outline: '2px solid',
+                        outlineOffset: '-2px',
+                        outlineColor: 'primary.main',
+                      },
+                    }}
+                  >
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontSize: '0.875rem',
+                          color: 'text.primary',
+                          lineHeight: 1.4,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {truncatedText}
+                      </Typography>
+                      {highlight.page && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: '0.75rem', mt: 0.25, display: 'block' }}
+                        >
+                          Page {highlight.page}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Button>
+                </Box>
+              );
+            })}
+          </Box>
+        ) : (
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.813rem' }}>
+            No bookmarks yet.
+          </Typography>
+        )}
+      </Collapsable>
+    </Box>
+  );
+};

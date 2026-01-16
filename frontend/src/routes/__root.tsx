@@ -1,6 +1,6 @@
 import { Box, CircularProgress } from '@mui/material';
 import { Navigate, Outlet, createRootRoute, useLocation } from '@tanstack/react-router';
-import { AppBar } from '../components/layout/AppBar';
+import { AppBar } from '@/components/layout/AppBar';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { SettingsProvider, useSettings } from '../context/SettingsContext';
 

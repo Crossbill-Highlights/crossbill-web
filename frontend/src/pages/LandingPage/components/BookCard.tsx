@@ -1,0 +1,115 @@
+import type { BookWithHighlightCount } from '@/api/generated/model';
+import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
+import { BookmarkIcon } from '@/components/Icons';
+import { theme } from '@/theme/theme.ts';
+import { Box, Typography } from '@mui/material';
+import { Link } from '@tanstack/react-router';
+import { BookCover } from '@/components/BookCover';
+
+export interface BookCardProps {
+  book: BookWithHighlightCount;
+}
+
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '...';
+};
+
+export const BookCard = ({ book }: BookCardProps) => {
+  return (
+    <FadeInOut ekey={book.id}>
+      <Link
+        to="/book/$bookId"
+        params={{ bookId: String(book.id) }}
+        style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: 'fit-content',
+            transition: 'transform 0.3s ease',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              '& .book-cover': {
+                boxShadow: 4,
+              },
+            },
+          }}
+        >
+          {/* Book cover with highlight count overlay */}
+          <Box sx={{ position: 'relative', width: 'fit-content' }}>
+            <BookCover
+              coverPath={book.cover}
+              title={book.title}
+              width={150}
+              height={220}
+              objectFit="cover"
+              sx={{
+                boxShadow: 3,
+                borderRadius: 1,
+                transition: 'box-shadow 0.3s ease',
+              }}
+            />
+
+            {/* Highlight count chip */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                backgroundColor: theme.palette.primary.main,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                py: 0.75,
+                px: 1.25,
+                borderRadius: 1.5,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+              }}
+            >
+              <BookmarkIcon sx={{ fontSize: 16, color: 'white' }} />
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'white',
+                  fontWeight: 500,
+                }}
+              >
+                {book.highlight_count}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Book title */}
+          <Typography
+            variant="body1"
+            component="h3"
+            sx={{
+              fontWeight: 600,
+              color: 'text.primary',
+              mt: 1.5,
+              maxWidth: 150,
+            }}
+            title={book.title}
+          >
+            {truncateText(book.title, 50)}
+          </Typography>
+
+          {/* Book author */}
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              maxWidth: 150,
+              mt: 0.5,
+            }}
+            title={book.author || 'Unknown Author'}
+          >
+            {truncateText(book.author || 'Unknown Author', 30)}
+          </Typography>
+        </Box>
+      </Link>
+    </FadeInOut>
+  );
+};

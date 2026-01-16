@@ -1,4 +1,4 @@
-import { LogoutIcon, MenuIcon, SettingsIcon } from '@/components/common/Icons';
+import { LogoutIcon, MenuIcon, SettingsIcon } from '@/components/Icons.tsx';
 import {
   Box,
   Button,
@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext.tsx';
 
 export function AppBar() {
   const { logout } = useAuth();
