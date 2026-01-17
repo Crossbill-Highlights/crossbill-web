@@ -3,9 +3,9 @@ import type { ReactNode } from 'react';
 
 interface IconButtonWithTooltipProps {
   title: string;
-  onClick: () => void;
-  disabled: boolean;
-  ariaLabel: string;
+  onClick: (e: React.MouseEvent) => void;
+  disabled?: boolean;
+  ariaLabel?: string;
   icon: ReactNode;
 }
 

@@ -1,20 +1,12 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/generated/flashcards/flashcards.ts';
 import { Collapsable } from '@/components/animations/Collapsable.tsx';
+import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { FlashcardWithContext } from '@/pages/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
 import { DeleteIcon, EditIcon, QuoteIcon } from '@/theme/Icons.tsx';
-import {
-  Box,
-  Card,
-  CardActionArea,
-  CardContent,
-  IconButton,
-  styled,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Box, Card, CardActionArea, CardContent, styled, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -24,24 +16,16 @@ export interface FlashcardCardProps {
   onEdit: () => void;
   component?: React.ElementType;
   showSourceHighlight?: boolean;
-  variant?: 'default' | 'suggestion';
 }
 
-interface FlashcardStyledProps {
-  $variant?: 'default' | 'suggestion';
-}
-
-const FlashcardStyled = styled(Card)<FlashcardStyledProps>(({ theme, $variant = 'default' }) => ({
+const FlashcardStyled = styled(Card)(({ theme }) => ({
   height: 'fit-content',
   display: 'flex',
   flexDirection: 'column',
   position: 'relative',
   transition: 'all 0.2s ease',
   bgcolor: 'background.paper',
-  border:
-    $variant === 'suggestion'
-      ? `1px dashed ${theme.palette.divider}`
-      : `1px solid ${theme.palette.divider}`,
+  border: `1px solid ${theme.palette.divider}`,
   '&:hover': {
     transform: 'translateY(-2px)',
     boxShadow: 3,
@@ -67,7 +51,6 @@ export const FlashcardCard = ({
   bookId,
   onEdit,
   showSourceHighlight = true,
-  variant = 'default',
 }: FlashcardCardProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -105,7 +88,7 @@ export const FlashcardCard = ({
   };
 
   return (
-    <FlashcardStyled $variant={variant}>
+    <FlashcardStyled>
       <CardActionArea
         onClick={() => setIsExpanded(!isExpanded)}
         sx={{
@@ -195,20 +178,22 @@ export const FlashcardCard = ({
           </Collapsable>
         </CardContent>
       </CardActionArea>
-      {variant !== 'suggestion' && (
-        <ActionButtonsStyled>
-          <Tooltip title="Edit">
-            <IconButton size="small" onClick={onEdit} disabled={isDeleting}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete">
-            <IconButton size="small" onClick={handleDeleteClick} disabled={isDeleting}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </ActionButtonsStyled>
-      )}
+      <ActionButtonsStyled>
+        <IconButtonWithTooltip
+          title="Edit"
+          ariaLabel="Edit flashcard"
+          onClick={onEdit}
+          disabled={isDeleting}
+          icon={<EditIcon fontSize="small" />}
+        />
+        <IconButtonWithTooltip
+          title="Delete"
+          ariaLabel="Delete flashcard"
+          onClick={handleDeleteClick}
+          disabled={isDeleting}
+          icon={<DeleteIcon fontSize="small" />}
+        />
+      </ActionButtonsStyled>
 
       <ConfirmationDialog
         open={deleteConfirmOpen}

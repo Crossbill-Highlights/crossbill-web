@@ -12,6 +12,7 @@ import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { FlashcardCard } from '@/pages/BookPage/FlashcardsTab/FlashcardCard.tsx';
 import type { FlashcardWithContext } from '@/pages/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
+import { FlashcardSuggestionCard } from '@/pages/BookPage/FlashcardsTab/FlashcardSuggestionCard.tsx';
 import { AISummaryIcon } from '@/theme/Icons.tsx';
 import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
@@ -41,7 +42,7 @@ export const FlashcardSection = ({
     highlight.id,
     showSnackbar
   );
-  const { isLoading, suggestions, fetchSuggestions } = useAIFlashcardSuggestions(
+  const { isLoading, suggestions, fetchSuggestions, removeSuggestion } = useAIFlashcardSuggestions(
     highlight.id,
     showSnackbar
   );
@@ -84,23 +85,6 @@ export const FlashcardSection = ({
       highlightTags: highlight.highlight_tags,
     })),
     (f) => f.question.toLowerCase()
-  );
-
-  const suggestedFlashcardsWithContext: FlashcardWithContext[] = suggestions.map(
-    (suggestion, index) => ({
-      id: -(index + 1),
-      user_id: 0,
-      book_id: bookId,
-      highlight_id: highlight.id,
-      question: suggestion.question,
-      answer: suggestion.answer,
-      highlight,
-      chapterName: highlight.chapter || '',
-      chapterId: highlight.chapter_id || 0,
-      highlightTags: highlight.highlight_tags,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
   );
 
   return (
@@ -230,7 +214,7 @@ export const FlashcardSection = ({
               )}
 
               {/* Suggested flashcards */}
-              {!isLoading && suggestedFlashcardsWithContext.length > 0 && (
+              {!isLoading && suggestions.length > 0 && (
                 <Box
                   component="ul"
                   sx={{
@@ -246,14 +230,16 @@ export const FlashcardSection = ({
                     mb: 2,
                   }}
                 >
-                  {suggestedFlashcardsWithContext.map((flashcard) => (
-                    <li key={flashcard.id}>
-                      <FlashcardCard
-                        flashcard={flashcard}
-                        bookId={bookId}
-                        onEdit={() => {}}
-                        showSourceHighlight={false}
-                        variant="suggestion"
+                  {suggestions.map((suggestion, index) => (
+                    <li key={index}>
+                      <FlashcardSuggestionCard
+                        question={suggestion.question}
+                        answer={suggestion.answer}
+                        onAccept={async () => {
+                          await saveFlashcard(suggestion.question, suggestion.answer);
+                          removeSuggestion(index);
+                        }}
+                        onReject={() => removeSuggestion(index)}
                       />
                     </li>
                   ))}
@@ -389,5 +375,9 @@ const useAIFlashcardSuggestions = (
     }
   };
 
-  return { isLoading, suggestions, fetchSuggestions };
+  const removeSuggestion = (index: number) => {
+    setSuggestions((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  return { isLoading, suggestions, fetchSuggestions, removeSuggestion };
 };
