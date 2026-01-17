@@ -1,4 +1,6 @@
 import type { Bookmark, Highlight } from '@/api/generated/model';
+import { HoverableCardActionArea } from '@/components/cards/HoverableCardActionArea';
+import { MetadataRow } from '@/components/cards/MetadataRow.tsx';
 import { BookTagList } from '@/pages/BookPage/BookTitle/BookTagList.tsx';
 import {
   BookmarkFilledIcon,
@@ -7,7 +9,7 @@ import {
   NotesIcon,
   QuoteIcon,
 } from '@/theme/Icons.tsx';
-import { Box, CardActionArea, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 export interface HighlightCardProps {
   highlight: Highlight;
@@ -48,41 +50,33 @@ const Footer = ({ highlight, bookmark }: FooterProps) => {
               theme.palette.mode === 'light' ? `theme.palette.secondary.main` : 'secondary.light',
           })}
         />
-        <Typography
+        <MetadataRow
           variant="caption"
           sx={(theme) => ({
             color:
               theme.palette.mode === 'light' ? `theme.palette.secondary.main` : 'secondary.light',
           })}
-        >
-          <span>
-            {new Date(highlight.datetime).toLocaleDateString('en-US', {
+          items={[
+            new Date(highlight.datetime).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'long',
               day: 'numeric',
-            })}
-          </span>
-          {highlight.page && <span>&nbsp;&nbsp;•&nbsp;&nbsp;Page {highlight.page}</span>}
-          {hasBookmark && (
-            <span>
-              &nbsp;&nbsp;•
+            }),
+            highlight.page && `Page ${highlight.page}`,
+            hasBookmark && (
               <BookmarkFilledIcon sx={{ fontSize: 16, verticalAlign: 'middle', ml: 1, mt: -0.5 }} />
-            </span>
-          )}
-          {highlight.note && (
-            <span>
-              &nbsp;&nbsp;•
+            ),
+            highlight.note && (
               <NotesIcon sx={{ fontSize: 16, verticalAlign: 'middle', ml: 1, mt: -0.5 }} />
-            </span>
-          )}
-          {!!highlight.flashcards.length && (
-            <span>
-              &nbsp;&nbsp;•
-              <FlashcardsIcon sx={{ fontSize: 16, verticalAlign: 'middle', ml: 1, mt: -0.5 }} />
-              <span>&nbsp;&nbsp;{highlight.flashcards.length}</span>
-            </span>
-          )}
-        </Typography>
+            ),
+            !!highlight.flashcards.length && (
+              <>
+                <FlashcardsIcon sx={{ fontSize: 16, verticalAlign: 'middle', ml: 1, mt: -0.5 }} />
+                <span>&nbsp;&nbsp;{highlight.flashcards.length}</span>
+              </>
+            ),
+          ]}
+        />
       </Box>
 
       <Box>
@@ -113,32 +107,12 @@ export const HighlightCard = ({ highlight, bookmark, onOpenModal }: HighlightCar
   };
 
   return (
-    <CardActionArea
+    <HoverableCardActionArea
       id={`highlight-${highlight.id}`}
       onClick={handleOpenModal}
       sx={{
-        position: 'relative',
         py: 3.5,
         px: 2.5,
-        borderBottom: 1,
-        borderColor: 'divider',
-        borderLeft: 3,
-        borderLeftStyle: 'solid',
-        borderLeftColor: 'transparent',
-        borderRadiusTopRight: 1.5,
-        borderRadiusBottomRight: 1.5,
-        transition: 'all 0.2s ease',
-        cursor: 'pointer',
-        '@media (hover: hover)': {
-          '&:hover': {
-            bgcolor: 'action.hover',
-            borderLeftColor: 'primary.main',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          },
-        },
-        '&:last-child': {
-          borderBottom: 0,
-        },
       }}
     >
       <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -164,6 +138,6 @@ export const HighlightCard = ({ highlight, bookmark, onOpenModal }: HighlightCar
 
         <Footer highlight={highlight} bookmark={bookmark} />
       </Box>
-    </CardActionArea>
+    </HoverableCardActionArea>
   );
 };

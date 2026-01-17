@@ -1,10 +1,11 @@
 import type { ReadingSession } from '@/api/generated/model';
 import { useGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet } from '@/api/generated/reading-sessions/reading-sessions';
+import { MetadataRow } from '@/components/cards/MetadataRow.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { useSettings } from '@/context/SettingsContext';
 import { useSnackbar } from '@/context/SnackbarContext';
 import { formatDate, formatDuration, formatTime } from '@/utils/date';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import type { AxiosError } from 'axios';
 import { useEffect } from 'react';
 import { AISummary } from './AISummary';
@@ -29,24 +30,19 @@ const SessionMetadata = ({ startTime, endTime, startPage, endPage }: SessionMeta
         mb: 1.5,
       }}
     >
-      <Typography
-        variant="body2"
-        sx={{
-          color: 'text.secondary',
-        }}
-      >
-        <span>
-          {formatDate(startTime)}
-          &nbsp;&nbsp;•&nbsp;&nbsp;{formatTime(startTime)}
-          &nbsp;&nbsp;•&nbsp;&nbsp;{formatDuration(startTime, endTime)}
-        </span>
-        {startPage != null && endPage != null && (
-          <span>
-            &nbsp;&nbsp;•&nbsp;&nbsp;Pages {startPage}-{endPage}
-            {pagesRead > 0 && ` (${pagesRead} page${pagesRead !== 1 ? 's' : ''})`}
-          </span>
-        )}
-      </Typography>
+      <MetadataRow
+        items={[
+          formatDate(startTime),
+          formatTime(startTime),
+          formatDuration(startTime, endTime),
+          startPage != null && endPage != null && (
+            <>
+              Pages {startPage}-{endPage}
+              {pagesRead > 0 && ` (${pagesRead} page${pagesRead !== 1 ? 's' : ''})`}
+            </>
+          ),
+        ]}
+      />
     </Box>
   );
 };

@@ -1,28 +1,14 @@
 import { Collapsable } from '@/components/animations/Collapsable';
+import { HoverableCardActionArea } from '@/components/cards/HoverableCardActionArea';
 import { ExpandLessIcon, ExpandMoreIcon } from '@/theme/Icons.tsx';
 import { markdownStyles } from '@/theme/theme';
-import { Box, Button, CardActionArea, styled } from '@mui/material';
+import { Box, Button, styled } from '@mui/material';
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 interface AISummaryProps {
   summary?: string | null;
 }
-
-const SummaryCard = styled(CardActionArea)(({ theme }) => ({
-  padding: theme.spacing(1.5, 2),
-  borderRadius: theme.spacing(0.75),
-  borderLeft: `3px solid transparent`,
-  transition: 'all 0.2s ease',
-  cursor: 'pointer',
-  '@media (hover: hover)': {
-    '&:hover': {
-      backgroundColor: theme.palette.action.hover,
-      borderLeftColor: theme.palette.primary.main,
-      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-    },
-  },
-}));
 
 const PreviewContent = styled(Box)(({ theme }) => ({
   display: '-webkit-box',
@@ -57,7 +43,10 @@ export const AISummary = ({ summary }: AISummaryProps) => {
   }
 
   return (
-    <SummaryCard onClick={() => setIsExpanded(!isExpanded)}>
+    <HoverableCardActionArea
+      onClick={() => setIsExpanded(!isExpanded)}
+      sx={(theme) => ({ padding: theme.spacing(1.5, 2) })}
+    >
       <Box sx={{ pointerEvents: 'none' }}>
         {!isExpanded && summary && (
           <PreviewContent>
@@ -82,6 +71,6 @@ export const AISummary = ({ summary }: AISummaryProps) => {
           </>
         )}
       </Box>
-    </SummaryCard>
+    </HoverableCardActionArea>
   );
 };
