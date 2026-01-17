@@ -7,7 +7,7 @@ import {
 import type { HighlightTagInBook } from '@/api/generated/model';
 import { useQueryClient } from '@tanstack/react-query';
 import { filter, map } from 'lodash';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export interface UseImmediateTagMutationParams {
   /** Book ID for API calls */
@@ -66,6 +66,10 @@ export const useImmediateTagMutation = ({
   const queryClient = useQueryClient();
   const [currentTags, setCurrentTags] = useState<HighlightTagInBook[]>(initialTags);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    setCurrentTags(initialTags);
+  }, [highlightId, initialTags]);
 
   const addTagMutation = useAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost({
     mutation: {
