@@ -1,4 +1,5 @@
 import type { Bookmark, Highlight } from '@/api/generated/model';
+import { HoverableCardActionArea } from '@/components/cards/HoverableCardActionArea';
 import { MetadataRow } from '@/components/cards/MetadataRow.tsx';
 import { BookTagList } from '@/pages/BookPage/BookTitle/BookTagList.tsx';
 import {
@@ -8,8 +9,7 @@ import {
   NotesIcon,
   QuoteIcon,
 } from '@/theme/Icons.tsx';
-import { theme } from '@/theme/theme';
-import { Box, CardActionArea, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 export interface HighlightCardProps {
   highlight: Highlight;
@@ -107,23 +107,12 @@ export const HighlightCard = ({ highlight, bookmark, onOpenModal }: HighlightCar
   };
 
   return (
-    <CardActionArea
+    <HoverableCardActionArea
       id={`highlight-${highlight.id}`}
       onClick={handleOpenModal}
       sx={{
         py: 3.5,
         px: 2.5,
-        borderLeft: `3px solid transparent`,
-        borderRadius: 0.75,
-        transition: 'all 0.2s ease',
-        cursor: 'pointer',
-        '@media (hover: hover)': {
-          '&:hover': {
-            backgroundColor: theme.palette.action.hover,
-            borderLeftColor: theme.palette.primary.main,
-            boxShadow: theme.shadows[2],
-          },
-        },
       }}
     >
       <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -149,6 +138,6 @@ export const HighlightCard = ({ highlight, bookmark, onOpenModal }: HighlightCar
 
         <Footer highlight={highlight} bookmark={bookmark} />
       </Box>
-    </CardActionArea>
+    </HoverableCardActionArea>
   );
 };
