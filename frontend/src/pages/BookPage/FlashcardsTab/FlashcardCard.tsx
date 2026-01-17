@@ -1,12 +1,12 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/generated/flashcards/flashcards.ts';
-import { Collapsable } from '@/components/animations/Collapsable.tsx';
 import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { FlashcardWithContext } from '@/pages/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
-import { DeleteIcon, EditIcon, QuoteIcon } from '@/theme/Icons.tsx';
-import { Box, Card, CardActionArea, CardContent, styled, Typography } from '@mui/material';
+import { FlashcardContent } from '@/pages/BookPage/FlashcardsTab/FlashcardContent.tsx';
+import { DeleteIcon, EditIcon } from '@/theme/Icons.tsx';
+import { Box, Card, CardActionArea, CardContent, styled } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -100,82 +100,13 @@ export const FlashcardCard = ({
         }}
       >
         <CardContent sx={{ width: '100%', pt: 2 }}>
-          {/* Question */}
-          <Box
-            sx={{
-              mb: isExpanded ? 2 : 1,
-              pr: 6,
-            }}
-          >
-            <Typography
-              variant="caption"
-              sx={{
-                color: 'primary.main',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                display: 'block',
-                mb: 0.5,
-              }}
-            >
-              Question
-            </Typography>
-            <Typography variant="body1" sx={{ lineHeight: 1.5 }}>
-              {flashcard.question}
-            </Typography>
-          </Box>
-
-          <Collapsable isExpanded={isExpanded}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: 'secondary.main',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                Answer
-              </Typography>
-            </Box>
-
-            <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
-              {flashcard.answer}
-            </Typography>
-
-            {/* Source highlight preview */}
-            {showSourceHighlight && flashcard.highlight.text && (
-              <Box
-                sx={{
-                  mt: 2,
-                  pt: 2,
-                  borderTop: '1px dashed',
-                  borderColor: 'divider',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                  <QuoteIcon
-                    sx={{ fontSize: 14, color: 'text.disabled', mt: 0.25, flexShrink: 0 }}
-                  />
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: 'text.disabled',
-                      fontStyle: 'italic',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {flashcard.highlight.text}
-                  </Typography>
-                </Box>
-              </Box>
-            )}
-          </Collapsable>
+          <FlashcardContent
+            question={flashcard.question}
+            answer={flashcard.answer}
+            isExpanded={isExpanded}
+            showSourceHighlight={showSourceHighlight}
+            sourceHighlightText={flashcard.highlight.text}
+          />
         </CardContent>
       </CardActionArea>
       <ActionButtonsStyled>

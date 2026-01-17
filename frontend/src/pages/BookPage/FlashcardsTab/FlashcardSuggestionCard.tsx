@@ -1,7 +1,7 @@
-import { Collapsable } from '@/components/animations/Collapsable.tsx';
 import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip';
+import { FlashcardContent } from '@/pages/BookPage/FlashcardsTab/FlashcardContent.tsx';
 import { Check as AcceptIcon, Close as RejectIcon } from '@mui/icons-material';
-import { Box, Card, CardActionArea, CardContent, styled, Typography } from '@mui/material';
+import { Box, Card, CardActionArea, CardContent, styled } from '@mui/material';
 import { useState } from 'react';
 
 export interface FlashcardSuggestionCardProps {
@@ -70,50 +70,7 @@ export const FlashcardSuggestionCard = ({
         }}
       >
         <CardContent sx={{ width: '100%', pt: 2 }}>
-          {/* Question */}
-          <Box
-            sx={{
-              mb: isExpanded ? 2 : 1,
-              pr: 6,
-            }}
-          >
-            <Typography
-              variant="caption"
-              sx={{
-                color: 'primary.main',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                display: 'block',
-                mb: 0.5,
-              }}
-            >
-              Question
-            </Typography>
-            <Typography variant="body1" sx={{ lineHeight: 1.5 }}>
-              {question}
-            </Typography>
-          </Box>
-
-          <Collapsable isExpanded={isExpanded}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: 'secondary.main',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                Answer
-              </Typography>
-            </Box>
-
-            <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
-              {answer}
-            </Typography>
-          </Collapsable>
+          <FlashcardContent question={question} answer={answer} isExpanded={isExpanded} />
         </CardContent>
       </CardActionArea>
 
