@@ -1,4 +1,5 @@
 import type { Bookmark, Highlight } from '@/api/generated/model';
+import { MetadataRow } from '@/components/cards/MetadataRow.tsx';
 import { BookTagList } from '@/pages/BookPage/BookTitle/BookTagList.tsx';
 import {
   BookmarkFilledIcon,
@@ -48,41 +49,33 @@ const Footer = ({ highlight, bookmark }: FooterProps) => {
               theme.palette.mode === 'light' ? `theme.palette.secondary.main` : 'secondary.light',
           })}
         />
-        <Typography
+        <MetadataRow
           variant="caption"
           sx={(theme) => ({
             color:
               theme.palette.mode === 'light' ? `theme.palette.secondary.main` : 'secondary.light',
           })}
-        >
-          <span>
-            {new Date(highlight.datetime).toLocaleDateString('en-US', {
+          items={[
+            new Date(highlight.datetime).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'long',
               day: 'numeric',
-            })}
-          </span>
-          {highlight.page && <span>&nbsp;&nbsp;•&nbsp;&nbsp;Page {highlight.page}</span>}
-          {hasBookmark && (
-            <span>
-              &nbsp;&nbsp;•
+            }),
+            highlight.page && `Page ${highlight.page}`,
+            hasBookmark && (
               <BookmarkFilledIcon sx={{ fontSize: 16, verticalAlign: 'middle', ml: 1, mt: -0.5 }} />
-            </span>
-          )}
-          {highlight.note && (
-            <span>
-              &nbsp;&nbsp;•
+            ),
+            highlight.note && (
               <NotesIcon sx={{ fontSize: 16, verticalAlign: 'middle', ml: 1, mt: -0.5 }} />
-            </span>
-          )}
-          {!!highlight.flashcards.length && (
-            <span>
-              &nbsp;&nbsp;•
-              <FlashcardsIcon sx={{ fontSize: 16, verticalAlign: 'middle', ml: 1, mt: -0.5 }} />
-              <span>&nbsp;&nbsp;{highlight.flashcards.length}</span>
-            </span>
-          )}
-        </Typography>
+            ),
+            !!highlight.flashcards.length && (
+              <>
+                <FlashcardsIcon sx={{ fontSize: 16, verticalAlign: 'middle', ml: 1, mt: -0.5 }} />
+                <span>&nbsp;&nbsp;{highlight.flashcards.length}</span>
+              </>
+            ),
+          ]}
+        />
       </Box>
 
       <Box>
