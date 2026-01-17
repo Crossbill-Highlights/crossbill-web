@@ -10,8 +10,8 @@ import {
 import type { FlashcardSuggestionItem, Highlight } from '@/api/generated/model';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
-import { FlashcardCard } from '@/pages/BookPage/FlashcardsTab/FlashcardCard.tsx';
 import type { FlashcardWithContext } from '@/pages/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
+import { FlashcardListCard } from '@/pages/BookPage/FlashcardsTab/FlashcardListCard.tsx';
 import { FlashcardSuggestionCard } from '@/pages/BookPage/FlashcardsTab/FlashcardSuggestionCard.tsx';
 import { AISummaryIcon } from '@/theme/Icons.tsx';
 import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
@@ -56,7 +56,7 @@ const FlashcardsList = ({ flashcardsWithContext, bookId, onEdit }: FlashcardsLis
     >
       {flashcardsWithContext.map((flashcard) => (
         <li key={flashcard.id}>
-          <FlashcardCard
+          <FlashcardListCard
             flashcard={flashcard}
             bookId={bookId}
             onEdit={() => onEdit(flashcard.id)}
