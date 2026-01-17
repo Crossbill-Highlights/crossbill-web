@@ -8,7 +8,7 @@ import { BookDetails } from '@/api/generated/model';
 import { BookCover } from '@/components/BookCover.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
-import { TagInput } from '@/components/inputs/TagInput.tsx';
+import { TagFormInput } from '@/components/inputs/TagInput.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { DeleteIcon } from '@/theme/Icons.tsx';
 import { Box, Button, Typography } from '@mui/material';
@@ -177,9 +177,8 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
           </Box>
         </Box>
 
-        {/* Editable Tags Field */}
         <Box>
-          <TagInput control={control} name="tags" disabled={isLoading} />
+          <TagFormInput control={control} name="tags" disabled={isLoading} />
         </Box>
 
         {/* Error Message */}

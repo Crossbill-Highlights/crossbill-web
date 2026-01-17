@@ -8,6 +8,8 @@ import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { HighlightTagInput } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/components/HighlightTagInput.tsx';
+import { useImmediateTagMutation } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/hooks/useImmediateTagMutation.ts';
 import { ArrowBackIcon, ArrowForwardIcon } from '@/theme/Icons.tsx';
 import { Box, Button, IconButton, Stack, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
@@ -16,7 +18,6 @@ import { HighlightContent } from '../../common/HighlightContent.tsx';
 import { FlashcardSection } from './components/FlashcardSection.tsx';
 import { HighlightNote } from './components/HighlightNote.tsx';
 import { ProgressBar } from './components/ProgressBar.tsx';
-import { TagInput } from './components/TagInput.tsx';
 import { Toolbar } from './components/Toolbar.tsx';
 import { useHighlightNavigation } from './hooks/useHighlightNavigation.ts';
 import { useVisibilityToggle } from './hooks/useVisibilityToggle.ts';
@@ -49,6 +50,13 @@ export const HighlightViewModal = ({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const currentBookmark = bookmarksByHighlightId[highlight.id] ?? undefined;
+
+  const { isProcessing, currentTags, updateTagList } = useImmediateTagMutation({
+    bookId,
+    highlightId: highlight.id,
+    initialTags: highlight.highlight_tags,
+    showSnackbar,
+  });
 
   const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext, swipeHandlers } =
     useHighlightNavigation({
@@ -140,11 +148,11 @@ export const HighlightViewModal = ({
           onDelete={handleDelete}
           disabled={isLoading}
         />
-        <TagInput
-          highlightId={highlight.id}
-          bookId={bookId}
-          initialTags={highlight.highlight_tags}
+        <HighlightTagInput
+          value={currentTags}
+          onChange={updateTagList}
           availableTags={availableTags}
+          isProcessing={isProcessing}
           disabled={isLoading}
         />
         <HighlightNote

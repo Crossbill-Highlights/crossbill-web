@@ -5,85 +5,71 @@ import {
   useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete,
 } from '@/api/generated/books/books.ts';
 import type { HighlightTagInBook } from '@/api/generated/model';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
-import { Autocomplete, Box, Chip, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { filter, map } from 'lodash';
+import { useEffect, useState } from 'react';
 
-interface TagInputProps {
-  highlightId: number;
+export interface UseImmediateTagMutationParams {
+  /** Book ID for API calls */
   bookId: number;
+  /** Highlight ID for API calls */
+  highlightId: number;
+  /** Initial tags for the highlight */
   initialTags: HighlightTagInBook[];
-  availableTags: HighlightTagInBook[];
-  disabled?: boolean;
+  /** Snackbar function for error/success notifications */
+  showSnackbar: (message: string, severity: 'error' | 'success' | 'info' | 'warning') => void;
 }
 
-export const TagInput = ({
-  highlightId,
-  bookId,
-  initialTags,
-  availableTags,
-  disabled = false,
-}: TagInputProps) => {
-  const { showSnackbar } = useSnackbar();
-  const { isProcessing, currentTags, updateTagList } = useTagState(
-    bookId,
-    highlightId,
-    initialTags,
-    showSnackbar
-  );
+export interface UseImmediateTagMutationReturn {
+  /** Whether a mutation is currently processing */
+  isProcessing: boolean;
+  /** Current list of tags */
+  currentTags: HighlightTagInBook[];
+  /** Function to update the tag list - handles add/remove mutations */
+  updateTagList: (newValue: (HighlightTagInBook | string)[]) => Promise<void>;
+}
 
-  const isDisabled = disabled || isProcessing;
-
-  return (
-    <Box>
-      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-        Tags
-      </Typography>
-      <Autocomplete
-        multiple
-        freeSolo
-        options={availableTags}
-        getOptionLabel={(option) => (typeof option === 'string' ? option : option.name)}
-        value={currentTags}
-        onChange={(_, value) => updateTagList(value)}
-        isOptionEqualToValue={(option, value) => option.id === value.id}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            placeholder="Add tags..."
-            helperText="Press Enter to add a tag, click X to remove"
-            disabled={isDisabled}
-          />
-        )}
-        renderValue={(tagValue, getTagProps) =>
-          tagValue.map((option, index) => {
-            const { key, ...tagProps } = getTagProps({ index });
-            return (
-              <Chip
-                key={key}
-                label={typeof option === 'string' ? option : option.name}
-                {...tagProps}
-                disabled={isDisabled}
-              />
-            );
-          })
-        }
-        disabled={isDisabled}
-      />
-    </Box>
-  );
+const calculateAddedTags = (current: string[], updated: string[]): string[] => {
+  return filter(updated, (name) => !current.includes(name));
 };
 
-const useTagState = (
-  bookId: number,
-  highlightId: number,
-  initialTags: HighlightTagInBook[],
-  showSnackbar: (message: string, severity: 'error' | 'warning' | 'info' | 'success') => void
-) => {
+const calculateRemovedTags = (
+  current: HighlightTagInBook[],
+  updated: string[]
+): HighlightTagInBook[] => {
+  return filter(current, (tag) => !updated.includes(tag.name));
+};
+
+/**
+ * Hook for managing immediate tag mutations on highlights
+ * Handles adding and removing tags with optimistic updates and error handling
+ *
+ * @param params - Configuration for the hook
+ * @returns Object with processing state, current tags, and update function
+ *
+ * @example
+ * ```tsx
+ * const { isProcessing, currentTags, updateTagList } = useImmediateTagMutation({
+ *   bookId: 1,
+ *   highlightId: 123,
+ *   initialTags: highlight.highlight_tags,
+ *   showSnackbar,
+ * });
+ * ```
+ */
+export const useImmediateTagMutation = ({
+  bookId,
+  highlightId,
+  initialTags,
+  showSnackbar,
+}: UseImmediateTagMutationParams): UseImmediateTagMutationReturn => {
   const queryClient = useQueryClient();
   const [currentTags, setCurrentTags] = useState<HighlightTagInBook[]>(initialTags);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    setCurrentTags(initialTags);
+  }, [highlightId, initialTags]);
 
   const addTagMutation = useAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost({
     mutation: {
@@ -149,11 +135,11 @@ const useTagState = (
   };
 
   const updateTagList = async (newValue: (HighlightTagInBook | string)[]) => {
-    const currentTagNames = currentTags.map((t) => t.name);
-    const newTagNames = newValue.map((v) => (typeof v === 'string' ? v : v.name));
+    const currentTagNames = map(currentTags, (t) => t.name);
+    const newTagNames = map(newValue, (v) => (typeof v === 'string' ? v : v.name));
 
-    const addedTags = newTagNames.filter((name) => !currentTagNames.includes(name));
-    const removedTags = currentTags.filter((tag) => !newTagNames.includes(tag.name));
+    const addedTags = calculateAddedTags(currentTagNames, newTagNames);
+    const removedTags = calculateRemovedTags(currentTags, newTagNames);
 
     for (const tagName of addedTags) {
       await addTagToHighlight(tagName);

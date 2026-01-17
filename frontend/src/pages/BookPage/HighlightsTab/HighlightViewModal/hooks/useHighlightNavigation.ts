@@ -35,12 +35,17 @@ export const useHighlightNavigation = ({
     if (!open || !hasNavigation) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't navigate when user is typing in an input field
       const target = e.target as HTMLElement;
+
+      // Don't navigate when user is typing in an input field
       const isEditableElement =
         target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
-      if (isEditableElement) return;
+      // Don't navigate when user is interacting with element inside area which is marked as to prevent
+      // navigation by the special attribute
+      const isInPreventNavigationArea = target.closest('[data-prevent-navigation="true"]');
+
+      if (isEditableElement || isInPreventNavigationArea) return;
 
       if (e.key === 'ArrowLeft' && hasPrevious) {
         e.preventDefault();
