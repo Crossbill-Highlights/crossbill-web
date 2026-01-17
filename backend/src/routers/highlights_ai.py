@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from src import schemas
 from src.database import DatabaseSession
+from src.dependencies import require_ai_enabled
 from src.models import User
 from src.services.auth_service import get_current_user
 from src.services.flashcard_service import FlashcardService, HighlightNotFoundError
@@ -21,6 +22,7 @@ router = APIRouter(prefix="/highlights", tags=["highlights", "ai"])
     response_model=schemas.HighlightFlashcardSuggestionsResponse,
     status_code=status.HTTP_200_OK,
 )
+@require_ai_enabled
 async def get_highlight_flashcard_suggestions(
     highlight_id: int,
     db: DatabaseSession,
