@@ -1,7 +1,7 @@
 import type { Flashcard, Highlight } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { SectionTitle } from '@/components/typography/SectionTitle.tsx';
-import { FlashcardCard } from '@/pages/BookPage/FlashcardsTab/FlashcardCard.tsx';
+import { FlashcardListCard } from '@/pages/BookPage/FlashcardsTab/FlashcardListCard.tsx';
 import { Box, Typography } from '@mui/material';
 
 export interface FlashcardWithContext extends Flashcard {
@@ -74,7 +74,7 @@ export const FlashcardChapterList = ({
               >
                 {chapter.flashcards.map((flashcard) => (
                   <li key={flashcard.id}>
-                    <FlashcardCard
+                    <FlashcardListCard
                       flashcard={flashcard}
                       bookId={bookId}
                       onEdit={() => onEditFlashcard(flashcard)}

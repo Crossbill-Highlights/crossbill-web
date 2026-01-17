@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from src import schemas
 from src.database import DatabaseSession
+from src.dependencies import require_ai_enabled
 from src.exceptions import ReadingSessionNotFoundError, ValidationError
 from src.models import User
 from src.services.auth_service import get_current_user
@@ -22,6 +23,7 @@ router = APIRouter(prefix="/reading_sessions", tags=["reading_sessions", "ai"])
     response_model=schemas.ReadingSessionAISummaryResponse,
     status_code=status.HTTP_200_OK,
 )
+@require_ai_enabled
 async def get_reading_session_ai_summary(
     reading_session_id: int,
     db: DatabaseSession,

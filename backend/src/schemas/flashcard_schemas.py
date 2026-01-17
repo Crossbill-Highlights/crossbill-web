@@ -72,3 +72,18 @@ class FlashcardsListResponse(BaseModel):
     """Schema for list of flashcards response."""
 
     flashcards: list[Flashcard] = Field(..., description="List of flashcards")
+
+
+class FlashcardSuggestionItem(BaseModel):
+    """Schema for a single AI-generated flashcard suggestion."""
+
+    question: str = Field(..., description="Suggested question for flashcard")
+    answer: str = Field(..., description="Suggested answer for flashcard")
+
+
+class HighlightFlashcardSuggestionsResponse(BaseModel):
+    """Schema for flashcard suggestions response."""
+
+    suggestions: list[FlashcardSuggestionItem] = Field(
+        ..., description="List of AI-generated flashcard suggestions"
+    )

@@ -31,8 +31,10 @@ from src.schemas.flashcard_schemas import (
     FlashcardCreateResponse,
     FlashcardDeleteResponse,
     FlashcardsListResponse,
+    FlashcardSuggestionItem,
     FlashcardUpdateRequest,
     FlashcardUpdateResponse,
+    HighlightFlashcardSuggestionsResponse,
 )
 from src.schemas.highlight_schemas import (
     BookDetails,
@@ -100,6 +102,7 @@ __all__ = [
     "FlashcardCreateRequest",
     "FlashcardCreateResponse",
     "FlashcardDeleteResponse",
+    "FlashcardSuggestionItem",
     "FlashcardUpdateRequest",
     "FlashcardUpdateResponse",
     "FlashcardWithHighlight",
@@ -110,6 +113,7 @@ __all__ = [
     "HighlightCreate",
     "HighlightDeleteRequest",
     "HighlightDeleteResponse",
+    "HighlightFlashcardSuggestionsResponse",
     "HighlightNoteUpdate",
     "HighlightNoteUpdateResponse",
     "HighlightResponseBase",

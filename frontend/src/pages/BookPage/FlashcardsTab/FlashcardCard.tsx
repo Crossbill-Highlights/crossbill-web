@@ -1,46 +1,34 @@
-import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
-import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/generated/flashcards/flashcards.ts';
-import { Collapsable } from '@/components/animations/Collapsable.tsx';
-import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
-import { FlashcardWithContext } from '@/pages/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
-import { DeleteIcon, EditIcon, QuoteIcon } from '@/theme/Icons.tsx';
-import {
-  Box,
-  Card,
-  CardActionArea,
-  CardContent,
-  IconButton,
-  styled,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { Collapsable } from '@/components/animations/Collapsable';
+import { QuoteIcon } from '@/theme/Icons';
+import { Box, Card, CardActionArea, CardContent, styled, Typography } from '@mui/material';
+import { ReactNode, useState } from 'react';
 
 export interface FlashcardCardProps {
-  flashcard: FlashcardWithContext;
-  bookId: number;
-  onEdit: () => void;
-  component?: React.ElementType;
+  question: string;
+  answer: string;
   showSourceHighlight?: boolean;
+  sourceHighlightText?: string;
+  renderActions: () => ReactNode;
+  borderStyle?: 'solid' | 'dashed';
 }
 
-const FlashcardStyled = styled(Card)(({ theme }) => ({
+const FlashcardStyled = styled(Card, {
+  shouldForwardProp: (prop) => prop !== 'borderStyle',
+})<{ borderStyle?: 'solid' | 'dashed' }>(({ theme, borderStyle = 'solid' }) => ({
   height: 'fit-content',
   display: 'flex',
   flexDirection: 'column',
   position: 'relative',
   transition: 'all 0.2s ease',
   bgcolor: 'background.paper',
-  borderColor: theme.palette.divider,
+  border: `1px ${borderStyle} ${theme.palette.divider}`,
   '&:hover': {
     transform: 'translateY(-2px)',
     boxShadow: 3,
   },
 }));
 
-const ActionButtonsStyled = styled(Box)(() => ({
+export const ActionButtonsStyled = styled(Box)(() => ({
   position: 'absolute',
   top: 8,
   right: 8,
@@ -55,48 +43,17 @@ const ActionButtonsStyled = styled(Box)(() => ({
 }));
 
 export const FlashcardCard = ({
-  flashcard,
-  bookId,
-  onEdit,
-  showSourceHighlight = true,
+  question,
+  answer,
+  showSourceHighlight,
+  sourceHighlightText,
+  renderActions,
+  borderStyle = 'solid',
 }: FlashcardCardProps) => {
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const { showSnackbar } = useSnackbar();
-
-  const deleteMutation = useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete({
-    mutation: {
-      onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-        });
-      },
-      onError: (error) => {
-        console.error('Failed to delete flashcard:', error);
-        showSnackbar('Failed to delete flashcard. Please try again.', 'error');
-      },
-    },
-  });
-
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDeleteConfirmOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    setDeleteConfirmOpen(false);
-    setIsDeleting(true);
-    try {
-      await deleteMutation.mutateAsync({ flashcardId: flashcard.id });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
 
   return (
-    <FlashcardStyled>
+    <FlashcardStyled borderStyle={borderStyle}>
       <CardActionArea
         onClick={() => setIsExpanded(!isExpanded)}
         sx={{
@@ -129,7 +86,7 @@ export const FlashcardCard = ({
               Question
             </Typography>
             <Typography variant="body1" sx={{ lineHeight: 1.5 }}>
-              {flashcard.question}
+              {question}
             </Typography>
           </Box>
 
@@ -149,11 +106,11 @@ export const FlashcardCard = ({
             </Box>
 
             <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
-              {flashcard.answer}
+              {answer}
             </Typography>
 
             {/* Source highlight preview */}
-            {showSourceHighlight && flashcard.highlight.text && (
+            {showSourceHighlight && sourceHighlightText && (
               <Box
                 sx={{
                   mt: 2,
@@ -178,7 +135,7 @@ export const FlashcardCard = ({
                       lineHeight: 1.4,
                     }}
                   >
-                    {flashcard.highlight.text}
+                    {sourceHighlightText}
                   </Typography>
                 </Box>
               </Box>
@@ -186,29 +143,8 @@ export const FlashcardCard = ({
           </Collapsable>
         </CardContent>
       </CardActionArea>
-      <ActionButtonsStyled>
-        <Tooltip title="Edit">
-          <IconButton size="small" onClick={onEdit} disabled={isDeleting}>
-            <EditIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Delete">
-          <IconButton size="small" onClick={handleDeleteClick} disabled={isDeleting}>
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </ActionButtonsStyled>
 
-      <ConfirmationDialog
-        open={deleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="Delete Flashcard"
-        message="Are you sure you want to delete this flashcard?"
-        confirmText="Delete"
-        confirmColor="error"
-        isLoading={isDeleting}
-      />
+      <ActionButtonsStyled>{renderActions()}</ActionButtonsStyled>
     </FlashcardStyled>
   );
 };
