@@ -24,16 +24,24 @@ export interface FlashcardCardProps {
   onEdit: () => void;
   component?: React.ElementType;
   showSourceHighlight?: boolean;
+  variant?: 'default' | 'suggestion';
 }
 
-const FlashcardStyled = styled(Card)(({ theme }) => ({
+interface FlashcardStyledProps {
+  $variant?: 'default' | 'suggestion';
+}
+
+const FlashcardStyled = styled(Card)<FlashcardStyledProps>(({ theme, $variant = 'default' }) => ({
   height: 'fit-content',
   display: 'flex',
   flexDirection: 'column',
   position: 'relative',
   transition: 'all 0.2s ease',
   bgcolor: 'background.paper',
-  borderColor: theme.palette.divider,
+  border:
+    $variant === 'suggestion'
+      ? `1px dashed ${theme.palette.divider}`
+      : `1px solid ${theme.palette.divider}`,
   '&:hover': {
     transform: 'translateY(-2px)',
     boxShadow: 3,
@@ -59,6 +67,7 @@ export const FlashcardCard = ({
   bookId,
   onEdit,
   showSourceHighlight = true,
+  variant = 'default',
 }: FlashcardCardProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -96,7 +105,7 @@ export const FlashcardCard = ({
   };
 
   return (
-    <FlashcardStyled>
+    <FlashcardStyled $variant={variant}>
       <CardActionArea
         onClick={() => setIsExpanded(!isExpanded)}
         sx={{
@@ -186,18 +195,20 @@ export const FlashcardCard = ({
           </Collapsable>
         </CardContent>
       </CardActionArea>
-      <ActionButtonsStyled>
-        <Tooltip title="Edit">
-          <IconButton size="small" onClick={onEdit} disabled={isDeleting}>
-            <EditIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Delete">
-          <IconButton size="small" onClick={handleDeleteClick} disabled={isDeleting}>
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </ActionButtonsStyled>
+      {variant !== 'suggestion' && (
+        <ActionButtonsStyled>
+          <Tooltip title="Edit">
+            <IconButton size="small" onClick={onEdit} disabled={isDeleting}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton size="small" onClick={handleDeleteClick} disabled={isDeleting}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </ActionButtonsStyled>
+      )}
 
       <ConfirmationDialog
         open={deleteConfirmOpen}
