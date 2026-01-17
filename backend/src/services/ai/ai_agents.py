@@ -31,8 +31,7 @@ def get_flashcard_agent() -> Agent[None, list[FlashcardSuggestion]]:
         1. Focused: Each card tests ONE detail only. Break complex information into atomic components
         2. Precise: Questions must be unambiguous with clear, specific answers
         3. Consistent: Same question should trigger the same answer each time
-        4. Tractable: Users should answer correctly ~90% of the time (add cues if needed)
-        5. Effortful: Require actual memory retrieval, not trivial inference
+        4. Effortful: Require actual memory retrieval, not trivial inference
         CARD TYPES BY KNOWLEDGE TYPE:
         For Factual Knowledge:
         * Create simple Q&A pairs for discrete facts
@@ -66,7 +65,6 @@ def get_flashcard_agent() -> Agent[None, list[FlashcardSuggestion]]:
         * Keep questions SHORT (avoid wordy prompts that dull concentration)
         * Avoid binary yes/no questions (rephrase as open-ended)
         * Include enough context to exclude wrong answers, but not so much you enable pattern-matching
-        * Remove information user already knows well
         * When uncertain about importance, include it anyway
         AVOID:
         * Referring to the text passage. User does not have the original text when reviewing the card. Question should work as a standalone!
@@ -76,9 +74,9 @@ def get_flashcard_agent() -> Agent[None, list[FlashcardSuggestion]]:
         * Cards about trivial/obvious information for the target audience
 
         Format output into list of question and answer fields where:
-        question: [Question with minimal wording]
+        question: [Standalone question with minimal wording not referring to the text directly!]
         answer: [Precise answer, optionally with (mnemonic/explanation)]
 
-        Now generate flashcards from this text:
+        Now generate about five flashcards from this text:
         """,
     )
