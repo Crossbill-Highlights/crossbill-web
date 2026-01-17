@@ -37,7 +37,7 @@ export const TagInput = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <Box>
+    <Box data-prevent-navigation="true">
       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
         Tags
       </Typography>
@@ -70,6 +70,7 @@ export const TagInput = ({
             const { key, ...tagProps } = getTagProps({ index });
             return (
               <Chip
+                aria-description="Selected tag, click to remove"
                 key={key}
                 label={typeof option === 'string' ? option : option.name}
                 {...tagProps}
