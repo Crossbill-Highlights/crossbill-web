@@ -1,6 +1,5 @@
 import { HighlightTagInBook } from '@/api/generated/model';
 import { BaseTagInputProps, TagAutocomplete } from '@/components/inputs/TagInput';
-import { useRef } from 'react';
 
 export interface HighlightTagInputProps extends BaseTagInputProps {
   value: HighlightTagInBook[];
@@ -20,7 +19,6 @@ export const HighlightTagInput = ({
   isProcessing = false,
   chipAriaDescription = 'Selected tag, click to remove',
 }: HighlightTagInputProps) => {
-  const inputRef = useRef<HTMLInputElement>(null);
   const isDisabled = disabled || isProcessing;
 
   return (
@@ -32,7 +30,6 @@ export const HighlightTagInput = ({
       blurOnSelect={false}
       placeholder={placeholder}
       helperText={helperText}
-      inputRef={inputRef}
       preventParentNavigation={true}
       chipAriaDescription={chipAriaDescription}
       getOptionLabel={(option) => (typeof option === 'string' ? option : option.name)}

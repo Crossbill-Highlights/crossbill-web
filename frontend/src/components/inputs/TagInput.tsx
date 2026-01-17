@@ -31,7 +31,6 @@ interface TagAutocompleteProps<T> {
   blurOnSelect: boolean;
   placeholder: string;
   helperText: string;
-  inputRef: React.RefObject<HTMLInputElement | null>;
   preventParentNavigation: boolean;
   chipAriaDescription: string;
   getOptionLabel: (option: T | string) => string;
@@ -49,7 +48,6 @@ export const TagAutocomplete = <T,>({
   blurOnSelect,
   placeholder,
   helperText,
-  inputRef,
   preventParentNavigation,
   chipAriaDescription,
   getOptionLabel,
@@ -57,6 +55,7 @@ export const TagAutocomplete = <T,>({
   label,
   showLabelAsTypography = false,
 }: TagAutocompleteProps<T>) => {
+  const inputRef = useRef<HTMLInputElement>(null);
   const handleChange = (newValue: T[]) => {
     const result = onChange(newValue);
 
@@ -147,7 +146,6 @@ export const TagFormInput = <T extends FieldValues>({
   preventParentNavigation = false,
   chipAriaDescription = 'Selected tag, click to remove',
 }: TagFormInputProps<T>) => {
-  const inputRef = useRef<HTMLInputElement>(null);
   return (
     <Controller
       name={name}
@@ -162,7 +160,6 @@ export const TagFormInput = <T extends FieldValues>({
           blurOnSelect={blurOnSelect}
           placeholder={placeholder}
           helperText={helperText}
-          inputRef={inputRef}
           preventParentNavigation={preventParentNavigation}
           chipAriaDescription={chipAriaDescription}
           getOptionLabel={(option) => (typeof option === 'string' ? option : String(option))}
