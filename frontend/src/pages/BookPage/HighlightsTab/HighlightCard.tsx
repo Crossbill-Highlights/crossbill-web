@@ -8,6 +8,7 @@ import {
   NotesIcon,
   QuoteIcon,
 } from '@/theme/Icons.tsx';
+import { theme } from '@/theme/theme';
 import { Box, CardActionArea, Typography } from '@mui/material';
 
 export interface HighlightCardProps {
@@ -110,27 +111,18 @@ export const HighlightCard = ({ highlight, bookmark, onOpenModal }: HighlightCar
       id={`highlight-${highlight.id}`}
       onClick={handleOpenModal}
       sx={{
-        position: 'relative',
         py: 3.5,
         px: 2.5,
-        borderBottom: 1,
-        borderColor: 'divider',
-        borderLeft: 3,
-        borderLeftStyle: 'solid',
-        borderLeftColor: 'transparent',
-        borderRadiusTopRight: 1.5,
-        borderRadiusBottomRight: 1.5,
+        borderLeft: `3px solid transparent`,
+        borderRadius: 0.75,
         transition: 'all 0.2s ease',
         cursor: 'pointer',
         '@media (hover: hover)': {
           '&:hover': {
-            bgcolor: 'action.hover',
-            borderLeftColor: 'primary.main',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+            backgroundColor: theme.palette.action.hover,
+            borderLeftColor: theme.palette.primary.main,
+            boxShadow: theme.shadows[2],
           },
-        },
-        '&:last-child': {
-          borderBottom: 0,
         },
       }}
     >

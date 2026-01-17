@@ -19,7 +19,7 @@ const SummaryCard = styled(CardActionArea)(({ theme }) => ({
     '&:hover': {
       backgroundColor: theme.palette.action.hover,
       borderLeftColor: theme.palette.primary.main,
-      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+      boxShadow: theme.shadows[2],
     },
   },
 }));
