@@ -8,7 +8,7 @@ import type { HighlightTagInBook } from '@/api/generated/model';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { Autocomplete, Box, Chip, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 interface TagInputProps {
   highlightId: number;
@@ -34,6 +34,7 @@ export const TagInput = ({
   );
 
   const isDisabled = disabled || isProcessing;
+  const inputRef = useRef<HTMLInputElement>(null);
 
   return (
     <Box>
@@ -45,12 +46,20 @@ export const TagInput = ({
         freeSolo
         options={availableTags}
         getOptionLabel={(option) => (typeof option === 'string' ? option : option.name)}
+        blurOnSelect={false}
         value={currentTags}
-        onChange={(_, value) => updateTagList(value)}
+        onChange={(_, value) => {
+          void updateTagList(value).then(() => {
+            setTimeout(() => {
+              inputRef.current?.focus();
+            }, 0);
+          });
+        }}
         isOptionEqualToValue={(option, value) => option.id === value.id}
         renderInput={(params) => (
           <TextField
             {...params}
+            inputRef={inputRef}
             placeholder="Add tags..."
             helperText="Press Enter to add a tag, click X to remove"
             disabled={isDisabled}
