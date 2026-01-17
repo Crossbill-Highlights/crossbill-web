@@ -123,16 +123,16 @@ const DroppableGroup = ({ id, children, isEmpty, emptyHeight }: DroppableGroupPr
       ref={setNodeRef}
       animate={{
         backgroundColor: isOver ? 'rgba(104, 90, 75, 0.08)' : 'rgba(104, 90, 75, 0)',
+        padding: isEmpty ? 12 : isOver ? 8 : 0,
+      }}
+      transition={{ duration: 0.2 }}
+      style={{
+        borderWidth: isEmpty ? 1 : isOver ? 2 : 0,
         borderColor: isOver
           ? 'rgba(104, 90, 75, 0.4)'
           : isEmpty
             ? 'rgba(0, 0, 0, 0.12)'
             : 'rgba(0, 0, 0, 0)',
-        borderWidth: isEmpty ? 1 : isOver ? 2 : 0,
-        padding: isEmpty ? 12 : isOver ? 8 : 0,
-      }}
-      transition={{ duration: 0.2 }}
-      style={{
         borderStyle: isEmpty ? 'dashed' : 'solid',
         borderRadius: 8,
         minHeight: isEmpty ? emptyHeight || 40 : 'auto',
