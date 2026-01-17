@@ -2,12 +2,15 @@
 
 import logging
 
+import structlog
 from sqlalchemy.orm import Session
 
 from src import repositories, schemas
 from src.exceptions import BookNotFoundError, NotFoundError, ValidationError
+from src.services.ai.ai_service import get_ai_flashcard_suggestions_from_text
 
 logger = logging.getLogger(__name__)
+structlog_logger = structlog.get_logger(__name__)
 
 
 class HighlightNotFoundError(NotFoundError):
@@ -195,3 +198,45 @@ class FlashcardService:
 
         self.db.commit()
         logger.info(f"Deleted flashcard {flashcard_id}")
+
+    async def get_flashcard_suggestions(
+        self,
+        highlight_id: int,
+        user_id: int,
+    ) -> list[schemas.FlashcardSuggestionItem]:
+        """
+        Get AI-generated flashcard suggestions for a highlight.
+
+        Args:
+            highlight_id: ID of the highlight
+            user_id: ID of the user (for ownership verification)
+
+        Returns:
+            List of flashcard suggestions
+
+        Raises:
+            HighlightNotFoundError: If highlight not found or user doesn't own it
+        """
+        # Retrieve highlight using repository
+        highlight = self.highlight_repo.get_by_id(highlight_id, user_id)
+
+        # Validate highlight exists
+        if highlight is None:
+            raise HighlightNotFoundError(highlight_id)
+
+        # Get AI suggestions from highlight text
+        ai_suggestions = await get_ai_flashcard_suggestions_from_text(highlight.text)
+
+        # Convert FlashcardSuggestion objects to FlashcardSuggestionItem schemas
+        suggestions = [
+            schemas.FlashcardSuggestionItem(question=suggestion.question, answer=suggestion.answer)
+            for suggestion in ai_suggestions
+        ]
+
+        structlog_logger.info(
+            "flashcard_suggestions_generated",
+            highlight_id=highlight_id,
+            suggestion_count=len(suggestions),
+        )
+
+        return suggestions

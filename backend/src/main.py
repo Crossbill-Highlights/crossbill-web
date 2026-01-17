@@ -30,6 +30,7 @@ from src.routers import (
     ereader,
     flashcards,
     highlights,
+    highlights_ai,
     reading_sessions,
     reading_sessions_ai,
     users,
@@ -248,6 +249,7 @@ app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)
 # Register AI-powered routers conditionally
 if settings.ai_enabled:
     app.include_router(reading_sessions_ai.router, prefix=settings.API_V1_PREFIX)
+    app.include_router(highlights_ai.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health")
