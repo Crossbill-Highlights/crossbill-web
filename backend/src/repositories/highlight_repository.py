@@ -5,7 +5,6 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 
 from sqlalchemy import delete, func, select, update
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from src import models, schemas
@@ -41,6 +40,30 @@ class HighlightRepository:
         self.db.refresh(highlight)
         return highlight
 
+    def _get_existing_content_hashes(self, user_id: int, content_hashes: list[str]) -> set[str]:
+        """
+        Get all existing content hashes for a user from a given list.
+
+        Returns a set of content hashes that already exist (active or soft-deleted).
+        Uses the unique constraint index (user_id, content_hash) for efficient lookup.
+
+        Args:
+            user_id: ID of the user
+            content_hashes: List of content hashes to check
+
+        Returns:
+            Set of content hashes that already exist in the database
+        """
+        if not content_hashes:
+            return set()
+
+        stmt = select(models.Highlight.content_hash).where(
+            models.Highlight.user_id == user_id,
+            models.Highlight.content_hash.in_(content_hashes),
+        )
+        result = self.db.execute(stmt).scalars().all()
+        return set(result)
+
     def try_create(
         self,
         book_id: int,
@@ -56,23 +79,21 @@ class HighlightRepository:
             tuple[Highlight | None, bool]: (highlight, was_created)
             If duplicate (including soft-deleted), returns (None, False)
         """
-        # Use a savepoint to isolate this insert
-        # This way, if it fails, we only rollback this specific insert
-        # and not all previous work in the transaction
-        savepoint = self.db.begin_nested()
-        try:
-            highlight = self.create_with_chapter(
-                book_id, user_id, chapter_id, content_hash, highlight_data
-            )
-            return highlight, True
-        except IntegrityError:
-            # Duplicate - unique constraint violated (active or soft-deleted)
-            # Rollback only to the savepoint, not the entire transaction
-            savepoint.rollback()
+        # Check for existing highlight before attempting INSERT
+        # This prevents PostgreSQL from logging sensitive data
+        existing_hashes = self._get_existing_content_hashes(user_id, [content_hash])
+
+        if content_hash in existing_hashes:
             logger.debug(
                 f"Skipped duplicate highlight for book_id={book_id}, content_hash='{content_hash}'"
             )
             return None, False
+
+        # No duplicate found - safe to insert
+        highlight = self.create_with_chapter(
+            book_id, user_id, chapter_id, content_hash, highlight_data
+        )
+        return highlight, True
 
     def bulk_create(
         self,
@@ -81,7 +102,7 @@ class HighlightRepository:
         highlights_data: list[tuple[int | None, str, schemas.HighlightCreate]],
     ) -> tuple[int, int]:
         """
-        Bulk create highlights with deduplication.
+        Bulk create highlights with optimized deduplication.
 
         Args:
             book_id: ID of the book
@@ -91,18 +112,41 @@ class HighlightRepository:
         Returns:
             tuple[int, int]: (created_count, skipped_count)
         """
-        created = 0
+        if not highlights_data:
+            return 0, 0
+
+        # Step 1: Extract all content hashes from the batch
+        all_content_hashes = [content_hash for _, content_hash, _ in highlights_data]
+
+        # Step 2: Fetch existing content hashes in one query
+        existing_hashes = self._get_existing_content_hashes(user_id, all_content_hashes)
+
+        # Step 3: Filter out duplicates (both from DB and within the batch)
+        new_highlights = []
         skipped = 0
+        seen_in_batch = set()  # Track hashes we've already processed in this batch
 
         for chapter_id, content_hash, highlight_data in highlights_data:
-            _, was_created = self.try_create(
-                book_id, user_id, chapter_id, content_hash, highlight_data
-            )
-            if was_created:
-                created += 1
-            else:
+            if content_hash in existing_hashes or content_hash in seen_in_batch:
                 skipped += 1
+            else:
+                # Prepare highlight for bulk insert
+                highlight = models.Highlight(
+                    book_id=book_id,
+                    user_id=user_id,
+                    chapter_id=chapter_id,
+                    content_hash=content_hash,
+                    **highlight_data.model_dump(exclude={"chapter", "chapter_number"}),
+                )
+                new_highlights.append(highlight)
+                seen_in_batch.add(content_hash)  # Mark this hash as seen
 
+        # Step 4: Bulk insert all new highlights in one operation
+        if new_highlights:
+            self.db.add_all(new_highlights)
+            self.db.flush()
+
+        created = len(new_highlights)
         logger.info(
             f"Bulk created highlights for book_id={book_id}: {created} created, {skipped} skipped"
         )
