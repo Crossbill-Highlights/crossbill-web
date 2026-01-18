@@ -2,7 +2,7 @@ import type { Flashcard, Highlight } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { SectionTitle } from '@/components/typography/SectionTitle.tsx';
 import { FlashcardListCard } from '@/pages/BookPage/FlashcardsTab/FlashcardListCard.tsx';
-import { Box, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 
 export interface FlashcardWithContext extends Flashcard {
   highlight: Highlight;
@@ -57,14 +57,9 @@ export const FlashcardChapterList = ({
             <Box key={chapter.id} id={`chapter-${chapter.id}`}>
               <SectionTitle showDivider>{chapter.name}</SectionTitle>
 
-              <Box
+              <Stack
                 component="ul"
                 sx={{
-                  display: 'grid',
-                  gridTemplateColumns: {
-                    xs: '1fr',
-                    sm: 'repeat(2, 1fr)',
-                  },
                   gap: 2,
                   listStyle: 'none',
                   p: 0,
@@ -81,7 +76,7 @@ export const FlashcardChapterList = ({
                     />
                   </li>
                 ))}
-              </Box>
+              </Stack>
             </Box>
           ))
         )}

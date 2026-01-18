@@ -14,7 +14,7 @@ import type { FlashcardWithContext } from '@/pages/BookPage/FlashcardsTab/Flashc
 import { FlashcardListCard } from '@/pages/BookPage/FlashcardsTab/FlashcardListCard.tsx';
 import { FlashcardSuggestionCard } from '@/pages/BookPage/FlashcardsTab/FlashcardSuggestionCard.tsx';
 import { AISummaryIcon } from '@/theme/Icons.tsx';
-import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Stack, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { sortBy } from 'lodash';
 import { AnimatePresence, motion } from 'motion/react';
@@ -39,14 +39,9 @@ const FlashcardsList = ({ flashcardsWithContext, bookId, onEdit }: FlashcardsLis
   }
 
   return (
-    <Box
+    <Stack
       component="ul"
       sx={{
-        display: 'grid',
-        gridTemplateColumns: {
-          xs: '1fr',
-          sm: 'repeat(2, 1fr)',
-        },
         gap: 2,
         listStyle: 'none',
         p: 0,
@@ -64,7 +59,7 @@ const FlashcardsList = ({ flashcardsWithContext, bookId, onEdit }: FlashcardsLis
           />
         </li>
       ))}
-    </Box>
+    </Stack>
   );
 };
 
@@ -190,14 +185,9 @@ const FlashcardSuggestions = ({
       )}
 
       {!isLoading && suggestions.length > 0 && (
-        <Box
+        <Stack
           component="ul"
           sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-            },
             gap: 2,
             listStyle: 'none',
             p: 0,
@@ -215,7 +205,7 @@ const FlashcardSuggestions = ({
               />
             </li>
           ))}
-        </Box>
+        </Stack>
       )}
     </>
   );
