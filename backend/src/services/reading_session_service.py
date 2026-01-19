@@ -178,7 +178,7 @@ class ReadingSessionService:
             Total number of highlight-session links created
         """
         # Get all highlights for this book that could be matched
-        highlights = self.highlight_repo.get_highlights_for_session_matching(book_id, user_id)
+        highlights = self.highlight_repo.get_by_book(book_id, user_id)
 
         if not highlights:
             return 0
@@ -230,14 +230,19 @@ class ReadingSessionService:
                     # Page-based matching (PDF)
                     if session.start_page <= highlight.page <= session.end_page:  # type: ignore[operator]
                         matching.append(highlight)
-                elif is_xpoint_based and highlight.start_xpoint is not None:
-                    # XPoint-based matching (EPUB)
-                    if is_xpoint_in_range(
+                elif (
+                    is_xpoint_based
+                    and highlight.start_xpoint is not None
+                    and session.start_xpoint is not None
+                    and session.end_xpoint is not None
+                    and is_xpoint_in_range(
                         highlight.start_xpoint,
                         session.start_xpoint,
                         session.end_xpoint,
-                    ):
-                        matching.append(highlight)
+                    )
+                ):
+                    # XPoint-based matching (EPUB)
+                    matching.append(highlight)
             except Exception as e:
                 # Log but don't fail - invalid xpoints shouldn't break the whole process
                 logger.warning(
