@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from src import models
 from src.exceptions import ServiceError
@@ -150,9 +150,20 @@ class ReadingSessionRepository:
     def get_by_book_id(
         self, book_id: int, user_id: int, limit: int = 30, offset: int = 0
     ) -> Sequence[models.ReadingSession]:
-        """Get reading sessions for a specific book, ordered by start_time descending."""
+        """Get reading sessions for a specific book, ordered by start_time descending.
+
+        Eagerly loads highlights with their flashcards and highlight_tags relationships.
+        """
         stmt = (
             select(models.ReadingSession)
+            .options(
+                selectinload(models.ReadingSession.highlights).selectinload(
+                    models.Highlight.flashcards
+                ),
+                selectinload(models.ReadingSession.highlights).selectinload(
+                    models.Highlight.highlight_tags
+                ),
+            )
             .where(
                 models.ReadingSession.book_id == book_id,
                 models.ReadingSession.user_id == user_id,
