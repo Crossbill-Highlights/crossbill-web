@@ -1,9 +1,11 @@
 """Service layer for reading session-related business logic."""
 
+from collections.abc import Sequence
+
 import structlog
 from sqlalchemy.orm import Session
 
-from src import repositories, schemas
+from src import models, repositories, schemas
 from src.config import get_settings
 from src.exceptions import BookNotFoundError, ReadingSessionNotFoundError, ValidationError
 from src.repositories.reading_session_repository import ReadingSessionRepository
@@ -15,7 +17,7 @@ from src.schemas.reading_session_schemas import (
 from src.services.ai.ai_service import get_ai_summary_from_text
 from src.services.book_service import BookService
 from src.services.epub_service import EpubService
-from src.utils import compute_reading_session_hash
+from src.utils import compute_reading_session_hash, is_xpoint_in_range
 
 logger = structlog.get_logger(__name__)
 
@@ -28,6 +30,7 @@ class ReadingSessionService:
         self.db = db
         self.book_repo = repositories.BookRepository(db)
         self.session_repo = ReadingSessionRepository(db)
+        self.highlight_repo = repositories.HighlightRepository(db)
         self.epub_service = EpubService(db)
 
     def upload_reading_sessions(
@@ -104,8 +107,20 @@ class ReadingSessionService:
                 )
             )
 
-        created_count = self.session_repo.bulk_create(user_id, to_save)
+        result = self.session_repo.bulk_create(user_id, to_save)
+        created_count = result.created_count
         skipped_duplicate_count = len(to_save) - created_count
+
+        # Link highlights to created reading sessions
+        if result.created_sessions:
+            linked_count = self._link_highlights_to_sessions(
+                book.id, user_id, result.created_sessions
+            )
+            logger.info(
+                "linked_highlights_to_sessions",
+                linked_count=linked_count,
+                session_count=len(result.created_sessions),
+            )
 
         self.db.commit()
 
@@ -141,6 +156,99 @@ class ReadingSessionService:
             return "No sessions to process"
 
         return ". ".join(parts) + "."
+
+    def _link_highlights_to_sessions(
+        self,
+        book_id: int,
+        user_id: int,
+        sessions: list[models.ReadingSession],
+    ) -> int:
+        """
+        Link highlights to reading sessions based on position overlap.
+
+        For each session, finds highlights whose position falls within the session's
+        reading range (either page-based for PDFs or xpoint-based for EPUBs).
+
+        Args:
+            book_id: ID of the book
+            user_id: ID of the user
+            sessions: List of newly created reading sessions
+
+        Returns:
+            Total number of highlight-session links created
+        """
+        # Get all highlights for this book that could be matched
+        highlights = self.highlight_repo.get_highlights_for_session_matching(book_id, user_id)
+
+        if not highlights:
+            return 0
+
+        total_links = 0
+
+        for session in sessions:
+            matching_highlights = self._find_matching_highlights(session, highlights)
+
+            if matching_highlights:
+                # Use the SQLAlchemy relationship to add links
+                # This will automatically insert into the join table
+                for highlight in matching_highlights:
+                    if highlight not in session.highlights:
+                        session.highlights.append(highlight)
+                        total_links += 1
+
+        self.db.flush()
+        return total_links
+
+    def _find_matching_highlights(
+        self,
+        session: models.ReadingSession,
+        highlights: Sequence[models.Highlight],
+    ) -> list[models.Highlight]:
+        """
+        Find highlights that fall within a reading session's range.
+
+        Matching is done based on:
+        - Page-based (PDFs): highlight.page BETWEEN session.start_page AND session.end_page
+        - XPoint-based (EPUBs): highlight.start_xpoint is between session's xpoint range
+
+        Args:
+            session: The reading session to match against
+            highlights: List of candidate highlights
+
+        Returns:
+            List of highlights that fall within the session's range
+        """
+        matching = []
+
+        # Determine if this is a page-based or xpoint-based session
+        is_page_based = session.start_page is not None and session.end_page is not None
+        is_xpoint_based = session.start_xpoint is not None and session.end_xpoint is not None
+
+        for highlight in highlights:
+            try:
+                if is_page_based and highlight.page is not None:
+                    # Page-based matching (PDF)
+                    if session.start_page <= highlight.page <= session.end_page:  # type: ignore[operator]
+                        matching.append(highlight)
+                elif is_xpoint_based and highlight.start_xpoint is not None:
+                    # XPoint-based matching (EPUB)
+                    if is_xpoint_in_range(
+                        highlight.start_xpoint,
+                        session.start_xpoint,
+                        session.end_xpoint,
+                    ):
+                        matching.append(highlight)
+            except Exception as e:
+                # Log but don't fail - invalid xpoints shouldn't break the whole process
+                logger.warning(
+                    "highlight_matching_error",
+                    highlight_id=highlight.id,
+                    session_id=session.id,
+                    error=str(e),
+                )
+                continue
+
+        return matching
 
     async def get_reading_sessions_for_book(
         self,
