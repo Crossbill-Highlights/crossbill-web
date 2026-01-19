@@ -250,7 +250,7 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
           />
         )}
         {activeTab === 'readingSessions' && (
-          <ReadingSessionsTab bookId={book.id} isDesktop={isDesktop} />
+          <ReadingSessionsTab book={book} isDesktop={isDesktop} />
         )}
       </FadeInOut>
     </PageContainer>
