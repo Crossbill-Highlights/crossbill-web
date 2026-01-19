@@ -43,7 +43,7 @@ class ReadingSession(ReadingSessionBase):
     id: int
     created_at: dt
     highlights: list[Highlight] = Field(
-        default_factory=list, description="Highlights that appear within this reading session"
+        ..., description="Highlights that appear within this reading session"
     )
 
     model_config = {"from_attributes": True}
