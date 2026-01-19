@@ -64,6 +64,32 @@ highlight_highlight_tags = Table(
 )
 
 
+# Association table for many-to-many relationship between reading_sessions and highlights
+reading_session_highlights = Table(
+    "reading_session_highlights",
+    Base.metadata,
+    Column(
+        "reading_session_id",
+        Integer,
+        ForeignKey("reading_sessions.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "highlight_id",
+        Integer,
+        ForeignKey("highlights.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    ),
+)
+
+
 class User(Base):
     """User model for multi-user support."""
 
@@ -253,6 +279,9 @@ class Highlight(Base):
     )
     flashcards: Mapped[list["Flashcard"]] = relationship(
         back_populates="highlight", cascade="all, delete-orphan"
+    )
+    reading_sessions: Mapped[list["ReadingSession"]] = relationship(
+        secondary=reading_session_highlights, back_populates="highlights", lazy="selectin"
     )
 
     # Unique constraint for deduplication: same content hash for same user
@@ -469,6 +498,9 @@ class ReadingSession(Base):
     # Relationships
     user: Mapped["User"] = relationship(back_populates="reading_sessions")
     book: Mapped["Book"] = relationship(back_populates="reading_sessions")
+    highlights: Mapped[list["Highlight"]] = relationship(
+        secondary=reading_session_highlights, back_populates="reading_sessions", lazy="selectin"
+    )
 
     # Unique constraint for deduplication: same content hash for same user
     __table_args__ = (
