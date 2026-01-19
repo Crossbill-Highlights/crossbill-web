@@ -1,28 +1,71 @@
-import { useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet } from '@/api/generated/books/books';
+import {
+  useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet,
+  useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet,
+} from '@/api/generated/books/books';
+import type { BookDetails } from '@/api/generated/model';
 import { Spinner } from '@/components/animations/Spinner.tsx';
 import { ThreeColumnLayout } from '@/components/layout/Layouts';
+import { HighlightViewModal } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/HighlightViewModal';
+import { useHighlightModal } from '@/pages/BookPage/HighlightsTab/hooks/useHighlightModal';
 import { Alert, Box, Pagination } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
+import { keyBy } from 'lodash';
+import { useMemo, useState } from 'react';
 import { ReadingSessionList } from './ReadingSessionList';
 
 const SESSIONS_PER_PAGE = 30;
 
 interface ReadingSessionsTabProps {
-  bookId: number;
+  book: BookDetails;
   isDesktop: boolean;
 }
 
-export const ReadingSessionsTab = ({ bookId, isDesktop }: ReadingSessionsTabProps) => {
+export const ReadingSessionsTab = ({ book, isDesktop }: ReadingSessionsTabProps) => {
   const { sessionPage } = useSearch({ from: '/book/$bookId' });
   const navigate = useNavigate({ from: '/book/$bookId' });
 
   const currentPage = sessionPage || 1;
   const offset = (currentPage - 1) * SESSIONS_PER_PAGE;
 
+  const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+
+  const bookmarksByHighlightId = useMemo(
+    () => keyBy(book.bookmarks, 'highlight_id'),
+    [book.bookmarks]
+  );
+
+  const { data: tagsResponse } = useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet(book.id);
+
   const { data, isLoading, isError } = useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet(
-    bookId,
+    book.id,
     { limit: SESSIONS_PER_PAGE, offset }
   );
+
+  const activeSession = useMemo(
+    () => data?.sessions.find((s) => s.id === activeSessionId) || null,
+    [data?.sessions, activeSessionId]
+  );
+
+  const sessionHighlights = useMemo(() => activeSession?.highlights || [], [activeSession]);
+
+  const {
+    openHighlightId,
+    currentHighlight,
+    currentHighlightIndex,
+    handleOpenHighlight,
+    handleCloseHighlight,
+    handleModalNavigate,
+  } = useHighlightModal({ allHighlights: sessionHighlights, isMobile: !isDesktop });
+
+  const handleOpenSessionHighlight = (sessionId: number, highlightId: number) => {
+    setActiveSessionId(sessionId);
+    handleOpenHighlight(highlightId);
+  };
+
+  const handleCloseModal = (lastViewedHighlightId?: number) => {
+    handleCloseHighlight(lastViewedHighlightId);
+    setActiveSessionId(null);
+  };
 
   const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
     navigate({
@@ -51,6 +94,8 @@ export const ReadingSessionsTab = ({ bookId, isDesktop }: ReadingSessionsTabProp
           <ReadingSessionList
             sessions={data.sessions}
             animationKey={`reading-sessions-${currentPage}`}
+            bookmarksByHighlightId={bookmarksByHighlightId}
+            onOpenHighlight={handleOpenSessionHighlight}
           />
           {totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -71,14 +116,46 @@ export const ReadingSessionsTab = ({ bookId, isDesktop }: ReadingSessionsTabProp
   );
 
   if (!isDesktop) {
-    return <Box sx={{ maxWidth: '800px', mx: 'auto' }}>{content}</Box>;
+    return (
+      <>
+        <Box sx={{ maxWidth: '800px', mx: 'auto' }}>{content}</Box>
+        {currentHighlight && (
+          <HighlightViewModal
+            highlight={currentHighlight}
+            bookId={book.id}
+            open={!!openHighlightId}
+            onClose={handleCloseModal}
+            availableTags={tagsResponse?.tags || []}
+            bookmarksByHighlightId={bookmarksByHighlightId}
+            allHighlights={sessionHighlights}
+            currentIndex={currentHighlightIndex}
+            onNavigate={handleModalNavigate}
+          />
+        )}
+      </>
+    );
   }
 
   return (
-    <ThreeColumnLayout>
-      <div></div>
-      {content}
-      <div></div>
-    </ThreeColumnLayout>
+    <>
+      <ThreeColumnLayout>
+        <div></div>
+        {content}
+        <div></div>
+      </ThreeColumnLayout>
+      {currentHighlight && (
+        <HighlightViewModal
+          highlight={currentHighlight}
+          bookId={book.id}
+          open={!!openHighlightId}
+          onClose={handleCloseModal}
+          availableTags={tagsResponse?.tags || []}
+          bookmarksByHighlightId={bookmarksByHighlightId}
+          allHighlights={sessionHighlights}
+          currentIndex={currentHighlightIndex}
+          onNavigate={handleModalNavigate}
+        />
+      )}
+    </>
   );
 };
