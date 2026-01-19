@@ -6,6 +6,7 @@ from typing import Self
 from pydantic import BaseModel, Field, model_validator
 
 from src.schemas.book_schemas import BookCreate
+from src.schemas.highlight_schemas import Highlight
 
 
 class ReadingSessionBase(BaseModel):
@@ -41,6 +42,9 @@ class ReadingSession(ReadingSessionBase):
 
     id: int
     created_at: dt
+    highlights: list[Highlight] = Field(
+        default_factory=list, description="Highlights that appear within this reading session"
+    )
 
     model_config = {"from_attributes": True}
 
