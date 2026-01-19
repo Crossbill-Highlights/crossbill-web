@@ -150,7 +150,7 @@ def compare_xpoints(xpoint1: str, xpoint2: str) -> int:
 
 
 def compare_parsed_xpoints(parsed1: ParsedXPoint, parsed2: ParsedXPoint) -> int:  # noqa: PLR0911
-    """Compare two ParsedXPoint objects for ordering.
+    """Compare two ParsedXPoint objects for deterministic ordering.
 
     Comparison order:
     1. doc_fragment_index (None treated as 1)
@@ -158,14 +158,20 @@ def compare_parsed_xpoints(parsed1: ParsedXPoint, parsed2: ParsedXPoint) -> int:
     3. text_node_index
     4. char_offset
 
+    Note: This comparison provides deterministic ordering but may not reflect
+    actual document reading order when comparing siblings with different tag names.
+    Sibling elements are compared alphabetically by tag name (e.g., "div" < "p"),
+    which may differ from their actual order in the DOM. This is acceptable for
+    most use cases where highlights are within similar structures.
+
     Args:
         parsed1: First parsed xpoint
         parsed2: Second parsed xpoint
 
     Returns:
-        -1 if parsed1 < parsed2 (parsed1 comes before parsed2)
+        -1 if parsed1 < parsed2 (parsed1 comes before parsed2 in comparison order)
          0 if parsed1 == parsed2 (same position)
-         1 if parsed1 > parsed2 (parsed1 comes after parsed2)
+         1 if parsed1 > parsed2 (parsed1 comes after parsed2 in comparison order)
     """
     # Compare doc_fragment_index (None treated as 1)
     frag1 = parsed1.doc_fragment_index if parsed1.doc_fragment_index is not None else 1
