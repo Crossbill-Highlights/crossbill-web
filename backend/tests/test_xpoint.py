@@ -3,7 +3,7 @@
 import pytest
 
 from src.exceptions import XPointParseError
-from src.utils import ParsedXPoint
+from src.utils import ParsedXPoint, compare_xpoints, is_xpoint_in_range
 
 
 class TestParsedXPoint:
@@ -163,3 +163,140 @@ class TestParsedXPoint:
         """XPoint with multiple dots (malformed offset) raises error."""
         with pytest.raises(XPointParseError):
             ParsedXPoint.parse("/body/div.5.10")
+
+
+class TestCompareXpoints:
+    """Test suite for xpoint comparison functions."""
+
+    def test_compare_identical_xpoints(self) -> None:
+        """Identical xpoints should be equal."""
+        xpoint = "/body/div[1]/p[5]/text()[1].42"
+        assert compare_xpoints(xpoint, xpoint) == 0
+
+    def test_compare_different_doc_fragments(self) -> None:
+        """Earlier doc fragment comes first."""
+        xpoint1 = "/body/DocFragment[1]/body/div/p/text().0"
+        xpoint2 = "/body/DocFragment[2]/body/div/p/text().0"
+        assert compare_xpoints(xpoint1, xpoint2) == -1
+        assert compare_xpoints(xpoint2, xpoint1) == 1
+
+    def test_compare_with_and_without_doc_fragment(self) -> None:
+        """No DocFragment treated as DocFragment[1]."""
+        xpoint1 = "/body/div/p/text().0"  # No DocFragment = 1
+        xpoint2 = "/body/DocFragment[1]/body/div/p/text().0"  # Explicit DocFragment[1]
+        assert compare_xpoints(xpoint1, xpoint2) == 0
+
+    def test_compare_different_element_indices(self) -> None:
+        """Earlier element index comes first."""
+        xpoint1 = "/body/div[1]/p[5]/text().0"
+        xpoint2 = "/body/div[1]/p[10]/text().0"
+        assert compare_xpoints(xpoint1, xpoint2) == -1
+        assert compare_xpoints(xpoint2, xpoint1) == 1
+
+    def test_compare_avoids_lexicographic_trap(self) -> None:
+        """Numeric comparison, not lexicographic (p[9] < p[10])."""
+        xpoint1 = "/body/div/p[9]/text().0"
+        xpoint2 = "/body/div/p[10]/text().0"
+        # Lexicographically "p[9]" > "p[10]", but numerically p[9] < p[10]
+        assert compare_xpoints(xpoint1, xpoint2) == -1
+
+    def test_compare_different_text_node_indices(self) -> None:
+        """Earlier text node index comes first."""
+        xpoint1 = "/body/div/p/text()[1].0"
+        xpoint2 = "/body/div/p/text()[2].0"
+        assert compare_xpoints(xpoint1, xpoint2) == -1
+        assert compare_xpoints(xpoint2, xpoint1) == 1
+
+    def test_compare_different_char_offsets(self) -> None:
+        """Earlier char offset comes first."""
+        xpoint1 = "/body/div/p/text().10"
+        xpoint2 = "/body/div/p/text().100"
+        assert compare_xpoints(xpoint1, xpoint2) == -1
+        assert compare_xpoints(xpoint2, xpoint1) == 1
+
+    def test_compare_different_xpath_depth(self) -> None:
+        """Shallower xpath comes first when prefix matches."""
+        xpoint1 = "/body/div/p/text().0"
+        xpoint2 = "/body/div/p/span/text().0"
+        assert compare_xpoints(xpoint1, xpoint2) == -1
+        assert compare_xpoints(xpoint2, xpoint1) == 1
+
+    def test_compare_element_boundaries(self) -> None:
+        """Element boundary xpoints compare correctly."""
+        xpoint1 = "/body/DocFragment[14]/body/a"  # Offset 0 default
+        xpoint2 = "/body/DocFragment[14]/body/a/text().10"
+        assert compare_xpoints(xpoint1, xpoint2) == -1
+
+    def test_compare_complex_xpoints(self) -> None:
+        """Complex xpoints with multiple differing components."""
+        xpoint1 = "/body/DocFragment[2]/body/div[1]/section[1]/p[5]/text()[1].42"
+        xpoint2 = "/body/DocFragment[2]/body/div[1]/section[1]/p[5]/text()[1].100"
+        assert compare_xpoints(xpoint1, xpoint2) == -1
+
+        xpoint3 = "/body/DocFragment[2]/body/div[1]/section[2]/p[1]/text().0"
+        assert compare_xpoints(xpoint1, xpoint3) == -1  # section[1] < section[2]
+
+
+class TestIsXpointInRange:
+    """Test suite for xpoint range checking."""
+
+    def test_xpoint_within_range_inclusive(self) -> None:
+        """Xpoint within range returns True (inclusive)."""
+        start = "/body/div/p[1]/text().0"
+        end = "/body/div/p[10]/text().100"
+        xpoint = "/body/div/p[5]/text().50"
+        assert is_xpoint_in_range(xpoint, start, end) is True
+
+    def test_xpoint_at_start_inclusive(self) -> None:
+        """Xpoint at start of range returns True (inclusive)."""
+        start = "/body/div/p[1]/text().0"
+        end = "/body/div/p[10]/text().100"
+        assert is_xpoint_in_range(start, start, end) is True
+
+    def test_xpoint_at_end_inclusive(self) -> None:
+        """Xpoint at end of range returns True (inclusive)."""
+        start = "/body/div/p[1]/text().0"
+        end = "/body/div/p[10]/text().100"
+        assert is_xpoint_in_range(end, start, end) is True
+
+    def test_xpoint_before_range(self) -> None:
+        """Xpoint before range returns False."""
+        start = "/body/div/p[5]/text().0"
+        end = "/body/div/p[10]/text().100"
+        xpoint = "/body/div/p[1]/text().0"
+        assert is_xpoint_in_range(xpoint, start, end) is False
+
+    def test_xpoint_after_range(self) -> None:
+        """Xpoint after range returns False."""
+        start = "/body/div/p[1]/text().0"
+        end = "/body/div/p[10]/text().100"
+        xpoint = "/body/div/p[15]/text().0"
+        assert is_xpoint_in_range(xpoint, start, end) is False
+
+    def test_xpoint_at_start_exclusive(self) -> None:
+        """Xpoint at start of range returns False (exclusive)."""
+        start = "/body/div/p[1]/text().0"
+        end = "/body/div/p[10]/text().100"
+        assert is_xpoint_in_range(start, start, end, inclusive=False) is False
+
+    def test_xpoint_at_end_exclusive(self) -> None:
+        """Xpoint at end of range returns False (exclusive)."""
+        start = "/body/div/p[1]/text().0"
+        end = "/body/div/p[10]/text().100"
+        assert is_xpoint_in_range(end, start, end, inclusive=False) is False
+
+    def test_xpoint_within_range_exclusive(self) -> None:
+        """Xpoint within range returns True (exclusive)."""
+        start = "/body/div/p[1]/text().0"
+        end = "/body/div/p[10]/text().100"
+        xpoint = "/body/div/p[5]/text().50"
+        assert is_xpoint_in_range(xpoint, start, end, inclusive=False) is True
+
+    def test_range_with_doc_fragments(self) -> None:
+        """Range check works with DocFragments."""
+        start = "/body/DocFragment[2]/body/div/p[1]/text().0"
+        end = "/body/DocFragment[5]/body/div/p[10]/text().100"
+        xpoint_in = "/body/DocFragment[3]/body/div/p[5]/text().50"
+        xpoint_out = "/body/DocFragment[1]/body/div/p[5]/text().50"
+        assert is_xpoint_in_range(xpoint_in, start, end) is True
+        assert is_xpoint_in_range(xpoint_out, start, end) is False
