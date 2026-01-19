@@ -143,9 +143,7 @@ class ReadingSessionRepository:
         else:
             created_sessions = []
 
-        return BulkCreateResult(
-            created_count=created_count, created_sessions=created_sessions
-        )
+        return BulkCreateResult(created_count=created_count, created_sessions=created_sessions)
 
     def get_by_book_id(
         self, book_id: int, user_id: int, limit: int = 30, offset: int = 0

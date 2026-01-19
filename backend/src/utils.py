@@ -154,7 +154,7 @@ def compare_xpoints(xpoint1: str, xpoint2: str) -> int:
     return compare_parsed_xpoints(parsed1, parsed2)
 
 
-def compare_parsed_xpoints(parsed1: ParsedXPoint, parsed2: ParsedXPoint) -> int:
+def compare_parsed_xpoints(parsed1: ParsedXPoint, parsed2: ParsedXPoint) -> int:  # noqa: PLR0911
     """Compare two ParsedXPoint objects for ordering.
 
     Comparison order:
@@ -184,7 +184,7 @@ def compare_parsed_xpoints(parsed1: ParsedXPoint, parsed2: ParsedXPoint) -> int:
     segments2 = _parse_xpath_segments(parsed2.xpath)
 
     # Compare segment by segment
-    for seg1, seg2 in zip(segments1, segments2):
+    for seg1, seg2 in zip(segments1, segments2, strict=False):
         name1, idx1 = seg1
         name2, idx2 = seg2
 
@@ -233,8 +233,7 @@ def is_xpoint_in_range(
 
     if inclusive:
         return cmp_start >= 0 and cmp_end <= 0
-    else:
-        return cmp_start > 0 and cmp_end < 0
+    return cmp_start > 0 and cmp_end < 0
 
 
 def compute_highlight_hash(text: str, book_title: str, book_author: str | None) -> str:
