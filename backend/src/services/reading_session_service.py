@@ -65,6 +65,21 @@ class ReadingSessionService:
             book_title=book_data.title,
         )
 
+        # Log session details for debugging
+        for idx, session in enumerate(sessions):
+            duration = (session.end_time - session.start_time).total_seconds()
+            logger.debug(
+                "received_session",
+                index=idx,
+                duration_seconds=duration,
+                start_time=session.start_time.isoformat(),
+                end_time=session.end_time.isoformat(),
+                start_xpoint=session.start_xpoint,
+                end_xpoint=session.end_xpoint,
+                start_page=session.start_page,
+                end_page=session.end_page,
+            )
+
         # Get or create book using BookService (handles client_book_id lookup with content_hash fallback)
         book_service = BookService(self.db)
         book, _ = book_service.create_book(book_data, user_id)
@@ -72,16 +87,31 @@ class ReadingSessionService:
         to_save: list[ReadingSessionBase] = []
 
         # Filter away sessions where start and end points are the same
+        initial_count = len(sessions)
         sessions = [
             s for s in sessions if s.start_xpoint != s.end_xpoint or s.start_page != s.end_page
         ]
+        filtered_same_points = initial_count - len(sessions)
+        if filtered_same_points > 0:
+            logger.debug(
+                "filtered_sessions_with_same_start_end",
+                filtered_count=filtered_same_points,
+            )
 
         # Filter out sessions shorter than minimum duration
         settings = get_settings()
         min_duration = settings.MINIMUM_READING_SESSION_DURATION
+        before_duration_filter = len(sessions)
         sessions = [
             s for s in sessions if (s.end_time - s.start_time).total_seconds() >= min_duration
         ]
+        filtered_too_short = before_duration_filter - len(sessions)
+        if filtered_too_short > 0:
+            logger.debug(
+                "filtered_sessions_below_minimum_duration",
+                filtered_count=filtered_too_short,
+                min_duration_seconds=min_duration,
+            )
 
         for session in sessions:
             session_hash = compute_reading_session_hash(
@@ -107,9 +137,20 @@ class ReadingSessionService:
                 )
             )
 
+        logger.debug(
+            "calling_bulk_create",
+            sessions_to_save=len(to_save),
+        )
+
         result = self.session_repo.bulk_create(user_id, to_save)
         created_count = result.created_count
         skipped_duplicate_count = len(to_save) - created_count
+
+        logger.debug(
+            "bulk_create_result",
+            created_count=created_count,
+            skipped_duplicate_count=skipped_duplicate_count,
+        )
 
         # Link highlights to created reading sessions
         if result.created_sessions:
