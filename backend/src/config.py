@@ -107,7 +107,7 @@ def configure_logging(environment: str = "development") -> None:
     logging.basicConfig(
         format="%(message)s",
         stream=sys.stdout,
-        level=logging.INFO,
+        level=logging.DEBUG if environment == "development" else logging.INFO,
     )
 
     # Configure structlog
