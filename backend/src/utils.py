@@ -12,6 +12,9 @@ from src.exceptions import XPointParseError
 if TYPE_CHECKING:
     from typing import Self
 
+# Regex pattern for parsing XPath segments like "div", "div[1]", "p[15]"
+_XPATH_SEGMENT_PATTERN = re.compile(r"([a-zA-Z][a-zA-Z0-9_-]*)(?:\[(\d+)\])?$")
+
 
 # Regex pattern for parsing xpoint strings
 # Format: /body/DocFragment[N]/body/.../text()[N].offset
@@ -93,6 +96,145 @@ class ParsedXPoint:
             text_node_index=text_node_index,
             char_offset=char_offset,
         )
+
+
+def _parse_xpath_segments(xpath: str) -> list[tuple[str, int]]:
+    """Parse an XPath string into a list of (element_name, index) tuples.
+
+    Args:
+        xpath: XPath string like "/body/div[2]/section[1]/article/p[15]"
+
+    Returns:
+        List of tuples like [("body", 1), ("div", 2), ("section", 1), ("article", 1), ("p", 15)]
+        Elements without explicit index default to 1.
+    """
+    # Split by "/" and filter out empty strings
+    parts = [p for p in xpath.split("/") if p]
+    segments: list[tuple[str, int]] = []
+
+    for part in parts:
+        match = _XPATH_SEGMENT_PATTERN.match(part)
+        if match:
+            element_name = match.group(1)
+            index = int(match.group(2)) if match.group(2) else 1
+            segments.append((element_name, index))
+        else:
+            # Fallback: treat as element with index 1
+            segments.append((part, 1))
+
+    return segments
+
+
+def compare_xpoints(xpoint1: str, xpoint2: str) -> int:
+    """Compare two xpoint strings for ordering.
+
+    This function parses both xpoints and compares them component by component
+    to determine their relative order in the document.
+
+    Args:
+        xpoint1: First xpoint string
+        xpoint2: Second xpoint string
+
+    Returns:
+        -1 if xpoint1 < xpoint2 (xpoint1 comes before xpoint2)
+         0 if xpoint1 == xpoint2 (same position)
+         1 if xpoint1 > xpoint2 (xpoint1 comes after xpoint2)
+
+    Raises:
+        XPointParseError: If either xpoint string is invalid
+    """
+    parsed1 = ParsedXPoint.parse(xpoint1)
+    parsed2 = ParsedXPoint.parse(xpoint2)
+
+    return compare_parsed_xpoints(parsed1, parsed2)
+
+
+def compare_parsed_xpoints(parsed1: ParsedXPoint, parsed2: ParsedXPoint) -> int:  # noqa: PLR0911
+    """Compare two ParsedXPoint objects for deterministic ordering.
+
+    Comparison order:
+    1. doc_fragment_index (None treated as 1)
+    2. XPath segments (element name, then index for each segment)
+    3. text_node_index
+    4. char_offset
+
+    Note: This comparison provides deterministic ordering but may not reflect
+    actual document reading order when comparing siblings with different tag names.
+    Sibling elements are compared alphabetically by tag name (e.g., "div" < "p"),
+    which may differ from their actual order in the DOM. This is acceptable for
+    most use cases where highlights are within similar structures.
+
+    Args:
+        parsed1: First parsed xpoint
+        parsed2: Second parsed xpoint
+
+    Returns:
+        -1 if parsed1 < parsed2 (parsed1 comes before parsed2 in comparison order)
+         0 if parsed1 == parsed2 (same position)
+         1 if parsed1 > parsed2 (parsed1 comes after parsed2 in comparison order)
+    """
+    # Compare doc_fragment_index (None treated as 1)
+    frag1 = parsed1.doc_fragment_index if parsed1.doc_fragment_index is not None else 1
+    frag2 = parsed2.doc_fragment_index if parsed2.doc_fragment_index is not None else 1
+
+    if frag1 != frag2:
+        return -1 if frag1 < frag2 else 1
+
+    # Compare XPath segments
+    segments1 = _parse_xpath_segments(parsed1.xpath)
+    segments2 = _parse_xpath_segments(parsed2.xpath)
+
+    # Compare segment by segment
+    for seg1, seg2 in zip(segments1, segments2, strict=False):
+        name1, idx1 = seg1
+        name2, idx2 = seg2
+
+        # First compare element names (alphabetically)
+        if name1 != name2:
+            return -1 if name1 < name2 else 1
+
+        # Then compare indices
+        if idx1 != idx2:
+            return -1 if idx1 < idx2 else 1
+
+    # If one xpath has more segments, the shorter one comes first
+    if len(segments1) != len(segments2):
+        return -1 if len(segments1) < len(segments2) else 1
+
+    # Compare text_node_index
+    if parsed1.text_node_index != parsed2.text_node_index:
+        return -1 if parsed1.text_node_index < parsed2.text_node_index else 1
+
+    # Compare char_offset
+    if parsed1.char_offset != parsed2.char_offset:
+        return -1 if parsed1.char_offset < parsed2.char_offset else 1
+
+    return 0
+
+
+def is_xpoint_in_range(
+    xpoint: str, range_start: str, range_end: str, *, inclusive: bool = True
+) -> bool:
+    """Check if an xpoint falls within a given range.
+
+    Args:
+        xpoint: The xpoint to check
+        range_start: The start of the range
+        range_end: The end of the range
+        inclusive: If True, range includes start and end points (default True)
+
+    Returns:
+        True if xpoint is within the range, False otherwise
+
+    Raises:
+        XPointParseError: If any xpoint string is invalid
+    """
+    cmp_start = compare_xpoints(xpoint, range_start)
+    cmp_end = compare_xpoints(xpoint, range_end)
+
+    if inclusive:
+        return cmp_start >= 0 and cmp_end <= 0
+    return cmp_start > 0 and cmp_end < 0
 
 
 def compute_highlight_hash(text: str, book_title: str, book_author: str | None) -> str:

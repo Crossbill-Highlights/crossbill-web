@@ -4,6 +4,7 @@
  * crossbill API
  * OpenAPI spec version: 0.1.0
  */
+import type { Highlight } from './highlight';
 
 /**
  * Schema for ReadingSession response.
@@ -30,4 +31,6 @@ export interface ReadingSession {
   ai_summary?: string | null;
   id: number;
   created_at: string;
+  /** Highlights that appear within this reading session */
+  highlights: Highlight[];
 }
