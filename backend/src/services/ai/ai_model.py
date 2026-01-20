@@ -1,8 +1,10 @@
 from functools import lru_cache
 
 from pydantic_ai.models.anthropic import AnthropicModel
+from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.models.openai import Model, OpenAIChatModel
 from pydantic_ai.providers.anthropic import AnthropicProvider
+from pydantic_ai.providers.google import GoogleProvider
 from pydantic_ai.providers.ollama import OllamaProvider
 from pydantic_ai.providers.openai import OpenAIProvider
 
@@ -43,6 +45,14 @@ def _get_model() -> Model:
             provider=AnthropicProvider(api_key=settings.ANTHROPIC_API_KEY),
         )
 
+    if settings.AI_PROVIDER == "google":
+        # These assertions are guaranteed by the settings validator
+        assert settings.AI_MODEL_NAME is not None
+        assert settings.GEMINI_API_KEY is not None
+        return GoogleModel(
+            model_name=settings.AI_MODEL_NAME,
+            provider=GoogleProvider(api_key=settings.GEMINI_API_KEY),
+        )
     raise Exception("No such AI model provider available")
 
 
