@@ -50,13 +50,15 @@ class Settings(BaseSettings):
     MINIMUM_READING_SESSION_DURATION: int = 120
 
     # AI configuration
-    AI_PROVIDER: Literal["ollama"] | Literal["openai"] | None = None
+    AI_PROVIDER: Literal["ollama"] | Literal["openai"] | Literal["anthropic"] | None = None
     AI_MODEL_NAME: str | None = None
 
     # ollama
     OPENAI_BASE_URL: str | None = None
     # openai
     OPENAI_API_KEY: str | None = None
+    # anthropic
+    ANTHROPIC_API_KEY: str | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -73,20 +75,19 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_ai_provider_config(self) -> "Settings":
         """Validate AI provider configuration."""
-        if self.AI_PROVIDER == "ollama":
-            if not self.OPENAI_BASE_URL:
-                msg = "OPENAI_BASE_URL is required when AI_PROVIDER is 'ollama'"
-                raise ValueError(msg)
-            if not self.AI_MODEL_NAME:
-                msg = "AI_MODEL_NAME is required when AI_PROVIDER is 'ollama'"
-                raise ValueError(msg)
-        if self.AI_PROVIDER == "openai":
-            if not self.OPENAI_API_KEY:
-                msg = "OPENAI_API_KEY is required when AI_PROVIDER is 'openai'"
-                raise ValueError(msg)
-            if not self.AI_MODEL_NAME:
-                msg = "AI_MODEL_NAME is required when AI_PROVIDER is 'openai'"
-                raise ValueError(msg)
+        if self.AI_PROVIDER is not None and self.AI_MODEL_NAME is None:
+            msg = "AI_MODEL_NAME is required when AI_PROVIDER is 'openai'"
+            raise ValueError(msg)
+
+        if self.AI_PROVIDER == "ollama" and not self.OPENAI_BASE_URL:
+            msg = "OPENAI_BASE_URL is required when AI_PROVIDER is 'ollama'"
+            raise ValueError(msg)
+        if self.AI_PROVIDER == "openai" and not self.OPENAI_API_KEY:
+            msg = "OPENAI_API_KEY is required when AI_PROVIDER is 'openai'"
+            raise ValueError(msg)
+        if self.AI_PROVIDER == "anthropic" and not self.ANTHROPIC_API_KEY:
+            msg = "ANTHROPIC_API_KEY is required when AI_PROVIDER is 'anthropic'"
+            raise ValueError(msg)
         return self
 
 
