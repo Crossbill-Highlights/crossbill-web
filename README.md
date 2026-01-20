@@ -8,7 +8,7 @@
 [![CI](https://github.com/Tumetsu/Crossbill/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Tumetsu/Crossbill/actions/workflows/ci.yml)
 [![Docker Image Version](https://img.shields.io/docker/v/tumetsu/crossbill?sort=semver)](https://hub.docker.com/r/tumetsu/crossbill)
 
-A self-hosted web application for syncing, managing, creating flash cards and viewing book highlights from KOReader.
+A self-hosted reading companion web app for managing highlights, creating flash cards and improve your reading with e-readers using Koreader.
 
 ## Overview
 
