@@ -1,6 +1,8 @@
 from functools import lru_cache
 
+from pydantic_ai.models.anthropic import AnthropicModel
 from pydantic_ai.models.openai import Model, OpenAIChatModel
+from pydantic_ai.providers.anthropic import AnthropicProvider
 from pydantic_ai.providers.ollama import OllamaProvider
 from pydantic_ai.providers.openai import OpenAIProvider
 
@@ -30,6 +32,15 @@ def _get_model() -> Model:
         return OpenAIChatModel(
             model_name=settings.AI_MODEL_NAME,
             provider=OpenAIProvider(api_key=settings.OPENAI_API_KEY),
+        )
+
+    if settings.AI_PROVIDER == "anthropic":
+        # These assertions are guaranteed by the settings validator
+        assert settings.AI_MODEL_NAME is not None
+        assert settings.ANTHROPIC_API_KEY is not None
+        return AnthropicModel(
+            model_name=settings.AI_MODEL_NAME,
+            provider=AnthropicProvider(api_key=settings.ANTHROPIC_API_KEY),
         )
 
     raise Exception("No such AI model provider available")

@@ -16,13 +16,16 @@ if TYPE_CHECKING:
 # Regex pattern for parsing xpoint strings
 # Format: /body/DocFragment[N]/body/.../text()[N].offset
 # Or: /body/DocFragment[N]/body/... (element boundary, defaults to offset 0)
+# Or: /body/DocFragment[N]/body/.../img.offset (for non-text elements like images)
 # DocFragment, text node index, and text()/offset are optional
 _XPOINT_PATTERN = re.compile(
     r"^"
     r"(?:/body/DocFragment\[(\d+)\])?"  # Optional DocFragment[N] - group 1
     r"(/body(?:/[^/.\s()]+)*)"  # XPath: /body followed by /element segments (no dots/parens)
-    r"(?:/text\(\)(?:\[(\d+)\])?"  # Optional: text() with optional [N] - group 3
-    r"\.(\d+))?"  # Optional: .offset - group 4
+    r"(?:"  # Optional offset section
+    r"(?:/text\(\)(?:\[(\d+)\])?)?"  # Optional: text() with optional [N] - group 3
+    r"\.(\d+)"  # .offset - group 4
+    r")?"
     r"$"
 )
 
@@ -35,6 +38,7 @@ class ParsedXPoint:
     Formats:
     - /body/DocFragment[12]/body/div/p[88]/text().223 (full format with offset)
     - /body/DocFragment[14]/body/a (element boundary, offset defaults to 0)
+    - /body/DocFragment[20]/body/div/p[1]/img.0 (non-text element like image with offset)
 
     Attributes:
         doc_fragment_index: 1-based index into EPUB spine (None if not present)
@@ -57,6 +61,7 @@ class ParsedXPoint:
         - /body/div[1]/p[5]/text()[1].0
         - /body/div/p/text().42
         - /body/DocFragment[14]/body/a (element boundary, defaults to offset 0)
+        - /body/DocFragment[20]/body/div/p[1]/img.0 (non-text element with offset)
 
         Args:
             xpoint: The xpoint string to parse
