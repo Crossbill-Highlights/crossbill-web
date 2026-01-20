@@ -50,7 +50,9 @@ class Settings(BaseSettings):
     MINIMUM_READING_SESSION_DURATION: int = 120
 
     # AI configuration
-    AI_PROVIDER: Literal["ollama"] | Literal["openai"] | Literal["anthropic"] | None = None
+    AI_PROVIDER: (
+        Literal["ollama"] | Literal["openai"] | Literal["anthropic"] | Literal["google"] | None
+    ) = None
     AI_MODEL_NAME: str | None = None
 
     # ollama
@@ -59,6 +61,8 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str | None = None
     # anthropic
     ANTHROPIC_API_KEY: str | None = None
+    # google
+    GEMINI_API_KEY: str | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -87,6 +91,9 @@ class Settings(BaseSettings):
             raise ValueError(msg)
         if self.AI_PROVIDER == "anthropic" and not self.ANTHROPIC_API_KEY:
             msg = "ANTHROPIC_API_KEY is required when AI_PROVIDER is 'anthropic'"
+            raise ValueError(msg)
+        if self.AI_PROVIDER == "google" and not self.GEMINI_API_KEY:
+            msg = "GEMINI_API_KEY is required when AI_PROVIDER is 'google'"
             raise ValueError(msg)
         return self
 
