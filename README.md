@@ -48,8 +48,6 @@ Each component has its own installation instructions for development:
 
 - **Backend**: See [backend/README.md](backend/README.md)
 - **Frontend**: See [frontend/README.md](frontend/README.md)
-- **KOReader Plugin**: See [clients/koreader-plugin/crossbill.koplugin/README.md](clients/koreader-plugin/crossbill.koplugin/README.md)
-- **Obsidian Plugin**: See [clients/obsidian-plugin/README.md](clients/obsidian-plugin/README.md)
 
 API documentation can be found from URL `<backend host>/api/v1/docs` when running the backend server.
 
