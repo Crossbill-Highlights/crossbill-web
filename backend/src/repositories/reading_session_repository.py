@@ -2,16 +2,25 @@
 
 import logging
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from src import models
 from src.exceptions import ServiceError
 from src.schemas.reading_session_schemas import ReadingSessionBase
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class BulkCreateResult:
+    """Result of bulk create operation for reading sessions."""
+
+    created_count: int
+    created_sessions: list[models.ReadingSession]
 
 
 class ReadingSessionRepository:
@@ -25,7 +34,7 @@ class ReadingSessionRepository:
         self,
         user_id: int,
         sessions: list[ReadingSessionBase],
-    ) -> int:
+    ) -> BulkCreateResult:
         """
         Bulk create reading sessions with deduplication.
 
@@ -34,10 +43,13 @@ class ReadingSessionRepository:
             sessions: List of ReadingSessionBase instances.
 
         Returns:
-            int: Number of sessions actually created (excludes duplicates)
+            BulkCreateResult with created count and created session objects
         """
         if not sessions:
-            return 0
+            return BulkCreateResult(created_count=0, created_sessions=[])
+
+        # Map content_hash -> session data for later retrieval
+        session_by_hash = {s.content_hash: s for s in sessions}
 
         values = [
             {
@@ -68,7 +80,25 @@ class ReadingSessionRepository:
                 .returning(models.ReadingSession.id)
             )
             result = self.db.execute(stmt)
-            return len(result.fetchall())
+            created_ids = [row[0] for row in result.fetchall()]
+
+            # Fetch the created sessions
+            if created_ids:
+                created_sessions = list(
+                    self.db.execute(
+                        select(models.ReadingSession).where(
+                            models.ReadingSession.id.in_(created_ids)
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+            else:
+                created_sessions = []
+
+            return BulkCreateResult(
+                created_count=len(created_ids), created_sessions=created_sessions
+            )
 
         # Sqlite - count before and after to determine how many were inserted
         count_before = (
@@ -92,14 +122,46 @@ class ReadingSessionRepository:
             or 0
         )
 
-        return count_after - count_before
+        created_count = count_after - count_before
+
+        # For SQLite, fetch created sessions by content_hash
+        if created_count > 0:
+            content_hashes = list(session_by_hash.keys())
+            created_sessions = list(
+                self.db.execute(
+                    select(models.ReadingSession).where(
+                        models.ReadingSession.user_id == user_id,
+                        models.ReadingSession.content_hash.in_(content_hashes),
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            # Filter to only include sessions that were actually created (not pre-existing)
+            # We can't be 100% sure which were new, so we return all matching ones
+            # The caller will handle deduplication when linking highlights
+        else:
+            created_sessions = []
+
+        return BulkCreateResult(created_count=created_count, created_sessions=created_sessions)
 
     def get_by_book_id(
         self, book_id: int, user_id: int, limit: int = 30, offset: int = 0
     ) -> Sequence[models.ReadingSession]:
-        """Get reading sessions for a specific book, ordered by start_time descending."""
+        """Get reading sessions for a specific book, ordered by start_time descending.
+
+        Eagerly loads highlights with their flashcards and highlight_tags relationships.
+        """
         stmt = (
             select(models.ReadingSession)
+            .options(
+                selectinload(models.ReadingSession.highlights).selectinload(
+                    models.Highlight.flashcards
+                ),
+                selectinload(models.ReadingSession.highlights).selectinload(
+                    models.Highlight.highlight_tags
+                ),
+            )
             .where(
                 models.ReadingSession.book_id == book_id,
                 models.ReadingSession.user_id == user_id,

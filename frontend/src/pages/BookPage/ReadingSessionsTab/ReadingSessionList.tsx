@@ -1,4 +1,4 @@
-import type { ReadingSession } from '@/api/generated/model';
+import type { Bookmark, ReadingSession } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut';
 import { Box, Typography } from '@mui/material';
 import { ReadingSessionCard } from './ReadingSessionCard';
@@ -7,12 +7,16 @@ interface ReadingSessionListProps {
   sessions: ReadingSession[];
   emptyMessage?: string;
   animationKey?: string;
+  bookmarksByHighlightId: Record<number, Bookmark>;
+  onOpenHighlight: (sessionId: number, highlightId: number) => void;
 }
 
 export const ReadingSessionList = ({
   sessions,
   emptyMessage = 'No reading sessions recorded yet.',
   animationKey = 'reading-sessions',
+  bookmarksByHighlightId,
+  onOpenHighlight,
 }: ReadingSessionListProps) => {
   return (
     <FadeInOut ekey={animationKey}>
@@ -27,7 +31,12 @@ export const ReadingSessionList = ({
           aria-label="Reading sessions"
         >
           {sessions.map((session) => (
-            <ReadingSessionCard key={session.id} session={session} />
+            <ReadingSessionCard
+              key={session.id}
+              session={session}
+              bookmarksByHighlightId={bookmarksByHighlightId}
+              onOpenHighlight={onOpenHighlight}
+            />
           ))}
         </Box>
       )}

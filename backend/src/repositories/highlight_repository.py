@@ -343,3 +343,21 @@ class HighlightRepository:
 
         logger.info(f"Updated note for highlight_id={highlight_id}")
         return highlight
+
+    def get_by_book(self, book_id: int, user_id: int) -> Sequence[models.Highlight]:
+        """
+        Get all non-deleted highlights for a book.
+
+        Args:
+            book_id: ID of the book
+            user_id: ID of the user
+
+        Returns:
+            Sequence of highlights
+        """
+        stmt = select(models.Highlight).where(
+            models.Highlight.book_id == book_id,
+            models.Highlight.user_id == user_id,
+            models.Highlight.deleted_at.is_(None),
+        )
+        return self.db.execute(stmt).scalars().all()

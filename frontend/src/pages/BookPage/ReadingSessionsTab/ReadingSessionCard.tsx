@@ -1,11 +1,12 @@
-import type { ReadingSession } from '@/api/generated/model';
+import type { Bookmark, ReadingSession } from '@/api/generated/model';
 import { useGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet } from '@/api/generated/reading-sessions/reading-sessions';
 import { MetadataRow } from '@/components/cards/MetadataRow.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { useSettings } from '@/context/SettingsContext';
 import { useSnackbar } from '@/context/SnackbarContext';
+import { HighlightCard } from '@/pages/BookPage/HighlightsTab/HighlightCard';
 import { formatDate, formatDuration, formatTime } from '@/utils/date';
-import { Box, Button } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import type { AxiosError } from 'axios';
 import { useEffect } from 'react';
 import { AISummary } from './AISummary';
@@ -50,6 +51,8 @@ const SessionMetadata = ({ startTime, endTime, startPage, endPage }: SessionMeta
 interface ReadingSessionCardProps {
   session: ReadingSession;
   component?: React.ElementType;
+  bookmarksByHighlightId: Record<number, Bookmark>;
+  onOpenHighlight: (sessionId: number, highlightId: number) => void;
 }
 
 interface SummaryPlaceholderProps {
@@ -69,7 +72,11 @@ const SummaryPlaceholder = ({ onGenerate, isLoading }: SummaryPlaceholderProps) 
   </Box>
 );
 
-export const ReadingSessionCard = ({ session }: ReadingSessionCardProps) => {
+export const ReadingSessionCard = ({
+  session,
+  bookmarksByHighlightId,
+  onOpenHighlight,
+}: ReadingSessionCardProps) => {
   const { showSnackbar } = useSnackbar();
 
   const { data, isLoading, error, refetch } =
@@ -95,6 +102,12 @@ export const ReadingSessionCard = ({ session }: ReadingSessionCardProps) => {
   const hasSummary = Boolean(summary);
   const aiEnabled = !!useSettings().settings?.ai_features;
 
+  const handleHighlightClick = (highlightId: number) => {
+    onOpenHighlight(session.id, highlightId);
+  };
+
+  const hasHighlights = session.highlights.length > 0;
+
   return (
     <li key={session.id}>
       <Box
@@ -116,11 +129,58 @@ export const ReadingSessionCard = ({ session }: ReadingSessionCardProps) => {
 
         <AIFeature>
           {hasSummary ? (
-            <AISummary summary={summary} />
+            <>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  mb: 1,
+                  mt: 3,
+                  color: 'text.secondary',
+                  fontWeight: 600,
+                }}
+              >
+                Summary
+              </Typography>
+              <AISummary summary={summary} />
+            </>
           ) : (
             <SummaryPlaceholder onGenerate={() => refetch()} isLoading={isLoading} />
           )}
         </AIFeature>
+
+        {hasHighlights && (
+          <Box sx={{ mt: 3 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                mb: 1,
+                color: 'text.secondary',
+                fontWeight: 600,
+              }}
+            >
+              Highlights ({session.highlights.length})
+            </Typography>
+            <Box
+              component="ul"
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                listStyle: 'none',
+                p: 0,
+                m: 0,
+              }}
+            >
+              {session.highlights.map((highlight) => (
+                <HighlightCard
+                  key={highlight.id}
+                  highlight={highlight}
+                  bookmark={bookmarksByHighlightId[highlight.id]}
+                  onOpenModal={handleHighlightClick}
+                />
+              ))}
+            </Box>
+          </Box>
+        )}
       </Box>
     </li>
   );
