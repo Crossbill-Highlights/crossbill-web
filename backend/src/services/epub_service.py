@@ -23,6 +23,46 @@ from src.utils import ParsedXPoint
 
 logger = logging.getLogger(__name__)
 
+
+def _flatten_toc(toc_items: list, current_number: int = 1) -> list[tuple[str, int]]:
+    """
+    Flatten hierarchical TOC structure into a list of (title, chapter_number) tuples.
+
+    EPUB TOC can be nested. This function flattens the structure while
+    preserving reading order via sequential chapter numbers.
+
+    Args:
+        toc_items: List of TOC items from ebooklib (can be Link objects or tuples)
+        current_number: Starting chapter number (used for recursion)
+
+    Returns:
+        List of (chapter_title, chapter_number) tuples in reading order
+    """
+    chapters = []
+
+    for item in toc_items:
+        # TOC items can be Link objects or tuples (Section, [children])
+        if isinstance(item, tuple):
+            # Nested section: (Link, [children])
+            section, children = item[0], item[1] if len(item) > 1 else []
+
+            # Add the section itself
+            if hasattr(section, "title"):
+                chapters.append((section.title, current_number))
+                current_number += 1
+
+            # Recursively process children
+            child_chapters = _flatten_toc(children, current_number)
+            chapters.extend(child_chapters)
+            current_number += len(child_chapters)
+
+        elif hasattr(item, "title"):
+            # Simple Link object
+            chapters.append((item.title, current_number))
+            current_number += 1
+
+    return chapters
+
 # Directory for epub files (parallel to book-covers)
 EPUBS_DIR = Path(__file__).parent.parent.parent / "book-files" / "epubs"
 
@@ -95,6 +135,7 @@ class EpubService:
         """Initialize service with database session."""
         self.db = db
         self.book_repo = repositories.BookRepository(db)
+        self.chapter_repo = repositories.ChapterRepository(db)
 
     def upload_epub(self, book_id: int, epub_file: UploadFile, user_id: int) -> tuple[str, str]:
         """
@@ -170,6 +211,11 @@ class EpubService:
         # Update book's epub_path field in database (store just the filename)
         book.epub_path = epub_filename
         self.db.flush()
+
+        # Parse TOC and save chapters to database
+        toc_chapters = self._parse_toc_from_epub(epub_path)
+        if toc_chapters:
+            self._save_chapters_from_toc(book_id, user_id, toc_chapters)
 
         return epub_filename, str(epub_path)
 
@@ -259,6 +305,96 @@ class EpubService:
         except Exception as e:
             logger.error(f"Failed to delete epub file {epub_path}: {e!s}")
             return False
+
+    def _parse_toc_from_epub(self, epub_path: Path) -> list[tuple[str, int]]:
+        """
+        Parse table of contents from an EPUB file.
+
+        Extracts chapter titles and their reading order from the EPUB's TOC.
+        Handles both NCX (EPUB 2) and Navigation Document (EPUB 3) formats.
+
+        Args:
+            epub_path: Path to the EPUB file
+
+        Returns:
+            List of (chapter_title, chapter_number) tuples in reading order.
+            Returns empty list if EPUB has no TOC or TOC is invalid.
+        """
+        try:
+            book = epub.read_epub(str(epub_path))
+
+            # Get TOC from epub (supports both NCX and nav.xhtml)
+            toc = book.toc
+
+            if not toc:
+                logger.info(f"EPUB at {epub_path} has no table of contents")
+                return []
+
+            # Flatten hierarchical TOC structure
+            chapters = _flatten_toc(toc)
+
+            logger.info(f"Parsed {len(chapters)} chapters from EPUB TOC at {epub_path}")
+            return chapters
+
+        except Exception as e:
+            logger.error(f"Failed to parse TOC from EPUB at {epub_path}: {e!s}")
+            return []
+
+    def _save_chapters_from_toc(
+        self, book_id: int, user_id: int, chapters: list[tuple[str, int]]
+    ) -> int:
+        """
+        Save chapters from TOC to the database.
+
+        Creates new chapters that don't exist. Updates chapter_number for
+        existing chapters if it differs from the TOC.
+
+        Args:
+            book_id: ID of the book
+            user_id: ID of the user (for ownership verification)
+            chapters: List of (chapter_title, chapter_number) tuples
+
+        Returns:
+            Number of chapters created (not including updates)
+        """
+        if not chapters:
+            return 0
+
+        # Get existing chapters for this book
+        chapter_names = {name for name, _ in chapters}
+        existing_chapters = self.chapter_repo.get_by_names(book_id, chapter_names, user_id)
+
+        # Identify chapters to create and chapters to update
+        chapters_to_create = []
+        chapters_to_update = []
+
+        for name, chapter_number in chapters:
+            if name in existing_chapters:
+                # Chapter exists - check if chapter_number needs updating
+                existing_chapter = existing_chapters[name]
+                if existing_chapter.chapter_number != chapter_number:
+                    existing_chapter.chapter_number = chapter_number
+                    chapters_to_update.append(existing_chapter)
+            else:
+                # New chapter - add to creation list
+                chapters_to_create.append((name, chapter_number))
+
+        # Bulk create new chapters
+        created_count = 0
+        if chapters_to_create:
+            self.chapter_repo.bulk_create(book_id, user_id, chapters_to_create)
+            created_count = len(chapters_to_create)
+
+        # Flush updates
+        if chapters_to_update:
+            self.db.flush()
+            logger.info(f"Updated chapter_number for {len(chapters_to_update)} existing chapters")
+
+        logger.info(
+            f"Saved TOC for book {book_id}: created {created_count} chapters, "
+            f"updated {len(chapters_to_update)} chapters"
+        )
+        return created_count
 
     def extract_text_between_xpoints(
         self,
