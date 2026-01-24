@@ -11,32 +11,37 @@ import logging
 import re
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 from ebooklib import epub
 from fastapi import HTTPException, UploadFile
 from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
 from sqlalchemy.orm import Session
 
-from src import repositories
+from src import models, repositories
 from src.exceptions import BookNotFoundError, XPointNavigationError
 from src.utils import ParsedXPoint
 
 logger = logging.getLogger(__name__)
 
 
-def _flatten_toc(toc_items: list, current_number: int = 1) -> list[tuple[str, int]]:
+def _extract_toc_hierarchy(
+    toc_items: list[Any], current_number: int = 1, parent_name: str | None = None
+) -> list[tuple[str, int, str | None]]:
     """
-    Flatten hierarchical TOC structure into a list of (title, chapter_number) tuples.
+    Extract hierarchical TOC structure into a list preserving parent relationships.
 
-    EPUB TOC can be nested. This function flattens the structure while
-    preserving reading order via sequential chapter numbers.
+    EPUB TOC can be nested. This function preserves the hierarchy while
+    assigning sequential chapter numbers for reading order.
 
     Args:
         toc_items: List of TOC items from ebooklib (can be Link objects or tuples)
         current_number: Starting chapter number (used for recursion)
+        parent_name: Name of the parent chapter (None for root-level chapters)
 
     Returns:
-        List of (chapter_title, chapter_number) tuples in reading order
+        List of (chapter_title, chapter_number, parent_name) tuples in reading order.
+        parent_name is None for root-level chapters.
     """
     chapters = []
 
@@ -48,20 +53,24 @@ def _flatten_toc(toc_items: list, current_number: int = 1) -> list[tuple[str, in
 
             # Add the section itself
             if hasattr(section, "title"):
-                chapters.append((section.title, current_number))
+                chapters.append((section.title, current_number, parent_name))
+                section_name = section.title
                 current_number += 1
+            else:
+                section_name = parent_name
 
-            # Recursively process children
-            child_chapters = _flatten_toc(children, current_number)
+            # Recursively process children with this section as parent
+            child_chapters = _extract_toc_hierarchy(children, current_number, section_name)
             chapters.extend(child_chapters)
             current_number += len(child_chapters)
 
         elif hasattr(item, "title"):
             # Simple Link object
-            chapters.append((item.title, current_number))
+            chapters.append((item.title, current_number, parent_name))
             current_number += 1
 
     return chapters
+
 
 # Directory for epub files (parallel to book-covers)
 EPUBS_DIR = Path(__file__).parent.parent.parent / "book-files" / "epubs"
@@ -306,18 +315,19 @@ class EpubService:
             logger.error(f"Failed to delete epub file {epub_path}: {e!s}")
             return False
 
-    def _parse_toc_from_epub(self, epub_path: Path) -> list[tuple[str, int]]:
+    def _parse_toc_from_epub(self, epub_path: Path) -> list[tuple[str, int, str | None]]:
         """
         Parse table of contents from an EPUB file.
 
-        Extracts chapter titles and their reading order from the EPUB's TOC.
+        Extracts chapter titles, reading order, and hierarchy from the EPUB's TOC.
         Handles both NCX (EPUB 2) and Navigation Document (EPUB 3) formats.
 
         Args:
             epub_path: Path to the EPUB file
 
         Returns:
-            List of (chapter_title, chapter_number) tuples in reading order.
+            List of (chapter_title, chapter_number, parent_name) tuples in reading order.
+            parent_name is None for root-level chapters.
             Returns empty list if EPUB has no TOC or TOC is invalid.
         """
         try:
@@ -330,8 +340,8 @@ class EpubService:
                 logger.info(f"EPUB at {epub_path} has no table of contents")
                 return []
 
-            # Flatten hierarchical TOC structure
-            chapters = _flatten_toc(toc)
+            # Extract hierarchical TOC structure
+            chapters = _extract_toc_hierarchy(toc)
 
             logger.info(f"Parsed {len(chapters)} chapters from EPUB TOC at {epub_path}")
             return chapters
@@ -341,18 +351,18 @@ class EpubService:
             return []
 
     def _save_chapters_from_toc(
-        self, book_id: int, user_id: int, chapters: list[tuple[str, int]]
+        self, book_id: int, user_id: int, chapters: list[tuple[str, int, str | None]]
     ) -> int:
         """
-        Save chapters from TOC to the database.
+        Save chapters from TOC to the database, preserving hierarchical structure.
 
-        Creates new chapters that don't exist. Updates chapter_number for
-        existing chapters if it differs from the TOC.
+        Creates new chapters that don't exist. Updates chapter_number and parent_id
+        for existing chapters if they differ from the TOC.
 
         Args:
             book_id: ID of the book
             user_id: ID of the user (for ownership verification)
-            chapters: List of (chapter_title, chapter_number) tuples
+            chapters: List of (chapter_title, chapter_number, parent_name) tuples
 
         Returns:
             Number of chapters created (not including updates)
@@ -361,34 +371,56 @@ class EpubService:
             return 0
 
         # Get existing chapters for this book
-        chapter_names = {name for name, _ in chapters}
+        chapter_names = {name for name, _, _ in chapters}
         existing_chapters = self.chapter_repo.get_by_names(book_id, chapter_names, user_id)
 
-        # Identify chapters to create and chapters to update
-        chapters_to_create = []
-        chapters_to_update = []
+        # Track created/existing chapters by name for parent lookups
+        chapter_by_name: dict[str, models.Chapter] = existing_chapters.copy()
 
-        for name, chapter_number in chapters:
+        chapters_to_update = []
+        created_count = 0
+
+        # Process chapters in order (parents come before children due to sequential numbering)
+        for name, chapter_number, parent_name in chapters:
+            # Determine parent_id
+            parent_id = None
+            if parent_name and parent_name in chapter_by_name:
+                parent_id = chapter_by_name[parent_name].id
+
             if name in existing_chapters:
-                # Chapter exists - check if chapter_number needs updating
+                # Chapter exists - check if chapter_number or parent_id needs updating
                 existing_chapter = existing_chapters[name]
+                needs_update = False
+
                 if existing_chapter.chapter_number != chapter_number:
                     existing_chapter.chapter_number = chapter_number
+                    needs_update = True
+
+                if existing_chapter.parent_id != parent_id:
+                    existing_chapter.parent_id = parent_id
+                    needs_update = True
+
+                if needs_update:
                     chapters_to_update.append(existing_chapter)
             else:
-                # New chapter - add to creation list
-                chapters_to_create.append((name, chapter_number))
+                # New chapter - create it
+                chapter = models.Chapter(
+                    book_id=book_id,
+                    name=name,
+                    chapter_number=chapter_number,
+                    parent_id=parent_id,
+                )
+                self.db.add(chapter)
+                self.db.flush()  # Flush to get the ID for potential child chapters
+                self.db.refresh(chapter)
 
-        # Bulk create new chapters
-        created_count = 0
-        if chapters_to_create:
-            self.chapter_repo.bulk_create(book_id, user_id, chapters_to_create)
-            created_count = len(chapters_to_create)
+                chapter_by_name[name] = chapter
+                created_count += 1
 
         # Flush updates
         if chapters_to_update:
             self.db.flush()
-            logger.info(f"Updated chapter_number for {len(chapters_to_update)} existing chapters")
+            logger.info(f"Updated {len(chapters_to_update)} existing chapters")
 
         logger.info(
             f"Saved TOC for book {book_id}: created {created_count} chapters, "
