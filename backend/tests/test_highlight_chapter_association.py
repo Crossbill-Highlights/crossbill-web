@@ -51,11 +51,7 @@ class TestHighlightChapterAssociation:
 
         # Upload highlights with chapter_number specified
         payload = {
-            "book": {
-                "client_book_id": "test-client-duplicate-chapters",
-                "title": "Test Book with Duplicate Chapters",
-                "author": "Test Author",
-            },
+            "client_book_id": "test-client-duplicate-chapters",
             "highlights": [
                 {
                     "text": "Highlight in Part I exercises",
@@ -148,11 +144,7 @@ class TestHighlightChapterAssociation:
 
         # Upload highlight without chapter_number
         payload = {
-            "book": {
-                "client_book_id": "test-client-missing-number",
-                "title": "Test Book for Missing Chapter Number",
-                "author": "Test Author",
-            },
+            "client_book_id": "test-client-missing-number",
             "highlights": [
                 {
                     "text": "Highlight without chapter_number",
@@ -211,11 +203,7 @@ class TestHighlightChapterAssociation:
 
         # Upload highlights with chapter_numbers
         payload = {
-            "book": {
-                "client_book_id": "test-client-all-numbers",
-                "title": "Test Book with Chapter Numbers",
-                "author": "Test Author",
-            },
+            "client_book_id": "test-client-all-numbers",
             "highlights": [
                 {
                     "text": "Highlight in Introduction",
@@ -296,11 +284,7 @@ class TestHighlightChapterAssociation:
 
         # Upload highlights - some with chapter_number, some without
         payload = {
-            "book": {
-                "client_book_id": "test-client-mixed",
-                "title": "Test Book Mixed Chapter Numbers",
-                "author": "Test Author",
-            },
+            "client_book_id": "test-client-mixed",
             "highlights": [
                 {
                     "text": "Highlight with chapter_number",

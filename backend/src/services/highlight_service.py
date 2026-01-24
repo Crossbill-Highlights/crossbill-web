@@ -46,23 +46,21 @@ class HighlightService:
         """
         logger.info(
             "processing_highlight_upload",
-            book_title=request.book.title,
-            book_author=request.book.author,
+            book_client_id=request.client_book_id,
             highlight_count=len(request.highlights),
         )
 
         # Step 1: Look up existing book by client_book_id
         # Book must be created via POST /ereader/books before uploading highlights
-        book = self.book_repo.find_by_client_book_id(request.book.client_book_id, user_id)
+        book = self.book_repo.find_by_client_book_id(request.client_book_id, user_id)
 
         if not book:
             logger.error(
                 "book_not_found_for_highlight_upload",
-                client_book_id=request.book.client_book_id,
-                book_title=request.book.title,
+                client_book_id=request.client_book_id,
             )
             raise BookNotFoundError(
-                message=f"Book with client_book_id '{request.book.client_book_id}' not found. "
+                message=f"Book with client_book_id '{request.client_book_id}' not found. "
                 "Please create the book first via POST /ereader/books."
             )
 
@@ -118,8 +116,8 @@ class HighlightService:
             # Compute content hash for deduplication
             content_hash = compute_highlight_hash(
                 text=highlight_data.text,
-                book_title=request.book.title,
-                book_author=request.book.author,
+                book_title=book.title,
+                book_author=book.author,
             )
 
             highlights_with_chapters.append((chapter_id, content_hash, highlight_data))

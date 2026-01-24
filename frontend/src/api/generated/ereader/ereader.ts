@@ -23,6 +23,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
   BodyUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost,
   BodyUploadBookEpubApiV1EreaderBooksClientBookIdEpubPost,
+  BookCreate,
   CoverUploadResponse,
   EpubUploadResponse,
   EreaderBookMetadata,
@@ -31,6 +32,97 @@ import type {
 
 import { axiosInstance } from '../../axios-instance';
 
+/**
+ * Create or get a book by client_book_id.
+
+This endpoint creates a new book if it doesn't exist, or returns the existing
+book's metadata if it does. Used by KOReader to ensure a book exists before
+uploading highlights, covers, or EPUB files.
+
+Args:
+    book_data: Book creation data (same format as highlight upload)
+    db: Database session
+    current_user: Authenticated user
+
+Returns:
+    EreaderBookMetadata with book_id, bookname, author, has_cover, has_epub
+ * @summary Create Book
+ */
+export const createBookApiV1EreaderBooksPost = (bookCreate: BookCreate, signal?: AbortSignal) => {
+  return axiosInstance<EreaderBookMetadata>({
+    url: `/api/v1/ereader/books`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: bookCreate,
+    signal,
+  });
+};
+
+export const getCreateBookApiV1EreaderBooksPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBookApiV1EreaderBooksPost>>,
+    TError,
+    { data: BookCreate },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBookApiV1EreaderBooksPost>>,
+  TError,
+  { data: BookCreate },
+  TContext
+> => {
+  const mutationKey = ['createBookApiV1EreaderBooksPost'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBookApiV1EreaderBooksPost>>,
+    { data: BookCreate }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createBookApiV1EreaderBooksPost(data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBookApiV1EreaderBooksPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBookApiV1EreaderBooksPost>>
+>;
+export type CreateBookApiV1EreaderBooksPostMutationBody = BookCreate;
+export type CreateBookApiV1EreaderBooksPostMutationError = HTTPValidationError;
+
+/**
+ * @summary Create Book
+ */
+export const useCreateBookApiV1EreaderBooksPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createBookApiV1EreaderBooksPost>>,
+      TError,
+      { data: BookCreate },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof createBookApiV1EreaderBooksPost>>,
+  TError,
+  { data: BookCreate },
+  TContext
+> => {
+  return useMutation(getCreateBookApiV1EreaderBooksPostMutationOptions(options), queryClient);
+};
 /**
  * Get basic book metadata by client_book_id for ereader operations.
 
