@@ -4,15 +4,18 @@
  * crossbill API
  * OpenAPI spec version: 0.1.0
  */
-import type { BookCreate } from './bookCreate';
 import type { HighlightCreate } from './highlightCreate';
 
 /**
  * Schema for uploading highlights from KOReader.
  */
 export interface HighlightUploadRequest {
-  /** Book metadata */
-  book: BookCreate;
+  /**
+   * Client-provided stable book identifier for deduplication
+   * @minLength 1
+   * @maxLength 255
+   */
+  client_book_id: string;
   /** List of highlights to upload */
   highlights: HighlightCreate[];
 }

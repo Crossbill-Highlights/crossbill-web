@@ -18,6 +18,54 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ereader", tags=["ereader"])
 
 
+@router.post(
+    "/books",
+    response_model=schemas.EreaderBookMetadata,
+    status_code=status.HTTP_200_OK,
+)
+def create_book(
+    book_data: schemas.BookCreate,
+    db: DatabaseSession,
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> schemas.EreaderBookMetadata:
+    """
+    Create or get a book by client_book_id.
+
+    This endpoint creates a new book if it doesn't exist, or returns the existing
+    book's metadata if it does. Used by KOReader to ensure a book exists before
+    uploading highlights, covers, or EPUB files.
+
+    Args:
+        book_data: Book creation data (same format as highlight upload)
+        db: Database session
+        current_user: Authenticated user
+
+    Returns:
+        EreaderBookMetadata with book_id, bookname, author, has_cover, has_epub
+    """
+    try:
+        service = BookService(db)
+        service.create_book(book_data, current_user.id)
+
+        # Commit the book creation
+        db.commit()
+
+        # Return metadata in the same format as GET /ereader/books/{client_book_id}
+        return service.get_book_metadata_for_ereader(book_data.client_book_id, current_user.id)
+    except CrossbillError:
+        # Re-raise custom exceptions - handled by exception handlers
+        raise
+    except Exception as e:
+        logger.error(
+            f"Failed to create book: {e!s}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred. Please try again later.",
+        ) from e
+
+
 @router.get(
     "/books/{client_book_id}",
     response_model=schemas.EreaderBookMetadata,

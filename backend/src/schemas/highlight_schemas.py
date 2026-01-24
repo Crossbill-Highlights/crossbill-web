@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from src.schemas.book_schemas import BookCreate, TagInBook
+from src.schemas.book_schemas import TagInBook
 from src.schemas.bookmark_schemas import Bookmark
 from src.schemas.flashcard_schemas import Flashcard
 from src.schemas.highlight_tag_schemas import (
@@ -104,7 +104,12 @@ class Highlight(HighlightResponseBase):
 class HighlightUploadRequest(BaseModel):
     """Schema for uploading highlights from KOReader."""
 
-    book: BookCreate = Field(..., description="Book metadata")
+    client_book_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Client-provided stable book identifier for deduplication",
+    )
     highlights: list[HighlightCreate] = Field(..., description="List of highlights to upload")
 
 

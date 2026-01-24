@@ -16,6 +16,7 @@ class Chapter(ChapterBase):
 
     id: int
     book_id: int
+    parent_id: int | None = Field(None, description="Parent chapter ID for hierarchical structure")
     chapter_number: int | None = Field(None, description="Chapter order number from TOC")
     created_at: datetime
     updated_at: datetime

@@ -45,6 +45,9 @@ reportMissingTypeStubs = false
 reportUnknownMemberType = false
 reportUnknownArgumentType = false
 reportUnknownVariableType = false
+exclude = [
+    "tests/test_epub_toc_chapters.py"
+]
 
 [tool.ruff]
 line-length = 100
@@ -86,6 +89,10 @@ ignore = [
 "tests/**/*.py" = [
     "S101",    # Use of assert in tests
     "PLR2004", # Magic value in comparison
+]
+"tests/test_epub_toc_chapters.py" = [
+    "ANN001",  # Missing type annotation for function argument
+    "ANN201",  # Missing return type annotation for public function
 ]
 
 [tool.ruff.format]

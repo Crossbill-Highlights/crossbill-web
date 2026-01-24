@@ -11,17 +11,66 @@ import logging
 import re
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 from ebooklib import epub
 from fastapi import HTTPException, UploadFile
 from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
 from sqlalchemy.orm import Session
 
-from src import repositories
+from src import models, repositories
 from src.exceptions import BookNotFoundError, XPointNavigationError
 from src.utils import ParsedXPoint
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_toc_hierarchy(
+    toc_items: list[Any], current_number: int = 1, parent_name: str | None = None
+) -> list[tuple[str, int, str | None]]:
+    """
+    Extract hierarchical TOC structure into a list preserving parent relationships.
+
+    EPUB TOC can be nested. This function preserves the hierarchy while
+    assigning sequential chapter numbers for reading order.
+
+    Args:
+        toc_items: List of TOC items from ebooklib (can be Link objects or tuples)
+        current_number: Starting chapter number (used for recursion)
+        parent_name: Name of the parent chapter (None for root-level chapters)
+
+    Returns:
+        List of (chapter_title, chapter_number, parent_name) tuples in reading order.
+        parent_name is None for root-level chapters.
+    """
+    chapters = []
+
+    for item in toc_items:
+        # TOC items can be Link objects or tuples (Section, [children])
+        if isinstance(item, tuple):
+            # Nested section: (Link, [children])
+            section, children = item[0], item[1] if len(item) > 1 else []
+
+            # Add the section itself
+            if hasattr(section, "title"):
+                chapters.append((section.title, current_number, parent_name))
+                section_name = section.title
+                current_number += 1
+            else:
+                section_name = parent_name
+
+            # Recursively process children with this section as parent
+            child_chapters = _extract_toc_hierarchy(children, current_number, section_name)
+            chapters.extend(child_chapters)
+            current_number += len(child_chapters)
+
+        elif hasattr(item, "title"):
+            # Simple Link object
+            chapters.append((item.title, current_number, parent_name))
+            current_number += 1
+
+    return chapters
+
 
 # Directory for epub files (parallel to book-covers)
 EPUBS_DIR = Path(__file__).parent.parent.parent / "book-files" / "epubs"
@@ -95,6 +144,7 @@ class EpubService:
         """Initialize service with database session."""
         self.db = db
         self.book_repo = repositories.BookRepository(db)
+        self.chapter_repo = repositories.ChapterRepository(db)
 
     def upload_epub(self, book_id: int, epub_file: UploadFile, user_id: int) -> tuple[str, str]:
         """
@@ -170,6 +220,11 @@ class EpubService:
         # Update book's epub_path field in database (store just the filename)
         book.epub_path = epub_filename
         self.db.flush()
+
+        # Parse TOC and save chapters to database
+        toc_chapters = self._parse_toc_from_epub(epub_path)
+        if toc_chapters:
+            self._save_chapters_from_toc(book_id, user_id, toc_chapters)
 
         return epub_filename, str(epub_path)
 
@@ -259,6 +314,140 @@ class EpubService:
         except Exception as e:
             logger.error(f"Failed to delete epub file {epub_path}: {e!s}")
             return False
+
+    def _parse_toc_from_epub(self, epub_path: Path) -> list[tuple[str, int, str | None]]:
+        """
+        Parse table of contents from an EPUB file.
+
+        Extracts chapter titles, reading order, and hierarchy from the EPUB's TOC.
+        Handles both NCX (EPUB 2) and Navigation Document (EPUB 3) formats.
+
+        Args:
+            epub_path: Path to the EPUB file
+
+        Returns:
+            List of (chapter_title, chapter_number, parent_name) tuples in reading order.
+            parent_name is None for root-level chapters.
+            Returns empty list if EPUB has no TOC or TOC is invalid.
+        """
+        try:
+            book = epub.read_epub(str(epub_path))
+
+            # Get TOC from epub (supports both NCX and nav.xhtml)
+            toc = book.toc
+
+            if not toc:
+                logger.info(f"EPUB at {epub_path} has no table of contents")
+                return []
+
+            # Extract hierarchical TOC structure
+            chapters = _extract_toc_hierarchy(toc)
+
+            logger.info(f"Parsed {len(chapters)} chapters from EPUB TOC at {epub_path}")
+            return chapters
+
+        except Exception as e:
+            logger.error(f"Failed to parse TOC from EPUB at {epub_path}: {e!s}")
+            return []
+
+    def _save_chapters_from_toc(
+        self, book_id: int, user_id: int, chapters: list[tuple[str, int, str | None]]
+    ) -> int:
+        """
+        Save chapters from TOC to the database, preserving hierarchical structure.
+
+        Creates new chapters that don't exist. Updates chapter_number and parent_id
+        for existing chapters if they differ from the TOC.
+
+        Args:
+            book_id: ID of the book
+            user_id: ID of the user (for ownership verification)
+            chapters: List of (chapter_title, chapter_number, parent_name) tuples
+
+        Returns:
+            Number of chapters created (not including updates)
+        """
+        if not chapters:
+            return 0
+
+        # Get existing chapters for this book
+        chapter_names = {name for name, _, _ in chapters}
+        existing_chapters = self.chapter_repo.get_by_names(book_id, chapter_names, user_id)
+
+        # Track created/existing chapters by name for parent lookups
+        chapter_by_name: dict[str, models.Chapter] = existing_chapters.copy()
+
+        # Track chapters by (name, parent_id) to detect true duplicates
+        # (same name under same parent = duplicate, different parent = separate chapter)
+        chapter_by_name_and_parent: dict[tuple[str, int | None], models.Chapter] = {
+            (ch.name, ch.parent_id): ch for ch in existing_chapters.values()
+        }
+
+        chapters_to_update = []
+        created_count = 0
+
+        # Process chapters in order (parents come before children due to sequential numbering)
+        for name, chapter_number, parent_name in chapters:
+            # Determine parent_id
+            parent_id = None
+            if parent_name and parent_name in chapter_by_name:
+                parent_id = chapter_by_name[parent_name].id
+
+            # Check if we already have a chapter with this (name, parent_id) combination
+            chapter_key = (name, parent_id)
+            if chapter_key in chapter_by_name_and_parent:
+                # This exact chapter (same name AND parent) already exists
+                existing_chapter = chapter_by_name_and_parent[chapter_key]
+
+                # Check if it needs updating
+                if name in existing_chapters:
+                    needs_update = False
+
+                    if existing_chapter.chapter_number != chapter_number:
+                        existing_chapter.chapter_number = chapter_number
+                        needs_update = True
+
+                    if existing_chapter.parent_id != parent_id:
+                        existing_chapter.parent_id = parent_id
+                        needs_update = True
+
+                    if needs_update:
+                        chapters_to_update.append(existing_chapter)
+                else:
+                    # True duplicate in ToC (same name and parent, already created in this loop)
+                    logger.warning(
+                        f"Duplicate chapter '{name}' in ToC with same parent (parent_id={parent_id}). "
+                        f"Skipping duplicate."
+                    )
+            else:
+                # New chapter - create it
+                chapter = models.Chapter(
+                    book_id=book_id,
+                    name=name,
+                    chapter_number=chapter_number,
+                    parent_id=parent_id,
+                )
+                self.db.add(chapter)
+                self.db.flush()  # Flush to get the ID for potential child chapters
+                self.db.refresh(chapter)
+
+                # Add to both tracking dictionaries
+                # chapter_by_name: for parent lookups (may overwrite if duplicate names exist)
+                # chapter_by_name_and_parent: for duplicate detection (unique key)
+                chapter_by_name[name] = chapter
+                chapter_by_name_and_parent[chapter_key] = chapter
+                created_count += 1
+
+        # Flush updates
+        if chapters_to_update:
+            self.db.flush()
+            logger.info(f"Updated {len(chapters_to_update)} existing chapters")
+
+        logger.info(
+            f"Saved TOC for book {book_id}: created {created_count} chapters, "
+            f"updated {len(chapters_to_update)} chapters"
+        )
+        return created_count
 
     def extract_text_between_xpoints(
         self,
