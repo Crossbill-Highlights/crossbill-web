@@ -47,7 +47,7 @@ class TestSimpleChapterCreation:
         """Test creating a single chapter from ToC."""
         chapters: list[tuple[str, int, str | None]] = [("Introduction", 1, None)]
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
@@ -68,7 +68,7 @@ class TestSimpleChapterCreation:
             ("Chapter 3", 3, None),
         ]
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
@@ -89,7 +89,7 @@ class TestSimpleChapterCreation:
         """Test handling empty chapters list."""
         chapters: list[tuple[str, int, str | None]] = []
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
@@ -111,7 +111,7 @@ class TestHierarchicalChapters:
             ("Chapter 2", 3, "Part I"),
         ]
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
@@ -149,7 +149,7 @@ class TestHierarchicalChapters:
             ("Chapter 2", 5, "Part I"),
         ]
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
@@ -192,7 +192,7 @@ class TestDuplicateChapterNames:
             ("Harjoitukset", 4, "Part II"),  # Exercises for Part II
         ]
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
@@ -236,7 +236,7 @@ class TestDuplicateChapterNames:
             ("Preface", 2, None),  # Duplicate at root level
         ]
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
@@ -268,7 +268,7 @@ class TestDuplicateChapterNames:
             ("Chapter 1", 3, "Part I"),  # True duplicate - same name and parent
         ]
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
@@ -309,7 +309,7 @@ class TestUpdatingExistingChapters:
         # Re-upload with different chapter number
         chapters: list[tuple[str, int, str | None]] = [("Chapter 1", 5, None)]
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
@@ -351,7 +351,7 @@ class TestUpdatingExistingChapters:
             ("Chapter 1", 5, "Part I"),  # Same parent, different number
         ]
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
@@ -383,7 +383,7 @@ class TestUpdatingExistingChapters:
             ("Chapter 3", 7, None),  # New - create
         ]
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
@@ -436,7 +436,7 @@ class TestEdgeCases:
             ),  # Should have parent_id = Introduction under Part II
         ]
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
@@ -478,7 +478,7 @@ class TestEdgeCases:
             ("Part I", 2, None),  # Parent comes after
         ]
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
@@ -504,7 +504,7 @@ class TestEdgeCases:
             ("Chapter 1", 1, "Part I"),  # References parent that never appears
         ]
 
-        created_count = epub_service._save_chapters_from_toc(
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
             book_id=test_book_for_toc.id, user_id=1, chapters=chapters
         )
 
