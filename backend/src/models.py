@@ -229,8 +229,9 @@ class Chapter(Base):
         "Chapter", back_populates="parent", cascade="all, delete-orphan"
     )
 
-    # Unique constraint: chapters are unique within a book
-    __table_args__ = (UniqueConstraint("book_id", "name", name="uq_chapter_per_book"),)
+    # Unique constraint: chapter names must be unique within same parent level
+    # (allows "Harjoitukset" under Part I and "Harjoitukset" under Part II)
+    __table_args__ = (UniqueConstraint("book_id", "parent_id", "name", name="uq_chapter_per_book"),)
 
     def __repr__(self) -> str:
         """String representation of Chapter."""

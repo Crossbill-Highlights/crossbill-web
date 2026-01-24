@@ -377,6 +377,12 @@ class EpubService:
         # Track created/existing chapters by name for parent lookups
         chapter_by_name: dict[str, models.Chapter] = existing_chapters.copy()
 
+        # Track chapters by (name, parent_id) to detect true duplicates
+        # (same name under same parent = duplicate, different parent = separate chapter)
+        chapter_by_name_and_parent: dict[tuple[str, int | None], models.Chapter] = {
+            (ch.name, ch.parent_id): ch for ch in existing_chapters.values()
+        }
+
         chapters_to_update = []
         created_count = 0
 
@@ -387,21 +393,32 @@ class EpubService:
             if parent_name and parent_name in chapter_by_name:
                 parent_id = chapter_by_name[parent_name].id
 
-            if name in existing_chapters:
-                # Chapter exists - check if chapter_number or parent_id needs updating
-                existing_chapter = existing_chapters[name]
-                needs_update = False
+            # Check if we already have a chapter with this (name, parent_id) combination
+            chapter_key = (name, parent_id)
+            if chapter_key in chapter_by_name_and_parent:
+                # This exact chapter (same name AND parent) already exists
+                existing_chapter = chapter_by_name_and_parent[chapter_key]
 
-                if existing_chapter.chapter_number != chapter_number:
-                    existing_chapter.chapter_number = chapter_number
-                    needs_update = True
+                # Check if it needs updating
+                if name in existing_chapters:
+                    needs_update = False
 
-                if existing_chapter.parent_id != parent_id:
-                    existing_chapter.parent_id = parent_id
-                    needs_update = True
+                    if existing_chapter.chapter_number != chapter_number:
+                        existing_chapter.chapter_number = chapter_number
+                        needs_update = True
 
-                if needs_update:
-                    chapters_to_update.append(existing_chapter)
+                    if existing_chapter.parent_id != parent_id:
+                        existing_chapter.parent_id = parent_id
+                        needs_update = True
+
+                    if needs_update:
+                        chapters_to_update.append(existing_chapter)
+                else:
+                    # True duplicate in ToC (same name and parent, already created in this loop)
+                    logger.warning(
+                        f"Duplicate chapter '{name}' in ToC with same parent (parent_id={parent_id}). "
+                        f"Skipping duplicate."
+                    )
             else:
                 # New chapter - create it
                 chapter = models.Chapter(
@@ -414,7 +431,11 @@ class EpubService:
                 self.db.flush()  # Flush to get the ID for potential child chapters
                 self.db.refresh(chapter)
 
+                # Add to both tracking dictionaries
+                # chapter_by_name: for parent lookups (may overwrite if duplicate names exist)
+                # chapter_by_name_and_parent: for duplicate detection (unique key)
                 chapter_by_name[name] = chapter
+                chapter_by_name_and_parent[chapter_key] = chapter
                 created_count += 1
 
         # Flush updates
