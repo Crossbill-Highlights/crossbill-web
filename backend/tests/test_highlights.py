@@ -1,18 +1,61 @@
 """Tests for highlights API endpoints."""
 
+from collections.abc import Callable
+from typing import Any
+
+import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from src import models
+from src import models, schemas
 from tests.conftest import create_test_book
+
+# Type alias for the book creation fixture
+CreateBookFunc = Callable[[dict[str, Any]], schemas.EreaderBookMetadata]
+
+
+@pytest.fixture
+def create_book_via_api(client: TestClient) -> CreateBookFunc:
+    """Fixture factory for creating books via the API endpoint.
+
+    Returns a function that can be called with book data to create a book.
+    """
+
+    def _create_book(book_data: dict[str, Any]) -> schemas.EreaderBookMetadata:
+        """Create a book via POST /api/v1/ereader/books endpoint.
+
+        Args:
+            book_data: Dictionary with book creation data (client_book_id, title, etc.)
+
+        Returns:
+            EreaderBookMetadata response from the API
+        """
+        response = client.post("/api/v1/ereader/books", json=book_data)
+        assert response.status_code == status.HTTP_200_OK
+        return schemas.EreaderBookMetadata(**response.json())
+
+    return _create_book
 
 
 class TestHighlightsUpload:
     """Test suite for highlights upload endpoint."""
 
-    def test_upload_highlights_success(self, client: TestClient, db_session: Session) -> None:
+    def test_upload_highlights_success(
+        self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc
+    ) -> None:
         """Test successful upload of highlights."""
+        # Create the book via the fixture
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-book-id",
+                "title": "Test Book",
+                "author": "Test Author",
+                "isbn": "1234567890",
+            }
+        )
+
+        # Upload highlights
         payload = {
             "book": {
                 "client_book_id": "test-client-book-id",
@@ -70,9 +113,19 @@ class TestHighlightsUpload:
             assert highlight.chapter_id is None
 
     def test_upload_highlights_without_chapter(
-        self, client: TestClient, db_session: Session
+        self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc
     ) -> None:
         """Test uploading highlights without chapter information."""
+        # Create the book
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-book-id-no-chapters",
+                "title": "Test Book Without Chapters",
+                "author": "Test Author",
+            }
+        )
+
+        # Upload highlights
         payload = {
             "book": {
                 "client_book_id": "test-client-book-id-no-chapters",
@@ -111,8 +164,20 @@ class TestHighlightsUpload:
         assert highlight is not None
         assert highlight.chapter_id is None
 
-    def test_upload_highlights_with_xpoints(self, client: TestClient, db_session: Session) -> None:
+    def test_upload_highlights_with_xpoints(
+        self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc
+    ) -> None:
         """Test uploading highlights with start_xpoint and end_xpoint fields."""
+        # Create the book
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-book-xpoints",
+                "title": "Test Book With Xpoints",
+                "author": "Test Author",
+            }
+        )
+
+        # Upload highlights
         payload = {
             "book": {
                 "client_book_id": "test-client-book-xpoints",
@@ -168,8 +233,19 @@ class TestHighlightsUpload:
         assert highlights[1].start_xpoint is None
         assert highlights[1].end_xpoint is None
 
-    def test_upload_duplicate_highlights(self, client: TestClient, db_session: Session) -> None:
+    def test_upload_duplicate_highlights(
+        self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc
+    ) -> None:
         """Test that duplicate highlights are properly skipped."""
+        # Create the book
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-duplicate-book",
+                "title": "Duplicate Test Book",
+                "author": "Test Author",
+            }
+        )
+
         payload = {
             "book": {
                 "client_book_id": "test-client-duplicate-book",
@@ -209,8 +285,19 @@ class TestHighlightsUpload:
         highlights = db_session.query(models.Highlight).filter_by(book_id=book.id).all()
         assert len(highlights) == 1
 
-    def test_upload_partial_duplicates(self, client: TestClient, db_session: Session) -> None:
+    def test_upload_partial_duplicates(
+        self, client: TestClient, create_book_via_api: CreateBookFunc
+    ) -> None:
         """Test uploading mix of new and duplicate highlights."""
+        # Create the book
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-partial-dup",
+                "title": "Partial Duplicate Test Book",
+                "author": "Test Author",
+            }
+        )
+
         # First upload
         payload1 = {
             "book": {
@@ -260,7 +347,7 @@ class TestHighlightsUpload:
         assert data2["highlights_skipped"] == 1
 
     def test_upload_preserves_edited_book_metadata(
-        self, client: TestClient, db_session: Session
+        self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc
     ) -> None:
         """Test that user edits to book metadata are preserved during re-sync.
 
@@ -269,7 +356,17 @@ class TestHighlightsUpload:
         its content_hash (computed from original title+author), allowing metadata
         to be edited independently.
         """
-        # First upload - creates the book with original metadata
+        # Create the book
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-original",
+                "title": "Original Title",
+                "author": "Original Author",
+                "isbn": "1111111111",
+            }
+        )
+
+        # First upload
         payload1 = {
             "book": {
                 "client_book_id": "test-client-original",
@@ -328,8 +425,19 @@ class TestHighlightsUpload:
         highlights = db_session.query(models.Highlight).filter_by(book_id=book_id).all()
         assert len(highlights) == 2
 
-    def test_upload_empty_highlights_list(self, client: TestClient) -> None:
+    def test_upload_empty_highlights_list(
+        self, client: TestClient, create_book_via_api: CreateBookFunc
+    ) -> None:
         """Test uploading with empty highlights list."""
+        # Create the book
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-empty",
+                "title": "Empty Highlights Book",
+                "author": "Test Author",
+            }
+        )
+
         payload = {
             "book": {
                 "client_book_id": "test-client-empty",
@@ -348,13 +456,22 @@ class TestHighlightsUpload:
         assert data["highlights_skipped"] == 0
 
     def test_upload_same_text_different_datetime_is_duplicate(
-        self, client: TestClient, db_session: Session
+        self, client: TestClient, create_book_via_api: CreateBookFunc
     ) -> None:
         """Test that same text at different times is considered duplicate (hash-based dedup).
 
         With hash-based deduplication, the hash is computed from text + book_title + author.
         Datetime is NOT part of the hash, so same text in the same book is a duplicate.
         """
+        # Create the book
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-same-text",
+                "title": "Same Text Test Book",
+                "author": "Test Author",
+            }
+        )
+
         payload = {
             "book": {
                 "client_book_id": "test-client-same-text",
@@ -382,13 +499,22 @@ class TestHighlightsUpload:
         assert data["highlights_skipped"] == 1
 
     def test_upload_same_text_different_book_not_duplicate(
-        self, client: TestClient, db_session: Session
+        self, client: TestClient, create_book_via_api: CreateBookFunc
     ) -> None:
         """Test that same text in different books creates separate highlights.
 
         The hash includes book_title and author, so same text in different books
         will have different hashes and create separate highlights.
         """
+        # Create the first book
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-first-book",
+                "title": "First Book",
+                "author": "Author A",
+            }
+        )
+
         # First book
         payload1 = {
             "book": {
@@ -407,6 +533,15 @@ class TestHighlightsUpload:
         response1 = client.post("/api/v1/highlights/upload", json=payload1)
         assert response1.status_code == status.HTTP_200_OK
         assert response1.json()["highlights_created"] == 1
+
+        # Create the second book
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-second-book",
+                "title": "Second Book",
+                "author": "Author B",
+            }
+        )
 
         # Second book with same text
         payload2 = {
@@ -429,8 +564,19 @@ class TestHighlightsUpload:
         assert response2.json()["highlights_created"] == 1
         assert response2.json()["highlights_skipped"] == 0
 
-    def test_highlight_has_content_hash(self, client: TestClient, db_session: Session) -> None:
+    def test_highlight_has_content_hash(
+        self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc
+    ) -> None:
         """Test that created highlights have a content_hash field populated."""
+        # Create the book
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-hash-test",
+                "title": "Hash Test Book",
+                "author": "Test Author",
+            }
+        )
+
         payload = {
             "book": {
                 "client_book_id": "test-client-hash-test",
@@ -496,9 +642,18 @@ class TestHighlightsUpload:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     def test_upload_creates_chapter_only_once(
-        self, client: TestClient, db_session: Session
+        self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc
     ) -> None:
         """Test that multiple highlights without chapter_number don't create chapters."""
+        # Create the book
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-chapter-dedup",
+                "title": "Chapter Dedup Test Book",
+                "author": "Test Author",
+            }
+        )
+
         payload = {
             "book": {
                 "client_book_id": "test-client-chapter-dedup",
@@ -549,13 +704,22 @@ class TestHighlightsUpload:
         assert all(h.chapter_id is None for h in highlights)
 
     def test_upload_with_duplicates_and_new_chapters(
-        self, client: TestClient, db_session: Session
+        self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc
     ) -> None:
         """Test that duplicate highlights are properly skipped.
 
         Since chapters are no longer created during highlight upload (only via EPUB ToC),
         this test verifies that duplicate detection still works correctly.
         """
+        # Create the book
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-rollback-bug",
+                "title": "Rollback Bug Test Book",
+                "author": "Test Author",
+            }
+        )
+
         # First upload with some highlights
         payload1 = {
             "book": {
@@ -636,9 +800,20 @@ class TestHighlightsUpload:
         assert all(h.chapter_id is None for h in highlights)
 
     def test_upload_with_language_and_page_count(
-        self, client: TestClient, db_session: Session
+        self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc
     ) -> None:
         """Test uploading highlights with language and page_count metadata."""
+        # Create the book
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-metadata",
+                "title": "Test Book with Metadata",
+                "author": "Test Author",
+                "language": "en",
+                "page_count": 350,
+            }
+        )
+
         payload = {
             "book": {
                 "client_book_id": "test-client-metadata",
@@ -673,9 +848,19 @@ class TestHighlightsUpload:
         assert book.page_count == 350
 
     def test_upload_with_keywords_creates_tags(
-        self, client: TestClient, db_session: Session
+        self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc
     ) -> None:
         """Test that uploading with keywords creates corresponding tags."""
+        # Create the book with keywords
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-keywords",
+                "title": "Test Book with Keywords",
+                "author": "Test Author",
+                "keywords": ["Fiction", "Science", "Adventure"],
+            }
+        )
+
         payload = {
             "book": {
                 "client_book_id": "test-client-keywords",
@@ -718,9 +903,19 @@ class TestHighlightsUpload:
         assert "Adventure" in db_tag_names
 
     def test_upload_keywords_no_duplicates_on_resync(
-        self, client: TestClient, db_session: Session
+        self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc
     ) -> None:
         """Test that resyncing with same keywords doesn't create duplicate tags."""
+        # Create the book with keywords
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-dup-keywords",
+                "title": "Duplicate Keywords Test Book",
+                "author": "Test Author",
+                "keywords": ["Tag1", "Tag2"],
+            }
+        )
+
         payload = {
             "book": {
                 "client_book_id": "test-client-dup-keywords",
@@ -765,12 +960,22 @@ class TestHighlightsUpload:
             assert tag_counts.get(name) == 1
 
     def test_upload_keywords_only_on_first_upload(
-        self, client: TestClient, db_session: Session
+        self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc
     ) -> None:
         """Test that keywords are only added on first upload, not subsequent syncs.
 
         This ensures user's tag edits are preserved across re-syncs from the device.
         """
+        # Create the book with initial keywords
+        create_book_via_api(
+            {
+                "client_book_id": "test-client-keywords-first",
+                "title": "Keywords First Upload Test Book",
+                "author": "Test Author",
+                "keywords": ["Original1", "Original2"],
+            }
+        )
+
         # First upload with initial keywords - these should be added
         payload1 = {
             "book": {

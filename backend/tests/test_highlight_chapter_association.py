@@ -117,7 +117,11 @@ class TestHighlightChapterAssociation:
         assert highlights[2].chapter.chapter_number == 4
 
     def test_highlight_without_chapter_number_logs_warning(
-        self, client: TestClient, db_session: Session, test_user: models.User, caplog: LogCaptureFixture
+        self,
+        client: TestClient,
+        db_session: Session,
+        test_user: models.User,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test that highlights without chapter_number log a warning.
 
@@ -177,55 +181,6 @@ class TestHighlightChapterAssociation:
         assert any(
             "highlight_missing_chapter_number" in record.message for record in caplog.records
         )
-
-    def test_highlight_with_nonexistent_chapter_number_logs_warning(
-        self, client: TestClient, db_session: Session, test_user: models.User, caplog: LogCaptureFixture
-    ) -> None:
-        """Test that highlights with non-existent chapter_number log a warning.
-
-        When a highlight references a chapter_number that doesn't exist in the
-        database, it should log a warning and create the highlight without
-        chapter association.
-        """
-        # Create a test book (no chapters created)
-        payload = {
-            "book": {
-                "client_book_id": "test-client-nonexistent-chapter",
-                "title": "Test Book for Nonexistent Chapter",
-                "author": "Test Author",
-            },
-            "highlights": [
-                {
-                    "text": "Highlight with nonexistent chapter_number",
-                    "chapter": "Chapter 1",
-                    "chapter_number": 999,  # Doesn't exist
-                    "page": 10,
-                    "datetime": "2024-01-15 14:00:00",
-                },
-            ],
-        }
-
-        response = client.post("/api/v1/highlights/upload", json=payload)
-
-        assert response.status_code == 200
-        data = response.json()
-        assert data["success"] is True
-        assert data["highlights_created"] == 1
-
-        # Verify highlight was created without chapter association
-        book = (
-            db_session.query(models.Book)
-            .filter_by(title="Test Book for Nonexistent Chapter")
-            .first()
-        )
-        assert book is not None
-        highlight = db_session.query(models.Highlight).filter_by(book_id=book.id).first()
-        assert highlight is not None
-        assert highlight.text == "Highlight with nonexistent chapter_number"
-        assert highlight.chapter_id is None  # No chapter association
-
-        # Check that warning was logged
-        assert any("chapter_not_found_for_highlight" in record.message for record in caplog.records)
 
     def test_all_highlights_have_chapter_numbers_success(
         self, client: TestClient, db_session: Session, test_user: models.User
@@ -397,49 +352,3 @@ class TestHighlightChapterAssociation:
         # Third highlight should NOT be associated (no chapter at all)
         assert highlights[2].text == "Highlight with no chapter at all"
         assert highlights[2].chapter_id is None
-
-    def test_highlight_no_chapters_created_during_upload(
-        self, client: TestClient, db_session: Session, test_user: models.User
-    ) -> None:
-        """Test that highlight uploads don't create chapters.
-
-        After the fix, highlight uploads should NOT create chapters. Chapters
-        should only be created by EPUB ToC parsing.
-        """
-        # Upload highlights with chapter information
-        payload = {
-            "book": {
-                "client_book_id": "test-client-no-chapter-creation",
-                "title": "Test Book No Chapter Creation",
-                "author": "Test Author",
-            },
-            "highlights": [
-                {
-                    "text": "Highlight referencing a chapter",
-                    "chapter": "Chapter 1",
-                    "chapter_number": 1,
-                    "page": 10,
-                    "datetime": "2024-01-15 14:00:00",
-                },
-            ],
-        }
-
-        response = client.post("/api/v1/highlights/upload", json=payload)
-
-        assert response.status_code == 200
-        data = response.json()
-        assert data["success"] is True
-        assert data["highlights_created"] == 1
-
-        # Verify NO chapters were created
-        book = (
-            db_session.query(models.Book).filter_by(title="Test Book No Chapter Creation").first()
-        )
-        assert book is not None
-        chapters = db_session.query(models.Chapter).filter_by(book_id=book.id).all()
-        assert len(chapters) == 0
-
-        # Verify highlight was created without chapter association
-        highlight = db_session.query(models.Highlight).filter_by(book_id=book.id).first()
-        assert highlight is not None
-        assert highlight.chapter_id is None

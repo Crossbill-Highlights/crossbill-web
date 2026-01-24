@@ -4,7 +4,7 @@ import structlog
 from sqlalchemy.orm import Session
 
 from src import repositories, schemas
-from src.services.book_service import BookService
+from src.exceptions import BookNotFoundError
 from src.utils import compute_highlight_hash
 
 logger = structlog.get_logger(__name__)
@@ -29,8 +29,8 @@ class HighlightService:
         Process highlight upload from KOReader.
 
         This method:
-        1. Creates or updates the book record
-        2. Batch processes chapters (fetches existing and bulk creates new ones)
+        1. Looks up the existing book by client_book_id (book must be created first via POST /ereader/books)
+        2. Batch processes chapters (fetches existing chapters from EPUB upload)
         3. Prepares highlights with content hashes
         4. Bulk creates highlights with deduplication
 
@@ -40,6 +40,9 @@ class HighlightService:
 
         Returns:
             HighlightUploadResponse with upload statistics
+
+        Raises:
+            BookNotFoundError: If the book doesn't exist (must be created first)
         """
         logger.info(
             "processing_highlight_upload",
@@ -48,9 +51,20 @@ class HighlightService:
             highlight_count=len(request.highlights),
         )
 
-        # Step 1: Get or create book (with keywords as tags on creation)
-        book_service = BookService(self.db)
-        book, _ = book_service.create_book(request.book, user_id)
+        # Step 1: Look up existing book by client_book_id
+        # Book must be created via POST /ereader/books before uploading highlights
+        book = self.book_repo.find_by_client_book_id(request.book.client_book_id, user_id)
+
+        if not book:
+            logger.error(
+                "book_not_found_for_highlight_upload",
+                client_book_id=request.book.client_book_id,
+                book_title=request.book.title,
+            )
+            raise BookNotFoundError(
+                message=f"Book with client_book_id '{request.book.client_book_id}' not found. "
+                "Please create the book first via POST /ereader/books."
+            )
 
         # Step 2: Batch process chapters using chapter_number
         chapter_numbers: set[int] = set()
