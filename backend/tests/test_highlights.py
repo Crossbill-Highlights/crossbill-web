@@ -61,11 +61,13 @@ class TestHighlightsUpload:
         highlights = db_session.query(models.Highlight).filter_by(book_id=book.id).all()
         assert len(highlights) == 2
 
-        # Verify chapters were created
+        # Verify NO chapters were created (highlights without chapter_number don't create chapters)
         chapters = db_session.query(models.Chapter).filter_by(book_id=book.id).all()
-        assert len(chapters) == 2
-        chapter_names = {c.name for c in chapters}
-        assert chapter_names == {"Chapter 1", "Chapter 2"}
+        assert len(chapters) == 0
+
+        # Verify highlights have no chapter association (no chapter_number provided)
+        for highlight in highlights:
+            assert highlight.chapter_id is None
 
     def test_upload_highlights_without_chapter(
         self, client: TestClient, db_session: Session
@@ -496,7 +498,7 @@ class TestHighlightsUpload:
     def test_upload_creates_chapter_only_once(
         self, client: TestClient, db_session: Session
     ) -> None:
-        """Test that multiple highlights in same chapter only create one chapter."""
+        """Test that multiple highlights without chapter_number don't create chapters."""
         payload = {
             "book": {
                 "client_book_id": "test-client-chapter-dedup",
@@ -507,16 +509,19 @@ class TestHighlightsUpload:
                 {
                     "text": "Highlight 1 in Chapter 1",
                     "chapter": "Chapter 1",
+                    # No chapter_number provided
                     "datetime": "2024-01-15 14:00:00",
                 },
                 {
                     "text": "Highlight 2 in Chapter 1",
                     "chapter": "Chapter 1",
+                    # No chapter_number provided
                     "datetime": "2024-01-15 15:00:00",
                 },
                 {
                     "text": "Highlight 3 in Chapter 1",
                     "chapter": "Chapter 1",
+                    # No chapter_number provided
                     "datetime": "2024-01-15 16:00:00",
                 },
             ],
@@ -528,7 +533,7 @@ class TestHighlightsUpload:
         data = response.json()
         assert data["highlights_created"] == 3
 
-        # Verify only one chapter was created
+        # Verify NO chapters were created (highlights without chapter_number don't create chapters)
         book = (
             db_session.query(models.Book)
             .filter_by(title="Chapter Dedup Test Book", author="Test Author")
@@ -536,26 +541,22 @@ class TestHighlightsUpload:
         )
         assert book is not None
         chapters = db_session.query(models.Chapter).filter_by(book_id=book.id).all()
-        assert len(chapters) == 1
-        assert chapters[0].name == "Chapter 1"
+        assert len(chapters) == 0
 
-        # Verify all highlights are associated with the same chapter
+        # Verify all highlights were created but have no chapter association
         highlights = db_session.query(models.Highlight).filter_by(book_id=book.id).all()
         assert len(highlights) == 3
-        assert all(h.chapter_id == chapters[0].id for h in highlights)
+        assert all(h.chapter_id is None for h in highlights)
 
     def test_upload_with_duplicates_and_new_chapters(
         self, client: TestClient, db_session: Session
     ) -> None:
-        """Test that duplicate highlights don't cause rollback of chapter creation.
+        """Test that duplicate highlights are properly skipped.
 
-        This is a regression test for a bug where:
-        1. Chapters are created and flushed
-        2. Highlights are created, some are duplicates causing IntegrityError
-        3. The rollback from duplicate detection rolled back chapter creation
-        4. Subsequent highlights failed due to missing chapter foreign keys
+        Since chapters are no longer created during highlight upload (only via EPUB ToC),
+        this test verifies that duplicate detection still works correctly.
         """
-        # First upload with some highlights in Chapter 1
+        # First upload with some highlights
         payload1 = {
             "book": {
                 "client_book_id": "test-client-rollback-bug",
@@ -580,9 +581,7 @@ class TestHighlightsUpload:
         assert response1.status_code == status.HTTP_200_OK
         assert response1.json()["highlights_created"] == 2
 
-        # Second upload with mix of duplicates and new highlights in new chapters
-        # This tests that when a duplicate is encountered, it doesn't roll back
-        # the creation of new chapters for subsequent highlights
+        # Second upload with mix of duplicates and new highlights
         payload2 = {
             "book": {
                 "client_book_id": "test-client-rollback-bug",
@@ -596,7 +595,7 @@ class TestHighlightsUpload:
                     "datetime": "2024-01-15 14:00:00",
                 },
                 {
-                    "text": "New highlight in Chapter 2",  # New chapter
+                    "text": "New highlight in Chapter 2",  # New
                     "chapter": "Chapter 2",
                     "datetime": "2024-01-15 15:00:00",
                 },
@@ -606,7 +605,7 @@ class TestHighlightsUpload:
                     "datetime": "2024-01-15 14:30:00",
                 },
                 {
-                    "text": "Another new highlight in Chapter 3",  # New chapter
+                    "text": "Another new highlight in Chapter 3",  # New
                     "chapter": "Chapter 3",
                     "datetime": "2024-01-15 16:00:00",
                 },
@@ -616,10 +615,10 @@ class TestHighlightsUpload:
         response2 = client.post("/api/v1/highlights/upload", json=payload2)
         assert response2.status_code == status.HTTP_200_OK
         data2 = response2.json()
-        assert data2["highlights_created"] == 2  # Chapter 2 and Chapter 3 highlights
+        assert data2["highlights_created"] == 2  # Two new highlights
         assert data2["highlights_skipped"] == 2  # Both duplicates
 
-        # Verify all chapters were created correctly
+        # Verify NO chapters were created (highlights without chapter_number don't create chapters)
         book = (
             db_session.query(models.Book)
             .filter_by(title="Rollback Bug Test Book", author="Test Author")
@@ -627,21 +626,14 @@ class TestHighlightsUpload:
         )
         assert book is not None
         chapters = db_session.query(models.Chapter).filter_by(book_id=book.id).all()
-        assert len(chapters) == 3
-        chapter_names = {c.name for c in chapters}
-        assert chapter_names == {"Chapter 1", "Chapter 2", "Chapter 3"}
+        assert len(chapters) == 0
 
-        # Verify all 4 highlights exist (2 from first upload, 2 new from second)
+        # Verify all 4 unique highlights exist (2 from first upload, 2 new from second)
         highlights = db_session.query(models.Highlight).filter_by(book_id=book.id).all()
         assert len(highlights) == 4
 
-        # Verify highlights are correctly associated with chapters
-        chapter_map = {c.name: c.id for c in chapters}
-        highlight_texts = {h.text: h.chapter_id for h in highlights}
-        assert highlight_texts["First highlight in Chapter 1"] == chapter_map["Chapter 1"]
-        assert highlight_texts["Second highlight in Chapter 1"] == chapter_map["Chapter 1"]
-        assert highlight_texts["New highlight in Chapter 2"] == chapter_map["Chapter 2"]
-        assert highlight_texts["Another new highlight in Chapter 3"] == chapter_map["Chapter 3"]
+        # Verify all highlights have no chapter association (no chapter_number provided)
+        assert all(h.chapter_id is None for h in highlights)
 
     def test_upload_with_language_and_page_count(
         self, client: TestClient, db_session: Session

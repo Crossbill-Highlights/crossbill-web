@@ -70,6 +70,33 @@ class ChapterRepository:
         chapters = self.db.execute(stmt).scalars().all()
         return {chapter.name: chapter for chapter in chapters}
 
+    def get_by_numbers(
+        self, book_id: int, chapter_numbers: set[int], user_id: int
+    ) -> dict[int, models.Chapter]:
+        """Get multiple chapters by chapter_numbers for a book in one query.
+
+        Returns a dictionary mapping chapter_number to Chapter objects.
+        Used for accurate highlight-chapter association when chapter_number is available.
+        """
+        if not chapter_numbers:
+            return {}
+
+        stmt = (
+            select(models.Chapter)
+            .join(models.Book, models.Chapter.book_id == models.Book.id)
+            .where(
+                models.Chapter.book_id == book_id,
+                models.Chapter.chapter_number.in_(chapter_numbers),
+                models.Book.user_id == user_id,
+            )
+        )
+        chapters = self.db.execute(stmt).scalars().all()
+        return {
+            chapter.chapter_number: chapter
+            for chapter in chapters
+            if chapter.chapter_number is not None
+        }
+
     def bulk_create(
         self, book_id: int, user_id: int, chapter_data: list[tuple[str, int | None]]
     ) -> list[models.Chapter]:

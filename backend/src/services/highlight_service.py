@@ -3,7 +3,7 @@
 import structlog
 from sqlalchemy.orm import Session
 
-from src import models, repositories, schemas
+from src import repositories, schemas
 from src.services.book_service import BookService
 from src.utils import compute_highlight_hash
 
@@ -52,53 +52,54 @@ class HighlightService:
         book_service = BookService(self.db)
         book, _ = book_service.create_book(request.book, user_id)
 
-        # Step 2: Batch process chapters
-        # Collect unique chapter data from highlights
-        chapter_data_map: dict[str, int | None] = {}  # name -> chapter_number
+        # Step 2: Batch process chapters using chapter_number
+        chapter_numbers: set[int] = set()
+
         for highlight_data in request.highlights:
-            if highlight_data.chapter:
-                # Keep the latest chapter_number for each chapter name
-                chapter_data_map[highlight_data.chapter] = highlight_data.chapter_number
+            if highlight_data.chapter_number is not None:
+                chapter_numbers.add(highlight_data.chapter_number)
 
-        chapter_names = set(chapter_data_map.keys())
-        existing_chapters = self.chapter_repo.get_by_names(book.id, chapter_names, user_id)
+        # Fetch existing chapters by chapter_number only
+        # Note: EPUB ToC parsing creates chapters, highlights just reference them
+        existing_chapters_by_number = self.chapter_repo.get_by_numbers(
+            book.id, chapter_numbers, user_id
+        )
 
-        chapters_to_create = [
-            (name, chapter_number)
-            for name, chapter_number in chapter_data_map.items()
-            if name not in existing_chapters
-        ]
+        # No chapter creation here - chapters come from EPUB ToC upload
+        # If a highlight references a non-existent chapter_number, it won't be associated total
+        # chapter
 
-        # Bulk create new chapters
-        new_chapters = self.chapter_repo.bulk_create(book.id, user_id, chapters_to_create)
-
-        # Build complete chapter mapping (existing + newly created)
-        chapter_mapping: dict[str, models.Chapter] = {**existing_chapters}
-        for chapter in new_chapters:
-            chapter_mapping[chapter.name] = chapter
-
-        # Update chapter numbers if they've changed
-        for name, chapter in existing_chapters.items():
-            expected_number = chapter_data_map[name]
-            if expected_number is not None and chapter.chapter_number != expected_number:
-                chapter.chapter_number = expected_number
-                logger.info(
-                    f"Updated chapter number for '{name}' (book_id={book.id}) to {expected_number}"
-                )
-
-        # Commit chapters before creating highlights to avoid rollback issues
-        # This ensures chapter foreign keys exist before highlights reference them
+        # Commit any pending changes before processing highlights
         self.db.commit()
 
-        # Step 3: Prepare highlights with content hashes
+        # Step 3: Prepare highlights with chapter_number lookup
         highlights_with_chapters: list[tuple[int | None, str, schemas.HighlightCreate]] = []
 
         for highlight_data in request.highlights:
             chapter_id = None
 
-            # If highlight has chapter info, look up the chapter from our mapping
-            if highlight_data.chapter and highlight_data.chapter in chapter_mapping:
-                chapter_id = chapter_mapping[highlight_data.chapter].id
+            # Use chapter_number for lookup (source of truth)
+            if highlight_data.chapter_number is not None:
+                chapter = existing_chapters_by_number.get(highlight_data.chapter_number)
+                if chapter:
+                    chapter_id = chapter.id
+                else:
+                    # Chapter doesn't exist - probably EPUB not uploaded yet
+                    logger.warning(
+                        "chapter_not_found_for_highlight",
+                        chapter_name=highlight_data.chapter,
+                        chapter_number=highlight_data.chapter_number,
+                        book_id=book.id,
+                        message="Chapter referenced by highlight doesn't exist. Upload EPUB to create chapters.",
+                    )
+            elif highlight_data.chapter:
+                # No chapter_number - can't reliably associate with duplicate names
+                logger.warning(
+                    "highlight_missing_chapter_number",
+                    chapter_name=highlight_data.chapter,
+                    book_id=book.id,
+                    message="Highlight has no chapter_number. Cannot associate reliably with duplicate chapter names.",
+                )
 
             # Compute content hash for deduplication
             content_hash = compute_highlight_hash(
