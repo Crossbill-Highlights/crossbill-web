@@ -203,6 +203,9 @@ class Chapter(Base):
     book_id: Mapped[int] = mapped_column(
         ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
     )
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("chapters.id", ondelete="CASCADE"), index=True, nullable=True
+    )
     name: Mapped[str] = mapped_column(String(500), nullable=False)
     chapter_number: Mapped[int | None] = mapped_column(nullable=True, index=True)
     created_at: Mapped[dt] = mapped_column(
@@ -218,6 +221,13 @@ class Chapter(Base):
     # Relationships
     book: Mapped["Book"] = relationship(back_populates="chapters")
     highlights: Mapped[list["Highlight"]] = relationship(back_populates="chapter")
+    # Self-referential relationship for hierarchical chapters
+    parent: Mapped["Chapter | None"] = relationship(
+        "Chapter", remote_side="Chapter.id", back_populates="children"
+    )
+    children: Mapped[list["Chapter"]] = relationship(
+        "Chapter", back_populates="parent", cascade="all, delete-orphan"
+    )
 
     # Unique constraint: chapters are unique within a book
     __table_args__ = (UniqueConstraint("book_id", "name", name="uq_chapter_per_book"),)
