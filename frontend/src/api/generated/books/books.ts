@@ -22,7 +22,6 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
   BodyUploadBookCoverApiV1BooksBookIdMetadataCoverPost,
-  BodyUploadBookEpubApiV1BooksBookIdEpubPost,
   BookDetails,
   BookHighlightSearchResponse,
   BookUpdateRequest,
@@ -32,7 +31,6 @@ import type {
   BookmarksResponse,
   BooksListResponse,
   CoverUploadResponse,
-  EpubUploadResponse,
   FlashcardCreateRequest,
   FlashcardCreateResponse,
   FlashcardsWithHighlightsResponse,
@@ -1189,111 +1187,6 @@ export function useGetBookCoverApiV1BooksBookIdCoverGet<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
-/**
- * Upload an EPUB file for a book.
-
-This endpoint accepts an uploaded EPUB file and saves it for the book.
-The file is validated using ebooklib before being saved.
-If the book already has an EPUB file, it will be replaced.
-
-Args:
-    book_id: ID of the book
-    epub: Uploaded EPUB file
-    current_user: Authenticated user
-
-Returns:
-    EpubUploadResponse with success status and epub path
-
-Raises:
-    HTTPException: If book is not found, validation fails, or upload fails
- * @summary Upload Book Epub
- */
-export const uploadBookEpubApiV1BooksBookIdEpubPost = (
-  bookId: number,
-  bodyUploadBookEpubApiV1BooksBookIdEpubPost: BodyUploadBookEpubApiV1BooksBookIdEpubPost,
-  signal?: AbortSignal
-) => {
-  const formData = new FormData();
-  formData.append(`epub`, bodyUploadBookEpubApiV1BooksBookIdEpubPost.epub);
-
-  return axiosInstance<EpubUploadResponse>({
-    url: `/api/v1/books/${bookId}/epub`,
-    method: 'POST',
-    headers: { 'Content-Type': 'multipart/form-data' },
-    data: formData,
-    signal,
-  });
-};
-
-export const getUploadBookEpubApiV1BooksBookIdEpubPostMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof uploadBookEpubApiV1BooksBookIdEpubPost>>,
-    TError,
-    { bookId: number; data: BodyUploadBookEpubApiV1BooksBookIdEpubPost },
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof uploadBookEpubApiV1BooksBookIdEpubPost>>,
-  TError,
-  { bookId: number; data: BodyUploadBookEpubApiV1BooksBookIdEpubPost },
-  TContext
-> => {
-  const mutationKey = ['uploadBookEpubApiV1BooksBookIdEpubPost'];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof uploadBookEpubApiV1BooksBookIdEpubPost>>,
-    { bookId: number; data: BodyUploadBookEpubApiV1BooksBookIdEpubPost }
-  > = (props) => {
-    const { bookId, data } = props ?? {};
-
-    return uploadBookEpubApiV1BooksBookIdEpubPost(bookId, data);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type UploadBookEpubApiV1BooksBookIdEpubPostMutationResult = NonNullable<
-  Awaited<ReturnType<typeof uploadBookEpubApiV1BooksBookIdEpubPost>>
->;
-export type UploadBookEpubApiV1BooksBookIdEpubPostMutationBody =
-  BodyUploadBookEpubApiV1BooksBookIdEpubPost;
-export type UploadBookEpubApiV1BooksBookIdEpubPostMutationError = HTTPValidationError;
-
-/**
- * @summary Upload Book Epub
- */
-export const useUploadBookEpubApiV1BooksBookIdEpubPost = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof uploadBookEpubApiV1BooksBookIdEpubPost>>,
-      TError,
-      { bookId: number; data: BodyUploadBookEpubApiV1BooksBookIdEpubPost },
-      TContext
-    >;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof uploadBookEpubApiV1BooksBookIdEpubPost>>,
-  TError,
-  { bookId: number; data: BodyUploadBookEpubApiV1BooksBookIdEpubPost },
-  TContext
-> => {
-  return useMutation(
-    getUploadBookEpubApiV1BooksBookIdEpubPostMutationOptions(options),
-    queryClient
-  );
-};
 /**
  * Get all highlight tags for a book.
 

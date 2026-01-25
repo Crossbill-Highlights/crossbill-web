@@ -146,7 +146,7 @@ class EpubService:
         self.book_repo = repositories.BookRepository(db)
         self.chapter_repo = repositories.ChapterRepository(db)
 
-    def upload_epub(self, book_id: int, epub_file: UploadFile, user_id: int) -> tuple[str, str]:
+    def _upload_epub(self, book_id: int, epub_file: UploadFile, user_id: int) -> tuple[str, str]:
         """
         Upload and validate an epub file for a book.
 
@@ -284,7 +284,7 @@ class EpubService:
             )
 
         # Delegate to the existing upload_epub method using book.id
-        return self.upload_epub(book.id, epub_file, user_id)
+        return self._upload_epub(book.id, epub_file, user_id)
 
     def delete_epub(self, book_id: int) -> bool:
         """
