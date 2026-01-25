@@ -12,7 +12,7 @@ from src import models, repositories, schemas
 from src.exceptions import BookNotFoundError
 from src.schemas.highlight_schemas import ChapterWithHighlights
 from src.services.epub_service import EpubService
-from src.services.tag_service import TagService
+from src.services.book_tag_service import BookTagService
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ class BookService:
         book = self.book_repo.create(book_data, user_id)
 
         if book_data.keywords:
-            tag_service = TagService(self.db)
+            tag_service = BookTagService(self.db)
             tag_service.add_book_tags(book.id, book_data.keywords, user_id)
 
         return book, True
@@ -412,7 +412,7 @@ class BookService:
             raise BookNotFoundError(book_id)
 
         # Update tags using TagService
-        tag_service = TagService(self.db)
+        tag_service = BookTagService(self.db)
         updated_book = tag_service.update_book_tags(book, update_data.tags, user_id)
 
         # Commit the changes

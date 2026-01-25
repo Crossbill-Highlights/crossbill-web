@@ -9,7 +9,7 @@ from src import models, repositories
 logger = logging.getLogger(__name__)
 
 
-class TagService:
+class BookTagService:
     """Service for handling tag-related operations."""
 
     def __init__(self, db: Session) -> None:
