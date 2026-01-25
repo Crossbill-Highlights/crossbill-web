@@ -1,10 +1,9 @@
-from pathlib import Path
 
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from src import repositories
-from src.exceptions import BookNotFoundError, ValidationError
+from src.exceptions import ValidationError
 from src.services.ebook.epub_service import EpubService
 from src.services.ebook.pdf_service import PdfService
 
@@ -15,19 +14,6 @@ class EbookService:
         self.epub_service = EpubService(db)
         self.pdf_service = PdfService(db)
         self.book_repo = repositories.BookRepository(db)
-
-    def get_book_path(self, book_id: int, user_id: int) -> Path:
-        # Fetch book to determine type
-        book = self.book_repo.get_by_id(book_id, user_id)
-        if not book:
-            raise BookNotFoundError(book_id)
-
-        # Route based on file_type field
-        if book.file_type == "epub":
-            return self.epub_service.get_epub_path(book_id, user_id)
-        if book.file_type == "pdf":
-            return self.pdf_service.get_pdf_path(book_id, user_id)
-        raise BookNotFoundError(book_id)  # Book exists but has no file
 
     def upload_ebook(self, client_book_id: str, file: UploadFile, user_id: int) -> tuple[str, str]:
         # Detect file type from content-type header
