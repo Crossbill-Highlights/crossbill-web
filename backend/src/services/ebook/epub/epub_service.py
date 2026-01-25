@@ -354,16 +354,21 @@ class EpubService:
 
         # Get existing chapters for this book
         chapter_names = {name for name, _, _ in chapters}
-        existing_chapters = self.chapter_repo.get_by_names(book_id, chapter_names, user_id)
+        existing_chapters_list = self.chapter_repo.get_by_names(book_id, chapter_names, user_id)
 
-        # Track created/existing chapters by name for parent lookups
-        chapter_by_name: dict[str, models.Chapter] = existing_chapters.copy()
+        # Build tracking dictionaries from the complete list of existing chapters
+        # chapter_by_name: for parent lookups (last one wins if duplicate names - that's OK for this use case)
+        # chapter_by_name_and_parent: for duplicate detection (this is the critical one!)
+        # existing_chapter_keys: tracks which (name, parent_id) pairs came from DB
+        chapter_by_name: dict[str, models.Chapter] = {}
+        chapter_by_name_and_parent: dict[tuple[str, int | None], models.Chapter] = {}
+        existing_chapter_keys: set[tuple[str, int | None]] = set()
 
-        # Track chapters by (name, parent_id) to detect true duplicates
-        # (same name under same parent = duplicate, different parent = separate chapter)
-        chapter_by_name_and_parent: dict[tuple[str, int | None], models.Chapter] = {
-            (ch.name, ch.parent_id): ch for ch in existing_chapters.values()
-        }
+        for ch in existing_chapters_list:
+            chapter_by_name[ch.name] = ch
+            key = (ch.name, ch.parent_id)
+            chapter_by_name_and_parent[key] = ch
+            existing_chapter_keys.add(key)
 
         chapters_to_update = []
         created_count = 0
@@ -381,8 +386,8 @@ class EpubService:
                 # This exact chapter (same name AND parent) already exists
                 existing_chapter = chapter_by_name_and_parent[chapter_key]
 
-                # Check if it needs updating
-                if name in existing_chapters:
+                # Check if it needs updating (only if it came from DB, not created in this loop)
+                if chapter_key in existing_chapter_keys:
                     needs_update = False
 
                     if existing_chapter.chapter_number != chapter_number:

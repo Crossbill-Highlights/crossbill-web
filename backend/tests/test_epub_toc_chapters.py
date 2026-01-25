@@ -398,6 +398,63 @@ class TestUpdatingExistingChapters:
         assert db_chapters[0].id == existing_id  # Same chapter
         assert db_chapters[0].chapter_number == 5  # Updated
 
+    def test_reupload_with_duplicate_chapter_names(
+        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+    ):
+        """Test re-uploading EPUB TOC when book already has duplicate chapter names under different parents.
+
+        This is a regression test for the bug where get_by_names() returned a dict keyed by name,
+        causing data loss when multiple chapters had the same name but different parent_ids.
+
+        The bug manifested as:
+        - First upload: SUCCESS (chapters created correctly)
+        - Second upload: FAILURE (unique constraint violation trying to re-insert "missing" chapter)
+        """
+        # Initial upload: Create chapters with duplicate names under different parents
+        initial_chapters: list[tuple[str, int, str | None]] = [
+            ("Part I", 1, None),
+            ("Harjoitukset", 2, "Part I"),
+            ("Part II", 3, None),
+            ("Harjoitukset", 4, "Part II"),
+        ]
+
+        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
+            book_id=test_book_for_toc.id, user_id=1, chapters=initial_chapters
+        )
+        assert created_count == 4
+
+        # Re-upload the same TOC (simulating re-uploading the EPUB file via API)
+        # This should detect all existing chapters and update them, not try to create duplicates
+        created_count_2 = epub_service._save_chapters_from_toc(  # pyright: ignore
+            book_id=test_book_for_toc.id, user_id=1, chapters=initial_chapters
+        )
+
+        # Should create 0 new chapters (all already exist)
+        assert created_count_2 == 0
+
+        # Should still have exactly 4 chapters in database
+        db_chapters = (
+            db_session.query(models.Chapter)
+            .filter_by(book_id=test_book_for_toc.id)
+            .order_by(models.Chapter.chapter_number)
+            .all()
+        )
+        assert len(db_chapters) == 4
+
+        # Verify both "Harjoitukset" chapters still exist with correct parents
+        part1, harjoitukset1, part2, harjoitukset2 = db_chapters
+
+        assert harjoitukset1.name == "Harjoitukset"
+        assert harjoitukset1.parent_id == part1.id
+        assert harjoitukset1.chapter_number == 2
+
+        assert harjoitukset2.name == "Harjoitukset"
+        assert harjoitukset2.parent_id == part2.id
+        assert harjoitukset2.chapter_number == 4
+
+        # Verify they are distinct chapters
+        assert harjoitukset1.id != harjoitukset2.id
+
 
 class TestEdgeCases:
     """Test edge cases and potential issues in the ToC logic."""
