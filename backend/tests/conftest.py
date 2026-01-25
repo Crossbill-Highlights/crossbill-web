@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from src.database import Base, get_db
+from src.hash_utils import compute_highlight_hash
 from src.main import app
 from src.models import (
     Book,
@@ -22,7 +23,6 @@ from src.models import (
     User,
 )
 from src.services.auth_service import get_current_user
-from src.hash_utils import compute_highlight_hash
 
 
 def create_test_book(

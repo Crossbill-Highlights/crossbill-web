@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 
+
 def compute_highlight_hash(text: str, book_title: str, book_author: str | None) -> str:
     """
     Compute a unique hash for a highlight based on its content and book metadata.

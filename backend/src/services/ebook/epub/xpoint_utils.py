@@ -215,7 +215,7 @@ def compare_parsed_xpoints(parsed1: ParsedXPoint, parsed2: ParsedXPoint) -> int:
 
 
 def is_xpoint_in_range(
-        xpoint: str, range_start: str, range_end: str, *, inclusive: bool = True
+    xpoint: str, range_start: str, range_end: str, *, inclusive: bool = True
 ) -> bool:
     """Check if an xpoint falls within a given range.
 
@@ -237,4 +237,3 @@ def is_xpoint_in_range(
     if inclusive:
         return cmp_start >= 0 and cmp_end <= 0
     return cmp_start > 0 and cmp_end < 0
-

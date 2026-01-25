@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from src import models, repositories, schemas
 from src.config import get_settings
 from src.exceptions import BookNotFoundError, ReadingSessionNotFoundError, ValidationError
+from src.hash_utils import compute_reading_session_hash
 from src.repositories.reading_session_repository import ReadingSessionRepository
 from src.schemas.reading_session_schemas import (
     ReadingSessionBase,
@@ -16,7 +17,6 @@ from src.schemas.reading_session_schemas import (
 from src.services.ai.ai_service import get_ai_summary_from_text
 from src.services.ebook.ebook_service import EbookService
 from src.services.ebook.epub.xpoint_utils import is_xpoint_in_range
-from src.hash_utils import compute_reading_session_hash
 
 logger = structlog.get_logger(__name__)
 
