@@ -11,7 +11,7 @@ from src.exceptions import CrossbillError
 from src.models import User
 from src.services.auth_service import get_current_user
 from src.services.book_service import BookService
-from src.services.epub_service import EpubService
+from src.services.ebook.ebook_service import EbookService
 
 logger = logging.getLogger(__name__)
 
@@ -186,8 +186,8 @@ def upload_book_epub(
         HTTPException: 404 if book is not found, or if upload fails
     """
     try:
-        service = EpubService(db)
-        service.upload_epub_by_client_book_id(client_book_id, epub, current_user.id)
+        service = EbookService(db)
+        service.upload_ebook(client_book_id, epub, current_user.id)
 
         # Commit the database update
         db.commit()

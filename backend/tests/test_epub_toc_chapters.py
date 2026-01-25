@@ -17,7 +17,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from src import models
-from src.services.epub_service import EpubService
+from src.services.ebook.epub_service import EpubService
 from tests.conftest import create_test_book
 
 

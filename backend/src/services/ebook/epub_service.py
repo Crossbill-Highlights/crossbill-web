@@ -157,7 +157,7 @@ class EpubService:
         4. Generates sanitized filename from book title and ID
         5. Saves file to epubs directory
         6. Removes old epub file if filename differs
-        7. Updates book.epub_path in database
+        7. Updates book.file_path and book.file_type in database
 
         Args:
             book_id: ID of the book
@@ -202,8 +202,8 @@ class EpubService:
 
         # Check if book already has an epub file
         old_epub_path = None
-        if book.epub_path:
-            old_epub_path = EPUBS_DIR / book.epub_path
+        if book.file_path and book.file_type == "epub":
+            old_epub_path = EPUBS_DIR / book.file_path
 
         # Save new epub file
         epub_path.write_bytes(content)
@@ -217,8 +217,9 @@ class EpubService:
             except Exception as e:
                 logger.warning(f"Failed to delete old epub file {old_epub_path}: {e!s}")
 
-        # Update book's epub_path field in database (store just the filename)
-        book.epub_path = epub_filename
+        # Update book's file_path and file_type fields in database (store just the filename)
+        book.file_path = epub_filename
+        book.file_type = "epub"
         self.db.flush()
 
         # Parse TOC and save chapters to database
@@ -245,10 +246,10 @@ class EpubService:
         """
         book = self.book_repo.get_by_id(book_id, user_id)
 
-        if not book or not book.epub_path:
+        if not book or not book.file_path or book.file_type != "epub":
             raise HTTPException(status_code=404, detail="EPUB file not found")
 
-        epub_path = EPUBS_DIR / book.epub_path
+        epub_path = EPUBS_DIR / book.file_path
 
         if not epub_path.exists() or not epub_path.is_file():
             raise HTTPException(status_code=404, detail="EPUB file not found")

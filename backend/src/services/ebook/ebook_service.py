@@ -1,18 +1,65 @@
+from pathlib import Path
+
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from src import repositories
+from src.exceptions import BookNotFoundError, ValidationError
+from src.services.ebook.epub_service import EpubService
+from src.services.ebook.pdf_service import PdfService
 
 
 class EbookService:
     def __init__(self, db: Session) -> None:
-        """Initialize service with database session."""
         self.db = db
+        self.epub_service = EpubService(db)
+        self.pdf_service = PdfService(db)
         self.book_repo = repositories.BookRepository(db)
-        self.chapter_repo = repositories.ChapterRepository(db)
 
-    def upload_book(self, book_id: int, file: UploadFile, user_id: int) -> tuple[str, str]:
-        pass
+    def get_book_path(self, book_id: int, user_id: int) -> Path:
+        # Fetch book to determine type
+        book = self.book_repo.get_by_id(book_id, user_id)
+        if not book:
+            raise BookNotFoundError(book_id)
 
-    def get_book_path(self, book_id: int, user_id: str) -> Path:
-        pass
+        # Route based on file_type field
+        if book.file_type == "epub":
+            return self.epub_service.get_epub_path(book_id, user_id)
+        if book.file_type == "pdf":
+            return self.pdf_service.get_pdf_path(book_id, user_id)
+        raise BookNotFoundError(book_id)  # Book exists but has no file
+
+    def upload_ebook(self, client_book_id: str, file: UploadFile, user_id: int) -> tuple[str, str]:
+        # Detect file type from content-type header
+        if file.content_type == "application/epub+zip":
+            return self.epub_service.upload_epub_by_client_book_id(client_book_id, file, user_id)
+        if file.content_type == "application/pdf":
+            return self.pdf_service.upload_pdf_by_client_book_id(client_book_id, file, user_id)
+        raise ValidationError(
+            f"Unsupported file type: {file.content_type}. Only EPUB and PDF files are supported."
+        )
+
+    def delete_ebook(self, book_id: int) -> bool:
+        # Try deleting both EPUB and PDF files (one of them should exist)
+        # Book is already deleted from database at this point, so we can't check file_type
+        epub_deleted = self.epub_service.delete_epub(book_id)
+        pdf_deleted = self.pdf_service.delete_pdf(book_id)
+        return epub_deleted or pdf_deleted
+
+    def extract_text_between(
+        self, book_id: int, user_id: int, start: str | int, end: str | int
+    ) -> str:
+        # Validate that start and end are the same type
+        if type(start) is type(end):
+            raise ValidationError(
+                "start and end must be the same type (both int for pages or both str for xpoints)"
+            )
+
+        # Route based on parameter types
+        if isinstance(start, int) and isinstance(end, int):
+            # PDF: page numbers
+            return self.pdf_service.extract_text_between_pages(book_id, user_id, start, end)
+        if isinstance(start, str) and isinstance(end, str):
+            # EPUB: xpoints
+            return self.epub_service.extract_text_between_xpoints(book_id, user_id, start, end)
+        raise ValidationError("start and end must both be int (pages) or str (xpoints)")
