@@ -28,7 +28,7 @@ depends_on: str | Sequence[str] | None = None
 
 
 def compute_highlight_hash(text_content: str, book_title: str, book_author: str | None) -> str:
-    """Compute SHA-256 hash for a highlight (same logic as src/utils.py)."""
+    """Compute SHA-256 hash for a highlight (same logic as src/hash_utils.py)."""
     normalized_text = text_content.strip()
     normalized_title = book_title.strip()
     normalized_author = (book_author or "").strip()

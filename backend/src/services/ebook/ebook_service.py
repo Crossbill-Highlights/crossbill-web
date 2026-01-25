@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from src import repositories
 from src.exceptions import ValidationError
-from src.services.ebook.epub_service import EpubService
+from src.services.ebook.epub.epub_service import EpubService
 from src.services.ebook.pdf_service import PdfService
 
 

@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from src import models, repositories
 from src.exceptions import BookNotFoundError, InvalidEbookError, XPointNavigationError
-from src.utils import ParsedXPoint
+from src.services.ebook.epub.xpoint_utils import ParsedXPoint
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +202,7 @@ class EpubService:
 
         # Update book's file_path and file_type fields in database (store just the filename)
         book.file_path = epub_filename
-        book.file_type = "epub"
+        book.file_type = ""
         self.db.flush()
 
         # Parse TOC and save chapters to database

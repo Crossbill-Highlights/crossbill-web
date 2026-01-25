@@ -1,6 +1,6 @@
 """Tests for utility functions."""
 
-from src.utils import compute_highlight_hash
+from src.hash_utils import compute_highlight_hash
 
 
 class TestComputeHighlightHash:

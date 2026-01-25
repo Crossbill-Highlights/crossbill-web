@@ -22,7 +22,7 @@ from src.models import (
     User,
 )
 from src.services.auth_service import get_current_user
-from src.utils import compute_highlight_hash
+from src.hash_utils import compute_highlight_hash
 
 
 def create_test_book(

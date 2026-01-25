@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from src.exceptions import BookNotFoundError, XPointNavigationError, XPointParseError
 from src.models import Book, User
-from src.services.ebook.epub_service import EPUBS_DIR, EpubService
+from src.services.ebook.epub.epub_service import EPUBS_DIR, EpubService
 from tests.conftest import create_test_book
 
 

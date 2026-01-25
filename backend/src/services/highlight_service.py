@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src import repositories, schemas
 from src.exceptions import BookNotFoundError
-from src.utils import compute_highlight_hash
+from src.hash_utils import compute_highlight_hash
 
 logger = structlog.get_logger(__name__)
 

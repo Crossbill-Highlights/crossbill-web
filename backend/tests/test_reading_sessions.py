@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from src import models
-from src.utils import compute_reading_session_hash
+from src.hash_utils import compute_reading_session_hash
 from tests.conftest import create_test_book
 
 # Default user ID used by services (matches conftest default user)
