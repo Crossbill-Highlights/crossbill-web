@@ -4,15 +4,18 @@
  * crossbill API
  * OpenAPI spec version: 0.1.0
  */
-import type { BookCreate } from './bookCreate';
 import type { ReadingSessionUploadSessionItem } from './readingSessionUploadSessionItem';
 
 /**
  * Schema for uploading reading sessions from KOReader.
  */
 export interface ReadingSessionUploadRequest {
-  /** Book metadata for all sessions in this request */
-  book: BookCreate;
+  /**
+   * Client-provided stable book identifier for deduplication
+   * @minLength 1
+   * @maxLength 255
+   */
+  client_book_id: string;
   /**
    * List of reading sessions for this book
    * @minItems 1

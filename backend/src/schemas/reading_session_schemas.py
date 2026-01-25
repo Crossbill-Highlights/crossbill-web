@@ -77,7 +77,12 @@ class ReadingSessionUploadSessionItem(BaseModel):
 class ReadingSessionUploadRequest(BaseModel):
     """Schema for uploading reading sessions from KOReader."""
 
-    book: BookCreate = Field(..., description="Book metadata for all sessions in this request")
+    client_book_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Client-provided stable book identifier for deduplication",
+    )
     sessions: list[ReadingSessionUploadSessionItem] = Field(
         ..., min_length=1, description="List of reading sessions for this book"
     )

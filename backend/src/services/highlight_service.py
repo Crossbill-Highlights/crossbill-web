@@ -61,7 +61,7 @@ class HighlightService:
             )
             raise BookNotFoundError(
                 message=f"Book with client_book_id '{request.client_book_id}' not found. "
-                "Please create the book first via POST /ereader/books."
+                "Please create the book first"
             )
 
         # Step 2: Batch process chapters using chapter_number

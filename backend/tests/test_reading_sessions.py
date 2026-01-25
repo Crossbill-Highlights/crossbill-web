@@ -127,11 +127,7 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
-                "book": {
-                    "client_book_id": "test-client-book-id",
-                    "title": test_book.title,
-                    "author": test_book.author,
-                },
+                "client_book_id": "test-client-book-id",
                 "sessions": [
                     {
                         "start_time": "2024-01-15T10:00:00Z",
@@ -161,112 +157,6 @@ class TestUploadReadingSessions:
         assert session.start_xpoint == "/body/div[1]/p[1]"
         assert session.end_xpoint == "/body/div[1]/p[50]"
 
-    def test_upload_session_creates_book_if_not_exists(
-        self, client: TestClient, db_session: Session
-    ) -> None:
-        """Test that sessions for non-existent books create the book."""
-        response = client.post(
-            "/api/v1/reading_sessions/upload",
-            json={
-                "book": {
-                    "client_book_id": "test-client-new-book",
-                    "title": "New Book",
-                    "author": "New Author",
-                },
-                "sessions": [
-                    {
-                        "start_time": "2024-01-15T10:00:00Z",
-                        "end_time": "2024-01-15T11:00:00Z",
-                        "start_page": 1,
-                        "end_page": 10,
-                    }
-                ],
-            },
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["success"] is True
-        assert data["created_count"] == 1
-
-        # Verify book was created
-        book = db_session.query(models.Book).filter_by(title="New Book").first()
-        assert book is not None
-        assert book.author == "New Author"
-
-        # Verify session was created and linked to new book
-        session = db_session.query(models.ReadingSession).first()
-        assert session is not None
-        assert session.book_id == book.id
-
-    def test_upload_session_creates_book_with_keywords_as_tags(
-        self, client: TestClient, db_session: Session
-    ) -> None:
-        """Test that keywords from book metadata are added as tags when book is created."""
-        response = client.post(
-            "/api/v1/reading_sessions/upload",
-            json={
-                "book": {
-                    "client_book_id": "test-client-tagged-book",
-                    "title": "Tagged Book",
-                    "author": "Tag Author",
-                    "keywords": ["fiction", "adventure"],
-                },
-                "sessions": [
-                    {
-                        "start_time": "2024-01-15T10:00:00Z",
-                        "end_time": "2024-01-15T11:00:00Z",
-                        "start_page": 1,
-                        "end_page": 10,
-                    }
-                ],
-            },
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["success"] is True
-
-        # Verify book was created with tags
-        book = db_session.query(models.Book).filter_by(title="Tagged Book").first()
-        assert book is not None
-        tag_names = {tag.name for tag in book.tags}
-        assert tag_names == {"fiction", "adventure"}
-
-    def test_upload_session_uses_existing_book(
-        self, client: TestClient, db_session: Session, test_book: models.Book
-    ) -> None:
-        """Test that uploading a session uses existing book if it exists."""
-        response = client.post(
-            "/api/v1/reading_sessions/upload",
-            json={
-                "book": {
-                    "client_book_id": "test-client-book-id",
-                    "title": test_book.title,
-                    "author": test_book.author,
-                },
-                "sessions": [
-                    {
-                        "start_time": "2024-01-15T10:00:00Z",
-                        "end_time": "2024-01-15T11:00:00Z",
-                        "start_page": 10,
-                        "end_page": 15,
-                    }
-                ],
-            },
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-
-        # Verify session is linked to existing book
-        session = db_session.query(models.ReadingSession).first()
-        assert session is not None
-        assert session.book_id == test_book.id
-
-        # Verify no new book was created
-        books = db_session.query(models.Book).filter_by(title=test_book.title).all()
-        assert len(books) == 1
-
     def test_upload_bulk_sessions_success(
         self, client: TestClient, db_session: Session, test_book: models.Book
     ) -> None:
@@ -274,11 +164,7 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
-                "book": {
-                    "client_book_id": "test-client-book-id",
-                    "title": test_book.title,
-                    "author": test_book.author,
-                },
+                "client_book_id": "test-client-book-id",
                 "sessions": [
                     {
                         "start_time": "2024-01-15T10:00:00Z",
@@ -324,11 +210,7 @@ class TestUploadReadingSessions:
     ) -> None:
         """Test that duplicate sessions are skipped and reported in count."""
         session_data = {
-            "book": {
-                "client_book_id": "test-client-book-id",
-                "title": test_book.title,
-                "author": test_book.author,
-            },
+            "client_book_id": "test-client-book-id",
             "sessions": [
                 {
                     "start_time": "2024-01-15T10:00:00Z",
@@ -365,11 +247,7 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
-                "book": {
-                    "client_book_id": "test-client-book-id",
-                    "title": test_book.title,
-                    "author": test_book.author,
-                },
+                "client_book_id": "test-client-book-id",
                 "sessions": [
                     {
                         "start_time": "2024-01-15T10:00:00Z",
@@ -404,11 +282,7 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
-                "book": {
-                    "client_book_id": "test-client-book-id",
-                    "title": test_book.title,
-                    "author": test_book.author,
-                },
+                "client_book_id": "test-client-book-id",
                 "sessions": [
                     {
                         "start_time": "2024-01-15T10:00:00Z",
@@ -437,11 +311,7 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
-                "book": {
-                    "client_book_id": "test-client-book-id",
-                    "title": test_book.title,
-                    "author": test_book.author,
-                },
+                "client_book_id": "test-client-book-id",
                 "sessions": [
                     {
                         "start_time": "2024-01-15T10:00:00Z",
@@ -465,11 +335,7 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
-                "book": {
-                    "client_book_id": "test-client-book-id",
-                    "title": test_book.title,
-                    "author": test_book.author,
-                },
+                "client_book_id": "test-client-book-id",
                 "sessions": [
                     {
                         "start_time": "2024-01-15T10:00:00Z",
@@ -493,11 +359,7 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
-                "book": {
-                    "client_book_id": "test-client-book-id",
-                    "title": test_book.title,
-                    "author": test_book.author,
-                },
+                "client_book_id": "test-client-book-id",
                 "sessions": [
                     {
                         "start_time": "2024-01-15T10:00:00Z",
@@ -524,11 +386,7 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
-                "book": {
-                    "client_book_id": "test-client-book-id",
-                    "title": test_book.title,
-                    "author": test_book.author,
-                },
+                "client_book_id": "test-client-book-id",
                 "sessions": [
                     {
                         # Missing required start_time field
@@ -554,11 +412,7 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
-                "book": {
-                    "client_book_id": "test-client-book-id",
-                    "title": test_book.title,
-                    "author": test_book.author,
-                },
+                "client_book_id": "test-client-book-id",
                 "sessions": [
                     {
                         "start_time": "2024-01-15T10:00:00Z",
@@ -583,11 +437,7 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
-                "book": {
-                    "client_book_id": "test-client-book-id",
-                    "title": test_book.title,
-                    "author": test_book.author,
-                },
+                "client_book_id": "test-client-book-id",
                 "sessions": [
                     # Valid session
                     {
@@ -627,11 +477,7 @@ class TestUploadReadingSessions:
         response = client.post(
             "/api/v1/reading_sessions/upload",
             json={
-                "book": {
-                    "client_book_id": "test-client-book-id",
-                    "title": test_book.title,
-                    "author": test_book.author,
-                },
+                "client_book_id": "test-client-book-id",
                 "sessions": [
                     {
                         "start_time": "invalid-date",

@@ -40,7 +40,7 @@ async def upload_reading_sessions(
     try:
         service = ReadingSessionService(db)
         return service.upload_reading_sessions(
-            book_data=request.book,
+            client_book_id=request.client_book_id,
             sessions=request.sessions,
             user_id=current_user.id,
         )

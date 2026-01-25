@@ -9,7 +9,6 @@ from src import models, repositories, schemas
 from src.config import get_settings
 from src.exceptions import BookNotFoundError, ReadingSessionNotFoundError, ValidationError
 from src.repositories.reading_session_repository import ReadingSessionRepository
-from src.schemas.book_schemas import BookCreate
 from src.schemas.reading_session_schemas import (
     ReadingSessionBase,
     ReadingSessionUploadSessionItem,
@@ -35,7 +34,7 @@ class ReadingSessionService:
 
     def upload_reading_sessions(
         self,
-        book_data: BookCreate,
+        client_book_id: str,
         sessions: list[ReadingSessionUploadSessionItem],
         user_id: int,
     ) -> schemas.ReadingSessionUploadResponse:
@@ -62,7 +61,7 @@ class ReadingSessionService:
         logger.info(
             "processing_reading_session_upload",
             session_count=len(sessions),
-            book_title=book_data.title,
+            client_book_id=client_book_id,
         )
 
         # Log session details for debugging
@@ -81,8 +80,17 @@ class ReadingSessionService:
             )
 
         # Get or create book using BookService (handles client_book_id lookup with content_hash fallback)
-        book_service = BookService(self.db)
-        book, _ = book_service.create_book(book_data, user_id)
+        book = self.book_repo.find_by_client_book_id(client_book_id, user_id)
+
+        if not book:
+            logger.error(
+                "book_not_found_for_highlight_upload",
+                client_book_id=client_book_id,
+            )
+            raise BookNotFoundError(
+                message=f"Book with client_book_id '{client_book_id}' not found. "
+                "Please create the book first"
+            )
 
         to_save: list[ReadingSessionBase] = []
 
@@ -115,8 +123,8 @@ class ReadingSessionService:
 
         for session in sessions:
             session_hash = compute_reading_session_hash(
-                book_title=book_data.title,
-                book_author=book_data.author,
+                book_title=book.title,
+                book_author=book.author,
                 start_time=session.start_time.isoformat(),
                 device_id=session.device_id,
             )
