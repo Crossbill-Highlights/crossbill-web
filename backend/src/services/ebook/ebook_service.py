@@ -51,12 +51,6 @@ class EbookService:
     def extract_text_between(
         self, book_id: int, user_id: int, start: str | int, end: str | int
     ) -> str:
-        # Validate that start and end are the same type
-        if type(start) is type(end):
-            raise ValidationError(
-                "start and end must be the same type (both int for pages or both str for xpoints)"
-            )
-
         # Route based on parameter types
         if isinstance(start, int) and isinstance(end, int):
             # PDF: page numbers
