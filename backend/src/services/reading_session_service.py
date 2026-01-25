@@ -14,7 +14,6 @@ from src.schemas.reading_session_schemas import (
     ReadingSessionUploadSessionItem,
 )
 from src.services.ai.ai_service import get_ai_summary_from_text
-from src.services.book_service import BookService
 from src.services.epub_service import EpubService
 from src.utils import compute_reading_session_hash, is_xpoint_in_range
 

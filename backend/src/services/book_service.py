@@ -11,8 +11,8 @@ from sqlalchemy.orm import Session
 from src import models, repositories, schemas
 from src.exceptions import BookNotFoundError
 from src.schemas.highlight_schemas import ChapterWithHighlights
-from src.services.epub_service import EpubService
 from src.services.book_tag_service import BookTagService
+from src.services.epub_service import EpubService
 
 logger = logging.getLogger(__name__)
 
