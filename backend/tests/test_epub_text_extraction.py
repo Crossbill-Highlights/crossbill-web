@@ -5,10 +5,9 @@ from pathlib import Path
 
 import pytest
 from ebooklib import epub
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from src.exceptions import XPointNavigationError, XPointParseError
+from src.exceptions import BookNotFoundError, XPointNavigationError, XPointParseError
 from src.models import Book, User
 from src.services.ebook.epub_service import EPUBS_DIR, EpubService
 from tests.conftest import create_test_book
@@ -204,7 +203,7 @@ class TestEpubTextExtraction:
         assert "index out of range" in str(exc_info.value)
 
     def test_book_without_epub_raises_error(self, db_session: Session, test_user: User) -> None:
-        """Book without file_path raises HTTPException."""
+        """Book without file_path raises BookNotFoundError."""
         book = create_test_book(
             db_session=db_session,
             user_id=test_user.id,
@@ -213,7 +212,7 @@ class TestEpubTextExtraction:
 
         service = EpubService(db_session)
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(BookNotFoundError) as exc_info:
             service.extract_text_between_xpoints(
                 book_id=book.id,
                 user_id=test_user.id,

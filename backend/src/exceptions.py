@@ -17,6 +17,10 @@ class CrossbillError(Exception):
 class NotFoundError(CrossbillError):
     """Resource not found error."""
 
+    def __init__(self, message: str) -> None:
+        """Initialize with message and 404 status code."""
+        super().__init__(message, status_code=404)
+
 
 class BookNotFoundError(NotFoundError):
     """Book not found error."""
@@ -72,6 +76,16 @@ class XPointNavigationError(CrossbillError):
         self.xpoint = xpoint
         self.reason = reason
         super().__init__(f"Cannot navigate to xpoint '{xpoint}': {reason}", status_code=400)
+
+
+class InvalidEbookError(ValidationError):
+    """Invalid ebook file."""
+
+    def __init__(self, reason: str, ebook_type: str = "ebook") -> None:
+        """Initialize with reason for validation failure."""
+        self.reason = reason
+        self.ebook_type = ebook_type
+        super().__init__(f"Invalid {ebook_type}: {reason}", status_code=400)
 
 
 CredentialsException = HTTPException(

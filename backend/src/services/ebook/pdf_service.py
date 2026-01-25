@@ -9,7 +9,6 @@ and text extraction require PDF parsing libraries (pypdf, pdfplumber, etc.)
 import logging
 from pathlib import Path
 
-from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from src import repositories
@@ -17,7 +16,6 @@ from src.exceptions import BookNotFoundError
 
 # Module-level constants
 PDFS_DIR = Path(__file__).parent.parent.parent / "book-files" / "pdfs"
-MAX_PDF_SIZE = 50 * 1024 * 1024  # 50MB, same as EPUB
 logger = logging.getLogger(__name__)
 
 
@@ -65,18 +63,18 @@ class PdfService:
         return PDFS_DIR / book.file_path
 
     def upload_pdf_by_client_book_id(
-        self, client_book_id: str, pdf_file: UploadFile, user_id: int
+        self, client_book_id: str, content: bytes, user_id: int
     ) -> tuple[str, str]:
         """
         Upload a PDF file for a book identified by client_book_id.
 
         Args:
             client_book_id: Client-provided book identifier
-            pdf_file: The uploaded PDF file
+            content: The PDF file content as bytes
             user_id: The user ID
 
         Returns:
-            Tuple of (filename, client_book_id)
+            Tuple of (filename, absolute_file_path)
 
         Raises:
             NotImplementedError: PDF upload not yet implemented

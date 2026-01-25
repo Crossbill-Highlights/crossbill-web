@@ -19,7 +19,7 @@ class HighlightNotFoundError(NotFoundError):
     def __init__(self, highlight_id: int) -> None:
         """Initialize with highlight ID."""
         self.highlight_id = highlight_id
-        super().__init__(f"Highlight with id {highlight_id} not found", status_code=404)
+        super().__init__(f"Highlight with id {highlight_id} not found")
 
 
 class FlashcardNotFoundError(NotFoundError):
@@ -28,7 +28,7 @@ class FlashcardNotFoundError(NotFoundError):
     def __init__(self, flashcard_id: int) -> None:
         """Initialize with flashcard ID."""
         self.flashcard_id = flashcard_id
-        super().__init__(f"Flashcard with id {flashcard_id} not found", status_code=404)
+        super().__init__(f"Flashcard with id {flashcard_id} not found")
 
 
 class FlashcardService:

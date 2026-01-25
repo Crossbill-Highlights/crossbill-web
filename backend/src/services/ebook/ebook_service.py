@@ -1,5 +1,3 @@
-
-from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from src import repositories
@@ -15,14 +13,32 @@ class EbookService:
         self.pdf_service = PdfService(db)
         self.book_repo = repositories.BookRepository(db)
 
-    def upload_ebook(self, client_book_id: str, file: UploadFile, user_id: int) -> tuple[str, str]:
-        # Detect file type from content-type header
-        if file.content_type == "application/epub+zip":
-            return self.epub_service.upload_epub_by_client_book_id(client_book_id, file, user_id)
-        if file.content_type == "application/pdf":
-            return self.pdf_service.upload_pdf_by_client_book_id(client_book_id, file, user_id)
+    def upload_ebook(
+        self, client_book_id: str, content: bytes, content_type: str, user_id: int
+    ) -> tuple[str, str]:
+        """Upload an ebook file for a book.
+
+        Args:
+            client_book_id: The client-provided book identifier
+            content: The file content as bytes
+            content_type: MIME type of the file
+            user_id: ID of the user uploading the file
+
+        Returns:
+            tuple[str, str]: (file_path_for_db, absolute_file_path)
+
+        Raises:
+            ValidationError: If file type is not supported
+            BookNotFoundError: If book not found
+            InvalidEbookError: If file validation fails
+        """
+        # Route to appropriate service based on content-type
+        if content_type == "application/epub+zip":
+            return self.epub_service.upload_epub_by_client_book_id(client_book_id, content, user_id)
+        if content_type == "application/pdf":
+            return self.pdf_service.upload_pdf_by_client_book_id(client_book_id, content, user_id)
         raise ValidationError(
-            f"Unsupported file type: {file.content_type}. Only EPUB and PDF files are supported."
+            f"Unsupported file type: {content_type}. Only EPUB and PDF files are supported."
         )
 
     def delete_ebook(self, book_id: int) -> bool:
