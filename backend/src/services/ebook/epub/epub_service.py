@@ -200,9 +200,8 @@ class EpubService:
             except Exception as e:
                 logger.warning(f"Failed to delete old epub file {old_epub_path}: {e!s}")
 
-        # Update book's file_path and file_type fields in database (store just the filename)
         book.file_path = epub_filename
-        book.file_type = ""
+        book.file_type = "epub"
         self.db.flush()
 
         # Parse TOC and save chapters to database
