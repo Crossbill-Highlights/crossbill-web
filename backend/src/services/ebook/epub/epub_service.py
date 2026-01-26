@@ -14,13 +14,12 @@ from pathlib import Path
 from typing import Any
 
 from ebooklib import epub
-from fastapi import HTTPException, UploadFile
 from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
 from sqlalchemy.orm import Session
 
 from src import models, repositories
-from src.exceptions import BookNotFoundError, XPointNavigationError
-from src.utils import ParsedXPoint
+from src.exceptions import BookNotFoundError, InvalidEbookError, XPointNavigationError
+from src.services.ebook.epub.xpoint_utils import ParsedXPoint
 
 logger = logging.getLogger(__name__)
 
@@ -74,9 +73,6 @@ def _extract_toc_hierarchy(
 
 # Directory for epub files (parallel to book-covers)
 EPUBS_DIR = Path(__file__).parent.parent.parent / "book-files" / "epubs"
-
-# Maximum epub file size (50MB - epubs are larger than covers)
-MAX_EPUB_SIZE = 50 * 1024 * 1024
 
 
 def _sanitize_filename(text: str) -> str:
@@ -146,22 +142,21 @@ class EpubService:
         self.book_repo = repositories.BookRepository(db)
         self.chapter_repo = repositories.ChapterRepository(db)
 
-    def upload_epub(self, book_id: int, epub_file: UploadFile, user_id: int) -> tuple[str, str]:
+    def _upload_epub(self, book_id: int, content: bytes, user_id: int) -> tuple[str, str]:
         """
         Upload and validate an epub file for a book.
 
         This method:
         1. Validates the book exists and belongs to user
-        2. Checks file is epub format
-        3. Validates epub structure using ebooklib
-        4. Generates sanitized filename from book title and ID
-        5. Saves file to epubs directory
-        6. Removes old epub file if filename differs
-        7. Updates book.epub_path in database
+        2. Validates epub structure using ebooklib
+        3. Generates sanitized filename from book title and ID
+        4. Saves file to epubs directory
+        5. Removes old epub file if filename differs
+        6. Updates book.file_path and book.file_type in database
 
         Args:
             book_id: ID of the book
-            epub_file: Uploaded epub file
+            content: The epub file content as bytes
             user_id: ID of the user uploading the epub
 
         Returns:
@@ -169,28 +164,16 @@ class EpubService:
 
         Raises:
             BookNotFoundError: If book not found or doesn't belong to user
-            HTTPException: If validation fails or upload fails
+            InvalidEbookError: If epub structure validation fails
         """
         # Verify book exists and belongs to user
         book = self.book_repo.get_by_id(book_id, user_id)
         if not book:
             raise BookNotFoundError(book_id)
 
-        # Check content-type header
-        allowed_types = {"application/epub+zip"}
-        if epub_file.content_type not in allowed_types:
-            raise HTTPException(status_code=400, detail="Only EPUB files are allowed")
-
-        # Read with size limit
-        content = epub_file.file.read(MAX_EPUB_SIZE + 1)
-        if len(content) > MAX_EPUB_SIZE:
-            raise HTTPException(
-                status_code=400, detail=f"File too large (max {MAX_EPUB_SIZE // (1024 * 1024)}MB)"
-            )
-
         # Validate epub structure
         if not _validate_epub(content):
-            raise HTTPException(status_code=400, detail="Invalid EPUB file")
+            raise InvalidEbookError("EPUB structure validation failed", ebook_type="EPUB")
 
         # Create epubs directory if it doesn't exist
         EPUBS_DIR.mkdir(parents=True, exist_ok=True)
@@ -202,8 +185,8 @@ class EpubService:
 
         # Check if book already has an epub file
         old_epub_path = None
-        if book.epub_path:
-            old_epub_path = EPUBS_DIR / book.epub_path
+        if book.file_path and book.file_type == "epub":
+            old_epub_path = EPUBS_DIR / book.file_path
 
         # Save new epub file
         epub_path.write_bytes(content)
@@ -217,8 +200,8 @@ class EpubService:
             except Exception as e:
                 logger.warning(f"Failed to delete old epub file {old_epub_path}: {e!s}")
 
-        # Update book's epub_path field in database (store just the filename)
-        book.epub_path = epub_filename
+        book.file_path = epub_filename
+        book.file_type = "epub"
         self.db.flush()
 
         # Parse TOC and save chapters to database
@@ -240,23 +223,22 @@ class EpubService:
             Path to the epub file
 
         Raises:
-            BookNotFoundError: If book not found or user doesn't own it
-            HTTPException: If epub file doesn't exist
+            BookNotFoundError: If book not found or user doesn't own it or epub file doesn't exist
         """
         book = self.book_repo.get_by_id(book_id, user_id)
 
-        if not book or not book.epub_path:
-            raise HTTPException(status_code=404, detail="EPUB file not found")
+        if not book or not book.file_path or book.file_type != "epub":
+            raise BookNotFoundError(book_id, message="EPUB file not found for this book")
 
-        epub_path = EPUBS_DIR / book.epub_path
+        epub_path = EPUBS_DIR / book.file_path
 
         if not epub_path.exists() or not epub_path.is_file():
-            raise HTTPException(status_code=404, detail="EPUB file not found")
+            raise BookNotFoundError(book_id, message="EPUB file not found on disk")
 
         return epub_path
 
     def upload_epub_by_client_book_id(
-        self, client_book_id: str, epub_file: UploadFile, user_id: int
+        self, client_book_id: str, content: bytes, user_id: int
     ) -> tuple[str, str]:
         """
         Upload and validate an epub file for a book using client_book_id.
@@ -266,7 +248,7 @@ class EpubService:
 
         Args:
             client_book_id: The client-provided book identifier
-            epub_file: Uploaded epub file
+            content: The epub file content as bytes
             user_id: ID of the user uploading the epub
 
         Returns:
@@ -274,7 +256,7 @@ class EpubService:
 
         Raises:
             BookNotFoundError: If book not found for the given client_book_id
-            HTTPException: If validation fails or upload fails
+            InvalidEbookError: If epub validation fails
         """
         book = self.book_repo.find_by_client_book_id(client_book_id, user_id)
 
@@ -284,7 +266,7 @@ class EpubService:
             )
 
         # Delegate to the existing upload_epub method using book.id
-        return self.upload_epub(book.id, epub_file, user_id)
+        return self._upload_epub(book.id, content, user_id)
 
     def delete_epub(self, book_id: int) -> bool:
         """
@@ -372,16 +354,21 @@ class EpubService:
 
         # Get existing chapters for this book
         chapter_names = {name for name, _, _ in chapters}
-        existing_chapters = self.chapter_repo.get_by_names(book_id, chapter_names, user_id)
+        existing_chapters_list = self.chapter_repo.get_by_names(book_id, chapter_names, user_id)
 
-        # Track created/existing chapters by name for parent lookups
-        chapter_by_name: dict[str, models.Chapter] = existing_chapters.copy()
+        # Build tracking dictionaries from the complete list of existing chapters
+        # chapter_by_name: for parent lookups (last one wins if duplicate names - that's OK for this use case)
+        # chapter_by_name_and_parent: for duplicate detection (this is the critical one!)
+        # existing_chapter_keys: tracks which (name, parent_id) pairs came from DB
+        chapter_by_name: dict[str, models.Chapter] = {}
+        chapter_by_name_and_parent: dict[tuple[str, int | None], models.Chapter] = {}
+        existing_chapter_keys: set[tuple[str, int | None]] = set()
 
-        # Track chapters by (name, parent_id) to detect true duplicates
-        # (same name under same parent = duplicate, different parent = separate chapter)
-        chapter_by_name_and_parent: dict[tuple[str, int | None], models.Chapter] = {
-            (ch.name, ch.parent_id): ch for ch in existing_chapters.values()
-        }
+        for ch in existing_chapters_list:
+            chapter_by_name[ch.name] = ch
+            key = (ch.name, ch.parent_id)
+            chapter_by_name_and_parent[key] = ch
+            existing_chapter_keys.add(key)
 
         chapters_to_update = []
         created_count = 0
@@ -399,8 +386,8 @@ class EpubService:
                 # This exact chapter (same name AND parent) already exists
                 existing_chapter = chapter_by_name_and_parent[chapter_key]
 
-                # Check if it needs updating
-                if name in existing_chapters:
+                # Check if it needs updating (only if it came from DB, not created in this loop)
+                if chapter_key in existing_chapter_keys:
                     needs_update = False
 
                     if existing_chapter.chapter_number != chapter_number:
@@ -468,8 +455,7 @@ class EpubService:
             The text content between the two positions
 
         Raises:
-            BookNotFoundError: If book not found or user doesn't own it
-            HTTPException: If EPUB file doesn't exist on disk
+            BookNotFoundError: If book not found, user doesn't own it, or EPUB file doesn't exist
             XPointParseError: If xpoint format is invalid
             XPointNavigationError: If cannot navigate to xpoint in EPUB
         """

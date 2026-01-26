@@ -3,7 +3,7 @@
 import pytest
 
 from src.exceptions import XPointParseError
-from src.utils import ParsedXPoint, compare_xpoints, is_xpoint_in_range
+from src.services.ebook.epub.xpoint_utils import ParsedXPoint, compare_xpoints, is_xpoint_in_range
 
 
 class TestParsedXPoint:

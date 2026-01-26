@@ -28,7 +28,7 @@ depends_on: str | Sequence[str] | None = None
 
 
 def compute_book_hash(title: str, author: str | None) -> str:
-    """Compute SHA-256 hash for a book (same logic as src/utils.py)."""
+    """Compute SHA-256 hash for a book (same logic as src/hash_utils.py)."""
     normalized_title = title.strip()
     normalized_author = (author or "").strip()
     hash_input = f"{normalized_title}|{normalized_author}"

@@ -11,8 +11,8 @@ from sqlalchemy.orm import Session
 from src import models, repositories, schemas
 from src.exceptions import BookNotFoundError
 from src.schemas.highlight_schemas import ChapterWithHighlights
-from src.services.epub_service import EpubService
 from src.services.book_tag_service import BookTagService
+from src.services.ebook.ebook_service import EbookService
 
 logger = logging.getLogger(__name__)
 
@@ -277,8 +277,8 @@ class BookService:
             raise BookNotFoundError(book_id)
 
         # Delete associated epub file if it exists
-        epub_service = EpubService(self.db)
-        epub_service.delete_epub(book_id)
+        ebook_service = EbookService(self.db)
+        ebook_service.delete_ebook(book_id)
 
         # Commit the deletion
         self.db.commit()
@@ -503,15 +503,15 @@ class BookService:
         cover_path = COVERS_DIR / cover_filename
         has_cover = cover_path.is_file()
 
-        # Check if epub exists
-        has_epub = book.epub_path is not None
+        # Check if ebook file exists
+        has_ebook = book.file_path is not None
 
         return schemas.EreaderBookMetadata(
             book_id=book.id,
             bookname=book.title,
             author=book.author,
             has_cover=has_cover,
-            has_epub=has_epub,
+            has_ebook=has_ebook,
         )
 
     def upload_cover_by_client_book_id(

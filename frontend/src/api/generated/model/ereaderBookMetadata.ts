@@ -20,6 +20,6 @@ export interface EreaderBookMetadata {
   author?: string | null;
   /** Whether the book has a cover image */
   has_cover: boolean;
-  /** Whether the book has an EPUB file */
-  has_epub: boolean;
+  /** Whether the book has an ebook file */
+  has_ebook: boolean;
 }

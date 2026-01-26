@@ -8,15 +8,15 @@ from sqlalchemy.orm import Session
 from src import models, repositories, schemas
 from src.config import get_settings
 from src.exceptions import BookNotFoundError, ReadingSessionNotFoundError, ValidationError
+from src.hash_utils import compute_reading_session_hash
 from src.repositories.reading_session_repository import ReadingSessionRepository
 from src.schemas.reading_session_schemas import (
     ReadingSessionBase,
     ReadingSessionUploadSessionItem,
 )
 from src.services.ai.ai_service import get_ai_summary_from_text
-from src.services.book_service import BookService
-from src.services.epub_service import EpubService
-from src.utils import compute_reading_session_hash, is_xpoint_in_range
+from src.services.ebook.ebook_service import EbookService
+from src.services.ebook.epub.xpoint_utils import is_xpoint_in_range
 
 logger = structlog.get_logger(__name__)
 
@@ -30,7 +30,7 @@ class ReadingSessionService:
         self.book_repo = repositories.BookRepository(db)
         self.session_repo = ReadingSessionRepository(db)
         self.highlight_repo = repositories.HighlightRepository(db)
-        self.epub_service = EpubService(db)
+        self.ebook_service = EbookService(db)
 
     def upload_reading_sessions(
         self,
@@ -324,7 +324,7 @@ class ReadingSessionService:
 
         for s in sessions:
             if s.start_xpoint and s.end_xpoint:
-                text_content = self.epub_service.extract_text_between_xpoints(
+                text_content = self.ebook_service.extract_text_between(
                     book_id, user_id, s.start_xpoint, s.end_xpoint
                 )
                 s.content = text_content
@@ -382,21 +382,18 @@ class ReadingSessionService:
                 session_id=session_id,
                 book_id=session.book_id,
             )
-            content = self.epub_service.extract_text_between_xpoints(
+            content = self.ebook_service.extract_text_between(
                 session.book_id,
                 user_id,
                 session.start_xpoint,
                 session.end_xpoint,
             )
-            # TODO: PDF page numbers not yet supported
         elif session.start_page is not None and session.end_page is not None:
-            logger.warning(
-                "pdf_summary_not_supported",
-                session_id=session_id,
-                book_id=session.book_id,
-            )
-            raise ValidationError(
-                "AI summaries for PDF-based reading sessions are not yet supported"
+            content = self.ebook_service.extract_text_between(
+                session.book_id,
+                user_id,
+                session.start_page,
+                session.end_page,
             )
         else:
             # Session has neither xpoints nor pages (shouldn't happen due to validation)

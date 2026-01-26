@@ -48,15 +48,13 @@ class ChapterRepository:
         logger.info(f"Created chapter: {name} for book_id={book_id} (number={chapter_number})")
         return chapter
 
-    def get_by_names(
-        self, book_id: int, names: set[str], user_id: int
-    ) -> dict[str, models.Chapter]:
+    def get_by_names(self, book_id: int, names: set[str], user_id: int) -> list[models.Chapter]:
         """Get multiple chapters by names for a book in one query.
 
-        Returns a dictionary mapping chapter names to Chapter objects.
+        Returns a list of Chapter objects (may include duplicates with same name but different parent_id).
         """
         if not names:
-            return {}
+            return []
 
         stmt = (
             select(models.Chapter)
@@ -68,7 +66,7 @@ class ChapterRepository:
             )
         )
         chapters = self.db.execute(stmt).scalars().all()
-        return {chapter.name: chapter for chapter in chapters}
+        return list(chapters)
 
     def get_by_numbers(
         self, book_id: int, chapter_numbers: set[int], user_id: int

@@ -5,7 +5,6 @@ from typing import Self
 
 from pydantic import BaseModel, Field, model_validator
 
-from src.schemas.book_schemas import BookCreate
 from src.schemas.highlight_schemas import Highlight
 
 

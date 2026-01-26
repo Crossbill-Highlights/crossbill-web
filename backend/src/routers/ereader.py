@@ -11,7 +11,7 @@ from src.exceptions import CrossbillError
 from src.models import User
 from src.services.auth_service import get_current_user
 from src.services.book_service import BookService
-from src.services.epub_service import EpubService
+from src.services.ebook.ebook_service import EbookService
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +156,10 @@ def upload_book_cover(
         ) from e
 
 
+# Maximum ebook file size (50MB - epubs and PDFs can be large)
+MAX_EBOOK_SIZE = 50 * 1024 * 1024
+
+
 @router.post(
     "/books/{client_book_id}/epub",
     response_model=schemas.EpubUploadResponse,
@@ -168,14 +172,14 @@ def upload_book_epub(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> schemas.EpubUploadResponse:
     """
-    Upload an EPUB file for a book using client_book_id.
+    Upload an ebook file (EPUB) for a book using client_book_id.
 
-    This endpoint accepts an uploaded EPUB file and saves it for the book.
+    This endpoint accepts an uploaded ebook file and saves it for the book.
     Used by KOReader which identifies books by client_book_id.
 
     Args:
         client_book_id: The client-provided stable book identifier
-        epub: Uploaded EPUB file
+        epub: Uploaded ebook file (EPUB or PDF)
         db: Database session
         current_user: Authenticated user
 
@@ -183,25 +187,42 @@ def upload_book_epub(
         EpubUploadResponse with success status
 
     Raises:
-        HTTPException: 404 if book is not found, or if upload fails
+        HTTPException: 400 for invalid file, 404 if book is not found
     """
     try:
-        service = EpubService(db)
-        service.upload_epub_by_client_book_id(client_book_id, epub, current_user.id)
+        # Validate content-type
+        allowed_types = {"application/epub+zip"}
+        if epub.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only EPUB and PDF files are allowed",
+            )
+
+        # Read file with size limit
+        content = epub.file.read(MAX_EBOOK_SIZE + 1)
+        if len(content) > MAX_EBOOK_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File too large (max {MAX_EBOOK_SIZE // (1024 * 1024)}MB)",
+            )
+
+        # Upload the ebook through service layer
+        service = EbookService(db)
+        service.upload_ebook(client_book_id, content, epub.content_type or "", current_user.id)
 
         # Commit the database update
         db.commit()
 
         return schemas.EpubUploadResponse(
             success=True,
-            message="EPUB uploaded successfully",
+            message="Ebook uploaded successfully",
         )
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
     except Exception as e:
         logger.error(
-            f"Failed to upload epub for client_book_id={client_book_id}: {e!s}",
+            f"Failed to upload ebook for client_book_id={client_book_id}: {e!s}",
             exc_info=True,
         )
         raise HTTPException(
