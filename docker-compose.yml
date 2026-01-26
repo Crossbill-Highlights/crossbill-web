@@ -14,7 +14,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - postgres_data:/var/lib/postgresql/data # Add this line
+      - postgres_data:/var/lib/postgresql/18/docker
     networks:
       - crossbill-network
 
