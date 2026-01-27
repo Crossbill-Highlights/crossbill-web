@@ -4,13 +4,12 @@
  * crossbill API
  * OpenAPI spec version: 0.1.0
  */
+import type { FeatureFlags } from './featureFlags';
 
 /**
  * Schema for returning public application settings.
  */
 export interface AppSettingsResponse {
-  /** Whether user registration is enabled */
-  allow_user_registrations: boolean;
-  /** Whether AI features are enabled */
-  ai_features: boolean;
+  /** All feature flags */
+  feature_flags: FeatureFlags;
 }

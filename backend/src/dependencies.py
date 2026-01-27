@@ -6,7 +6,7 @@ from typing import Any, TypeVar
 
 from fastapi import HTTPException, status
 
-from src.config import get_settings
+from src.feature_flags import is_ai_enabled
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -26,8 +26,7 @@ def require_ai_enabled(func: F) -> F:
 
     @wraps(func)
     async def wrapper(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
-        settings = get_settings()
-        if not settings.ai_enabled:
+        if not is_ai_enabled():
             raise HTTPException(
                 status_code=status.HTTP_410_GONE,
                 detail="AI features are not enabled on this server",

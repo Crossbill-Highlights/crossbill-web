@@ -1,19 +1,19 @@
-import type { AppSettingsResponse } from '@/api/generated/model';
+import type { FeatureFlags } from '@/api/generated/model';
 import { useSettings } from '@/context/SettingsContext.tsx';
 import type { ReactNode } from 'react';
 
-interface FeatureGateProps<K extends keyof AppSettingsResponse> {
+interface FeatureGateProps<K extends keyof FeatureFlags> {
   flag: K;
-  value: AppSettingsResponse[K];
+  value: FeatureFlags[K];
   children: ReactNode;
 }
 
-export function FeatureGate<K extends keyof AppSettingsResponse>({
+export function FeatureGate<K extends keyof FeatureFlags>({
   flag,
   value,
   children,
 }: FeatureGateProps<K>) {
-  const { settings, isLoading } = useSettings();
+  const { featureFlags, isLoading } = useSettings();
 
   // Don't render anything while loading
   if (isLoading) {
@@ -21,12 +21,12 @@ export function FeatureGate<K extends keyof AppSettingsResponse>({
   }
 
   // Don't render if settings are not available
-  if (!settings) {
+  if (!featureFlags) {
     return null;
   }
 
   // Only render children if the flag matches the expected value
-  if (settings[flag] === value) {
+  if (featureFlags[flag] === value) {
     return <>{children}</>;
   }
 

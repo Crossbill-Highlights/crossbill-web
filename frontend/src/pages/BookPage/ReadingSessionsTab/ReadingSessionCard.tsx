@@ -100,7 +100,7 @@ export const ReadingSessionCard = ({
 
   const summary = session.ai_summary || data?.summary;
   const hasSummary = Boolean(summary);
-  const aiEnabled = !!useSettings().settings?.ai_features;
+  const aiEnabled = !!useSettings().featureFlags?.ai;
 
   const handleHighlightClick = (highlightId: number) => {
     onOpenHighlight(session.id, highlightId);
