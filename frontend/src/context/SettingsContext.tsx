@@ -1,9 +1,10 @@
-import type { AppSettingsResponse } from '@/api/generated/model';
+import type { AppSettingsResponse, FeatureFlags } from '@/api/generated/model';
 import { getAppSettingsApiV1SettingsGet } from '@/api/generated/settings/settings';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface SettingsContextType {
   settings: AppSettingsResponse | null;
+  featureFlags: FeatureFlags | undefined;
   isLoading: boolean;
 }
 
@@ -22,7 +23,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error('Failed to fetch app settings:', error);
         // Set default settings on error
-        setSettings({ allow_user_registrations: true, ai_features: false });
+        setSettings({
+          feature_flags: {
+            ai: false,
+            user_registrations: false,
+          },
+        });
       } finally {
         setIsLoading(false);
       }
@@ -35,6 +41,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     <SettingsContext.Provider
       value={{
         settings,
+        featureFlags: settings?.feature_flags,
         isLoading,
       }}
     >

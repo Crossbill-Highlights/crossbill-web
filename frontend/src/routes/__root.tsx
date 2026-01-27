@@ -23,7 +23,7 @@ function AuthenticatedRoutes() {
   }
 
   // Redirect to login if trying to access registration when it's disabled
-  if (location.pathname === '/register' && !settings?.allow_user_registrations) {
+  if (location.pathname === '/register' && !settings?.feature_flags.user_registrations) {
     return <Navigate to="/login" />;
   }
 

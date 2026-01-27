@@ -96,7 +96,7 @@ export const LoginPage = () => {
             </Button>
           </Box>
 
-          <FeatureGate flag="allow_user_registrations" value={true}>
+          <FeatureGate flag="user_registrations" value={true}>
             <Box sx={{ mt: 3, textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">
                 Don't have an account?{' '}

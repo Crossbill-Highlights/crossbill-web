@@ -24,6 +24,7 @@ export * from './chapterWithHighlights';
 export * from './coverUploadResponse';
 export * from './epubUploadResponse';
 export * from './ereaderBookMetadata';
+export * from './featureFlags';
 export * from './flashcard';
 export * from './flashcardCreateRequest';
 export * from './flashcardCreateResponse';

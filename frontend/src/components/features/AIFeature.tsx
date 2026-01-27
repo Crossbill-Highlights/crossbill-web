@@ -7,7 +7,7 @@ interface AIFeatureProps {
 
 export function AIFeature({ children }: AIFeatureProps) {
   return (
-    <FeatureGate flag="ai_features" value={true}>
+    <FeatureGate flag="ai" value={true}>
       {children}
     </FeatureGate>
   );

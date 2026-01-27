@@ -398,14 +398,14 @@ export const useUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost = <
   );
 };
 /**
- * Upload an EPUB file for a book using client_book_id.
+ * Upload an ebook file (EPUB) for a book using client_book_id.
 
-This endpoint accepts an uploaded EPUB file and saves it for the book.
+This endpoint accepts an uploaded ebook file and saves it for the book.
 Used by KOReader which identifies books by client_book_id.
 
 Args:
     client_book_id: The client-provided stable book identifier
-    epub: Uploaded EPUB file
+    epub: Uploaded ebook file (EPUB or PDF)
     db: Database session
     current_user: Authenticated user
 
@@ -413,7 +413,7 @@ Returns:
     EpubUploadResponse with success status
 
 Raises:
-    HTTPException: 404 if book is not found, or if upload fails
+    HTTPException: 400 for invalid file, 404 if book is not found
  * @summary Upload Book Epub
  */
 export const uploadBookEpubApiV1EreaderBooksClientBookIdEpubPost = (
