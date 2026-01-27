@@ -6,7 +6,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from src import schemas
-from src.config import get_settings
+from src.feature_flags import is_user_registrations_enabled
 from src.models import User
 from src.repositories import UserRepository
 from src.services.auth_service import (
@@ -43,10 +43,8 @@ class UserService:
         Raises:
             HTTPException: If registration is disabled or email already exists
         """
-        settings = get_settings()
-
         # Check if user registration is enabled
-        if not settings.ALLOW_USER_REGISTRATIONS:
+        if not is_user_registrations_enabled():
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="User registration is currently disabled",
