@@ -18,8 +18,8 @@ Example:
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import Generic, TypeVar
-from uuid import UUID, uuid4
+from typing import Generic, Self, TypeVar
+from uuid import UUID
 
 from .value_object import ValueObject
 
@@ -57,9 +57,9 @@ class EntityId(ValueObject):
         return str(self.value)
 
     @classmethod
-    def generate(cls) -> "EntityId":
-        """Generate a new UUID-based ID."""
-        return cls(uuid4())
+    def generate(cls) -> Self:
+        """Set placeholder id. Usually these are set by the database"""
+        return cls(0)
 
     def to_primitive(self) -> int | str:
         """Convert to primitive for serialization."""
