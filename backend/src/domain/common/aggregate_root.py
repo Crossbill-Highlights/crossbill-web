@@ -41,7 +41,9 @@ class AggregateRoot(Entity[IdType], Generic[IdType]):
     the aggregate is persisted (through the Unit of Work).
     """
 
-    _events: list[DomainEvent] = field(default_factory=list, repr=False, compare=False)
+    _events: list[DomainEvent] = field(
+        default_factory=list, repr=False, compare=False, kw_only=True
+    )
 
     def _record_event(self, event: DomainEvent) -> None:
         """
