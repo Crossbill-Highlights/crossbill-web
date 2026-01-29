@@ -9,7 +9,6 @@ Contains base classes for domain modeling:
 """
 
 from .aggregate_root import AggregateRoot
-from .domain_event import DomainEvent
 from .entity import Entity, EntityId
 from .exceptions import (
     BusinessRuleViolationError,
@@ -24,7 +23,6 @@ __all__ = [
     "AggregateRoot",
     "BusinessRuleViolationError",
     "DomainError",
-    "DomainEvent",
     "Entity",
     "EntityId",
     "EntityNotFoundError",
