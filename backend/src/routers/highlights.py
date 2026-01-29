@@ -10,11 +10,15 @@ from src.application.reading.services.highlight_upload_service import (
     HighlightService as DomainHighlightService,
 )
 from src.application.reading.services.highlight_upload_service import HighlightUploadData
+from src.application.reading.services.search_highlights_service import SearchHighlightsService
+from src.application.reading.services.update_highlight_note_service import (
+    UpdateHighlightNoteService,
+)
 from src.database import DatabaseSession
 from src.domain.reading.exceptions import BookNotFoundError
 from src.exceptions import CrossbillError
 from src.models import User
-from src.services import FlashcardService, HighlightService, HighlightTagService
+from src.services import FlashcardService, HighlightTagService
 from src.services.auth_service import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -128,8 +132,36 @@ def search_highlights(
         HTTPException: If search fails due to server error
     """
     try:
-        service = HighlightService(db)
-        return service.search_highlights(search_text, current_user.id, book_id, limit)
+        service = SearchHighlightsService(db)
+        results = service.search(search_text, current_user.id, book_id, limit)
+
+        # Convert domain entities to schemas in route handler
+        search_results = [
+            schemas.HighlightSearchResult(
+                id=highlight.id.value,
+                text=highlight.text,
+                page=highlight.page,
+                note=highlight.note,
+                datetime=highlight.datetime,
+                book_id=book.id.value,
+                book_title=book.title,
+                book_author=book.author,
+                chapter_id=chapter.id.value if chapter else None,
+                chapter_name=chapter.name if chapter else None,
+                chapter_number=chapter.chapter_number if chapter else None,
+                highlight_tags=[
+                    schemas.HighlightTagInBook(
+                        id=tag.id.value, name=tag.name, tag_group_id=tag.tag_group_id
+                    )
+                    for tag in highlight_tags
+                ],
+                created_at=highlight.created_at,
+                updated_at=highlight.updated_at,
+            )
+            for highlight, book, chapter, highlight_tags in results
+        ]
+
+        return schemas.HighlightSearchResponse(highlights=search_results, total=len(search_results))
     except Exception as e:
         logger.error(f"Failed to search highlights: {e!s}", exc_info=True)
         raise HTTPException(
@@ -164,8 +196,8 @@ def update_highlight_note(
         HTTPException: If highlight not found or update fails
     """
     try:
-        service = HighlightService(db)
-        highlight = service.update_highlight_note(highlight_id, current_user.id, request)
+        service = UpdateHighlightNoteService(db)
+        highlight = service.update_note(highlight_id, current_user.id, request.note)
 
         if highlight is None:
             raise HTTPException(
@@ -173,10 +205,28 @@ def update_highlight_note(
                 detail=f"Highlight with id {highlight_id} not found",
             )
 
+        # Commit the transaction
+        db.commit()
+
+        # Convert domain entity to schema
+        # Need to fetch the ORM model for relationships (flashcards, highlight_tags)
+        from src.repositories.highlight_repository import HighlightRepository as LegacyRepo
+
+        legacy_repo = LegacyRepo(db)
+        highlight_orm = legacy_repo.get_by_id(highlight_id, current_user.id)
+
+        if highlight_orm is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Highlight with id {highlight_id} not found",
+            )
+
+        highlight_schema = schemas.Highlight.model_validate(highlight_orm)
+
         return schemas.HighlightNoteUpdateResponse(
             success=True,
             message="Note updated successfully",
-            highlight=highlight,
+            highlight=highlight_schema,
         )
     except HTTPException:
         raise

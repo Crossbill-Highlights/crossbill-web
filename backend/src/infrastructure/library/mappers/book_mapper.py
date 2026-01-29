@@ -13,6 +13,7 @@ class BookMapper:
             user_id=UserId(orm_model.user_id),
             title=orm_model.title,
             created_at=orm_model.created_at,
+            updated_at=orm_model.updated_at,
             client_book_id=orm_model.client_book_id,
             author=orm_model.author,
             isbn=orm_model.isbn,

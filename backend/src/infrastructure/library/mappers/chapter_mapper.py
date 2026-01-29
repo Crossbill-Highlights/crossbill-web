@@ -17,16 +17,12 @@ class ChapterMapper:
             parent_id=ChapterId(orm_model.parent_id) if orm_model.parent_id else None,
         )
 
-    def to_orm(
-        self, domain_entity: Chapter, orm_model: ChapterORM | None = None
-    ) -> ChapterORM:
+    def to_orm(self, domain_entity: Chapter, orm_model: ChapterORM | None = None) -> ChapterORM:
         """Convert domain entity to ORM model."""
         if orm_model:
             # Update existing
             orm_model.book_id = domain_entity.book_id.value
-            orm_model.parent_id = (
-                domain_entity.parent_id.value if domain_entity.parent_id else None
-            )
+            orm_model.parent_id = domain_entity.parent_id.value if domain_entity.parent_id else None
             orm_model.name = domain_entity.name
             orm_model.chapter_number = domain_entity.chapter_number
             return orm_model

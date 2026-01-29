@@ -19,7 +19,7 @@ Example:
             self._record_event(FlashcardUpdated(self.id))
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Generic
 
 from .entity import Entity, IdType

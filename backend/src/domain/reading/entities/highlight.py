@@ -4,8 +4,11 @@ Highlight aggregate root.
 Encapsulates all business rules for managing highlights.
 """
 
+from __future__ import annotations
+
+import datetime as dt_module
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC
 
 from src.domain.common.aggregate_root import AggregateRoot
 from src.domain.common.exceptions import DomainError
@@ -52,8 +55,10 @@ class Highlight(AggregateRoot[HighlightId]):
     note: str | None = None
 
     # Metadata
-    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
-    deleted_at: datetime | None = None
+    datetime: str = ""  # KOReader datetime string
+    created_at: dt_module.datetime = field(default_factory=lambda: dt_module.datetime.now(UTC))
+    updated_at: dt_module.datetime = field(default_factory=lambda: dt_module.datetime.now(UTC))
+    deleted_at: dt_module.datetime | None = None
 
     # Relationships
     _tag_ids: list[int] = field(default_factory=list, repr=False)
@@ -89,7 +94,7 @@ class Highlight(AggregateRoot[HighlightId]):
         if self.is_deleted():
             raise DomainError(f"Highlight {self.id} is already deleted")
 
-        self.deleted_at = datetime.now(UTC)
+        self.deleted_at = dt_module.datetime.now(UTC)
 
     def restore(self) -> None:
         """
@@ -128,7 +133,7 @@ class Highlight(AggregateRoot[HighlightId]):
         xpoints: XPointRange | None = None,
         page: int | None = None,
         note: str | None = None,
-    ) -> "Highlight":
+    ) -> Highlight:
         """
         Factory method for creating a new highlight.
 
@@ -152,6 +157,9 @@ class Highlight(AggregateRoot[HighlightId]):
         # Compute content hash for deduplication
         content_hash = ContentHash.compute(text)
 
+        now = dt_module.datetime.now(UTC)
+        datetime_str = now.strftime("%Y-%m-%d %H:%M:%S")
+
         return cls(
             id=HighlightId.generate(),  # Generate new ID
             user_id=user_id,
@@ -162,7 +170,9 @@ class Highlight(AggregateRoot[HighlightId]):
             xpoints=xpoints,
             page=page,
             note=note.strip() if note else None,
-            created_at=datetime.now(UTC),
+            datetime=datetime_str,
+            created_at=now,
+            updated_at=now,
             deleted_at=None,
             _tag_ids=[],
         )
@@ -175,13 +185,15 @@ class Highlight(AggregateRoot[HighlightId]):
         book_id: BookId,
         text: str,
         content_hash: ContentHash,
-        created_at: datetime,
+        datetime_str: str,
+        created_at: dt_module.datetime,
+        updated_at: dt_module.datetime,
         chapter_id: ChapterId | None = None,
         xpoints: XPointRange | None = None,
         page: int | None = None,
         note: str | None = None,
-        deleted_at: datetime | None = None,
-    ) -> "Highlight":
+        deleted_at: dt_module.datetime | None = None,
+    ) -> Highlight:
         """
         Factory method for reconstituting highlight from persistence.
 
@@ -197,7 +209,9 @@ class Highlight(AggregateRoot[HighlightId]):
             xpoints=xpoints,
             page=page,
             note=note,
+            datetime=datetime_str,
             created_at=created_at,
+            updated_at=updated_at,
             deleted_at=deleted_at,
             _tag_ids=[],
         )
