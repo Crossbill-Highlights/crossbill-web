@@ -10,8 +10,8 @@ class BookId(EntityId):
     value: int
 
     def __post_init__(self) -> None:
-        if self.value <= 0:
-            raise ValueError("BookId must be positive")
+        if self.value < 0:
+            raise ValueError("BookId must be non-negative")
 
 
 @dataclass(frozen=True)
@@ -21,8 +21,8 @@ class UserId(EntityId):
     value: int
 
     def __post_init__(self) -> None:
-        if self.value <= 0:
-            raise ValueError("UserId must be positive")
+        if self.value < 0:
+            raise ValueError("UserId must be non-negative")
 
 
 @dataclass(frozen=True)
@@ -32,8 +32,8 @@ class HighlightId(EntityId):
     value: int
 
     def __post_init__(self) -> None:
-        if self.value <= 0:
-            raise ValueError("HighlightId must be positive")
+        if self.value < 0:
+            raise ValueError("HighlightId must be non-negative")
 
 
 @dataclass(frozen=True)
@@ -43,8 +43,8 @@ class ChapterId(EntityId):
     value: int
 
     def __post_init__(self) -> None:
-        if self.value <= 0:
-            raise ValueError("ChapterId must be positive")
+        if self.value < 0:
+            raise ValueError("ChapterId must be non-negative")
 
 
 @dataclass(frozen=True)
@@ -54,8 +54,8 @@ class ReadingSessionId(EntityId):
     value: int
 
     def __post_init__(self) -> None:
-        if self.value <= 0:
-            raise ValueError("ReadingSessionId must be positive")
+        if self.value < 0:
+            raise ValueError("ReadingSessionId must be non-negative")
 
 
 @dataclass(frozen=True)
@@ -65,5 +65,5 @@ class HighlightTagId(EntityId):
     value: int
 
     def __post_init__(self) -> None:
-        if self.value <= 0:
-            raise ValueError("HighlightTagId must be positive")
+        if self.value < 0:
+            raise ValueError("HighlightTagId must be non-negative")

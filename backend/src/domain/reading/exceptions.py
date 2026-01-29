@@ -3,6 +3,13 @@
 from src.domain.common.exceptions import DomainError
 
 
+class BookNotFoundError(DomainError):
+    """Raised when a book cannot be found."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
 class HighlightNotFoundError(DomainError):
     """Raised when a highlight cannot be found."""
 
