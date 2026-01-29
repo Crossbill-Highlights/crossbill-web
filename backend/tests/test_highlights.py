@@ -441,10 +441,10 @@ class TestHighlightsUpload:
 
         response2 = client.post("/api/v1/highlights/upload", json=payload2)
         assert response2.status_code == status.HTTP_200_OK
-        # New hash strategy: hash only text (not book metadata)
-        # Same text = duplicate, even from different book
-        assert response2.json()["highlights_created"] == 0
-        assert response2.json()["highlights_skipped"] == 1
+        # Same text in different book = NOT a duplicate (scoped by book)
+        # Allows highlighting the same passage in multiple books
+        assert response2.json()["highlights_created"] == 1
+        assert response2.json()["highlights_skipped"] == 0
 
     def test_highlight_has_content_hash(
         self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc

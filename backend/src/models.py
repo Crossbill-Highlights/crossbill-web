@@ -296,9 +296,9 @@ class Highlight(Base):
         secondary=reading_session_highlights, back_populates="highlights", lazy="selectin"
     )
 
-    # Unique constraint for deduplication: same content hash for same user
+    # Unique constraint for deduplication: same content hash within same book
     __table_args__ = (
-        UniqueConstraint("user_id", "content_hash", name="uq_highlight_content_hash"),
+        UniqueConstraint("user_id", "book_id", "content_hash", name="uq_highlight_content_hash"),
     )
 
     def __repr__(self) -> str:
