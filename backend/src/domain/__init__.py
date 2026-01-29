@@ -9,6 +9,4 @@ This layer contains:
 - Value Objects: Immutable objects defined by attributes
 - Aggregate Roots: Consistency boundaries
 - Domain Services: Stateless operations across entities
-- Domain Events: Notifications of significant occurrences
-- Repository Interfaces: Abstract contracts for data access
 """
