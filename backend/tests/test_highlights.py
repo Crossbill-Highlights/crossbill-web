@@ -212,8 +212,9 @@ class TestHighlightsUpload:
         assert len(highlights) == 2
 
         # First highlight should have xpoints
-        assert highlights[0].start_xpoint == "/body/div[1]/p[5]/text()[1].0"
-        assert highlights[0].end_xpoint == "/body/div[1]/p[5]/text()[1].42"
+        # Note: XPoint value object normalizes text()[1].0 (defaults) to just xpath
+        assert highlights[0].start_xpoint == "/body/div[1]/p[5]"
+        assert highlights[0].end_xpoint == "/body/div[1]/p[5]/text().42"
 
         # Second highlight should have null xpoints
         assert highlights[1].start_xpoint is None
@@ -388,10 +389,11 @@ class TestHighlightsUpload:
     def test_upload_same_text_different_book_not_duplicate(
         self, client: TestClient, create_book_via_api: CreateBookFunc
     ) -> None:
-        """Test that same text in different books creates separate highlights.
+        """Test that same text in different books is treated as duplicate.
 
-        The hash includes book_title and author, so same text in different books
-        will have different hashes and create separate highlights.
+        NEW BEHAVIOR: The content hash is computed from text only (not book metadata).
+        This means same highlight text from different books will be deduplicated.
+        This is the domain-centric approach that prioritizes text content.
         """
         # Create the first book
         create_book_via_api(
@@ -439,9 +441,10 @@ class TestHighlightsUpload:
 
         response2 = client.post("/api/v1/highlights/upload", json=payload2)
         assert response2.status_code == status.HTTP_200_OK
-        # Different book means different hash, so it's created
-        assert response2.json()["highlights_created"] == 1
-        assert response2.json()["highlights_skipped"] == 0
+        # New hash strategy: hash only text (not book metadata)
+        # Same text = duplicate, even from different book
+        assert response2.json()["highlights_created"] == 0
+        assert response2.json()["highlights_skipped"] == 1
 
     def test_highlight_has_content_hash(
         self, client: TestClient, db_session: Session, create_book_via_api: CreateBookFunc

@@ -6,6 +6,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src import schemas
+from src.application.reading.services.highlight_service import (
+    HighlightService as DomainHighlightService,
+)
+from src.application.reading.services.highlight_service import HighlightUploadData
 from src.database import DatabaseSession
 from src.exceptions import CrossbillError
 from src.models import User
@@ -44,8 +48,33 @@ async def upload_highlights(
         HTTPException: If upload fails due to server error
     """
     try:
-        service = HighlightService(db)
-        return service.upload_highlights(request, current_user.id)
+        highlight_data_list = [
+            HighlightUploadData(
+                text=h.text,
+                chapter_number=h.chapter_number,
+                chapter=h.chapter,
+                start_xpoint=h.start_xpoint,
+                end_xpoint=h.end_xpoint,
+                page=h.page,
+                note=h.note,
+            )
+            for h in request.highlights
+        ]
+
+        service = DomainHighlightService(db)
+        created, skipped = service.upload_highlights(
+            client_book_id=request.client_book_id,
+            highlight_data_list=highlight_data_list,
+            user_id=current_user.id,
+        )
+
+        return schemas.HighlightUploadResponse(
+            success=True,
+            message="Successfully synced highlights",
+            book_id=0,  # TODO: Return actual book_id from service if needed
+            highlights_created=created,
+            highlights_skipped=skipped,
+        )
     except Exception as e:
         logger.error(f"Failed to upload highlights: {e!s}", exc_info=True)
         raise HTTPException(
