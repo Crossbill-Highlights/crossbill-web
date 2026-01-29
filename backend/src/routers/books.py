@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from fastapi.responses import FileResponse
 
 from src import schemas
-from src.application.reading.services.get_recently_viewed_books_service import (
+from src.application.library.services.get_recently_viewed_books_service import (
     GetRecentlyViewedBooksService,
 )
 from src.database import DatabaseSession
