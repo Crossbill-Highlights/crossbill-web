@@ -6,10 +6,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src import schemas
-from src.application.reading.services.highlight_service import (
+from src.application.reading.services.highlight_upload_service import (
     HighlightService as DomainHighlightService,
 )
-from src.application.reading.services.highlight_service import HighlightUploadData
+from src.application.reading.services.highlight_upload_service import HighlightUploadData
 from src.database import DatabaseSession
 from src.domain.reading.exceptions import BookNotFoundError
 from src.exceptions import CrossbillError
