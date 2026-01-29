@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from src.database import Base, get_db
-from src.hash_utils import compute_highlight_hash
+from src.domain.common.value_objects import ContentHash
 from src.main import app
 from src.models import (
     Book,
@@ -74,12 +74,11 @@ def create_test_highlight(
     """Create a test highlight with properly computed content_hash.
 
     This helper ensures all test highlights have valid content_hash values.
+    Hash is computed from text only, matching domain entity behavior.
     """
-    content_hash = compute_highlight_hash(
-        text=text,
-        book_title=book.title,
-        book_author=book.author,
-    )
+    # Compute hash from text only (deduplication happens within book context)
+    content_hash = ContentHash.compute(text).value
+
     highlight = Highlight(
         book_id=book.id,
         user_id=user_id,

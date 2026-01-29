@@ -155,6 +155,7 @@ class Highlight(AggregateRoot[HighlightId]):
         highlight_text = text
 
         # Compute content hash for deduplication
+        # Hash is based on text only since deduplication happens within book context
         content_hash = ContentHash.compute(text)
 
         now = dt_module.datetime.now(UTC)

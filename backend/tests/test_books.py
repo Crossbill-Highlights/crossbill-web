@@ -356,19 +356,26 @@ class TestHighlightSyncWithSoftDelete:
         self,
         client: TestClient,
         db_session: Session,
-        book_with_soft_deleted_highlight: BookWithHighlights,
-        create_book_via_api: CreateBookFunc,
     ) -> None:
-        create_book_via_api(
-            {
-                "client_book_id": "test-client-book-id",
-                "title": "Test Book",
-                "author": "Test Author",
-            }
-        )
-
         """Test that sync does not recreate soft-deleted highlights."""
-        book = book_with_soft_deleted_highlight.book
+        # Create book with soft-deleted highlight and matching client_book_id
+        book = create_test_book(
+            db_session=db_session,
+            user_id=DEFAULT_USER_ID,
+            title="Test Book",
+            author="Test Author",
+            isbn="1234567890",
+            client_book_id="test-client-book-id",
+        )
+        create_test_highlight(
+            db_session=db_session,
+            book=book,
+            user_id=DEFAULT_USER_ID,
+            text="Deleted Highlight",
+            page=10,
+            datetime_str="2024-01-15 14:30:22",
+            deleted_at=datetime.now(UTC),
+        )
 
         # Try to sync the same highlight again
         payload = {
