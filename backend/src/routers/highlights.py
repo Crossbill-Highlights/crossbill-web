@@ -11,6 +11,7 @@ from src.application.reading.services.highlight_service import (
 )
 from src.application.reading.services.highlight_service import HighlightUploadData
 from src.database import DatabaseSession
+from src.domain.reading.exceptions import BookNotFoundError
 from src.exceptions import CrossbillError
 from src.models import User
 from src.services import FlashcardService, HighlightService, HighlightTagService
@@ -75,6 +76,12 @@ async def upload_highlights(
             highlights_created=created,
             highlights_skipped=skipped,
         )
+    except BookNotFoundError as e:
+        logger.error(f"Failed to upload highlights for non existent book: {e!s}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Book could not be found",
+        ) from e
     except Exception as e:
         logger.error(f"Failed to upload highlights: {e!s}", exc_info=True)
         raise HTTPException(
