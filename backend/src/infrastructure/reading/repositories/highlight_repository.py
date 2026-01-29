@@ -9,10 +9,12 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
 from src.domain.common.value_objects import BookId, ContentHash, HighlightId, UserId
+from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.chapter import Chapter
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.infrastructure.learning.mappers.flashcard_mapper import FlashcardMapper
 from src.infrastructure.library.mappers.book_mapper import BookMapper
 from src.infrastructure.library.mappers.chapter_mapper import ChapterMapper
 from src.infrastructure.reading.mappers.highlight_mapper import HighlightMapper
@@ -35,6 +37,7 @@ class HighlightRepository:
         self.book_mapper = BookMapper()
         self.chapter_mapper = ChapterMapper()
         self.highlight_tag_mapper = HighlightTagMapper()
+        self.flashcard_mapper = FlashcardMapper()
 
     def find_by_id(self, highlight_id: HighlightId, user_id: UserId) -> Highlight | None:
         """
@@ -58,6 +61,41 @@ class HighlightRepository:
             return None
 
         return self.mapper.to_domain(orm_model)
+
+    def find_by_id_with_relations(
+        self, highlight_id: HighlightId, user_id: UserId
+    ) -> tuple[Highlight, list[Flashcard], list[HighlightTag]] | None:
+        """
+        Load highlight by ID with its flashcards and tags eagerly loaded.
+
+        Args:
+            highlight_id: Highlight ID to find
+            user_id: User ID for authorization check
+
+        Returns:
+            Tuple of (Highlight, list[Flashcard], list[HighlightTag]) if found, None otherwise
+        """
+        stmt = (
+            select(HighlightORM)
+            .options(
+                joinedload(HighlightORM.flashcards),
+                joinedload(HighlightORM.highlight_tags),
+            )
+            .where(HighlightORM.id == highlight_id.value)
+            .where(HighlightORM.user_id == user_id.value)
+        )
+        orm_model = self.db.execute(stmt).scalar_one_or_none()
+
+        if not orm_model:
+            return None
+
+        highlight = self.mapper.to_domain(orm_model)
+        flashcards = [self.flashcard_mapper.to_domain(fc_orm) for fc_orm in orm_model.flashcards]
+        highlight_tags = [
+            self.highlight_tag_mapper.to_domain(tag_orm) for tag_orm in orm_model.highlight_tags
+        ]
+
+        return highlight, flashcards, highlight_tags
 
     def save(self, highlight: Highlight) -> Highlight:
         """

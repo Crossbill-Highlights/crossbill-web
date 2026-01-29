@@ -4,9 +4,11 @@ from .content_hash import ContentHash
 from .ids import (
     BookId,
     ChapterId,
+    FlashcardId,
     HighlightId,
     HighlightTagId,
     ReadingSessionId,
+    TagId,
     UserId,
 )
 from .xpoint import XPoint, XPointRange
@@ -16,9 +18,11 @@ __all__ = [
     "BookId",
     "ChapterId",
     "ContentHash",
+    "FlashcardId",
     "HighlightId",
     "HighlightTagId",
     "ReadingSessionId",
+    "TagId",
     "UserId",
     # XPoint
     "XPoint",
