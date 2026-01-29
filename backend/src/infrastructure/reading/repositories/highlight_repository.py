@@ -135,6 +135,8 @@ class HighlightRepository:
         Check which content hashes already exist for a user.
 
         Efficient deduplication check using unique constraint index.
+        Includes both active and soft-deleted highlights to prevent
+        recreating highlights that were previously deleted by the user.
 
         Args:
             user_id: User to check for
@@ -142,7 +144,7 @@ class HighlightRepository:
             hashes: List of ContentHash value objects to check
 
         Returns:
-            Set of ContentHash value objects that already exist
+            Set of ContentHash value objects that already exist (including soft-deleted)
         """
         if not hashes:
             return set()
@@ -155,7 +157,7 @@ class HighlightRepository:
             .where(HighlightORM.user_id == user_id.value)
             .where(HighlightORM.book_id == book_id.value)
             .where(HighlightORM.content_hash.in_(hash_strings))
-            .where(HighlightORM.deleted_at.is_(None))  # Only check non-deleted highlights
+            # Include soft-deleted highlights to prevent recreation
         )
 
         result = self.db.execute(stmt).scalars().all()
