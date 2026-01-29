@@ -91,6 +91,7 @@ class HighlightRepository:
 
         Args:
             user_id: User to check for
+            book_id: Book containing the highlight
             hashes: List of ContentHash value objects to check
 
         Returns:

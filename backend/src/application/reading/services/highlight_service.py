@@ -10,12 +10,13 @@ from dataclasses import dataclass
 import structlog
 from sqlalchemy.orm import Session
 
-from src.domain.common.value_objects import BookId, ChapterId, UserId, XPointRange
+from src.domain.common.value_objects import ChapterId, UserId, XPointRange
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
+from src.infrastructure.library.repositories.book_repository import BookRepository
+from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
 from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
-from src.repositories import BookRepository, ChapterRepository
 
 logger = structlog.get_logger(__name__)
 
@@ -47,7 +48,6 @@ class HighlightService:
         """
         self.db = db
         self.highlight_repo = HighlightRepository(db)
-        # TODO: Legacy repositories (for now - will migrate later)
         self.book_repo = BookRepository(db)
         self.chapter_repo = ChapterRepository(db)
         self.deduplication_service = HighlightDeduplicationService()
@@ -85,13 +85,10 @@ class HighlightService:
             highlight_count=len(highlight_data_list),
         )
 
-        # Convert primitive to value object
         user_id_vo = UserId(user_id)
+        book = self.book_repo.find_by_client_book_id(client_book_id, user_id_vo)
 
-        # Step 1: Find book (returns ORM model for now - legacy repository)
-        book_orm = self.book_repo.find_by_client_book_id(client_book_id, user_id)
-
-        if not book_orm:
+        if not book:
             logger.error(
                 "book_not_found_for_highlight_upload",
                 client_book_id=client_book_id,
@@ -101,15 +98,13 @@ class HighlightService:
                 "Please create the book first"
             )
 
-        book_id = BookId(book_orm.id)
+        book_id = book.id
 
         # Step 2: Batch fetch chapters by chapter_number
         chapter_numbers: set[int] = {
             data.chapter_number for data in highlight_data_list if data.chapter_number is not None
         }
-
-        # Returns dict[int, Chapter ORM model]
-        chapters_by_number = self.chapter_repo.get_by_numbers(book_orm.id, chapter_numbers, user_id)
+        chapters_by_number = self.chapter_repo.get_by_numbers(book.id, chapter_numbers, user_id_vo)
 
         # Step 3: Create domain entities using factory methods
         new_highlights: list[Highlight] = []
@@ -118,14 +113,14 @@ class HighlightService:
             # Resolve chapter ID
             chapter_id: ChapterId | None = None
             if data.chapter_number is not None:
-                chapter_orm = chapters_by_number.get(data.chapter_number)
-                if chapter_orm:
-                    chapter_id = ChapterId(chapter_orm.id)
+                chapter = chapters_by_number.get(data.chapter_number)
+                if chapter:
+                    chapter_id = chapter.id
                 else:
                     logger.warning(
                         "chapter_not_found_for_highlight",
                         chapter_number=data.chapter_number,
-                        book_id=book_orm.id,
+                        book_id=book.id.value,
                         message="Chapter referenced by highlight doesn't exist. Upload EPUB to create chapters.",
                     )
             elif data.chapter:
@@ -133,7 +128,7 @@ class HighlightService:
                 logger.warning(
                     "highlight_missing_chapter_number",
                     chapter_name=data.chapter,
-                    book_id=book_orm.id,
+                    book_id=book.id.value,
                     message="Highlight has no chapter_number. Cannot associate reliably with duplicate chapter names.",
                 )
 
@@ -170,8 +165,8 @@ class HighlightService:
 
         logger.info(
             "upload_complete",
-            book_id=book_orm.id,
-            book_title=book_orm.title,
+            book_id=book.id.value,
+            book_title=book.title,
             highlights_created=len(unique),
             highlights_skipped=len(duplicates),
         )
