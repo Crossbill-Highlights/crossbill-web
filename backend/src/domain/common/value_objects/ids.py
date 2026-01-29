@@ -78,3 +78,14 @@ class TagId(EntityId):
     def __post_init__(self) -> None:
         if self.value < 0:
             raise ValueError("TagId must be non-negative")
+
+
+@dataclass(frozen=True)
+class FlashcardId(EntityId):
+    """Strongly-typed flashcard identifier."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("FlashcardId must be non-negative")

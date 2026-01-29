@@ -1,7 +1,5 @@
 """Pydantic schemas for Flashcard API request/response validation."""
 
-from datetime import datetime as dt
-
 from pydantic import BaseModel, Field
 
 
@@ -25,8 +23,6 @@ class Flashcard(FlashcardBase):
     user_id: int
     book_id: int
     highlight_id: int | None
-    created_at: dt
-    updated_at: dt
 
     model_config = {"from_attributes": True}
 

@@ -197,31 +197,54 @@ def update_highlight_note(
     """
     try:
         service = UpdateHighlightNoteService(db)
-        highlight = service.update_note(highlight_id, current_user.id, request.note)
+        result = service.update_note(highlight_id, current_user.id, request.note)
 
-        if highlight is None:
+        if result is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Highlight with id {highlight_id} not found",
             )
+
+        highlight, flashcards, highlight_tags = result
 
         # Commit the transaction
         db.commit()
 
-        # Convert domain entity to schema
-        # Need to fetch the ORM model for relationships (flashcards, highlight_tags)
-        from src.repositories.highlight_repository import HighlightRepository as LegacyRepo
-
-        legacy_repo = LegacyRepo(db)
-        highlight_orm = legacy_repo.get_by_id(highlight_id, current_user.id)
-
-        if highlight_orm is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Highlight with id {highlight_id} not found",
-            )
-
-        highlight_schema = schemas.Highlight.model_validate(highlight_orm)
+        # Build response from domain entities
+        highlight_schema = schemas.Highlight(
+            id=highlight.id.value,
+            book_id=highlight.book_id.value,
+            chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
+            text=highlight.text,
+            chapter=None,  # We don't have chapter name loaded
+            chapter_number=None,
+            page=highlight.page,
+            start_xpoint=highlight.xpoints.start.to_string() if highlight.xpoints else None,
+            end_xpoint=highlight.xpoints.end.to_string() if highlight.xpoints else None,
+            note=highlight.note,
+            datetime=highlight.datetime,
+            highlight_tags=[
+                schemas.HighlightTagInBook(
+                    id=tag.id.value,
+                    name=tag.name,
+                    tag_group_id=tag.tag_group_id,
+                )
+                for tag in highlight_tags
+            ],
+            flashcards=[
+                schemas.Flashcard(
+                    id=fc.id.value,
+                    user_id=fc.user_id.value,
+                    book_id=fc.book_id.value,
+                    highlight_id=fc.highlight_id.value if fc.highlight_id else None,
+                    question=fc.question,
+                    answer=fc.answer,
+                )
+                for fc in flashcards
+            ],
+            created_at=highlight.created_at,
+            updated_at=highlight.updated_at,
+        )
 
         return schemas.HighlightNoteUpdateResponse(
             success=True,
