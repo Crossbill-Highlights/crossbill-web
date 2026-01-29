@@ -7,6 +7,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from fastapi.responses import FileResponse
 
 from src import schemas
+from src.application.reading.services.get_recently_viewed_books_service import (
+    GetRecentlyViewedBooksService,
+)
 from src.database import DatabaseSession
 from src.exceptions import CrossbillError
 from src.models import User
@@ -88,8 +91,31 @@ def get_recently_viewed_books(
         HTTPException: If fetching books fails due to server error
     """
     try:
-        service = HighlightService(db)
-        return service.get_recently_viewed_books(current_user.id, limit)
+        service = GetRecentlyViewedBooksService(db)
+        results = service.get_recently_viewed(current_user.id, limit)
+
+        books_list = [
+            schemas.BookWithHighlightCount(
+                id=book.id.value,
+                client_book_id=book.client_book_id,
+                title=book.title,
+                author=book.author,
+                isbn=book.isbn,
+                cover=book.cover,
+                description=book.description,
+                language=book.language,
+                page_count=book.page_count,
+                highlight_count=highlight_count,
+                flashcard_count=flashcard_count,
+                tags=[schemas.TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
+                created_at=book.created_at,
+                updated_at=book.updated_at,
+                last_viewed=book.last_viewed,
+            )
+            for book, highlight_count, flashcard_count, tags in results
+        ]
+
+        return schemas.RecentlyViewedBooksResponse(books=books_list)
     except Exception as e:
         logger.error(f"Failed to fetch recently viewed books: {e!s}", exc_info=True)
         raise HTTPException(

@@ -5,12 +5,18 @@ Returns domain entities instead of ORM models.
 Uses HighlightMapper internally for conversions.
 """
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session, joinedload
 
 from src.domain.common.value_objects import BookId, ContentHash, HighlightId, UserId
+from src.domain.library.entities.book import Book
+from src.domain.library.entities.chapter import Chapter
 from src.domain.reading.entities.highlight import Highlight
+from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.infrastructure.library.mappers.book_mapper import BookMapper
+from src.infrastructure.library.mappers.chapter_mapper import ChapterMapper
 from src.infrastructure.reading.mappers.highlight_mapper import HighlightMapper
+from src.infrastructure.reading.mappers.highlight_tag_mapper import HighlightTagMapper
 from src.models import Highlight as HighlightORM
 
 
@@ -26,6 +32,9 @@ class HighlightRepository:
         """
         self.db = db
         self.mapper = HighlightMapper()
+        self.book_mapper = BookMapper()
+        self.chapter_mapper = ChapterMapper()
+        self.highlight_tag_mapper = HighlightTagMapper()
 
     def find_by_id(self, highlight_id: HighlightId, user_id: UserId) -> Highlight | None:
         """
@@ -140,3 +149,82 @@ class HighlightRepository:
 
         # Convert back to domain entities with real IDs
         return [self.mapper.to_domain(orm) for orm in orm_models]
+
+    def search(
+        self,
+        search_text: str,
+        user_id: UserId,
+        book_id: BookId | None = None,
+        limit: int = 100,
+    ) -> list[tuple[Highlight, Book, Chapter | None, list[HighlightTag]]]:
+        """
+        Search for highlights using full-text search (PostgreSQL) or LIKE (SQLite).
+
+        Returns highlights with their associated book, chapter, and tags eagerly loaded.
+
+        Args:
+            search_text: Text to search for
+            user_id: User ID for filtering highlights
+            book_id: Optional book ID to filter by
+            limit: Maximum number of results to return (default 100)
+
+        Returns:
+            List of tuples containing (Highlight entity, Book entity, Chapter entity or None, list[HighlightTag])
+        """
+        # Check database type
+        is_postgresql = self.db.bind is not None and self.db.bind.dialect.name == "postgresql"
+
+        # Build the base query with eager loading of relationships
+        stmt = (
+            select(HighlightORM)
+            .options(
+                joinedload(HighlightORM.book),
+                joinedload(HighlightORM.chapter),
+                joinedload(HighlightORM.highlight_tags),
+            )
+            .where(
+                HighlightORM.user_id == user_id.value,
+                HighlightORM.deleted_at.is_(None),
+            )
+        )
+
+        if is_postgresql:
+            # PostgreSQL: Use full-text search
+            search_query = func.plainto_tsquery("english", search_text)
+            stmt = stmt.where(HighlightORM.text_search_vector.op("@@")(search_query))
+        else:
+            # SQLite: Use LIKE-based search
+            stmt = stmt.where(HighlightORM.text.ilike(f"%{search_text}%"))
+
+        # Add optional book_id filter
+        if book_id is not None:
+            stmt = stmt.where(HighlightORM.book_id == book_id.value)
+
+        # Order by relevance and limit results
+        if is_postgresql:
+            search_query = func.plainto_tsquery("english", search_text)
+            stmt = stmt.order_by(func.ts_rank(HighlightORM.text_search_vector, search_query).desc())
+        else:
+            # SQLite: Order by created_at (newest first)
+            stmt = stmt.order_by(HighlightORM.created_at.desc())
+
+        stmt = stmt.limit(limit)
+
+        # Execute query
+        results = self.db.execute(stmt).scalars().all()
+
+        # Convert ORM models to domain entities
+        return [
+            (
+                self.mapper.to_domain(highlight_orm),
+                self.book_mapper.to_domain(highlight_orm.book),
+                self.chapter_mapper.to_domain(highlight_orm.chapter)
+                if highlight_orm.chapter
+                else None,
+                [
+                    self.highlight_tag_mapper.to_domain(tag_orm)
+                    for tag_orm in highlight_orm.highlight_tags
+                ],
+            )
+            for highlight_orm in results
+        ]

@@ -6,8 +6,6 @@ Handles bidirectional conversion:
 - Domain entity → ORM model (when persisting to database)
 """
 
-from datetime import UTC, datetime
-
 from src.domain.common.value_objects import (
     BookId,
     ChapterId,
@@ -47,7 +45,9 @@ class HighlightMapper:
             book_id=BookId(orm_model.book_id),
             text=orm_model.text,
             content_hash=ContentHash(orm_model.content_hash),
+            datetime_str=orm_model.datetime,
             created_at=orm_model.created_at,
+            updated_at=orm_model.updated_at,
             chapter_id=ChapterId(orm_model.chapter_id) if orm_model.chapter_id else None,
             xpoints=xpoints,
             page=orm_model.page,
@@ -77,8 +77,8 @@ class HighlightMapper:
             start_xpoint = domain_entity.xpoints.start.to_string()
             end_xpoint = domain_entity.xpoints.end.to_string()
 
-        # Generate KOReader datetime string (current time for new highlights)
-        datetime_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+        # Use datetime string from entity (already formatted)
+        datetime_str = domain_entity.datetime
 
         # Update existing ORM model or create new one
         if orm_model:

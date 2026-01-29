@@ -23,6 +23,7 @@ class Book(Entity[BookId]):
 
     # Timestamps
     created_at: datetime
+    updated_at: datetime
 
     # Optional fields
     author: str | None = None
@@ -71,6 +72,7 @@ class Book(Entity[BookId]):
         file_type: str | None = None,
     ) -> "Book":
         """Factory for creating new book."""
+        now = datetime.now(UTC)
         return cls(
             id=BookId.generate(),
             user_id=user_id,
@@ -84,7 +86,8 @@ class Book(Entity[BookId]):
             cover=cover,
             file_path=file_path,
             file_type=file_type,
-            created_at=datetime.now(UTC),
+            created_at=now,
+            updated_at=now,
             last_viewed=None,
         )
 
@@ -95,6 +98,7 @@ class Book(Entity[BookId]):
         user_id: UserId,
         title: str,
         created_at: datetime,
+        updated_at: datetime,
         client_book_id: str | None = None,
         author: str | None = None,
         isbn: str | None = None,
@@ -121,5 +125,6 @@ class Book(Entity[BookId]):
             file_path=file_path,
             file_type=file_type,
             created_at=created_at,
+            updated_at=updated_at,
             last_viewed=last_viewed,
         )

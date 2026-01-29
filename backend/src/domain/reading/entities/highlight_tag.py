@@ -3,6 +3,7 @@ HighlightTag entity for categorizing highlights.
 """
 
 from dataclasses import dataclass
+from datetime import datetime
 
 from src.domain.common.entity import Entity
 from src.domain.common.exceptions import DomainError
@@ -23,7 +24,10 @@ class HighlightTag(Entity[HighlightTagId]):
     user_id: UserId
     book_id: BookId
     name: str
+    tag_group_id: int | None = None
     group_name: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     def __post_init__(self) -> None:
         """Validate invariants."""

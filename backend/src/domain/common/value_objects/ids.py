@@ -67,3 +67,14 @@ class HighlightTagId(EntityId):
     def __post_init__(self) -> None:
         if self.value < 0:
             raise ValueError("HighlightTagId must be non-negative")
+
+
+@dataclass(frozen=True)
+class TagId(EntityId):
+    """Strongly-typed tag identifier."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("TagId must be non-negative")
