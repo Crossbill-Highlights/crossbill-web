@@ -6,6 +6,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src import schemas
+from src.application.reading.services.highlight_tag_group_service import (
+    HighlightTagGroupService,
+)
 from src.application.reading.services.highlight_upload_service import (
     HighlightService as DomainHighlightService,
 )
@@ -15,10 +18,11 @@ from src.application.reading.services.update_highlight_note_service import (
     UpdateHighlightNoteService,
 )
 from src.database import DatabaseSession
+from src.domain.common.exceptions import DomainError
 from src.domain.reading.exceptions import BookNotFoundError
 from src.exceptions import CrossbillError
 from src.models import User
-from src.services import FlashcardService, HighlightTagService
+from src.services import FlashcardService
 from src.services.auth_service import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -285,14 +289,41 @@ def create_or_update_tag_group(
         HTTPException: If creation/update fails
     """
     try:
-        service = HighlightTagService(db)
-        tag_group = service.upsert_tag_group(
-            book_id=request.book_id,
-            name=request.name,
-            user_id=current_user.id,
-            tag_group_id=request.id,
+        service = HighlightTagGroupService(db)
+
+        # Create or update based on whether ID is provided
+        if request.id is not None:
+            # Update existing
+            tag_group = service.update_group(
+                group_id=request.id,
+                book_id=request.book_id,
+                new_name=request.name,
+                user_id=current_user.id,
+            )
+        else:
+            # Create new
+            tag_group = service.create_group(
+                book_id=request.book_id,
+                name=request.name,
+                user_id=current_user.id,
+            )
+
+        # Manually construct response to handle value objects
+        return schemas.HighlightTagGroup(
+            id=tag_group.id.value,
+            book_id=tag_group.book_id.value,
+            name=tag_group.name,
         )
-        return schemas.HighlightTagGroup.model_validate(tag_group)
+    except (CrossbillError, DomainError) as e:
+        if isinstance(e, CrossbillError):
+            raise HTTPException(
+                status_code=e.status_code,
+                detail=str(e),
+            ) from e
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
     except ValueError as e:
         # Check if it's a "not found" error or a validation error
         error_msg = str(e)
@@ -303,11 +334,6 @@ def create_or_update_tag_group(
         raise HTTPException(
             status_code=status_code,
             detail=error_msg,
-        ) from e
-    except CrossbillError as e:
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=str(e),
         ) from e
     except Exception as e:
         logger.error(f"Failed to create/update tag group: {e!s}", exc_info=True)
@@ -337,8 +363,8 @@ def delete_tag_group(
         HTTPException: If tag group not found or deletion fails
     """
     try:
-        service = HighlightTagService(db)
-        success = service.delete_tag_group(tag_group_id, current_user.id)
+        service = HighlightTagGroupService(db)
+        success = service.delete_group(tag_group_id, current_user.id)
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

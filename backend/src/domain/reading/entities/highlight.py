@@ -9,6 +9,7 @@ from __future__ import annotations
 import datetime as dt_module
 from dataclasses import dataclass, field
 from datetime import UTC
+from typing import TYPE_CHECKING
 
 from src.domain.common.aggregate_root import AggregateRoot
 from src.domain.common.exceptions import DomainError
@@ -20,6 +21,9 @@ from src.domain.common.value_objects import (
     UserId,
     XPointRange,
 )
+
+if TYPE_CHECKING:
+    from src.domain.reading.entities.highlight_tag import HighlightTag
 
 
 @dataclass
@@ -120,6 +124,46 @@ class Highlight(AggregateRoot[HighlightId]):
     def associate_with_chapter(self, chapter_id: ChapterId) -> None:
         """Associate this highlight with a chapter."""
         self.chapter_id = chapter_id
+
+    def add_tag(self, tag: HighlightTag) -> None:
+        """
+        Add a tag to this highlight (domain validation).
+
+        Args:
+            tag: The tag to add
+
+        Raises:
+            DomainError: If tag doesn't belong to same book as highlight
+        """
+        if tag.book_id != self.book_id:
+            raise DomainError(
+                f"Tag {tag.id.value} does not belong to the same book as highlight {self.id.value}"
+            )
+
+        # Actual persistence of association happens in infrastructure layer
+        # This method provides domain-level validation
+
+    def remove_tag(self, tag: HighlightTag) -> None:
+        """
+        Remove a tag from this highlight (domain validation).
+
+        Args:
+            tag: The tag to remove
+        """
+        # Validation logic here if needed
+        # Actual persistence happens in infrastructure layer
+
+    def has_tag(self, tag_id: int) -> bool:
+        """
+        Check if this highlight has the given tag.
+
+        Args:
+            tag_id: The tag ID to check
+
+        Returns:
+            True if highlight has the tag
+        """
+        return tag_id in self._tag_ids
 
     # Factory methods
 
