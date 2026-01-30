@@ -1,7 +1,5 @@
 """Pydantic schemas for HighlightTag API request/response validation."""
 
-from datetime import datetime
-
 from pydantic import BaseModel, Field
 
 
@@ -17,8 +15,6 @@ class HighlightTag(HighlightTagBase):
     id: int
     book_id: int
     tag_group_id: int | None = None
-    created_at: datetime
-    updated_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -72,8 +68,6 @@ class HighlightTagGroup(HighlightTagGroupBase):
 
     id: int
     book_id: int
-    created_at: datetime
-    updated_at: datetime
 
     model_config = {"from_attributes": True}
 

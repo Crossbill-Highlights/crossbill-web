@@ -1,6 +1,6 @@
 """Mapper for HighlightTag ORM ↔ Domain conversion."""
 
-from src.domain.common.value_objects import BookId, HighlightTagId, UserId
+from src.domain.common.value_objects.ids import BookId, HighlightTagId, UserId
 from src.domain.reading.entities.highlight_tag import HighlightTag
 from src.models import HighlightTag as HighlightTagORM
 
@@ -18,15 +18,13 @@ class HighlightTagMapper:
         if hasattr(orm_model, "tag_group") and orm_model.tag_group:
             group_name = orm_model.tag_group.name
 
-        return HighlightTag(
+        return HighlightTag.create_with_id(
             id=HighlightTagId(orm_model.id),
             user_id=UserId(orm_model.user_id),
             book_id=BookId(orm_model.book_id),
             name=orm_model.name,
             tag_group_id=tag_group_id,
             group_name=group_name,
-            created_at=orm_model.created_at,
-            updated_at=orm_model.updated_at,
         )
 
     def to_orm(
@@ -48,6 +46,4 @@ class HighlightTagMapper:
             book_id=domain_entity.book_id.value,
             name=domain_entity.name,
             tag_group_id=domain_entity.tag_group_id,
-            created_at=domain_entity.created_at,
-            updated_at=domain_entity.updated_at,
         )

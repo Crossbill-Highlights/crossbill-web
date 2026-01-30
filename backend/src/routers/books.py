@@ -10,14 +10,28 @@ from src import schemas
 from src.application.library.services.get_recently_viewed_books_service import (
     GetRecentlyViewedBooksService,
 )
+from src.application.reading.services.highlight_tag_association_service import (
+    HighlightTagAssociationService,
+)
+from src.application.reading.services.highlight_tag_group_service import (
+    HighlightTagGroupService,
+)
+from src.application.reading.services.highlight_tag_service import HighlightTagService
 from src.database import DatabaseSession
+from src.domain.common.exceptions import DomainError
+from src.domain.common.value_objects.ids import HighlightId, HighlightTagId, UserId
 from src.exceptions import CrossbillError
+from src.infrastructure.reading.repositories.highlight_repository import (
+    HighlightRepository,
+)
+from src.infrastructure.reading.repositories.highlight_tag_repository import (
+    HighlightTagRepository,
+)
 from src.models import User
 from src.services import (
     BookmarkService,
     BookService,
     FlashcardService,
-    HighlightTagService,
 )
 from src.services.auth_service import get_current_user
 from src.services.highlight_service import HighlightService
@@ -409,7 +423,15 @@ def get_highlight_tags(
         service = HighlightTagService(db)
         tags = service.get_tags_for_book(book_id, current_user.id)
         return schemas.HighlightTagsResponse(
-            tags=[schemas.HighlightTag.model_validate(tag) for tag in tags]
+            tags=[
+                schemas.HighlightTag(
+                    id=tag.id.value,
+                    book_id=tag.book_id.value,
+                    name=tag.name,
+                    tag_group_id=tag.tag_group_id,
+                )
+                for tag in tags
+            ]
         )
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
@@ -448,9 +470,14 @@ def create_highlight_tag(
     """
     try:
         service = HighlightTagService(db)
-        tag = service.create_tag_for_book(book_id, request.name, user_id=current_user.id)
-        return schemas.HighlightTag.model_validate(tag)
-    except CrossbillError:
+        tag = service.create_tag(book_id, request.name, user_id=current_user.id)
+        return schemas.HighlightTag(
+            id=tag.id.value,
+            book_id=tag.book_id.value,
+            name=tag.name,
+            tag_group_id=tag.tag_group_id,
+        )
+    except (CrossbillError, DomainError):
         # Re-raise custom exceptions - handled by exception handlers
         raise
     except ValueError as e:
@@ -547,18 +574,50 @@ def update_highlight_tag(
         HTTPException: If tag not found, doesn't belong to book, or update fails
     """
     try:
-        service = HighlightTagService(db)
-        tag = service.update_tag(
-            book_id=book_id,
-            tag_id=tag_id,
-            user_id=current_user.id,
-            name=request.name,
-            tag_group_id=request.tag_group_id,
+        tag_service = HighlightTagService(db)
+        group_service = HighlightTagGroupService(db)
+
+        # Update name if provided
+        if request.name is not None:
+            tag = tag_service.update_tag_name(
+                book_id=book_id,
+                tag_id=tag_id,
+                new_name=request.name,
+                user_id=current_user.id,
+            )
+        else:
+            # Load tag for group update
+            tag_repo = HighlightTagRepository(db)
+            tag = tag_repo.find_by_id(HighlightTagId(tag_id), UserId(current_user.id))
+            if not tag:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Tag {tag_id} not found",
+                )
+
+        # Update group association if provided (including None to clear)
+        if hasattr(request, "tag_group_id"):
+            tag = group_service.update_tag_group_association(
+                book_id=book_id,
+                tag_id=tag_id,
+                group_id=request.tag_group_id,
+                user_id=current_user.id,
+            )
+
+        return schemas.HighlightTag(
+            id=tag.id.value,
+            book_id=tag.book_id.value,
+            name=tag.name,
+            tag_group_id=tag.tag_group_id,
         )
-        return schemas.HighlightTag.model_validate(tag)
-    except CrossbillError as e:
+    except (CrossbillError, DomainError) as e:
+        if isinstance(e, CrossbillError):
+            raise HTTPException(
+                status_code=e.status_code,
+                detail=str(e),
+            ) from e
         raise HTTPException(
-            status_code=e.status_code,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         ) from e
     except ValueError as e:
@@ -610,23 +669,69 @@ def add_tag_to_highlight(
         HTTPException: If highlight or tag not found, or association fails
     """
     try:
-        service = HighlightTagService(db)
+        service = HighlightTagAssociationService(db)
 
         # Add tag by ID or by name (with get_or_create)
         if request.tag_id is not None:
-            highlight = service.add_tag_to_highlight(highlight_id, request.tag_id, current_user.id)
+            service.add_tag_by_id(highlight_id, request.tag_id, current_user.id)
         elif request.name is not None:
-            highlight = service.add_tag_to_highlight_by_name(
-                book_id, highlight_id, request.name, current_user.id
-            )
+            service.add_tag_by_name(book_id, highlight_id, request.name, current_user.id)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Either tag_id or name must be provided",
             )
 
-        return schemas.Highlight.model_validate(highlight)
-    except CrossbillError:
+        # Reload highlight with relations to get updated tags
+        highlight_repo = HighlightRepository(db)
+        result = highlight_repo.find_by_id_with_relations(
+            HighlightId(highlight_id), UserId(current_user.id)
+        )
+
+        if result is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Highlight with id {highlight_id} not found",
+            )
+
+        highlight, flashcards, highlight_tags = result
+
+        # Manually construct schema from domain entities
+        return schemas.Highlight(
+            id=highlight.id.value,
+            book_id=highlight.book_id.value,
+            chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
+            text=highlight.text,
+            chapter=None,
+            chapter_number=None,
+            page=highlight.page,
+            start_xpoint=highlight.xpoints.start.to_string() if highlight.xpoints else None,
+            end_xpoint=highlight.xpoints.end.to_string() if highlight.xpoints else None,
+            note=highlight.note,
+            datetime=highlight.datetime,
+            highlight_tags=[
+                schemas.HighlightTagInBook(
+                    id=tag.id.value,
+                    name=tag.name,
+                    tag_group_id=tag.tag_group_id,
+                )
+                for tag in highlight_tags
+            ],
+            flashcards=[
+                schemas.Flashcard(
+                    id=fc.id.value,
+                    user_id=fc.user_id.value,
+                    book_id=fc.book_id.value,
+                    highlight_id=fc.highlight_id.value if fc.highlight_id else None,
+                    question=fc.question,
+                    answer=fc.answer,
+                )
+                for fc in flashcards
+            ],
+            created_at=highlight.created_at,
+            updated_at=highlight.updated_at,
+        )
+    except (CrossbillError, DomainError):
         # Re-raise custom exceptions - handled by exception handlers
         raise
     except ValueError as e:
@@ -673,10 +778,59 @@ def remove_tag_from_highlight(
         HTTPException: If highlight not found or removal fails
     """
     try:
-        service = HighlightTagService(db)
-        highlight = service.remove_tag_from_highlight(highlight_id, tag_id, current_user.id)
-        return schemas.Highlight.model_validate(highlight)
-    except CrossbillError:
+        service = HighlightTagAssociationService(db)
+        service.remove_tag(highlight_id, tag_id, current_user.id)
+
+        # Reload highlight with relations to get updated tags
+        highlight_repo = HighlightRepository(db)
+        result = highlight_repo.find_by_id_with_relations(
+            HighlightId(highlight_id), UserId(current_user.id)
+        )
+
+        if result is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Highlight with id {highlight_id} not found",
+            )
+
+        highlight, flashcards, highlight_tags = result
+
+        # Manually construct schema from domain entities
+        return schemas.Highlight(
+            id=highlight.id.value,
+            book_id=highlight.book_id.value,
+            chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
+            text=highlight.text,
+            chapter=None,
+            chapter_number=None,
+            page=highlight.page,
+            start_xpoint=highlight.xpoints.start.to_string() if highlight.xpoints else None,
+            end_xpoint=highlight.xpoints.end.to_string() if highlight.xpoints else None,
+            note=highlight.note,
+            datetime=highlight.datetime,
+            highlight_tags=[
+                schemas.HighlightTagInBook(
+                    id=tag.id.value,
+                    name=tag.name,
+                    tag_group_id=tag.tag_group_id,
+                )
+                for tag in highlight_tags
+            ],
+            flashcards=[
+                schemas.Flashcard(
+                    id=fc.id.value,
+                    user_id=fc.user_id.value,
+                    book_id=fc.book_id.value,
+                    highlight_id=fc.highlight_id.value if fc.highlight_id else None,
+                    question=fc.question,
+                    answer=fc.answer,
+                )
+                for fc in flashcards
+            ],
+            created_at=highlight.created_at,
+            updated_at=highlight.updated_at,
+        )
+    except (CrossbillError, DomainError):
         # Re-raise custom exceptions - handled by exception handlers
         raise
     except ValueError as e:

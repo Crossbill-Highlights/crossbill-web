@@ -84,7 +84,7 @@ class HighlightRepository:
             .where(HighlightORM.id == highlight_id.value)
             .where(HighlightORM.user_id == user_id.value)
         )
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
+        orm_model = self.db.execute(stmt).unique().scalar_one_or_none()
 
         if not orm_model:
             return None

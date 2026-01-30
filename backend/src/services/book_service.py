@@ -9,6 +9,9 @@ from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from src import models, repositories, schemas
+from src.application.reading.services.highlight_tag_service import (
+    HighlightTagService as DomainHighlightTagService,
+)
 from src.exceptions import BookNotFoundError
 from src.schemas.highlight_schemas import ChapterWithHighlights
 from src.services.book_tag_service import BookTagService
@@ -71,7 +74,6 @@ class BookService:
         self.book_repo = repositories.BookRepository(db)
         self.chapter_repo = repositories.ChapterRepository(db)
         self.highlight_repo = repositories.HighlightRepository(db)
-        self.highlight_tag_repo = repositories.HighlightTagRepository(db)
         self.bookmark_repo = repositories.BookmarkRepository(db)
         self.flashcard_repo = repositories.FlashcardRepository(db)
 
@@ -188,7 +190,9 @@ class BookService:
         if not book:
             raise BookNotFoundError(book_id)
 
-        highlight_tags = self.highlight_tag_repo.get_by_book_id(book_id, user_id)
+        # Get highlight tags using new DDD service
+        highlight_tag_service = DomainHighlightTagService(self.db)
+        highlight_tags = highlight_tag_service.get_tags_for_book(book_id, user_id)
         all_highlights = self.highlight_repo.find_by_book_with_relationships(book_id, user_id)
 
         chapters_with_highlights = self._group_highlights_by_chapter(all_highlights)[0]
@@ -208,7 +212,12 @@ class BookService:
             page_count=book.page_count,
             tags=[schemas.TagInBook.model_validate(tag) for tag in book.tags],
             highlight_tags=[
-                schemas.HighlightTagInBook.model_validate(tag) for tag in highlight_tags
+                schemas.HighlightTagInBook(
+                    id=tag.id.value,
+                    name=tag.name,
+                    tag_group_id=tag.tag_group_id,
+                )
+                for tag in highlight_tags
             ],
             highlight_tag_groups=[
                 schemas.HighlightTagGroupInBook.model_validate(group)

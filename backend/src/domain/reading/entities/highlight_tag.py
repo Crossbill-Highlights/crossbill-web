@@ -3,11 +3,15 @@ HighlightTag entity for categorizing highlights.
 """
 
 from dataclasses import dataclass
-from datetime import datetime
 
 from src.domain.common.entity import Entity
 from src.domain.common.exceptions import DomainError
-from src.domain.common.value_objects import BookId, HighlightTagId, UserId
+from src.domain.common.value_objects.ids import (
+    BookId,
+    HighlightTagGroupId,
+    HighlightTagId,
+    UserId,
+)
 
 
 @dataclass
@@ -26,8 +30,6 @@ class HighlightTag(Entity[HighlightTagId]):
     name: str
     tag_group_id: int | None = None
     group_name: str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
 
     def __post_init__(self) -> None:
         """Validate invariants."""
@@ -52,3 +54,81 @@ class HighlightTag(Entity[HighlightTagId]):
     def set_group(self, group_name: str | None) -> None:
         """Set or clear the group for this tag."""
         self.group_name = group_name.strip() if group_name else None
+
+    def update_group(self, group_id: HighlightTagGroupId | None) -> None:
+        """
+        Update the tag's group association.
+
+        Args:
+            group_id: The group ID to associate with, or None to clear
+        """
+        self.tag_group_id = group_id.value if group_id else None
+
+    def belongs_to_book(self, book_id: BookId) -> bool:
+        """Check if this tag belongs to the specified book."""
+        return self.book_id == book_id
+
+    def belongs_to_user(self, user_id: UserId) -> bool:
+        """Check if this tag belongs to the specified user."""
+        return self.user_id == user_id
+
+    @classmethod
+    def create(
+        cls,
+        user_id: UserId,
+        book_id: BookId,
+        name: str,
+        tag_group_id: HighlightTagGroupId | None = None,
+    ) -> "HighlightTag":
+        """
+        Create a new tag.
+
+        Args:
+            user_id: ID of the user creating the tag
+            book_id: ID of the book this tag belongs to
+            name: Name of the tag
+            tag_group_id: Optional group ID to associate with
+
+        Returns:
+            New HighlightTag instance
+        """
+        return cls(
+            id=HighlightTagId.generate(),
+            user_id=user_id,
+            book_id=book_id,
+            name=name.strip(),
+            tag_group_id=tag_group_id.value if tag_group_id else None,
+        )
+
+    @classmethod
+    def create_with_id(
+        cls,
+        id: HighlightTagId,
+        user_id: UserId,
+        book_id: BookId,
+        name: str,
+        tag_group_id: int | None = None,
+        group_name: str | None = None,
+    ) -> "HighlightTag":
+        """
+        Reconstitute a tag from persistence.
+
+        Args:
+            id: Existing tag ID
+            user_id: ID of the user who owns the tag
+            book_id: ID of the book this tag belongs to
+            name: Name of the tag
+            tag_group_id: Optional group ID
+            group_name: Optional group name
+
+        Returns:
+            Reconstituted HighlightTag instance
+        """
+        return cls(
+            id=id,
+            user_id=user_id,
+            book_id=book_id,
+            name=name,
+            tag_group_id=tag_group_id,
+            group_name=group_name,
+        )

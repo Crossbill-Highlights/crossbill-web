@@ -25,8 +25,6 @@ class TestCreateTagGroup:
         assert data["name"] == "Important Themes"
         assert data["book_id"] == test_book.id
         assert "id" in data
-        assert "created_at" in data
-        assert "updated_at" in data
 
         # Verify in database
         tag_group = db_session.query(models.HighlightTagGroup).filter_by(id=data["id"]).first()
