@@ -160,7 +160,7 @@ class BookManagementService:
 
         # Use domain service to group highlights
         grouped = self.highlight_grouping_service.group_by_chapter(
-            [(h, c, tags) for h, _, c, tags in highlights_with_context]
+            [(h, c, tags, flashcards) for h, _, c, tags, flashcards in highlights_with_context]
         )
 
         # Get bookmarks using legacy repository (temporary)
@@ -265,9 +265,7 @@ class BookManagementService:
 
         logger.info(f"Successfully deleted book {book_id}")
 
-    def get_metadata_for_ereader(
-        self, client_book_id: str, user_id: int
-    ) -> EreaderMetadata:
+    def get_metadata_for_ereader(self, client_book_id: str, user_id: int) -> EreaderMetadata:
         """
         Get basic book metadata for ereader operations.
 
@@ -308,4 +306,3 @@ class BookManagementService:
             has_cover=has_cover,
             has_ebook=has_ebook,
         )
-

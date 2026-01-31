@@ -3,6 +3,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 
+from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.library.entities.chapter import Chapter
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.highlight_tag import HighlightTag
@@ -10,11 +11,12 @@ from src.domain.reading.entities.highlight_tag import HighlightTag
 
 @dataclass
 class HighlightWithContext:
-    """Highlight with its associated context (chapter, tags)."""
+    """Highlight with its associated context (chapter, tags, flashcards)."""
 
     highlight: Highlight
     chapter: Chapter | None
     tags: list[HighlightTag]
+    flashcards: list[Flashcard]
 
 
 @dataclass
@@ -32,13 +34,15 @@ class HighlightGroupingService:
 
     @staticmethod
     def group_by_chapter(
-        highlights_with_context: list[tuple[Highlight, Chapter | None, list[HighlightTag]]],
+        highlights_with_context: list[
+            tuple[Highlight, Chapter | None, list[HighlightTag], list[Flashcard]]
+        ],
     ) -> list[ChapterWithHighlights]:
         """
         Group highlights by chapter, sorted by chapter number.
 
         Args:
-            highlights_with_context: List of tuples (highlight, chapter, tags)
+            highlights_with_context: List of tuples (highlight, chapter, tags, flashcards)
 
         Returns:
             List of ChapterWithHighlights, sorted by chapter_number
@@ -47,7 +51,7 @@ class HighlightGroupingService:
         grouped: dict[int | None, list[HighlightWithContext]] = defaultdict(list)
         chapter_lookup: dict[int, Chapter] = {}
 
-        for highlight, chapter, tags in highlights_with_context:
+        for highlight, chapter, tags, flashcards in highlights_with_context:
             chapter_id = highlight.chapter_id.value if highlight.chapter_id else None
 
             # Store chapter for later lookup
@@ -55,7 +59,9 @@ class HighlightGroupingService:
                 chapter_lookup[chapter_id] = chapter
 
             grouped[chapter_id].append(
-                HighlightWithContext(highlight=highlight, chapter=chapter, tags=tags)
+                HighlightWithContext(
+                    highlight=highlight, chapter=chapter, tags=tags, flashcards=flashcards
+                )
             )
 
         # Build results, sorted by chapter_number

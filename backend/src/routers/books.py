@@ -82,7 +82,17 @@ def _map_chapters_to_schemas(
                 page=h.page,
                 note=h.note,
                 datetime=h.datetime,
-                flashcards=[],  # Not needed for search results
+                flashcards=[
+                    schemas.Flashcard(
+                        id=fc.id.value,
+                        user_id=fc.user_id.value,
+                        book_id=fc.book_id.value,
+                        highlight_id=fc.highlight_id.value if fc.highlight_id else None,
+                        question=fc.question,
+                        answer=fc.answer,
+                    )
+                    for fc in hw.flashcards
+                ],
                 highlight_tags=[
                     schemas.HighlightTagInBook(
                         id=tag.id.value,

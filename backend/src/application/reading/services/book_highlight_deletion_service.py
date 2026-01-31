@@ -26,9 +26,7 @@ class BookHighlightDeletionService:
         self.book_repository = BookRepository(db)
         self.highlight_repository = HighlightRepository(db)
 
-    def delete_highlights(
-        self, book_id: int, highlight_ids: list[int], user_id: int
-    ) -> int:
+    def delete_highlights(self, book_id: int, highlight_ids: list[int], user_id: int) -> int:
         """
         Soft delete highlights from a book.
 

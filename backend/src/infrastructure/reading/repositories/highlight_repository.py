@@ -203,11 +203,11 @@ class HighlightRepository:
         user_id: UserId,
         book_id: BookId | None = None,
         limit: int = 100,
-    ) -> list[tuple[Highlight, Book, Chapter | None, list[HighlightTag]]]:
+    ) -> list[tuple[Highlight, Book, Chapter | None, list[HighlightTag], list[Flashcard]]]:
         """
         Search for highlights using full-text search (PostgreSQL) or LIKE (SQLite).
 
-        Returns highlights with their associated book, chapter, and tags eagerly loaded.
+        Returns highlights with their associated book, chapter, tags, and flashcards eagerly loaded.
 
         Args:
             search_text: Text to search for
@@ -216,7 +216,7 @@ class HighlightRepository:
             limit: Maximum number of results to return (default 100)
 
         Returns:
-            List of tuples containing (Highlight entity, Book entity, Chapter entity or None, list[HighlightTag])
+            List of tuples containing (Highlight, Book, Chapter or None, list[HighlightTag], list[Flashcard])
         """
         # Check database type
         is_postgresql = self.db.bind is not None and self.db.bind.dialect.name == "postgresql"
@@ -228,6 +228,7 @@ class HighlightRepository:
                 joinedload(HighlightORM.book),
                 joinedload(HighlightORM.chapter),
                 joinedload(HighlightORM.highlight_tags),
+                joinedload(HighlightORM.flashcards),
             )
             .where(
                 HighlightORM.user_id == user_id.value,
@@ -235,24 +236,26 @@ class HighlightRepository:
             )
         )
 
-        if is_postgresql:
-            # PostgreSQL: Use full-text search
-            search_query = func.plainto_tsquery("english", search_text)
-            stmt = stmt.where(HighlightORM.text_search_vector.op("@@")(search_query))
-        else:
-            # SQLite: Use LIKE-based search
-            stmt = stmt.where(HighlightORM.text.ilike(f"%{search_text}%"))
+        # Only apply search filter if search_text is provided
+        if search_text:
+            if is_postgresql:
+                # PostgreSQL: Use full-text search
+                search_query = func.plainto_tsquery("english", search_text)
+                stmt = stmt.where(HighlightORM.text_search_vector.op("@@")(search_query))
+            else:
+                # SQLite: Use LIKE-based search
+                stmt = stmt.where(HighlightORM.text.ilike(f"%{search_text}%"))
 
         # Add optional book_id filter
         if book_id is not None:
             stmt = stmt.where(HighlightORM.book_id == book_id.value)
 
-        # Order by relevance and limit results
-        if is_postgresql:
+        # Order by relevance (if searching) or by created_at (if not searching)
+        if search_text and is_postgresql:
             search_query = func.plainto_tsquery("english", search_text)
             stmt = stmt.order_by(func.ts_rank(HighlightORM.text_search_vector, search_query).desc())
         else:
-            # SQLite: Order by created_at (newest first)
+            # Order by created_at (newest first) for SQLite or when not searching
             stmt = stmt.order_by(HighlightORM.created_at.desc())
 
         stmt = stmt.limit(limit)
@@ -272,6 +275,7 @@ class HighlightRepository:
                     self.highlight_tag_mapper.to_domain(tag_orm)
                     for tag_orm in highlight_orm.highlight_tags
                 ],
+                [self.flashcard_mapper.to_domain(fc_orm) for fc_orm in highlight_orm.flashcards],
             )
             for highlight_orm in results
         ]

@@ -46,9 +46,7 @@ class BookCoverService:
         self.db = db
         self.book_repository = BookRepository(db)
 
-    def upload_cover(
-        self, book_id: int, cover: UploadFile, user_id: int
-    ) -> str:
+    def upload_cover(self, book_id: int, cover: UploadFile, user_id: int) -> str:
         """
         Upload a book cover image.
 
