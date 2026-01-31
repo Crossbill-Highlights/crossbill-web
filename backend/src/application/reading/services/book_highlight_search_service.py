@@ -71,7 +71,7 @@ class BookHighlightSearchService:
 
         # Use domain service to group highlights by chapter
         grouped = self.highlight_grouping_service.group_by_chapter(
-            [(h, c, tags) for h, _, c, tags in highlights_with_context]
+            [(h, c, tags, flashcards) for h, _, c, tags, flashcards in highlights_with_context]
         )
 
         # Calculate total number of highlights

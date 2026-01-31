@@ -162,7 +162,7 @@ def search_highlights(
                 created_at=highlight.created_at,
                 updated_at=highlight.updated_at,
             )
-            for highlight, book, chapter, highlight_tags in results
+            for highlight, book, chapter, highlight_tags, _ in results
         ]
 
         return schemas.HighlightSearchResponse(highlights=search_results, total=len(search_results))

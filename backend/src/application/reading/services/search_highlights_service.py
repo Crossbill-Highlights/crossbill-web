@@ -7,6 +7,7 @@ Provides full-text search across user's highlights.
 from sqlalchemy.orm import Session
 
 from src.domain.common.value_objects import BookId, UserId
+from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.chapter import Chapter
 from src.domain.reading.entities.highlight import Highlight
@@ -33,7 +34,7 @@ class SearchHighlightsService:
         user_id: int,
         book_id: int | None = None,
         limit: int = 100,
-    ) -> list[tuple[Highlight, Book, Chapter | None, list[HighlightTag]]]:
+    ) -> list[tuple[Highlight, Book, Chapter | None, list[HighlightTag], list[Flashcard]]]:
         """
         Search for highlights using full-text search.
 
@@ -44,7 +45,7 @@ class SearchHighlightsService:
             limit: Maximum number of results to return (default 100)
 
         Returns:
-            List of tuples containing (Highlight entity, Book entity, Chapter entity or None, list[HighlightTag])
+            List of tuples containing (Highlight, Book, Chapter or None, list[HighlightTag], list[Flashcard])
             ordered by relevance (PostgreSQL) or creation date (SQLite).
         """
         # Convert primitives to value objects
