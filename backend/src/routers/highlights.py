@@ -6,10 +6,23 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src import schemas
+from src.application.reading.services.highlight_tag_group_service import (
+    HighlightTagGroupService,
+)
+from src.application.reading.services.highlight_upload_service import (
+    HighlightService as DomainHighlightService,
+)
+from src.application.reading.services.highlight_upload_service import HighlightUploadData
+from src.application.reading.services.search_highlights_service import SearchHighlightsService
+from src.application.reading.services.update_highlight_note_service import (
+    UpdateHighlightNoteService,
+)
 from src.database import DatabaseSession
+from src.domain.common.exceptions import DomainError
+from src.domain.reading.exceptions import BookNotFoundError
 from src.exceptions import CrossbillError
 from src.models import User
-from src.services import FlashcardService, HighlightService, HighlightTagService
+from src.services import FlashcardService
 from src.services.auth_service import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -44,8 +57,39 @@ async def upload_highlights(
         HTTPException: If upload fails due to server error
     """
     try:
-        service = HighlightService(db)
-        return service.upload_highlights(request, current_user.id)
+        highlight_data_list = [
+            HighlightUploadData(
+                text=h.text,
+                chapter_number=h.chapter_number,
+                chapter=h.chapter,
+                start_xpoint=h.start_xpoint,
+                end_xpoint=h.end_xpoint,
+                page=h.page,
+                note=h.note,
+            )
+            for h in request.highlights
+        ]
+
+        service = DomainHighlightService(db)
+        created, skipped = service.upload_highlights(
+            client_book_id=request.client_book_id,
+            highlight_data_list=highlight_data_list,
+            user_id=current_user.id,
+        )
+
+        return schemas.HighlightUploadResponse(
+            success=True,
+            message="Successfully synced highlights",
+            book_id=0,  # TODO: Return actual book_id from service if needed
+            highlights_created=created,
+            highlights_skipped=skipped,
+        )
+    except BookNotFoundError as e:
+        logger.error(f"Failed to upload highlights for non existent book: {e!s}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Book could not be found",
+        ) from e
     except Exception as e:
         logger.error(f"Failed to upload highlights: {e!s}", exc_info=True)
         raise HTTPException(
@@ -92,8 +136,36 @@ def search_highlights(
         HTTPException: If search fails due to server error
     """
     try:
-        service = HighlightService(db)
-        return service.search_highlights(search_text, current_user.id, book_id, limit)
+        service = SearchHighlightsService(db)
+        results = service.search(search_text, current_user.id, book_id, limit)
+
+        # Convert domain entities to schemas in route handler
+        search_results = [
+            schemas.HighlightSearchResult(
+                id=highlight.id.value,
+                text=highlight.text,
+                page=highlight.page,
+                note=highlight.note,
+                datetime=highlight.datetime,
+                book_id=book.id.value,
+                book_title=book.title,
+                book_author=book.author,
+                chapter_id=chapter.id.value if chapter else None,
+                chapter_name=chapter.name if chapter else None,
+                chapter_number=chapter.chapter_number if chapter else None,
+                highlight_tags=[
+                    schemas.HighlightTagInBook(
+                        id=tag.id.value, name=tag.name, tag_group_id=tag.tag_group_id
+                    )
+                    for tag in highlight_tags
+                ],
+                created_at=highlight.created_at,
+                updated_at=highlight.updated_at,
+            )
+            for highlight, book, chapter, highlight_tags, _ in results
+        ]
+
+        return schemas.HighlightSearchResponse(highlights=search_results, total=len(search_results))
     except Exception as e:
         logger.error(f"Failed to search highlights: {e!s}", exc_info=True)
         raise HTTPException(
@@ -128,19 +200,60 @@ def update_highlight_note(
         HTTPException: If highlight not found or update fails
     """
     try:
-        service = HighlightService(db)
-        highlight = service.update_highlight_note(highlight_id, current_user.id, request)
+        service = UpdateHighlightNoteService(db)
+        result = service.update_note(highlight_id, current_user.id, request.note)
 
-        if highlight is None:
+        if result is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Highlight with id {highlight_id} not found",
             )
 
+        highlight, flashcards, highlight_tags = result
+
+        # Commit the transaction
+        db.commit()
+
+        # Build response from domain entities
+        highlight_schema = schemas.Highlight(
+            id=highlight.id.value,
+            book_id=highlight.book_id.value,
+            chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
+            text=highlight.text,
+            chapter=None,  # We don't have chapter name loaded
+            chapter_number=None,
+            page=highlight.page,
+            start_xpoint=highlight.xpoints.start.to_string() if highlight.xpoints else None,
+            end_xpoint=highlight.xpoints.end.to_string() if highlight.xpoints else None,
+            note=highlight.note,
+            datetime=highlight.datetime,
+            highlight_tags=[
+                schemas.HighlightTagInBook(
+                    id=tag.id.value,
+                    name=tag.name,
+                    tag_group_id=tag.tag_group_id,
+                )
+                for tag in highlight_tags
+            ],
+            flashcards=[
+                schemas.Flashcard(
+                    id=fc.id.value,
+                    user_id=fc.user_id.value,
+                    book_id=fc.book_id.value,
+                    highlight_id=fc.highlight_id.value if fc.highlight_id else None,
+                    question=fc.question,
+                    answer=fc.answer,
+                )
+                for fc in flashcards
+            ],
+            created_at=highlight.created_at,
+            updated_at=highlight.updated_at,
+        )
+
         return schemas.HighlightNoteUpdateResponse(
             success=True,
             message="Note updated successfully",
-            highlight=highlight,
+            highlight=highlight_schema,
         )
     except HTTPException:
         raise
@@ -176,14 +289,41 @@ def create_or_update_tag_group(
         HTTPException: If creation/update fails
     """
     try:
-        service = HighlightTagService(db)
-        tag_group = service.upsert_tag_group(
-            book_id=request.book_id,
-            name=request.name,
-            user_id=current_user.id,
-            tag_group_id=request.id,
+        service = HighlightTagGroupService(db)
+
+        # Create or update based on whether ID is provided
+        if request.id is not None:
+            # Update existing
+            tag_group = service.update_group(
+                group_id=request.id,
+                book_id=request.book_id,
+                new_name=request.name,
+                user_id=current_user.id,
+            )
+        else:
+            # Create new
+            tag_group = service.create_group(
+                book_id=request.book_id,
+                name=request.name,
+                user_id=current_user.id,
+            )
+
+        # Manually construct response to handle value objects
+        return schemas.HighlightTagGroup(
+            id=tag_group.id.value,
+            book_id=tag_group.book_id.value,
+            name=tag_group.name,
         )
-        return schemas.HighlightTagGroup.model_validate(tag_group)
+    except (CrossbillError, DomainError) as e:
+        if isinstance(e, CrossbillError):
+            raise HTTPException(
+                status_code=e.status_code,
+                detail=str(e),
+            ) from e
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
     except ValueError as e:
         # Check if it's a "not found" error or a validation error
         error_msg = str(e)
@@ -194,11 +334,6 @@ def create_or_update_tag_group(
         raise HTTPException(
             status_code=status_code,
             detail=error_msg,
-        ) from e
-    except CrossbillError as e:
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=str(e),
         ) from e
     except Exception as e:
         logger.error(f"Failed to create/update tag group: {e!s}", exc_info=True)
@@ -228,8 +363,8 @@ def delete_tag_group(
         HTTPException: If tag group not found or deletion fails
     """
     try:
-        service = HighlightTagService(db)
-        success = service.delete_tag_group(tag_group_id, current_user.id)
+        service = HighlightTagGroupService(db)
+        success = service.delete_group(tag_group_id, current_user.id)
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

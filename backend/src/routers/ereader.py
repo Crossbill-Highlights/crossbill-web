@@ -6,11 +6,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from src import schemas
+from src.application.library.services.book_cover_service import BookCoverService
+from src.application.library.services.book_management_service import BookManagementService
 from src.database import DatabaseSession
+from src.domain.common.exceptions import DomainError
 from src.exceptions import CrossbillError
 from src.models import User
 from src.services.auth_service import get_current_user
-from src.services.book_service import BookService
 from src.services.ebook.ebook_service import EbookService
 
 logger = logging.getLogger(__name__)
@@ -44,17 +46,28 @@ def create_book(
         EreaderBookMetadata with book_id, bookname, author, has_cover, has_epub
     """
     try:
-        service = BookService(db)
+        service = BookManagementService(db)
         service.create_book(book_data, current_user.id)
 
         # Commit the book creation
         db.commit()
 
         # Return metadata in the same format as GET /ereader/books/{client_book_id}
-        return service.get_book_metadata_for_ereader(book_data.client_book_id, current_user.id)
+        metadata = service.get_metadata_for_ereader(book_data.client_book_id, current_user.id)
+        return schemas.EreaderBookMetadata(
+            book_id=metadata.book_id,
+            bookname=metadata.title,
+            author=metadata.author,
+            has_cover=metadata.has_cover,
+            has_ebook=metadata.has_ebook,
+        )
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
+    except DomainError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error(
             f"Failed to create book: {e!s}",
@@ -94,11 +107,22 @@ def get_book_metadata(
         HTTPException: 404 if book is not found
     """
     try:
-        service = BookService(db)
-        return service.get_book_metadata_for_ereader(client_book_id, current_user.id)
+        service = BookManagementService(db)
+        metadata = service.get_metadata_for_ereader(client_book_id, current_user.id)
+        return schemas.EreaderBookMetadata(
+            book_id=metadata.book_id,
+            bookname=metadata.title,
+            author=metadata.author,
+            has_cover=metadata.has_cover,
+            has_ebook=metadata.has_ebook,
+        )
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
+    except DomainError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error(
             f"Failed to get book metadata for client_book_id={client_book_id}: {e!s}",
@@ -140,11 +164,21 @@ def upload_book_cover(
         HTTPException: 404 if book is not found, or if upload fails
     """
     try:
-        service = BookService(db)
-        return service.upload_cover_by_client_book_id(client_book_id, cover, current_user.id)
+        service = BookCoverService(db)
+        cover_url = service.upload_cover_by_client_book_id(client_book_id, cover, current_user.id)
+        db.commit()
+        return schemas.CoverUploadResponse(
+            success=True,
+            message="Cover uploaded successfully",
+            cover_url=cover_url,
+        )
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
+    except DomainError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error(
             f"Failed to upload cover for client_book_id={client_book_id}: {e!s}",

@@ -24,8 +24,6 @@ export interface FlashcardWithHighlight {
   user_id: number;
   book_id: number;
   highlight_id: number | null;
-  created_at: string;
-  updated_at: string;
   /** Associated highlight data with tags (if any) */
   highlight?: HighlightResponseBase | null;
 }
