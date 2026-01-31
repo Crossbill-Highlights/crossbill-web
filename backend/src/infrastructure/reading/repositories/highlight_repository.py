@@ -5,7 +5,10 @@ Returns domain entities instead of ORM models.
 Uses HighlightMapper internally for conversions.
 """
 
-from sqlalchemy import func, select
+import logging
+from datetime import UTC, datetime
+
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session, joinedload
 
 from src.domain.common.value_objects import BookId, ContentHash, HighlightId, UserId
@@ -19,7 +22,11 @@ from src.infrastructure.library.mappers.book_mapper import BookMapper
 from src.infrastructure.library.mappers.chapter_mapper import ChapterMapper
 from src.infrastructure.reading.mappers.highlight_mapper import HighlightMapper
 from src.infrastructure.reading.mappers.highlight_tag_mapper import HighlightTagMapper
+from src.models import Bookmark as BookmarkORM
+from src.models import Flashcard as FlashcardORM
 from src.models import Highlight as HighlightORM
+
+logger = logging.getLogger(__name__)
 
 
 class HighlightRepository:
@@ -250,8 +257,8 @@ class HighlightRepository:
 
         stmt = stmt.limit(limit)
 
-        # Execute query
-        results = self.db.execute(stmt).scalars().all()
+        # Execute query - use unique() when joining collections
+        results = self.db.execute(stmt).unique().scalars().all()
 
         # Convert ORM models to domain entities
         return [
@@ -268,3 +275,72 @@ class HighlightRepository:
             )
             for highlight_orm in results
         ]
+
+    def soft_delete_by_ids(
+        self,
+        highlight_ids: list[HighlightId],
+        user_id: UserId,
+        book_id: BookId,
+    ) -> int:
+        """
+        Soft delete highlights by IDs with value objects.
+
+        Cascades to delete bookmarks and flashcards.
+
+        Args:
+            highlight_ids: List of highlight IDs to soft delete
+            user_id: User ID for authorization check
+            book_id: Book ID for validation
+
+        Returns:
+            Number of highlights soft deleted
+        """
+        # Convert value objects to primitives for query
+        highlight_id_values = [hid.value for hid in highlight_ids]
+
+        # Subquery to get valid highlight IDs (belong to book/user, not already deleted)
+        valid_highlight_ids_subquery = (
+            select(HighlightORM.id)
+            .where(
+                HighlightORM.id.in_(highlight_id_values),
+                HighlightORM.book_id == book_id.value,
+                HighlightORM.user_id == user_id.value,
+                HighlightORM.deleted_at.is_(None),
+            )
+            .scalar_subquery()
+        )
+
+        # Bulk delete all bookmarks for valid highlights
+        stmt_delete_bookmarks = delete(BookmarkORM).where(
+            BookmarkORM.highlight_id.in_(valid_highlight_ids_subquery)
+        )
+        result = self.db.execute(stmt_delete_bookmarks)
+        bookmarks_deleted = getattr(result, "rowcount", 0) or 0
+
+        # Bulk delete all flashcards for valid highlights
+        stmt_delete_flashcards = delete(FlashcardORM).where(
+            FlashcardORM.highlight_id.in_(valid_highlight_ids_subquery)
+        )
+        result = self.db.execute(stmt_delete_flashcards)
+        flashcards_deleted = getattr(result, "rowcount", 0) or 0
+
+        # Bulk soft delete all valid highlights in a single query
+        stmt_soft_delete = (
+            update(HighlightORM)
+            .where(
+                HighlightORM.id.in_(highlight_id_values),
+                HighlightORM.book_id == book_id.value,
+                HighlightORM.user_id == user_id.value,
+                HighlightORM.deleted_at.is_(None),
+            )
+            .values(deleted_at=datetime.now(UTC))
+        )
+        result = self.db.execute(stmt_soft_delete)
+        count = getattr(result, "rowcount", 0) or 0
+
+        self.db.flush()
+        logger.info(
+            f"Soft deleted {count} highlights, {bookmarks_deleted} associated bookmarks, "
+            f"and {flashcards_deleted} associated flashcards for book_id={book_id.value}, user_id={user_id.value}"
+        )
+        return count
