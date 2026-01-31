@@ -85,6 +85,17 @@ backend/
 │   │       │   ├── book.py         # Book aggregate root
 │   │       │   └── chapter.py      # Chapter entity
 │   │       └── exceptions.py
+```
+
+**Important Note on Module Organization**:
+The `library`, `reading`, and `learning` directories within `domain/`, `application/`, and `infrastructure/` are **organizational modules**, NOT true DDD bounded contexts. They help organize related code but:
+- They can share domain concepts (Book, User, etc.)
+- They can reference each other's entities and services
+- They don't enforce strict bounded context boundaries
+
+True bounded contexts would have stricter separation with anti-corruption layers and separate databases. Our current structure is a pragmatic organization for a monolithic application.
+
+```
 │   │
 │   ├── application/                 # Application Layer (Use Cases)
 │   │   └── reading/
@@ -222,7 +233,8 @@ class Highlight(AggregateRoot[HighlightId]):
 
 **Rules**:
 - ✅ Use domain entities and value objects
-- ✅ No Pydantic schemas
+- ✅ NEVER return Pydantic schemas - return domain entities, tuples, or domain dataclasses
+- ✅ Remove all `from src import schemas` imports from application layer
 - ✅ No HTTP/routing logic
 - ✅ Delegate to repositories for persistence
 
@@ -366,6 +378,8 @@ class HighlightMapper:
 - Handle HTTP requests/responses
 - Validate input (Pydantic)
 - Convert domain entities → DTOs (schemas)
+- Manually construct Pydantic schemas, extracting `.value` from value objects
+- Use private helper functions (prefix `_`) for complex schema construction
 - Error handling and HTTP status codes
 - Authentication/authorization
 

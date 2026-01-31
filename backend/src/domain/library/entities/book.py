@@ -55,6 +55,10 @@ class Book(Entity[BookId]):
         """Update last viewed timestamp to now."""
         self.last_viewed = datetime.now(UTC)
 
+    def update_cover(self, cover_url: str) -> None:
+        """Update book cover URL."""
+        self.cover = cover_url
+
     # Factory methods
     @classmethod
     def create(

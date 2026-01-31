@@ -66,6 +66,17 @@ class BookRepository:
         self.db.flush()
         return self.mapper.to_domain(existing_orm)
 
+    def delete(self, book: Book) -> None:
+        """
+        Hard delete a book from the database.
+
+        Cascading deletes handled by database foreign key constraints.
+        """
+        stmt = select(BookORM).where(BookORM.id == book.id.value)
+        book_orm = self.db.execute(stmt).scalar_one()
+        self.db.delete(book_orm)
+        self.db.flush()
+
     def get_recently_viewed_books(
         self, user_id: UserId, limit: int = 10
     ) -> list[tuple[Book, int, int, list[Tag]]]:
