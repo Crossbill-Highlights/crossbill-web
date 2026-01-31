@@ -18,8 +18,8 @@ from src.domain.library.services.book_details_aggregator import BookDetailsAggre
 from src.domain.reading.services.highlight_grouping_service import HighlightGroupingService
 from src.exceptions import BookNotFoundError
 from src.infrastructure.library.repositories.book_repository import BookRepository
+from src.infrastructure.reading.repositories.bookmark_repository import BookmarkRepository
 from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
-from src.repositories.bookmark_repository import BookmarkRepository as LegacyBookmarkRepository
 from src.repositories.flashcard_repository import (
     FlashcardRepository as LegacyFlashcardRepository,
 )
@@ -58,11 +58,11 @@ class BookManagementService:
         """
         self.db = db
         self.book_repository = BookRepository(db)
+        self.bookmark_repository = BookmarkRepository(db)
         self.highlight_repository = HighlightRepository(db)
         self.highlight_grouping_service = HighlightGroupingService()
 
         # Legacy repositories (temporary)
-        self.legacy_bookmark_repository = LegacyBookmarkRepository(db)
         self.legacy_highlight_repository = LegacyHighlightRepository(db)
         self.legacy_flashcard_repository = LegacyFlashcardRepository(db)
 
@@ -163,8 +163,21 @@ class BookManagementService:
             [(h, c, tags, flashcards) for h, _, c, tags, flashcards in highlights_with_context]
         )
 
-        # Get bookmarks using legacy repository (temporary)
-        bookmarks = self.legacy_bookmark_repository.get_by_book_id(book_id, user_id)
+        # Get bookmarks (returns domain entities)
+        bookmark_entities = self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)
+
+        # Convert domain entities to ORM for BookDetailsAggregation (temporary compatibility)
+        from src.models import Bookmark as BookmarkORM  # noqa: PLC0415
+
+        bookmarks = [
+            BookmarkORM(
+                id=b.id.value,
+                book_id=b.book_id.value,
+                highlight_id=b.highlight_id.value,
+                created_at=b.created_at,
+            )
+            for b in bookmark_entities
+        ]
 
         # Get legacy book for tags and tag groups (temporary ORM access)
         from src.repositories.book_repository import (  # noqa: PLC0415

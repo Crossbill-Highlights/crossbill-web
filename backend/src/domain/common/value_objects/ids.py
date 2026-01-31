@@ -108,3 +108,18 @@ class FlashcardId(EntityId):
     def __post_init__(self) -> None:
         if self.value < 0:
             raise ValueError("FlashcardId must be non-negative")
+
+
+@dataclass(frozen=True)
+class BookmarkId(EntityId):
+    """Strongly-typed bookmark identifier."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("BookmarkId must be non-negative")
+
+    @classmethod
+    def generate(cls) -> "BookmarkId":
+        return cls(0)  # Database assigns real ID

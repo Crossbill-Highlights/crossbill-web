@@ -19,6 +19,7 @@ from src.application.reading.services.book_highlight_deletion_service import (
 from src.application.reading.services.book_highlight_search_service import (
     BookHighlightSearchService,
 )
+from src.application.reading.services.bookmark_service import BookmarkService
 from src.application.reading.services.highlight_tag_association_service import (
     HighlightTagAssociationService,
 )
@@ -40,7 +41,6 @@ from src.infrastructure.reading.repositories.highlight_tag_repository import (
 )
 from src.models import User
 from src.services import (
-    BookmarkService,
     FlashcardService,
 )
 from src.services.auth_service import get_current_user
@@ -1067,7 +1067,17 @@ def create_bookmark(
     """
     try:
         service = BookmarkService(db)
-        return service.create_bookmark(book_id, request.highlight_id, current_user.id)
+        bookmark = service.create_bookmark(book_id, request.highlight_id, current_user.id)
+
+        # Manually construct schema from domain entity
+        # created_at is always set for persisted bookmarks
+        assert bookmark.created_at is not None
+        return schemas.Bookmark(
+            id=bookmark.id.value,
+            book_id=bookmark.book_id.value,
+            highlight_id=bookmark.highlight_id.value,
+            created_at=bookmark.created_at,
+        )
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -1147,7 +1157,22 @@ def get_bookmarks(
     """
     try:
         service = BookmarkService(db)
-        return service.get_bookmarks_by_book(book_id, current_user.id)
+        bookmarks = service.get_bookmarks_by_book(book_id, current_user.id)
+
+        # Manually construct schemas from domain entities
+        # created_at is always set for persisted bookmarks
+        bookmark_schemas = []
+        for b in bookmarks:
+            assert b.created_at is not None
+            bookmark_schemas.append(
+                schemas.Bookmark(
+                    id=b.id.value,
+                    book_id=b.book_id.value,
+                    highlight_id=b.highlight_id.value,
+                    created_at=b.created_at,
+                )
+            )
+        return schemas.BookmarksResponse(bookmarks=bookmark_schemas)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
