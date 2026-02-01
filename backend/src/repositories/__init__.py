@@ -2,7 +2,6 @@
 
 from src.repositories.book_repository import BookRepository
 from src.repositories.chapter_repository import ChapterRepository
-from src.repositories.flashcard_repository import FlashcardRepository
 from src.repositories.highlight_repository import HighlightRepository
 from src.repositories.reading_session_repository import ReadingSessionRepository
 from src.repositories.user_repository import UserRepository
@@ -10,7 +9,6 @@ from src.repositories.user_repository import UserRepository
 __all__ = [
     "BookRepository",
     "ChapterRepository",
-    "FlashcardRepository",
     "HighlightRepository",
     "ReadingSessionRepository",
     "UserRepository",

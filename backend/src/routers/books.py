@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from fastapi.responses import FileResponse
 
 from src import schemas
+from src.application.learning.services.flashcard_service import FlashcardService
 from src.application.library.services.book_cover_service import BookCoverService
 from src.application.library.services.book_management_service import BookManagementService
 from src.application.library.services.get_recently_viewed_books_service import (
@@ -32,7 +33,7 @@ from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import HighlightId, HighlightTagId, UserId
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
 from src.domain.reading.services.highlight_grouping_service import ChapterWithHighlights
-from src.exceptions import CrossbillError
+from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.reading.repositories.highlight_repository import (
     HighlightRepository,
 )
@@ -40,9 +41,6 @@ from src.infrastructure.reading.repositories.highlight_tag_repository import (
     HighlightTagRepository,
 )
 from src.models import User
-from src.services import (
-    FlashcardService,
-)
 from src.services.auth_service import get_current_user
 from src.services.highlight_service import HighlightService
 from src.services.reading_session_service import ReadingSessionService
@@ -1222,18 +1220,29 @@ def create_flashcard_for_book(
     """
     try:
         service = FlashcardService(db)
-        flashcard = service.create_flashcard_for_book(
+        flashcard_entity = service.create_flashcard_for_book(
             book_id=book_id,
             user_id=current_user.id,
             question=request.question,
             answer=request.answer,
+        )
+        # Manually construct Pydantic schema from domain entity
+        flashcard = schemas.Flashcard(
+            id=flashcard_entity.id.value,
+            user_id=flashcard_entity.user_id.value,
+            book_id=flashcard_entity.book_id.value,
+            highlight_id=flashcard_entity.highlight_id.value
+            if flashcard_entity.highlight_id
+            else None,
+            question=flashcard_entity.question,
+            answer=flashcard_entity.answer,
         )
         return schemas.FlashcardCreateResponse(
             success=True,
             message="Flashcard created successfully",
             flashcard=flashcard,
         )
-    except CrossbillError:
+    except (CrossbillError, DomainError, ValidationError):
         raise
     except Exception as e:
         logger.error(f"Failed to create flashcard for book {book_id}: {e!s}", exc_info=True)
@@ -1269,9 +1278,64 @@ def get_flashcards_for_book(
         HTTPException: If book not found or fetching fails
     """
     try:
+        # Get flashcards with highlights from service (returns DTOs)
         service = FlashcardService(db)
-        return service.get_flashcards_by_book(book_id, current_user.id)
-    except CrossbillError:
+        flashcards_with_highlights = service.get_flashcards_by_book(book_id, current_user.id)
+
+        # Convert DTOs to Pydantic schemas
+        flashcards = []
+        for dto in flashcards_with_highlights:
+            fc = dto.flashcard
+            highlight = dto.highlight
+            chapter = dto.chapter
+            tags = dto.highlight_tags
+
+            # Convert highlight to Pydantic schema if present
+            highlight_schema = None
+            if highlight:
+                # Extract xpoint strings
+                start_xpoint = str(highlight.xpoints.start) if highlight.xpoints else None
+                end_xpoint = str(highlight.xpoints.end) if highlight.xpoints else None
+
+                # Manually construct highlight schema
+                highlight_schema = schemas.HighlightResponseBase(
+                    id=highlight.id.value,
+                    book_id=highlight.book_id.value,
+                    chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
+                    text=highlight.text,
+                    note=highlight.note,
+                    page=highlight.page,
+                    start_xpoint=start_xpoint,
+                    end_xpoint=end_xpoint,
+                    datetime=highlight.datetime,
+                    chapter=chapter.name if chapter else None,
+                    chapter_number=chapter.chapter_number if chapter else None,
+                    created_at=highlight.created_at,
+                    updated_at=highlight.updated_at,
+                    highlight_tags=[
+                        schemas.HighlightTagInBook(
+                            id=tag.id.value,
+                            name=tag.name,
+                            tag_group_id=tag.tag_group_id,
+                        )
+                        for tag in tags
+                    ],
+                )
+
+            # Construct flashcard schema with highlight
+            flashcard_schema = schemas.FlashcardWithHighlight(
+                id=fc.id.value,
+                user_id=fc.user_id.value,
+                book_id=fc.book_id.value,
+                highlight_id=fc.highlight_id.value if fc.highlight_id else None,
+                question=fc.question,
+                answer=fc.answer,
+                highlight=highlight_schema,
+            )
+            flashcards.append(flashcard_schema)
+
+        return schemas.FlashcardsWithHighlightsResponse(flashcards=flashcards)
+    except (CrossbillError, DomainError, ValidationError):
         raise
     except Exception as e:
         logger.error(f"Failed to get flashcards for book {book_id}: {e!s}", exc_info=True)

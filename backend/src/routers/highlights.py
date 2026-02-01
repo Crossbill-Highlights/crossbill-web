@@ -6,6 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src import schemas
+from src.application.learning.services.flashcard_service import FlashcardService
 from src.application.reading.services.highlight_tag_group_service import (
     HighlightTagGroupService,
 )
@@ -20,9 +21,8 @@ from src.application.reading.services.update_highlight_note_service import (
 from src.database import DatabaseSession
 from src.domain.common.exceptions import DomainError
 from src.domain.reading.exceptions import BookNotFoundError
-from src.exceptions import CrossbillError
+from src.exceptions import CrossbillError, ValidationError
 from src.models import User
-from src.services import FlashcardService
 from src.services.auth_service import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -410,18 +410,29 @@ def create_flashcard_for_highlight(
     """
     try:
         service = FlashcardService(db)
-        flashcard = service.create_flashcard_for_highlight(
+        flashcard_entity = service.create_flashcard_for_highlight(
             highlight_id=highlight_id,
             user_id=current_user.id,
             question=request.question,
             answer=request.answer,
+        )
+        # Manually construct Pydantic schema from domain entity
+        flashcard = schemas.Flashcard(
+            id=flashcard_entity.id.value,
+            user_id=flashcard_entity.user_id.value,
+            book_id=flashcard_entity.book_id.value,
+            highlight_id=flashcard_entity.highlight_id.value
+            if flashcard_entity.highlight_id
+            else None,
+            question=flashcard_entity.question,
+            answer=flashcard_entity.answer,
         )
         return schemas.FlashcardCreateResponse(
             success=True,
             message="Flashcard created successfully",
             flashcard=flashcard,
         )
-    except CrossbillError:
+    except (CrossbillError, DomainError, ValidationError):
         raise
     except Exception as e:
         logger.error(

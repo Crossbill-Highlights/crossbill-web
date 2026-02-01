@@ -6,10 +6,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src import schemas
+from src.application.learning.services.flashcard_service import FlashcardService
 from src.database import DatabaseSession
-from src.exceptions import CrossbillError
+from src.domain.common.exceptions import DomainError
+from src.exceptions import CrossbillError, ValidationError
 from src.models import User
-from src.services import FlashcardService
 from src.services.auth_service import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -44,18 +45,29 @@ def update_flashcard(
     """
     try:
         service = FlashcardService(db)
-        flashcard = service.update_flashcard(
+        flashcard_entity = service.update_flashcard(
             flashcard_id=flashcard_id,
             user_id=current_user.id,
             question=request.question,
             answer=request.answer,
+        )
+        # Manually construct Pydantic schema from domain entity
+        flashcard = schemas.Flashcard(
+            id=flashcard_entity.id.value,
+            user_id=flashcard_entity.user_id.value,
+            book_id=flashcard_entity.book_id.value,
+            highlight_id=flashcard_entity.highlight_id.value
+            if flashcard_entity.highlight_id
+            else None,
+            question=flashcard_entity.question,
+            answer=flashcard_entity.answer,
         )
         return schemas.FlashcardUpdateResponse(
             success=True,
             message="Flashcard updated successfully",
             flashcard=flashcard,
         )
-    except CrossbillError:
+    except (CrossbillError, DomainError, ValidationError):
         raise
     except Exception as e:
         logger.error(f"Failed to update flashcard {flashcard_id}: {e!s}", exc_info=True)
@@ -95,7 +107,7 @@ def delete_flashcard(
             success=True,
             message="Flashcard deleted successfully",
         )
-    except CrossbillError:
+    except (CrossbillError, DomainError, ValidationError):
         raise
     except Exception as e:
         logger.error(f"Failed to delete flashcard {flashcard_id}: {e!s}", exc_info=True)

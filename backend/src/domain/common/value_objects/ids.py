@@ -109,6 +109,10 @@ class FlashcardId(EntityId):
         if self.value < 0:
             raise ValueError("FlashcardId must be non-negative")
 
+    @classmethod
+    def generate(cls) -> "FlashcardId":
+        return cls(0)  # Database assigns real ID
+
 
 @dataclass(frozen=True)
 class BookmarkId(EntityId):

@@ -188,9 +188,7 @@ class TagRepository:
 
     # Book-tag association methods
 
-    def add_tags_to_book(
-        self, book_id: BookId, tag_ids: list[TagId], user_id: UserId
-    ) -> None:
+    def add_tags_to_book(self, book_id: BookId, tag_ids: list[TagId], user_id: UserId) -> None:
         """
         Add tags to a book (manages the many-to-many association).
 
@@ -234,9 +232,7 @@ class TagRepository:
             book_orm.tags.extend(tag_orms)
             self.db.flush()
 
-    def replace_book_tags(
-        self, book_id: BookId, tag_ids: list[TagId], user_id: UserId
-    ) -> None:
+    def replace_book_tags(self, book_id: BookId, tag_ids: list[TagId], user_id: UserId) -> None:
         """
         Replace all tags on a book (manages the many-to-many association).
 

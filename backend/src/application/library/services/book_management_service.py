@@ -20,12 +20,12 @@ from src.domain.library.entities.tag import Tag
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
 from src.domain.reading.services.highlight_grouping_service import HighlightGroupingService
 from src.exceptions import BookNotFoundError
+from src.infrastructure.learning.repositories.flashcard_repository import (
+    FlashcardRepository,
+)
 from src.infrastructure.library.repositories.book_repository import BookRepository
 from src.infrastructure.reading.repositories.bookmark_repository import BookmarkRepository
 from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
-from src.repositories.flashcard_repository import (
-    FlashcardRepository as LegacyFlashcardRepository,
-)
 from src.repositories.highlight_repository import (
     HighlightRepository as LegacyHighlightRepository,
 )
@@ -64,9 +64,11 @@ class BookManagementService:
         self.highlight_repository = HighlightRepository(db)
         self.highlight_grouping_service = HighlightGroupingService()
 
+        # Repositories
+        self.flashcard_repository = FlashcardRepository(db)
+
         # Legacy repositories (temporary)
         self.legacy_highlight_repository = LegacyHighlightRepository(db)
-        self.legacy_flashcard_repository = LegacyFlashcardRepository(db)
 
         # Legacy services
         self.ebook_service = EbookService(db)
@@ -222,9 +224,9 @@ class BookManagementService:
         tag_service = BookTagAssociationService(self.db)
         tags = tag_service.replace_book_tags(book_id, update_data.tags, user_id)
 
-        # Get counts (still using legacy repositories temporarily)
+        # Get counts
         highlight_count = self.legacy_highlight_repository.count_by_book_id(book_id, user_id)
-        flashcard_count = self.legacy_flashcard_repository.count_by_book_id(book_id, user_id)
+        flashcard_count = self.flashcard_repository.count_by_book(BookId(book_id), UserId(user_id))
 
         logger.info(f"Successfully updated book {book_id}")
 

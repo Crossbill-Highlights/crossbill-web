@@ -10,7 +10,7 @@ class FlashcardMapper:
 
     def to_domain(self, orm_model: FlashcardORM) -> Flashcard:
         """Convert ORM model to domain entity."""
-        return Flashcard(
+        return Flashcard.create_with_id(
             id=FlashcardId(orm_model.id),
             user_id=UserId(orm_model.user_id),
             book_id=BookId(orm_model.book_id),
@@ -44,6 +44,4 @@ class FlashcardMapper:
             question=domain_entity.question,
             answer=domain_entity.answer,
             highlight_id=domain_entity.highlight_id.value if domain_entity.highlight_id else None,
-            created_at=domain_entity.created_at,
-            updated_at=domain_entity.updated_at,
         )

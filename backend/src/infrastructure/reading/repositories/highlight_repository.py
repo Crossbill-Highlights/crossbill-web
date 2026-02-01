@@ -348,3 +348,45 @@ class HighlightRepository:
             f"and {flashcards_deleted} associated flashcards for book_id={book_id.value}, user_id={user_id.value}"
         )
         return count
+
+    def find_by_ids_with_tags(
+        self, highlight_ids: list[HighlightId], user_id: UserId
+    ) -> list[tuple[Highlight, Chapter | None, list[HighlightTag]]]:
+        """
+        Get highlights by IDs with tags and chapters.
+
+        Args:
+            highlight_ids: List of highlight IDs to fetch
+            user_id: The user ID for ownership verification
+
+        Returns:
+            List of tuples (Highlight, Chapter | None, list[HighlightTag])
+        """
+        if not highlight_ids:
+            return []
+
+        highlight_id_values = [hid.value for hid in highlight_ids]
+
+        stmt = (
+            select(HighlightORM)
+            .options(
+                joinedload(HighlightORM.highlight_tags),
+                joinedload(HighlightORM.chapter),
+            )
+            .where(
+                HighlightORM.id.in_(highlight_id_values),
+                HighlightORM.user_id == user_id.value,
+                HighlightORM.deleted_at.is_(None),
+            )
+        )
+        highlight_orms = list(self.db.execute(stmt).unique().scalars().all())
+
+        # Convert to domain entities
+        return [
+            (
+                self.mapper.to_domain(h_orm),
+                self.chapter_mapper.to_domain(h_orm.chapter) if h_orm.chapter else None,
+                [self.highlight_tag_mapper.to_domain(tag_orm) for tag_orm in h_orm.highlight_tags],
+            )
+            for h_orm in highlight_orms
+        ]
