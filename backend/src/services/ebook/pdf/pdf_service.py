@@ -12,10 +12,10 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from src import repositories
+from src.config import PDFS_DIR
 from src.exceptions import BookNotFoundError
 
 # Module-level constants
-PDFS_DIR = Path(__file__).parent.parent.parent / "book-files" / "pdfs"
 logger = logging.getLogger(__name__)
 
 
