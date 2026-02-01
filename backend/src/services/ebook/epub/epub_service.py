@@ -18,6 +18,7 @@ from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
 from sqlalchemy.orm import Session
 
 from src import models, repositories
+from src.config import EPUBS_DIR
 from src.exceptions import BookNotFoundError, InvalidEbookError, XPointNavigationError
 from src.services.ebook.epub.xpoint_utils import ParsedXPoint
 
@@ -69,10 +70,6 @@ def _extract_toc_hierarchy(
             current_number += 1
 
     return chapters
-
-
-# Directory for epub files (parallel to book-covers)
-EPUBS_DIR = Path(__file__).parent.parent.parent / "book-files" / "epubs"
 
 
 def _sanitize_filename(text: str) -> str:

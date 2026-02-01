@@ -10,14 +10,12 @@ from pathlib import Path
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from src.config import BOOK_COVERS_DIR
 from src.domain.common.value_objects import BookId, UserId
 from src.exceptions import BookNotFoundError
 from src.infrastructure.library.repositories.book_repository import BookRepository
 
 logger = logging.getLogger(__name__)
-
-# Directory for book cover images
-COVERS_DIR = Path(__file__).parent.parent.parent.parent.parent / "book-files" / "book-covers"
 
 # Maximum cover image size (5MB)
 MAX_COVER_SIZE = 5 * 1024 * 1024
@@ -92,10 +90,10 @@ class BookCoverService:
         if file_type not in {"jpeg", "png", "webp"}:
             raise HTTPException(status_code=400, detail="Invalid image file")
 
-        COVERS_DIR.mkdir(parents=True, exist_ok=True)
+        BOOK_COVERS_DIR.mkdir(parents=True, exist_ok=True)
 
         cover_filename = f"{book_id}.jpg"
-        cover_path = COVERS_DIR / cover_filename
+        cover_path = BOOK_COVERS_DIR / cover_filename
         cover_path.write_bytes(content)
 
         logger.info(f"Successfully saved cover for book {book_id} at {cover_path}")
@@ -165,7 +163,7 @@ class BookCoverService:
             raise BookNotFoundError(book_id)
 
         cover_filename = f"{book_id}.jpg"
-        cover_path = COVERS_DIR / cover_filename
+        cover_path = BOOK_COVERS_DIR / cover_filename
 
         if not cover_path.is_file():
             raise HTTPException(status_code=404, detail="Cover not found")

@@ -4,11 +4,18 @@ import logging
 import sys
 from collections.abc import Callable
 from functools import lru_cache
+from pathlib import Path
 from typing import Any, Literal
 
 import structlog
 from pydantic import computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Path constants - calculated once at module load
+BACKEND_ROOT = Path(__file__).parent.parent.resolve()
+BOOK_FILES_DIR = BACKEND_ROOT / "book-files"
+BOOK_COVERS_DIR = BOOK_FILES_DIR / "book-covers"
+EPUBS_DIR = BOOK_FILES_DIR / "epubs"
 
 
 class Settings(BaseSettings):
