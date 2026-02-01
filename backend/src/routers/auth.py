@@ -8,15 +8,13 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from starlette import status
 
+from src.application.identity.services.authentication_service import AuthenticationService
 from src.config import get_settings
 from src.database import DatabaseSession
-from src.repositories import UserRepository
-from src.services.auth_service import (
+from src.domain.identity.exceptions import InvalidCredentialsError
+from src.infrastructure.identity.auth.token_service import (
     REFRESH_TOKEN_EXPIRE_DAYS,
     TokenWithRefresh,
-    authenticate_user,
-    create_token_pair,
-    verify_refresh_token,
 )
 
 logger = logging.getLogger(__name__)
@@ -64,17 +62,17 @@ async def login(
     db: DatabaseSession,
 ) -> TokenWithRefresh:
     # OAuth2PasswordRequestForm uses 'username' field, but we use it for email
-    user = authenticate_user(form_data.username, form_data.password, db)
-    if not user:
+    try:
+        auth_service = AuthenticationService(db)
+        _, token_pair = auth_service.authenticate_user(form_data.username, form_data.password)
+        set_refresh_cookie(response, token_pair.refresh_token)
+        return token_pair
+    except InvalidCredentialsError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    token_pair = create_token_pair(user.id)
-    set_refresh_cookie(response, token_pair.refresh_token)
-    return token_pair
+        ) from None
 
 
 @router.post("/refresh")
@@ -104,27 +102,17 @@ async def refresh(
             detail="Refresh token required",
         )
 
-    user_id = verify_refresh_token(token)
-    if user_id is None:
+    try:
+        auth_service = AuthenticationService(db)
+        _, token_pair = auth_service.refresh_access_token(token)
+        set_refresh_cookie(response, token_pair.refresh_token)
+        return token_pair
+    except InvalidCredentialsError:
         _clear_refresh_cookie(response)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token",
-        )
-
-    # Verify user still exists
-    user_repo = UserRepository(db)
-    user = user_repo.get_by_id(user_id)
-    if not user:
-        _clear_refresh_cookie(response)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-
-    token_pair = create_token_pair(user.id)
-    set_refresh_cookie(response, token_pair.refresh_token)
-    return token_pair
+        ) from None
 
 
 @router.post("/logout")

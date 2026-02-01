@@ -13,7 +13,6 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pwdlib import PasswordHash
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -23,7 +22,8 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from src.config import configure_logging, get_settings
 from src.database import get_engine
 from src.exceptions import BookNotFoundError, CrossbillError, NotFoundError
-from src.repositories import UserRepository
+from src.infrastructure.identity.auth.password_service import hash_password
+from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.routers import (
     auth,
     books,
@@ -59,8 +59,9 @@ def _initialize_admin_password() -> None:
     db = session_factory()
 
     try:
-        user_repo = UserRepository(db)
-        admin_user = user_repo.get_by_email(settings.ADMIN_USERNAME)
+        # Use repository to find and update admin user
+        user_repository = UserRepository(db)
+        admin_user = user_repository.find_by_email(settings.ADMIN_USERNAME)
 
         if not admin_user:
             logger.warning(
@@ -69,7 +70,7 @@ def _initialize_admin_password() -> None:
             )
             return
 
-        if admin_user.hashed_password:
+        if admin_user.has_password():
             logger.info(
                 "admin_password_skip",
                 reason="password already set",
@@ -77,8 +78,12 @@ def _initialize_admin_password() -> None:
             )
             return
 
-        password_hash = PasswordHash.recommended()
-        admin_user.hashed_password = password_hash.hash(settings.ADMIN_PASSWORD)
+        # Hash password and update domain entity
+        hashed = hash_password(settings.ADMIN_PASSWORD)
+        admin_user.update_password(hashed)
+
+        # Save via repository
+        user_repository.save(admin_user)
         db.commit()
 
         logger.info(

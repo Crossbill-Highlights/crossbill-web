@@ -9,9 +9,9 @@ from src import schemas
 from src.application.reading.services import ReadingSessionAISummaryService
 from src.database import DatabaseSession
 from src.dependencies import require_ai_enabled
+from src.domain.identity.entities.user import User
 from src.exceptions import ReadingSessionNotFoundError, ValidationError
-from src.models import User
-from src.services.auth_service import get_current_user
+from src.infrastructure.identity.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -51,10 +51,12 @@ async def get_reading_session_ai_summary(
 
     try:
         service = ReadingSessionAISummaryService(db)
-        summary = await service.get_or_generate_summary(reading_session_id, current_user.id)
+        summary = await service.get_or_generate_summary(reading_session_id, current_user.id.value)
         return schemas.ReadingSessionAISummaryResponse(summary=summary)
     except ReadingSessionNotFoundError as e:
-        logger.warning(f"Reading session {reading_session_id} not found for user {current_user.id}")
+        logger.warning(
+            f"Reading session {reading_session_id} not found for user {current_user.id.value}"
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),

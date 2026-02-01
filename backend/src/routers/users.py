@@ -5,13 +5,20 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+from src.application.identity.services.user_profile_service import UserProfileService
+from src.application.identity.services.user_registration_service import UserRegistrationService
 from src.database import DatabaseSession
+from src.domain.identity.entities.user import User
+from src.domain.identity.exceptions import (
+    EmailAlreadyExistsError,
+    PasswordVerificationError,
+    RegistrationDisabledError,
+)
 from src.exceptions import CrossbillError
-from src.models import User
+from src.infrastructure.identity.auth.token_service import TokenWithRefresh
+from src.infrastructure.identity.dependencies import get_current_user
 from src.routers.auth import set_refresh_cookie
 from src.schemas.user_schemas import UserDetailsResponse, UserRegisterRequest, UserUpdateRequest
-from src.services.auth_service import TokenWithRefresh, get_current_user
-from src.services.users_service import UserService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/users", tags=["users"])
@@ -30,10 +37,20 @@ async def register(
     Returns token pair for immediate login after registration.
     """
     try:
-        service = UserService(db)
-        token_pair = service.register_user(register_data)
+        service = UserRegistrationService(db)
+        _, token_pair = service.register_user(register_data.email, register_data.password)
         set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
+    except RegistrationDisabledError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User registration is currently disabled",
+        ) from None
+    except EmailAlreadyExistsError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        ) from None
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -51,7 +68,7 @@ async def register(
 @router.get("/me")
 async def get_me(current_user: Annotated[User, Depends(get_current_user)]) -> UserDetailsResponse:
     """Get the current user's profile information."""
-    return UserDetailsResponse(email=current_user.email, id=current_user.id)
+    return UserDetailsResponse(email=current_user.email, id=current_user.id.value)
 
 
 @router.post("/me")
@@ -67,8 +84,19 @@ async def update_me(
     - To change password: provide both `current_password` and `new_password` fields
     """
     try:
-        service = UserService(db)
-        return service.update_user(current_user, update_data)
+        service = UserProfileService(db)
+        user = service.update_user(
+            user_id=current_user.id.value,
+            email=update_data.email,
+            current_password=update_data.current_password,
+            new_password=update_data.new_password,
+        )
+        return UserDetailsResponse(email=user.email, id=user.id.value)
+    except PasswordVerificationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        ) from None
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -76,7 +104,7 @@ async def update_me(
         # Re-raise HTTPException
         raise
     except Exception as e:
-        logger.error(f"Failed to update user {current_user.id}: {e!s}", exc_info=True)
+        logger.error(f"Failed to update user {current_user.id.value}: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again later.",

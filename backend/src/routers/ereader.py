@@ -10,9 +10,9 @@ from src.application.library.services.book_cover_service import BookCoverService
 from src.application.library.services.book_management_service import BookManagementService
 from src.database import DatabaseSession
 from src.domain.common.exceptions import DomainError
+from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError
-from src.models import User
-from src.services.auth_service import get_current_user
+from src.infrastructure.identity.dependencies import get_current_user
 from src.services.ebook.ebook_service import EbookService
 
 logger = logging.getLogger(__name__)
@@ -47,13 +47,13 @@ def create_book(
     """
     try:
         service = BookManagementService(db)
-        service.create_book(book_data, current_user.id)
+        service.create_book(book_data, current_user.id.value)
 
         # Commit the book creation
         db.commit()
 
         # Return metadata in the same format as GET /ereader/books/{client_book_id}
-        metadata = service.get_metadata_for_ereader(book_data.client_book_id, current_user.id)
+        metadata = service.get_metadata_for_ereader(book_data.client_book_id, current_user.id.value)
         return schemas.EreaderBookMetadata(
             book_id=metadata.book_id,
             bookname=metadata.title,
@@ -108,7 +108,7 @@ def get_book_metadata(
     """
     try:
         service = BookManagementService(db)
-        metadata = service.get_metadata_for_ereader(client_book_id, current_user.id)
+        metadata = service.get_metadata_for_ereader(client_book_id, current_user.id.value)
         return schemas.EreaderBookMetadata(
             book_id=metadata.book_id,
             bookname=metadata.title,
@@ -165,7 +165,9 @@ def upload_book_cover(
     """
     try:
         service = BookCoverService(db)
-        cover_url = service.upload_cover_by_client_book_id(client_book_id, cover, current_user.id)
+        cover_url = service.upload_cover_by_client_book_id(
+            client_book_id, cover, current_user.id.value
+        )
         db.commit()
         return schemas.CoverUploadResponse(
             success=True,
@@ -242,7 +244,9 @@ def upload_book_epub(
 
         # Upload the ebook through service layer
         service = EbookService(db)
-        service.upload_ebook(client_book_id, content, epub.content_type or "", current_user.id)
+        service.upload_ebook(
+            client_book_id, content, epub.content_type or "", current_user.id.value
+        )
 
         # Commit the database update
         db.commit()

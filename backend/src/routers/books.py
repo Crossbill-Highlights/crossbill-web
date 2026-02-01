@@ -34,17 +34,17 @@ from src.application.reading.services.reading_session_query_service import (
 from src.database import DatabaseSession
 from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import HighlightId, HighlightTagId, UserId
+from src.domain.identity.entities.user import User
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
 from src.domain.reading.services.highlight_grouping_service import ChapterWithHighlights
 from src.exceptions import CrossbillError, ValidationError
+from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.reading.repositories.highlight_repository import (
     HighlightRepository,
 )
 from src.infrastructure.reading.repositories.highlight_tag_repository import (
     HighlightTagRepository,
 )
-from src.models import User
-from src.services.auth_service import get_current_user
 from src.services.highlight_service import HighlightService
 
 logger = logging.getLogger(__name__)
@@ -200,7 +200,7 @@ def get_books(
     try:
         service = HighlightService(db)
         return service.get_books_with_counts(
-            current_user.id, offset, limit, only_with_flashcards, search
+            current_user.id.value, offset, limit, only_with_flashcards, search
         )
     except Exception as e:
         logger.error(f"Failed to fetch books: {e!s}", exc_info=True)
@@ -237,7 +237,7 @@ def get_recently_viewed_books(
     """
     try:
         service = GetRecentlyViewedBooksService(db)
-        results = service.get_recently_viewed(current_user.id, limit)
+        results = service.get_recently_viewed(current_user.id.value, limit)
 
         books_list = [
             schemas.BookWithHighlightCount(
@@ -290,7 +290,7 @@ def get_book_details(
     """
     try:
         service = BookManagementService(db)
-        agg = service.get_book_details(book_id, current_user.id)
+        agg = service.get_book_details(book_id, current_user.id.value)
         db.commit()
         return _build_book_details_schema(agg)
     except CrossbillError:
@@ -333,7 +333,7 @@ def search_book_highlights(
     try:
         service = BookHighlightSearchService(db)
         chapters_grouped, total = service.search_book_highlights(
-            book_id, current_user.id, search_text
+            book_id, current_user.id.value, search_text
         )
         return schemas.BookHighlightSearchResponse(
             chapters=_map_chapters_to_schemas(chapters_grouped),
@@ -376,7 +376,7 @@ def delete_book(
     """
     try:
         service = BookManagementService(db)
-        service.delete_book(book_id, current_user.id)
+        service.delete_book(book_id, current_user.id.value)
         db.commit()
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
@@ -424,7 +424,9 @@ def delete_highlights(
     """
     try:
         service = BookHighlightDeletionService(db)
-        deleted_count = service.delete_highlights(book_id, request.highlight_ids, current_user.id)
+        deleted_count = service.delete_highlights(
+            book_id, request.highlight_ids, current_user.id.value
+        )
         db.commit()
         return schemas.HighlightDeleteResponse(
             success=True,
@@ -477,7 +479,7 @@ def upload_book_cover(
     """
     try:
         service = BookCoverService(db)
-        cover_url = service.upload_cover(book_id, cover, current_user.id)
+        cover_url = service.upload_cover(book_id, cover, current_user.id.value)
         db.commit()
         return schemas.CoverUploadResponse(
             success=True,
@@ -523,7 +525,7 @@ def get_book_cover(
         HTTPException: If book is not found, user doesn't own it, or cover doesn't exist
     """
     service = BookCoverService(db)
-    cover_path = service.get_cover_path(book_id, current_user.id)
+    cover_path = service.get_cover_path(book_id, current_user.id.value)
     return FileResponse(cover_path, media_type="image/jpeg")
 
 
@@ -557,7 +559,7 @@ def update_book(
     try:
         service = BookManagementService(db)
         book, highlight_count, flashcard_count, tags = service.update_book(
-            book_id, request, current_user.id
+            book_id, request, current_user.id.value
         )
         db.commit()
         return schemas.BookWithHighlightCount(
@@ -617,7 +619,7 @@ def get_highlight_tags(
     """
     try:
         service = HighlightTagService(db)
-        tags = service.get_tags_for_book(book_id, current_user.id)
+        tags = service.get_tags_for_book(book_id, current_user.id.value)
         return schemas.HighlightTagsResponse(
             tags=[
                 schemas.HighlightTag(
@@ -666,7 +668,7 @@ def create_highlight_tag(
     """
     try:
         service = HighlightTagService(db)
-        tag = service.create_tag(book_id, request.name, user_id=current_user.id)
+        tag = service.create_tag(book_id, request.name, user_id=current_user.id.value)
         return schemas.HighlightTag(
             id=tag.id.value,
             book_id=tag.book_id.value,
@@ -714,7 +716,7 @@ def delete_highlight_tag(
     """
     try:
         service = HighlightTagService(db)
-        deleted = service.delete_tag(book_id, tag_id, current_user.id)
+        deleted = service.delete_tag(book_id, tag_id, current_user.id.value)
         if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -779,12 +781,12 @@ def update_highlight_tag(
                 book_id=book_id,
                 tag_id=tag_id,
                 new_name=request.name,
-                user_id=current_user.id,
+                user_id=current_user.id.value,
             )
         else:
             # Load tag for group update
             tag_repo = HighlightTagRepository(db)
-            tag = tag_repo.find_by_id(HighlightTagId(tag_id), UserId(current_user.id))
+            tag = tag_repo.find_by_id(HighlightTagId(tag_id), UserId(current_user.id.value))
             if not tag:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -797,7 +799,7 @@ def update_highlight_tag(
                 book_id=book_id,
                 tag_id=tag_id,
                 group_id=request.tag_group_id,
-                user_id=current_user.id,
+                user_id=current_user.id.value,
             )
 
         return schemas.HighlightTag(
@@ -869,9 +871,9 @@ def add_tag_to_highlight(
 
         # Add tag by ID or by name (with get_or_create)
         if request.tag_id is not None:
-            service.add_tag_by_id(highlight_id, request.tag_id, current_user.id)
+            service.add_tag_by_id(highlight_id, request.tag_id, current_user.id.value)
         elif request.name is not None:
-            service.add_tag_by_name(book_id, highlight_id, request.name, current_user.id)
+            service.add_tag_by_name(book_id, highlight_id, request.name, current_user.id.value)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -881,7 +883,7 @@ def add_tag_to_highlight(
         # Reload highlight with relations to get updated tags
         highlight_repo = HighlightRepository(db)
         result = highlight_repo.find_by_id_with_relations(
-            HighlightId(highlight_id), UserId(current_user.id)
+            HighlightId(highlight_id), UserId(current_user.id.value)
         )
 
         if result is None:
@@ -975,12 +977,12 @@ def remove_tag_from_highlight(
     """
     try:
         service = HighlightTagAssociationService(db)
-        service.remove_tag(highlight_id, tag_id, current_user.id)
+        service.remove_tag(highlight_id, tag_id, current_user.id.value)
 
         # Reload highlight with relations to get updated tags
         highlight_repo = HighlightRepository(db)
         result = highlight_repo.find_by_id_with_relations(
-            HighlightId(highlight_id), UserId(current_user.id)
+            HighlightId(highlight_id), UserId(current_user.id.value)
         )
 
         if result is None:
@@ -1075,7 +1077,7 @@ def create_bookmark(
     """
     try:
         service = BookmarkService(db)
-        bookmark = service.create_bookmark(book_id, request.highlight_id, current_user.id)
+        bookmark = service.create_bookmark(book_id, request.highlight_id, current_user.id.value)
 
         # Manually construct schema from domain entity
         # created_at is always set for persisted bookmarks
@@ -1123,7 +1125,7 @@ def delete_bookmark(
     """
     try:
         service = BookmarkService(db)
-        service.delete_bookmark(book_id, bookmark_id, current_user.id)
+        service.delete_bookmark(book_id, bookmark_id, current_user.id.value)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -1165,7 +1167,7 @@ def get_bookmarks(
     """
     try:
         service = BookmarkService(db)
-        bookmarks = service.get_bookmarks_by_book(book_id, current_user.id)
+        bookmarks = service.get_bookmarks_by_book(book_id, current_user.id.value)
 
         # Manually construct schemas from domain entities
         # created_at is always set for persisted bookmarks
@@ -1224,7 +1226,7 @@ def create_flashcard_for_book(
         service = FlashcardService(db)
         flashcard_entity = service.create_flashcard_for_book(
             book_id=book_id,
-            user_id=current_user.id,
+            user_id=current_user.id.value,
             question=request.question,
             answer=request.answer,
         )
@@ -1282,7 +1284,7 @@ def get_flashcards_for_book(
     try:
         # Get flashcards with highlights from service (returns DTOs)
         service = FlashcardService(db)
-        flashcards_with_highlights = service.get_flashcards_by_book(book_id, current_user.id)
+        flashcards_with_highlights = service.get_flashcards_by_book(book_id, current_user.id.value)
 
         # Convert DTOs to Pydantic schemas
         flashcards = []
@@ -1379,7 +1381,7 @@ async def get_book_reading_sessions(
         # Call service
         result = service.get_sessions_for_book(
             book_id=book_id,
-            user_id=current_user.id,
+            user_id=current_user.id.value,
             limit=limit,
             offset=offset,
             include_content=True,

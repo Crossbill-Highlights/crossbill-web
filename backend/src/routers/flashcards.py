@@ -9,9 +9,9 @@ from src import schemas
 from src.application.learning.services.flashcard_service import FlashcardService
 from src.database import DatabaseSession
 from src.domain.common.exceptions import DomainError
+from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError, ValidationError
-from src.models import User
-from src.services.auth_service import get_current_user
+from src.infrastructure.identity.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ def update_flashcard(
         service = FlashcardService(db)
         flashcard_entity = service.update_flashcard(
             flashcard_id=flashcard_id,
-            user_id=current_user.id,
+            user_id=current_user.id.value,
             question=request.question,
             answer=request.answer,
         )
@@ -102,7 +102,7 @@ def delete_flashcard(
     """
     try:
         service = FlashcardService(db)
-        service.delete_flashcard(flashcard_id=flashcard_id, user_id=current_user.id)
+        service.delete_flashcard(flashcard_id=flashcard_id, user_id=current_user.id.value)
         return schemas.FlashcardDeleteResponse(
             success=True,
             message="Flashcard deleted successfully",

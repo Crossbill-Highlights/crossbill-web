@@ -20,10 +20,10 @@ from src.application.reading.services.update_highlight_note_service import (
 )
 from src.database import DatabaseSession
 from src.domain.common.exceptions import DomainError
+from src.domain.identity.entities.user import User
 from src.domain.reading.exceptions import BookNotFoundError
 from src.exceptions import CrossbillError, ValidationError
-from src.models import User
-from src.services.auth_service import get_current_user
+from src.infrastructure.identity.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ async def upload_highlights(
         created, skipped = service.upload_highlights(
             client_book_id=request.client_book_id,
             highlight_data_list=highlight_data_list,
-            user_id=current_user.id,
+            user_id=current_user.id.value,
         )
 
         return schemas.HighlightUploadResponse(
@@ -137,7 +137,7 @@ def search_highlights(
     """
     try:
         service = SearchHighlightsService(db)
-        results = service.search(search_text, current_user.id, book_id, limit)
+        results = service.search(search_text, current_user.id.value, book_id, limit)
 
         # Convert domain entities to schemas in route handler
         search_results = [
@@ -201,7 +201,7 @@ def update_highlight_note(
     """
     try:
         service = UpdateHighlightNoteService(db)
-        result = service.update_note(highlight_id, current_user.id, request.note)
+        result = service.update_note(highlight_id, current_user.id.value, request.note)
 
         if result is None:
             raise HTTPException(
@@ -298,14 +298,14 @@ def create_or_update_tag_group(
                 group_id=request.id,
                 book_id=request.book_id,
                 new_name=request.name,
-                user_id=current_user.id,
+                user_id=current_user.id.value,
             )
         else:
             # Create new
             tag_group = service.create_group(
                 book_id=request.book_id,
                 name=request.name,
-                user_id=current_user.id,
+                user_id=current_user.id.value,
             )
 
         # Manually construct response to handle value objects
@@ -364,7 +364,7 @@ def delete_tag_group(
     """
     try:
         service = HighlightTagGroupService(db)
-        success = service.delete_group(tag_group_id, current_user.id)
+        success = service.delete_group(tag_group_id, current_user.id.value)
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -412,7 +412,7 @@ def create_flashcard_for_highlight(
         service = FlashcardService(db)
         flashcard_entity = service.create_flashcard_for_highlight(
             highlight_id=highlight_id,
-            user_id=current_user.id,
+            user_id=current_user.id.value,
             question=request.question,
             answer=request.answer,
         )

@@ -11,8 +11,8 @@ from src.application.reading.services import (
     ReadingSessionUploadService,
 )
 from src.database import DatabaseSession
-from src.models import User
-from src.services.auth_service import get_current_user
+from src.domain.identity.entities.user import User
+from src.infrastructure.identity.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ async def upload_reading_sessions(
         result = service.upload_reading_sessions(
             client_book_id=request.client_book_id,
             sessions=upload_data,
-            user_id=current_user.id,
+            user_id=current_user.id.value,
         )
 
         # Build Pydantic response

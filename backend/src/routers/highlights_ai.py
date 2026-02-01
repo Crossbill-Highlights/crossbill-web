@@ -10,9 +10,9 @@ from src.application.learning.services.flashcard_ai_service import FlashcardAISe
 from src.database import DatabaseSession
 from src.dependencies import require_ai_enabled
 from src.domain.common.exceptions import DomainError
+from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError, ValidationError
-from src.models import User
-from src.services.auth_service import get_current_user
+from src.infrastructure.identity.dependencies import get_current_user
 
 logger = structlog.get_logger(__name__)
 
@@ -46,7 +46,9 @@ async def get_highlight_flashcard_suggestions(
     """
     try:
         service = FlashcardAIService(db)
-        suggestions_data = await service.get_flashcard_suggestions(highlight_id, current_user.id)
+        suggestions_data = await service.get_flashcard_suggestions(
+            highlight_id, current_user.id.value
+        )
 
         # Convert data classes to Pydantic schemas
         suggestions = [
