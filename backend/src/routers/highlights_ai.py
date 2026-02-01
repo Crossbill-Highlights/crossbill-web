@@ -8,10 +8,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from src import schemas
 from src.application.learning.services.flashcard_ai_service import FlashcardAIService
 from src.database import DatabaseSession
-from src.dependencies import require_ai_enabled
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError, ValidationError
+from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.identity.dependencies import get_current_user
 
 logger = structlog.get_logger(__name__)
