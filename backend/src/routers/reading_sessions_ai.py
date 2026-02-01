@@ -6,12 +6,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src import schemas
+from src.application.reading.services import ReadingSessionAISummaryService
 from src.database import DatabaseSession
 from src.dependencies import require_ai_enabled
 from src.exceptions import ReadingSessionNotFoundError, ValidationError
 from src.models import User
 from src.services.auth_service import get_current_user
-from src.services.reading_session_service import ReadingSessionService
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +50,8 @@ async def get_reading_session_ai_summary(
     """
 
     try:
-        service = ReadingSessionService(db)
-        summary = await service.get_ai_summary(reading_session_id, current_user.id)
+        service = ReadingSessionAISummaryService(db)
+        summary = await service.get_or_generate_summary(reading_session_id, current_user.id)
         return schemas.ReadingSessionAISummaryResponse(summary=summary)
     except ReadingSessionNotFoundError as e:
         logger.warning(f"Reading session {reading_session_id} not found for user {current_user.id}")

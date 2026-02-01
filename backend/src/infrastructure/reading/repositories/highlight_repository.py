@@ -11,7 +11,13 @@ from datetime import UTC, datetime
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session, joinedload
 
-from src.domain.common.value_objects import BookId, ContentHash, HighlightId, UserId
+from src.domain.common.value_objects import (
+    BookId,
+    ContentHash,
+    HighlightId,
+    ReadingSessionId,
+    UserId,
+)
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.chapter import Chapter
@@ -25,6 +31,7 @@ from src.infrastructure.reading.mappers.highlight_tag_mapper import HighlightTag
 from src.models import Bookmark as BookmarkORM
 from src.models import Flashcard as FlashcardORM
 from src.models import Highlight as HighlightORM
+from src.models import reading_session_highlights
 
 logger = logging.getLogger(__name__)
 
@@ -390,3 +397,71 @@ class HighlightRepository:
             )
             for h_orm in highlight_orms
         ]
+
+    def find_by_book_id(self, book_id: BookId, user_id: UserId) -> list[Highlight]:
+        """
+        Get all non-deleted highlights for a book.
+
+        Args:
+            book_id: Book ID value object
+            user_id: User ID value object
+
+        Returns:
+            List of Highlight domain entities
+        """
+        stmt = select(HighlightORM).where(
+            HighlightORM.book_id == book_id.value,
+            HighlightORM.user_id == user_id.value,
+            HighlightORM.deleted_at.is_(None),
+        )
+        orms = self.db.execute(stmt).scalars().all()
+        return [self.mapper.to_domain(orm) for orm in orms]
+
+    def get_highlights_by_session_ids(
+        self,
+        session_ids: list[ReadingSessionId],
+        user_id: UserId,
+    ) -> dict[ReadingSessionId, list[Highlight]]:
+        """
+        Get highlights grouped by reading session IDs.
+
+        Queries the reading_session_highlights join table to find all highlights
+        associated with the given sessions.
+
+        Args:
+            session_ids: List of reading session IDs to fetch highlights for
+            user_id: User ID for authorization check
+
+        Returns:
+            Dictionary mapping session_id -> list of highlights
+        """
+        if not session_ids:
+            return {}
+
+        session_id_values = [sid.value for sid in session_ids]
+
+        # Query join table + highlights
+        stmt = (
+            select(reading_session_highlights.c.reading_session_id, HighlightORM)
+            .join(
+                HighlightORM,
+                reading_session_highlights.c.highlight_id == HighlightORM.id,
+            )
+            .where(
+                reading_session_highlights.c.reading_session_id.in_(session_id_values),
+                HighlightORM.user_id == user_id.value,
+                HighlightORM.deleted_at.is_(None),
+            )
+        )
+
+        results = self.db.execute(stmt).all()
+
+        # Group results by session_id
+        grouped: dict[ReadingSessionId, list[Highlight]] = {sid: [] for sid in session_ids}
+
+        for session_id_value, highlight_orm in results:
+            session_id = ReadingSessionId(session_id_value)
+            highlight = self.mapper.to_domain(highlight_orm)
+            grouped[session_id].append(highlight)
+
+        return grouped

@@ -3,13 +3,11 @@
 from src.repositories.book_repository import BookRepository
 from src.repositories.chapter_repository import ChapterRepository
 from src.repositories.highlight_repository import HighlightRepository
-from src.repositories.reading_session_repository import ReadingSessionRepository
 from src.repositories.user_repository import UserRepository
 
 __all__ = [
     "BookRepository",
     "ChapterRepository",
     "HighlightRepository",
-    "ReadingSessionRepository",
     "UserRepository",
 ]

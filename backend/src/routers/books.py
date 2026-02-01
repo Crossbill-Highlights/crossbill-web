@@ -28,6 +28,9 @@ from src.application.reading.services.highlight_tag_group_service import (
     HighlightTagGroupService,
 )
 from src.application.reading.services.highlight_tag_service import HighlightTagService
+from src.application.reading.services.reading_session_query_service import (
+    ReadingSessionQueryService,
+)
 from src.database import DatabaseSession
 from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import HighlightId, HighlightTagId, UserId
@@ -43,7 +46,6 @@ from src.infrastructure.reading.repositories.highlight_tag_repository import (
 from src.models import User
 from src.services.auth_service import get_current_user
 from src.services.highlight_service import HighlightService
-from src.services.reading_session_service import ReadingSessionService
 
 logger = logging.getLogger(__name__)
 
@@ -1372,8 +1374,90 @@ async def get_book_reading_sessions(
         ReadingSessionsResponse with sessions list
     """
     try:
-        service = ReadingSessionService(db)
-        return await service.get_reading_sessions_for_book(book_id, current_user.id, limit, offset)
+        service = ReadingSessionQueryService(db)
+
+        # Call service
+        result = service.get_sessions_for_book(
+            book_id=book_id,
+            user_id=current_user.id,
+            limit=limit,
+            offset=offset,
+            include_content=True,
+        )
+
+        # Manually construct Pydantic schemas
+        sessions_schemas = []
+        for session_with_highlights in result.sessions_with_highlights:
+            session = session_with_highlights.session
+
+            # Convert XPointRange to strings
+            start_xpoint_str = None
+            end_xpoint_str = None
+            if session.start_xpoint:
+                start_xpoint_str = session.start_xpoint.start.to_string()
+                end_xpoint_str = session.start_xpoint.end.to_string()
+
+            # Convert highlights to schemas
+            # Note: We don't have chapter/tags/flashcards loaded, so use minimal schema
+            highlight_schemas = []
+            for highlight in session_with_highlights.highlights:
+                # Convert highlight xpoints to strings
+                highlight_start_xpoint = None
+                highlight_end_xpoint = None
+                if highlight.xpoints:
+                    highlight_start_xpoint = highlight.xpoints.start.to_string()
+                    highlight_end_xpoint = highlight.xpoints.end.to_string()
+
+                # Construct Highlight schema directly with named parameters
+                highlight_schemas.append(
+                    schemas.Highlight(
+                        id=highlight.id.value,
+                        book_id=highlight.book_id.value,
+                        chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
+                        text=highlight.text,
+                        start_xpoint=highlight_start_xpoint,
+                        end_xpoint=highlight_end_xpoint,
+                        page=highlight.page,
+                        note=highlight.note,
+                        datetime=highlight.datetime,
+                        created_at=highlight.created_at,
+                        updated_at=highlight.updated_at,
+                        chapter=None,  # Not loaded in this context
+                        chapter_number=None,  # Not loaded in this context
+                        highlight_tags=[],  # Not loaded in this context
+                        flashcards=[],  # Not loaded in this context
+                    )
+                )
+
+            # Build ReadingSession schema
+            # Assert created_at is not None (always present for persisted entities)
+            assert session.created_at is not None, "Persisted session must have created_at"
+
+            sessions_schemas.append(
+                schemas.ReadingSession(
+                    id=session.id.value,
+                    book_id=session.book_id.value,
+                    device_id=session.device_id,
+                    content_hash=session.content_hash.value,
+                    start_time=session.start_time,
+                    end_time=session.end_time,
+                    start_xpoint=start_xpoint_str,
+                    end_xpoint=end_xpoint_str,
+                    start_page=session.start_page,
+                    end_page=session.end_page,
+                    content=session_with_highlights.extracted_content,
+                    ai_summary=session.ai_summary,
+                    created_at=session.created_at,
+                    highlights=highlight_schemas,
+                )
+            )
+
+        return schemas.ReadingSessionsResponse(
+            sessions=sessions_schemas,
+            total=result.total,
+            offset=result.offset,
+            limit=result.limit,
+        )
     except CrossbillError:
         raise
     except Exception as e:

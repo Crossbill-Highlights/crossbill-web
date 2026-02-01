@@ -6,10 +6,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src import schemas
+from src.application.reading.services import (
+    ReadingSessionUploadData,
+    ReadingSessionUploadService,
+)
 from src.database import DatabaseSession
 from src.models import User
 from src.services.auth_service import get_current_user
-from src.services.reading_session_service import ReadingSessionService
 
 logger = logging.getLogger(__name__)
 
@@ -38,11 +41,46 @@ async def upload_reading_sessions(
         ReadingSessionUploadResponse with upload statistics
     """
     try:
-        service = ReadingSessionService(db)
-        return service.upload_reading_sessions(
+        service = ReadingSessionUploadService(db)
+
+        # Convert Pydantic schemas to DTOs
+        upload_data = [
+            ReadingSessionUploadData(
+                start_time=s.start_time,
+                end_time=s.end_time,
+                start_xpoint=s.start_xpoint,
+                end_xpoint=s.end_xpoint,
+                start_page=s.start_page,
+                end_page=s.end_page,
+                device_id=s.device_id,
+            )
+            for s in request.sessions
+        ]
+
+        # Call service
+        result = service.upload_reading_sessions(
             client_book_id=request.client_book_id,
-            sessions=request.sessions,
+            sessions=upload_data,
             user_id=current_user.id,
+        )
+
+        # Build Pydantic response
+        message_parts = []
+        if result.created_count > 0:
+            message_parts.append(
+                f"Created {result.created_count} session{'s' if result.created_count != 1 else ''}"
+            )
+        if result.skipped_duplicate_count > 0:
+            message_parts.append(f"{result.skipped_duplicate_count} skipped (duplicate)")
+
+        message = ". ".join(message_parts) + "." if message_parts else "No sessions to process"
+
+        return schemas.ReadingSessionUploadResponse(
+            success=True,
+            message=message,
+            book_id=result.book_id.value,  # Extract .value from BookId
+            created_count=result.created_count,
+            skipped_duplicate_count=result.skipped_duplicate_count,
         )
     except Exception as e:
         logger.error(f"Failed to upload reading sessions: {e!s}", exc_info=True)

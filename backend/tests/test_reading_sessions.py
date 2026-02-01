@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from src import models
-from src.hash_utils import compute_reading_session_hash
+from src.hash_utils import compute_reading_session_hash_v2
 from tests.conftest import create_test_book
 
 # Default user ID used by services (matches conftest default user)
@@ -93,9 +93,9 @@ def create_reading_session(
     end_page: int | None = None,
 ) -> models.ReadingSession:
     """Helper function to create a reading session."""
-    session_hash = compute_reading_session_hash(
-        book_title=book.title,
-        book_author=book.author,
+    session_hash = compute_reading_session_hash_v2(
+        book_id=book.id,
+        user_id=user_id,
         start_time=start_time.isoformat(),
         device_id=device_id,
     )
@@ -340,8 +340,8 @@ class TestUploadReadingSessions:
                     {
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
-                        "start_xpoint": "foobar",
-                        "end_xpoint": "foobar",
+                        "start_xpoint": "/body/div[1]/p[1]",
+                        "end_xpoint": "/body/div[1]/p[1]",
                     }
                 ],
             },
@@ -364,8 +364,8 @@ class TestUploadReadingSessions:
                     {
                         "start_time": "2024-01-15T10:00:00Z",
                         "end_time": "2024-01-15T11:00:00Z",
-                        "start_xpoint": "foo",
-                        "end_xpoint": "bar",
+                        "start_xpoint": "/body/div[1]/p[1]",
+                        "end_xpoint": "/body/div[5]/p[1]",
                         "start_page": 10,
                         "end_page": 10,
                     }

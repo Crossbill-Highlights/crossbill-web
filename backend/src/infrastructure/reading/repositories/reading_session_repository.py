@@ -1,0 +1,277 @@
+"""
+Domain-centric repository for ReadingSession aggregate.
+
+Returns domain entities instead of ORM models.
+Uses ReadingSessionMapper internally for conversions.
+"""
+
+import logging
+from dataclasses import dataclass
+
+from sqlalchemy import func, select
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import Session
+
+from src.domain.common.value_objects import BookId, HighlightId, ReadingSessionId, UserId
+from src.domain.reading.entities.reading_session import ReadingSession
+from src.exceptions import ServiceError
+from src.infrastructure.reading.mappers.reading_session_mapper import ReadingSessionMapper
+from src.models import ReadingSession as ReadingSessionORM
+from src.models import reading_session_highlights
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class BulkCreateResult:
+    """Result of bulk create operation for reading sessions."""
+
+    created_count: int
+    created_sessions: list[ReadingSession]
+
+
+class ReadingSessionRepository:
+    """Repository for ReadingSession persistence (domain-centric)."""
+
+    def __init__(self, db: Session) -> None:
+        """
+        Initialize repository.
+
+        Args:
+            db: SQLAlchemy database session
+        """
+        self.db = db
+        self.mapper = ReadingSessionMapper()
+
+    def bulk_create(self, user_id: UserId, sessions: list[ReadingSession]) -> BulkCreateResult:
+        """
+        Bulk create reading sessions with deduplication.
+
+        Uses PostgreSQL ON CONFLICT DO NOTHING or SQLite INSERT OR IGNORE
+        to skip sessions with duplicate content_hash.
+
+        Args:
+            user_id: User ID value object
+            sessions: List of ReadingSession domain entities
+
+        Returns:
+            BulkCreateResult with created count and created domain entities
+        """
+        if not sessions:
+            return BulkCreateResult(created_count=0, created_sessions=[])
+
+        # Map content_hash -> session for later retrieval
+        session_by_hash = {s.content_hash.value: s for s in sessions}
+
+        values = [
+            {
+                "book_id": s.book_id.value,
+                "user_id": user_id.value,
+                "content_hash": s.content_hash.value,
+                "start_time": s.start_time,
+                "end_time": s.end_time,
+                "start_xpoint": s.start_xpoint.start.to_string() if s.start_xpoint else None,
+                "end_xpoint": s.start_xpoint.end.to_string() if s.start_xpoint else None,
+                "start_page": s.start_page,
+                "end_page": s.end_page,
+                "device_id": s.device_id,
+            }
+            for s in sessions
+        ]
+
+        if self.db.bind is None:
+            raise ServiceError("Database not bound!")
+
+        dialect = self.db.bind.dialect.name
+
+        if dialect == "postgresql":
+            stmt = (
+                insert(ReadingSessionORM)
+                .values(values)
+                .on_conflict_do_nothing(index_elements=["user_id", "content_hash"])
+                .returning(ReadingSessionORM.id)
+            )
+            result = self.db.execute(stmt)
+            created_ids = [row[0] for row in result.fetchall()]
+
+            # Fetch the created sessions and convert to domain
+            if created_ids:
+                created_orms = list(
+                    self.db.execute(
+                        select(ReadingSessionORM).where(ReadingSessionORM.id.in_(created_ids))
+                    )
+                    .scalars()
+                    .all()
+                )
+                created_sessions = [self.mapper.to_domain(orm) for orm in created_orms]
+            else:
+                created_sessions = []
+
+            return BulkCreateResult(
+                created_count=len(created_ids), created_sessions=created_sessions
+            )
+
+        # SQLite - count before and after to determine how many were inserted
+        count_before = (
+            self.db.execute(
+                select(func.count(ReadingSessionORM.id)).where(
+                    ReadingSessionORM.user_id == user_id.value
+                )
+            ).scalar()
+            or 0
+        )
+
+        stmt = insert(ReadingSessionORM).values(values).prefix_with("OR IGNORE")
+        self.db.execute(stmt)
+
+        count_after = (
+            self.db.execute(
+                select(func.count(ReadingSessionORM.id)).where(
+                    ReadingSessionORM.user_id == user_id.value
+                )
+            ).scalar()
+            or 0
+        )
+
+        created_count = count_after - count_before
+
+        # For SQLite, fetch created sessions by content_hash
+        if created_count > 0:
+            content_hashes = list(session_by_hash.keys())
+            created_orms = list(
+                self.db.execute(
+                    select(ReadingSessionORM).where(
+                        ReadingSessionORM.user_id == user_id.value,
+                        ReadingSessionORM.content_hash.in_(content_hashes),
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            created_sessions = [self.mapper.to_domain(orm) for orm in created_orms]
+        else:
+            created_sessions = []
+
+        return BulkCreateResult(created_count=created_count, created_sessions=created_sessions)
+
+    def find_by_book_id(
+        self, book_id: BookId, user_id: UserId, limit: int, offset: int
+    ) -> list[ReadingSession]:
+        """
+        Get reading sessions for a book with pagination.
+
+        Ordered by start_time DESC.
+        Does NOT load highlights (application layer's responsibility).
+
+        Args:
+            book_id: Book ID value object
+            user_id: User ID value object
+            limit: Maximum number of results
+            offset: Number of results to skip
+
+        Returns:
+            List of ReadingSession domain entities
+        """
+        stmt = (
+            select(ReadingSessionORM)
+            .where(
+                ReadingSessionORM.book_id == book_id.value,
+                ReadingSessionORM.user_id == user_id.value,
+            )
+            .order_by(ReadingSessionORM.start_time.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        orms = self.db.execute(stmt).scalars().all()
+        return [self.mapper.to_domain(orm) for orm in orms]
+
+    def count_by_book_id(self, book_id: BookId, user_id: UserId) -> int:
+        """
+        Count all reading sessions for a book.
+
+        Args:
+            book_id: Book ID value object
+            user_id: User ID value object
+
+        Returns:
+            Total count of sessions
+        """
+        stmt = select(func.count(ReadingSessionORM.id)).where(
+            ReadingSessionORM.book_id == book_id.value,
+            ReadingSessionORM.user_id == user_id.value,
+        )
+        return self.db.execute(stmt).scalar() or 0
+
+    def find_by_id(self, session_id: ReadingSessionId, user_id: UserId) -> ReadingSession | None:
+        """
+        Load reading session by ID.
+
+        Args:
+            session_id: Session ID value object
+            user_id: User ID for authorization check
+
+        Returns:
+            ReadingSession domain entity if found, None otherwise
+        """
+        stmt = select(ReadingSessionORM).where(
+            ReadingSessionORM.id == session_id.value,
+            ReadingSessionORM.user_id == user_id.value,
+        )
+        orm_model = self.db.execute(stmt).scalar_one_or_none()
+
+        if not orm_model:
+            return None
+
+        return self.mapper.to_domain(orm_model)
+
+    def save(self, session: ReadingSession) -> ReadingSession:
+        """
+        Update existing reading session.
+
+        Primarily used for updating ai_summary field.
+
+        Args:
+            session: ReadingSession domain entity to save
+
+        Returns:
+            ReadingSession with any updated values from database
+        """
+        stmt = select(ReadingSessionORM).where(ReadingSessionORM.id == session.id.value)
+        existing_orm = self.db.execute(stmt).scalar_one()
+
+        # Update ORM model using mapper
+        self.mapper.to_orm(session, existing_orm)
+        self.db.flush()
+
+        return self.mapper.to_domain(existing_orm)
+
+    def link_highlights_to_sessions(
+        self,
+        session_highlight_pairs: list[tuple[ReadingSessionId, HighlightId]],
+    ) -> int:
+        """
+        Bulk link highlights to reading sessions via join table.
+
+        Args:
+            session_highlight_pairs: List of (session_id, highlight_id) tuples to link
+
+        Returns:
+            Number of links created
+        """
+        if not session_highlight_pairs:
+            return 0
+
+        # Build list of dicts for bulk insert
+        links_to_insert = [
+            {
+                "reading_session_id": session_id.value,
+                "highlight_id": highlight_id.value,
+            }
+            for session_id, highlight_id in session_highlight_pairs
+        ]
+
+        # Bulk insert into join table
+        self.db.execute(reading_session_highlights.insert(), links_to_insert)
+        self.db.flush()
+
+        return len(links_to_insert)

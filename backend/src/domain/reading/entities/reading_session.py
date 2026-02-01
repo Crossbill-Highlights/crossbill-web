@@ -49,6 +49,7 @@ class ReadingSession(AggregateRoot[ReadingSessionId]):
     # Metadata
     device_id: str | None = None
     ai_summary: str | None = None
+    created_at: datetime | None = None
 
     # Related highlights (IDs only - don't load full entities)
     _highlight_ids: list[int] = field(default_factory=list, repr=False)
