@@ -10,10 +10,10 @@ from pathlib import Path
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from src.config import BOOK_COVERS_DIR
 from src.domain.common.value_objects import BookId, UserId
 from src.exceptions import BookNotFoundError
 from src.infrastructure.library.repositories.book_repository import BookRepository
+from src.infrastructure.library.repositories.file_repository import FileRepository
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,7 @@ class BookCoverService:
         """
         self.db = db
         self.book_repository = BookRepository(db)
+        self.file_repository = FileRepository()
 
     def upload_cover(self, book_id: int, cover: UploadFile, user_id: int) -> str:
         """
@@ -90,13 +91,8 @@ class BookCoverService:
         if file_type not in {"jpeg", "png", "webp"}:
             raise HTTPException(status_code=400, detail="Invalid image file")
 
-        BOOK_COVERS_DIR.mkdir(parents=True, exist_ok=True)
-
         cover_filename = f"{book_id}.jpg"
-        cover_path = BOOK_COVERS_DIR / cover_filename
-        cover_path.write_bytes(content)
-
-        logger.info(f"Successfully saved cover for book {book_id} at {cover_path}")
+        self.file_repository.save_cover(book_id_vo, content, cover_filename)
 
         # Update book's cover field in database using domain method
         cover_url = f"/api/v1/books/{book_id}/cover"
@@ -162,10 +158,9 @@ class BookCoverService:
         if not book:
             raise BookNotFoundError(book_id)
 
-        cover_filename = f"{book_id}.jpg"
-        cover_path = BOOK_COVERS_DIR / cover_filename
-
-        if not cover_path.is_file():
+        # Find cover file
+        cover_path = self.file_repository.find_cover(book_id_vo)
+        if not cover_path:
             raise HTTPException(status_code=404, detail="Cover not found")
 
         return cover_path

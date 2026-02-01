@@ -23,7 +23,6 @@ from src.infrastructure.reading.repositories.highlight_repository import Highlig
 from src.infrastructure.reading.repositories.reading_session_repository import (
     ReadingSessionRepository,
 )
-from src.services.ebook.epub.xpoint_utils import is_xpoint_in_range
 
 logger = structlog.get_logger(__name__)
 
@@ -288,11 +287,8 @@ class ReadingSessionUploadService:
                 ) or (
                     is_xpoint_based
                     and highlight.xpoints is not None
-                    and is_xpoint_in_range(
-                        highlight.xpoints.start.to_string(),
-                        session.start_xpoint.start.to_string(),  # type: ignore[union-attr]
-                        session.start_xpoint.end.to_string(),  # type: ignore[union-attr]
-                    )
+                    and session.start_xpoint is not None  # type: ignore[union-attr]
+                    and session.start_xpoint.contains(highlight.xpoints.start)  # type: ignore[union-attr]
                 ):
                     matching.append(highlight)
             except Exception as e:

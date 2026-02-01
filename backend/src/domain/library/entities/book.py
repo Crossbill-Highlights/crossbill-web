@@ -59,6 +59,13 @@ class Book(Entity[BookId]):
         """Update book cover URL."""
         self.cover = cover_url
 
+    def update_file(self, file_path: str, file_type: str) -> None:
+        """Update book file metadata."""
+        if file_type not in ["epub", "pdf"]:
+            raise DomainError(f"Invalid file type: {file_type}")
+        self.file_path = file_path
+        self.file_type = file_type
+
     # Factory methods
     @classmethod
     def create(

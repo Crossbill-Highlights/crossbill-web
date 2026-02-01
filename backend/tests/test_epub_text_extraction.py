@@ -7,9 +7,12 @@ import pytest
 from ebooklib import epub
 from sqlalchemy.orm import Session
 
+from src.application.library.services.ebook_text_extraction_service import (
+    EbookTextExtractionService,
+)
+from src.config import EPUBS_DIR
 from src.exceptions import BookNotFoundError, XPointNavigationError, XPointParseError
 from src.models import Book, User
-from src.services.ebook.epub.epub_service import EPUBS_DIR, EpubService
 from tests.conftest import create_test_book
 
 
@@ -110,16 +113,16 @@ class TestEpubTextExtraction:
         self, db_session: Session, test_epub_book: Book, test_user: User
     ) -> None:
         """Extract text within a single paragraph."""
-        service = EpubService(db_session)
+        service = EbookTextExtractionService(db_session)
 
         # Extract "the first paragraph" from first paragraph
         # DocFragment[2] = first chapter (spine[1], after nav)
         # The text "This is the first paragraph of chapter one." starts at position 0
-        result = service.extract_text_between_xpoints(
+        result = service.extract_text(
             book_id=test_epub_book.id,
             user_id=test_user.id,
-            start_xpoint="/body/DocFragment[2]/body/div/p[1]/text().8",  # "the"
-            end_xpoint="/body/DocFragment[2]/body/div/p[1]/text().27",  # end of "first paragraph"
+            start="/body/DocFragment[2]/body/div/p[1]/text().8",  # "the"
+            end="/body/DocFragment[2]/body/div/p[1]/text().27",  # end of "first paragraph"
         )
 
         assert result == "the first paragraph"
@@ -128,14 +131,14 @@ class TestEpubTextExtraction:
         self, db_session: Session, test_epub_book: Book, test_user: User
     ) -> None:
         """Extract an entire paragraph's text."""
-        service = EpubService(db_session)
+        service = EbookTextExtractionService(db_session)
 
         # DocFragment[2] = first chapter (spine[1], after nav)
-        result = service.extract_text_between_xpoints(
+        result = service.extract_text(
             book_id=test_epub_book.id,
             user_id=test_user.id,
-            start_xpoint="/body/DocFragment[2]/body/div/p[1]/text().0",
-            end_xpoint="/body/DocFragment[2]/body/div/p[1]/text().44",
+            start="/body/DocFragment[2]/body/div/p[1]/text().0",
+            end="/body/DocFragment[2]/body/div/p[1]/text().44",
         )
 
         assert result == "This is the first paragraph of chapter one."
@@ -144,14 +147,14 @@ class TestEpubTextExtraction:
         self, db_session: Session, test_epub_book: Book, test_user: User
     ) -> None:
         """Extract text using explicit DocFragment index."""
-        service = EpubService(db_session)
+        service = EbookTextExtractionService(db_session)
 
         # DocFragment[2] is the first chapter (spine[0] is nav, spine[1] is chapter 1)
-        result = service.extract_text_between_xpoints(
+        result = service.extract_text(
             book_id=test_epub_book.id,
             user_id=test_user.id,
-            start_xpoint="/body/DocFragment[2]/body/div/p[1]/text().0",
-            end_xpoint="/body/DocFragment[2]/body/div/p[1]/text().7",
+            start="/body/DocFragment[2]/body/div/p[1]/text().0",
+            end="/body/DocFragment[2]/body/div/p[1]/text().7",
         )
 
         assert result == "This is"
@@ -160,28 +163,28 @@ class TestEpubTextExtraction:
         self, db_session: Session, test_epub_book: Book, test_user: User
     ) -> None:
         """Invalid xpoint format raises XPointParseError."""
-        service = EpubService(db_session)
+        service = EbookTextExtractionService(db_session)
 
         with pytest.raises(XPointParseError):
-            service.extract_text_between_xpoints(
+            service.extract_text(
                 book_id=test_epub_book.id,
                 user_id=test_user.id,
-                start_xpoint="invalid",
-                end_xpoint="/body/div/p[1]/text().10",
+                start="invalid",
+                end="/body/div/p[1]/text().10",
             )
 
     def test_xpath_not_found_raises_error(
         self, db_session: Session, test_epub_book: Book, test_user: User
     ) -> None:
         """XPath that doesn't match any element raises XPointNavigationError."""
-        service = EpubService(db_session)
+        service = EbookTextExtractionService(db_session)
 
         with pytest.raises(XPointNavigationError) as exc_info:
-            service.extract_text_between_xpoints(
+            service.extract_text(
                 book_id=test_epub_book.id,
                 user_id=test_user.id,
-                start_xpoint="/body/div/p[999]/text().0",
-                end_xpoint="/body/div/p[999]/text().10",
+                start="/body/div/p[999]/text().0",
+                end="/body/div/p[999]/text().10",
             )
 
         assert "matched no elements" in str(exc_info.value)
@@ -190,14 +193,14 @@ class TestEpubTextExtraction:
         self, db_session: Session, test_epub_book: Book, test_user: User
     ) -> None:
         """DocFragment index out of range raises XPointNavigationError."""
-        service = EpubService(db_session)
+        service = EbookTextExtractionService(db_session)
 
         with pytest.raises(XPointNavigationError) as exc_info:
-            service.extract_text_between_xpoints(
+            service.extract_text(
                 book_id=test_epub_book.id,
                 user_id=test_user.id,
-                start_xpoint="/body/DocFragment[999]/body/div/p[1]/text().0",
-                end_xpoint="/body/DocFragment[999]/body/div/p[1]/text().10",
+                start="/body/DocFragment[999]/body/div/p[1]/text().0",
+                end="/body/DocFragment[999]/body/div/p[1]/text().10",
             )
 
         assert "index out of range" in str(exc_info.value)
@@ -210,14 +213,14 @@ class TestEpubTextExtraction:
             title="Book Without EPUB",
         )
 
-        service = EpubService(db_session)
+        service = EbookTextExtractionService(db_session)
 
         with pytest.raises(BookNotFoundError) as exc_info:
-            service.extract_text_between_xpoints(
+            service.extract_text(
                 book_id=book.id,
                 user_id=test_user.id,
-                start_xpoint="/body/div/p[1]/text().0",
-                end_xpoint="/body/div/p[1]/text().10",
+                start="/body/div/p[1]/text().0",
+                end="/body/div/p[1]/text().10",
             )
 
         assert exc_info.value.status_code == 404

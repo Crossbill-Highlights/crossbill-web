@@ -8,12 +8,12 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from src import schemas
 from src.application.library.services.book_cover_service import BookCoverService
 from src.application.library.services.book_management_service import BookManagementService
+from src.application.library.services.ebook_upload_service import EbookUploadService
 from src.database import DatabaseSession
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError
 from src.infrastructure.identity.dependencies import get_current_user
-from src.services.ebook.ebook_service import EbookService
 
 logger = logging.getLogger(__name__)
 
@@ -243,7 +243,7 @@ def upload_book_epub(
             )
 
         # Upload the ebook through service layer
-        service = EbookService(db)
+        service = EbookUploadService(db)
         service.upload_ebook(
             client_book_id, content, epub.content_type or "", current_user.id.value
         )

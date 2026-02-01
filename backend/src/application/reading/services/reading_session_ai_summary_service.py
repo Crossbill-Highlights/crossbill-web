@@ -3,13 +3,15 @@
 import structlog
 from sqlalchemy.orm import Session
 
+from src.application.library.services.ebook_text_extraction_service import (
+    EbookTextExtractionService,
+)
 from src.domain.common.value_objects import ReadingSessionId, UserId
 from src.exceptions import ReadingSessionNotFoundError, ValidationError
 from src.infrastructure.reading.repositories.reading_session_repository import (
     ReadingSessionRepository,
 )
 from src.services.ai.ai_service import get_ai_summary_from_text
-from src.services.ebook.ebook_service import EbookService
 
 logger = structlog.get_logger(__name__)
 
@@ -21,7 +23,7 @@ class ReadingSessionAISummaryService:
         """Initialize service with database session."""
         self.db = db
         self.session_repo = ReadingSessionRepository(db)
-        self.ebook_service = EbookService(db)
+        self.text_extraction_service = EbookTextExtractionService(db)
 
     async def get_or_generate_summary(self, session_id: int, user_id: int) -> str:
         """
@@ -68,7 +70,7 @@ class ReadingSessionAISummaryService:
                 session_id=session_id,
                 book_id=session.book_id.value,
             )
-            content = self.ebook_service.extract_text_between(
+            content = self.text_extraction_service.extract_text(
                 session.book_id.value,
                 user_id,
                 session.start_xpoint.start.to_string(),
@@ -76,7 +78,7 @@ class ReadingSessionAISummaryService:
             )
         elif session.start_page is not None and session.end_page is not None:
             # Try PDF pages
-            content = self.ebook_service.extract_text_between(
+            content = self.text_extraction_service.extract_text(
                 session.book_id.value,
                 user_id,
                 session.start_page,

@@ -5,6 +5,9 @@ from dataclasses import dataclass
 import structlog
 from sqlalchemy.orm import Session
 
+from src.application.library.services.ebook_text_extraction_service import (
+    EbookTextExtractionService,
+)
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.reading_session import ReadingSession
@@ -14,7 +17,6 @@ from src.infrastructure.reading.repositories.highlight_repository import Highlig
 from src.infrastructure.reading.repositories.reading_session_repository import (
     ReadingSessionRepository,
 )
-from src.services.ebook.ebook_service import EbookService
 
 logger = structlog.get_logger(__name__)
 
@@ -47,7 +49,7 @@ class ReadingSessionQueryService:
         self.book_repo = BookRepository(db)
         self.session_repo = ReadingSessionRepository(db)
         self.highlight_repo = HighlightRepository(db)
-        self.ebook_service = EbookService(db)
+        self.text_extraction_service = EbookTextExtractionService(db)
 
     def get_sessions_for_book(
         self,
@@ -99,7 +101,7 @@ class ReadingSessionQueryService:
             extracted_content = None
             if include_content and session.start_xpoint:
                 try:
-                    extracted_content = self.ebook_service.extract_text_between(
+                    extracted_content = self.text_extraction_service.extract_text(
                         book_id,
                         user_id,
                         session.start_xpoint.start.to_string(),

@@ -14,6 +14,7 @@ from src import schemas  # Only for input parameter types
 from src.application.library.services.book_tag_association_service import (
     BookTagAssociationService,
 )
+from src.application.library.services.ebook_deletion_service import EbookDeletionService
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.tag import Tag
@@ -29,7 +30,6 @@ from src.infrastructure.reading.repositories.highlight_repository import Highlig
 from src.repositories.highlight_repository import (
     HighlightRepository as LegacyHighlightRepository,
 )
-from src.services.ebook.ebook_service import EbookService
 
 logger = logging.getLogger(__name__)
 
@@ -70,8 +70,8 @@ class BookManagementService:
         # Legacy repositories (temporary)
         self.legacy_highlight_repository = LegacyHighlightRepository(db)
 
-        # Legacy services
-        self.ebook_service = EbookService(db)
+        # Services
+        self.ebook_deletion_service = EbookDeletionService()
 
     def create_book(self, book_data: schemas.BookCreate, user_id: int) -> tuple[Book, bool]:
         """
@@ -257,7 +257,7 @@ class BookManagementService:
             raise BookNotFoundError(book_id)
 
         # Delete associated epub file if it exists
-        self.ebook_service.delete_ebook(book_id)
+        self.ebook_deletion_service.delete_ebook(book_id)
 
         # Delete book (cascades handled by database)
         self.book_repository.delete(book)
