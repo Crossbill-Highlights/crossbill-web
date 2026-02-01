@@ -144,7 +144,7 @@ def _build_book_details_schema(agg: BookDetailsAggregation) -> schemas.BookDetai
         description=agg.book.description,
         language=agg.book.language,
         page_count=agg.book.page_count,
-        tags=[schemas.TagInBook.model_validate(tag) for tag in agg.tags],
+        tags=[schemas.TagInBook(id=tag.id.value, name=tag.name) for tag in agg.tags],
         highlight_tags=[
             schemas.HighlightTagInBook(
                 id=tag.id.value,
@@ -157,7 +157,15 @@ def _build_book_details_schema(agg: BookDetailsAggregation) -> schemas.BookDetai
             schemas.HighlightTagGroupInBook.model_validate(group)
             for group in agg.highlight_tag_groups
         ],
-        bookmarks=[schemas.Bookmark.model_validate(b) for b in agg.bookmarks],
+        bookmarks=[
+            schemas.Bookmark(
+                id=b.id.value,
+                book_id=b.book_id.value,
+                highlight_id=b.highlight_id.value,
+                created_at=b.created_at,
+            )
+            for b in agg.bookmarks
+        ],
         chapters=_map_chapters_to_schemas(agg.chapters_with_highlights),
         created_at=agg.book.created_at,
         updated_at=agg.book.updated_at,
@@ -564,7 +572,7 @@ def update_book(
             page_count=book.page_count,
             highlight_count=highlight_count,
             flashcard_count=flashcard_count,
-            tags=[schemas.TagInBook.model_validate(tag) for tag in tags],
+            tags=[schemas.TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
             created_at=book.created_at,
             updated_at=book.updated_at,
             last_viewed=book.last_viewed,

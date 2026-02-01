@@ -7,13 +7,16 @@ Handles CRUD operations and book details aggregation for the library context.
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from sqlalchemy.orm import Session
 
 from src import schemas  # Only for input parameter types
+from src.application.library.services.book_tag_association_service import (
+    BookTagAssociationService,
+)
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.library.entities.book import Book
+from src.domain.library.entities.tag import Tag
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
 from src.domain.reading.services.highlight_grouping_service import HighlightGroupingService
 from src.exceptions import BookNotFoundError
@@ -26,7 +29,6 @@ from src.repositories.flashcard_repository import (
 from src.repositories.highlight_repository import (
     HighlightRepository as LegacyHighlightRepository,
 )
-from src.services.book_tag_service import BookTagService
 from src.services.ebook.ebook_service import EbookService
 
 logger = logging.getLogger(__name__)
@@ -107,10 +109,10 @@ class BookManagementService:
         # Save book
         book = self.book_repository.save(book)
 
-        # Add tags using legacy service (temporary)
+        # Add tags using DDD service
         if book_data.keywords:
-            tag_service = BookTagService(self.db)
-            tag_service.add_book_tags(book.id.value, book_data.keywords, user_id)
+            tag_service = BookTagAssociationService(self.db)
+            tag_service.add_tags_to_book(book.id.value, book_data.keywords, user_id)
 
         return book, True
 
@@ -164,22 +166,13 @@ class BookManagementService:
         )
 
         # Get bookmarks (returns domain entities)
-        bookmark_entities = self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)
+        bookmarks = self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)
 
-        # Convert domain entities to ORM for BookDetailsAggregation (temporary compatibility)
-        from src.models import Bookmark as BookmarkORM  # noqa: PLC0415
+        # Get tags using DDD service
+        tag_service = BookTagAssociationService(self.db)
+        tags = tag_service.get_tags_for_book(book_id, user_id)
 
-        bookmarks = [
-            BookmarkORM(
-                id=b.id.value,
-                book_id=b.book_id.value,
-                highlight_id=b.highlight_id.value,
-                created_at=b.created_at,
-            )
-            for b in bookmark_entities
-        ]
-
-        # Get legacy book for tags and tag groups (temporary ORM access)
+        # Get legacy book for tag groups (temporary ORM access)
         from src.repositories.book_repository import (  # noqa: PLC0415
             BookRepository as LegacyBookRepository,
         )
@@ -190,7 +183,7 @@ class BookManagementService:
         # Return domain aggregation
         return BookDetailsAggregation(
             book=book,
-            tags=legacy_book.tags if legacy_book else [],
+            tags=tags,
             highlight_tags=highlight_tags,
             highlight_tag_groups=legacy_book.highlight_tag_groups if legacy_book else [],
             bookmarks=bookmarks,
@@ -199,7 +192,7 @@ class BookManagementService:
 
     def update_book(
         self, book_id: int, update_data: schemas.BookUpdateRequest, user_id: int
-    ) -> tuple[Book, int, int, list[Any]]:
+    ) -> tuple[Book, int, int, list[Tag]]:
         """
         Update book information.
 
@@ -225,27 +218,18 @@ class BookManagementService:
         if not book:
             raise BookNotFoundError(book_id)
 
-        # Update tags using legacy TagService (temporary)
-        from src.repositories.book_repository import (  # noqa: PLC0415
-            BookRepository as LegacyBookRepository,
-        )
+        # Update tags using DDD service
+        tag_service = BookTagAssociationService(self.db)
+        tags = tag_service.replace_book_tags(book_id, update_data.tags, user_id)
 
-        legacy_book_repo = LegacyBookRepository(self.db)
-        legacy_book = legacy_book_repo.get_by_id(book_id, user_id)
-        if not legacy_book:
-            raise BookNotFoundError(book_id)
-
-        tag_service = BookTagService(self.db)
-        updated_legacy_book = tag_service.update_book_tags(legacy_book, update_data.tags, user_id)
-
-        # Get highlight and flashcard counts
+        # Get counts (still using legacy repositories temporarily)
         highlight_count = self.legacy_highlight_repository.count_by_book_id(book_id, user_id)
         flashcard_count = self.legacy_flashcard_repository.count_by_book_id(book_id, user_id)
 
         logger.info(f"Successfully updated book {book_id}")
 
-        # Return book entity, counts, and tags
-        return (book, highlight_count, flashcard_count, updated_legacy_book.tags)
+        # Return domain entities
+        return (book, highlight_count, flashcard_count, tags)
 
     def delete_book(self, book_id: int, user_id: int) -> None:
         """
