@@ -136,3 +136,90 @@ class BookRepository:
             )
             for book_orm, highlight_count, flashcard_count in results
         ]
+
+    def get_books_with_counts(
+        self,
+        user_id: UserId,
+        offset: int = 0,
+        limit: int = 100,
+        include_only_with_flashcards: bool = False,
+        search_text: str | None = None,
+    ) -> tuple[list[tuple[Book, int, int, list[Tag]]], int]:
+        """
+        Get books with their highlight and flashcard counts for a specific user.
+
+        Books are sorted alphabetically by title.
+
+        Args:
+            user_id: ID of the user whose books to retrieve
+            offset: Number of books to skip (default: 0)
+            limit: Maximum number of books to return (default: 100)
+            include_only_with_flashcards: Include only books which have flashcards
+            search_text: Optional text to search for in book title or author (case-insensitive)
+
+        Returns:
+            tuple[list[tuple[Book, highlight_count, flashcard_count, list[Tag]]], total_count]:
+                (list of (book, highlight_count, flashcard_count, tags) tuples, total count)
+        """
+        # Build base filter conditions - always filter by user
+        filters = [BookORM.user_id == user_id.value]
+        if search_text:
+            search_pattern = f"%{search_text}%"
+            filters.append(
+                (BookORM.title.ilike(search_pattern)) | (BookORM.author.ilike(search_pattern))
+            )
+
+        if include_only_with_flashcards:
+            # Use EXISTS to efficiently check if book has any flashcards
+            flashcard_exists = select(1).where(FlashcardORM.book_id == BookORM.id).exists()
+            filters.append(flashcard_exists)
+
+        # Count query for total number of books
+        total_stmt = select(func.count(BookORM.id)).where(*filters)
+        total = self.db.execute(total_stmt).scalar() or 0
+
+        # Subquery for highlight counts (excluding soft-deleted highlights)
+        highlight_count_subq = (
+            select(func.count(HighlightORM.id))
+            .where(
+                HighlightORM.book_id == BookORM.id,
+                HighlightORM.deleted_at.is_(None),
+            )
+            .correlate(BookORM)
+            .scalar_subquery()
+            .label("highlight_count")
+        )
+
+        # Subquery for flashcard counts
+        flashcard_count_subq = (
+            select(func.count(FlashcardORM.id))
+            .where(FlashcardORM.book_id == BookORM.id)
+            .correlate(BookORM)
+            .scalar_subquery()
+            .label("flashcard_count")
+        )
+
+        # Main query for books with both counts
+        stmt = (
+            select(BookORM, highlight_count_subq, flashcard_count_subq)
+            .where(*filters)
+            .order_by(BookORM.title)
+            .offset(offset)
+            .limit(limit)
+        )
+
+        results = self.db.execute(stmt).all()
+
+        # Convert ORM models to domain entities with counts and tags
+        return (
+            [
+                (
+                    self.mapper.to_domain(book_orm),
+                    highlight_count,
+                    flashcard_count,
+                    [self.tag_mapper.to_domain(tag_orm) for tag_orm in book_orm.tags],
+                )
+                for book_orm, highlight_count, flashcard_count in results
+            ],
+            total,
+        )

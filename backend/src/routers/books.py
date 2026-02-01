@@ -11,6 +11,9 @@ from src import schemas
 from src.application.learning.services.flashcard_service import FlashcardService
 from src.application.library.services.book_cover_service import BookCoverService
 from src.application.library.services.book_management_service import BookManagementService
+from src.application.library.services.get_books_with_counts_service import (
+    GetBooksWithCountsService,
+)
 from src.application.library.services.get_recently_viewed_books_service import (
     GetRecentlyViewedBooksService,
 )
@@ -45,7 +48,6 @@ from src.infrastructure.reading.repositories.highlight_repository import (
 from src.infrastructure.reading.repositories.highlight_tag_repository import (
     HighlightTagRepository,
 )
-from src.services.highlight_service import HighlightService
 
 logger = logging.getLogger(__name__)
 
@@ -198,10 +200,33 @@ def get_books(
         HTTPException: If fetching books fails due to server error
     """
     try:
-        service = HighlightService(db)
-        return service.get_books_with_counts(
+        service = GetBooksWithCountsService(db)
+        results, total = service.get_books_with_counts(
             current_user.id.value, offset, limit, only_with_flashcards, search
         )
+
+        books_list = [
+            schemas.BookWithHighlightCount(
+                id=book.id.value,
+                client_book_id=book.client_book_id,
+                title=book.title,
+                author=book.author,
+                isbn=book.isbn,
+                cover=book.cover,
+                description=book.description,
+                language=book.language,
+                page_count=book.page_count,
+                highlight_count=highlight_count,
+                flashcard_count=flashcard_count,
+                tags=[schemas.TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
+                created_at=book.created_at,
+                updated_at=book.updated_at,
+                last_viewed=book.last_viewed,
+            )
+            for book, highlight_count, flashcard_count, tags in results
+        ]
+
+        return schemas.BooksListResponse(books=books_list, total=total, offset=offset, limit=limit)
     except Exception as e:
         logger.error(f"Failed to fetch books: {e!s}", exc_info=True)
         raise HTTPException(
