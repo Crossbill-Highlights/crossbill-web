@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from src.config import get_settings
 from src.domain.common.value_objects import (
     BookId,
-    ContentHash,
     ReadingSessionId,
     UserId,
     XPointRange,
@@ -17,7 +16,6 @@ from src.domain.common.value_objects import (
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.reading_session import ReadingSession
 from src.exceptions import BookNotFoundError
-from src.hash_utils import compute_reading_session_hash_v2
 from src.infrastructure.library.repositories.book_repository import BookRepository
 from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
 from src.infrastructure.reading.repositories.reading_session_repository import (
@@ -136,14 +134,6 @@ class ReadingSessionUploadService:
         # Create domain entities with NEW hash
         domain_sessions: list[ReadingSession] = []
         for session in sessions:
-            # Compute new hash using IDs
-            session_hash = compute_reading_session_hash_v2(
-                book_id=book.id.value,
-                user_id=user_id,
-                start_time=session.start_time.isoformat(),
-                device_id=session.device_id,
-            )
-
             # Parse XPointRange if both xpoints exist
             xpoint_range = None
             if session.start_xpoint and session.end_xpoint:
@@ -157,7 +147,6 @@ class ReadingSessionUploadService:
                 book_id=book.id,
                 start_time=session.start_time,
                 end_time=session.end_time,
-                content_hash=ContentHash(session_hash),
                 start_xpoint=xpoint_range,
                 start_page=session.start_page,
                 end_page=session.end_page,

@@ -1,5 +1,6 @@
 """Tests for reading sessions API endpoints."""
 
+import uuid
 from datetime import UTC, datetime
 from typing import NamedTuple
 
@@ -9,7 +10,6 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from src import models
-from src.hash_utils import compute_reading_session_hash_v2
 from tests.conftest import create_test_book
 
 # Default user ID used by services (matches conftest default user)
@@ -93,12 +93,6 @@ def create_reading_session(
     end_page: int | None = None,
 ) -> models.ReadingSession:
     """Helper function to create a reading session."""
-    session_hash = compute_reading_session_hash_v2(
-        book_id=book.id,
-        user_id=user_id,
-        start_time=start_time.isoformat(),
-        device_id=device_id,
-    )
     session = models.ReadingSession(
         user_id=user_id,
         book_id=book.id,
@@ -109,7 +103,7 @@ def create_reading_session(
         start_page=start_page,
         end_page=end_page,
         device_id=device_id,
-        content_hash=session_hash,
+        content_hash=str(uuid.uuid4()),
     )
     db_session.add(session)
     db_session.commit()

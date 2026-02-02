@@ -39,7 +39,7 @@ class ReadingSession(AggregateRoot[ReadingSessionId]):
     start_time: datetime
     end_time: datetime
 
-    content_hash: ContentHash = field(init=True)
+    content_hash: ContentHash = field(init=False)
 
     # Position tracking (optional)
     start_xpoint: XPointRange | None = None
@@ -64,6 +64,9 @@ class ReadingSession(AggregateRoot[ReadingSessionId]):
                 raise DomainError("End page must be >= start page")
             if self.start_page < 0 or self.end_page < 0:
                 raise DomainError("Page numbers cannot be negative")
+
+        hash_input = f"{self.book_id}|{self.user_id}|{self.start_time}|{self.device_id or ''}"
+        self.content_hash = ContentHash.compute(hash_input)
 
     @property
     def duration_minutes(self) -> int:
@@ -110,12 +113,6 @@ class ReadingSession(AggregateRoot[ReadingSessionId]):
         Returns:
             New ReadingSession instance
         """
-        # Compute content hash for deduplication
-        # Hash based on user, book, time range
-        hash_content = (
-            f"{user_id.value}-{book_id.value}-{start_time.isoformat()}-{end_time.isoformat()}"
-        )
-        content_hash = ContentHash.compute(hash_content)
 
         return cls(
             id=ReadingSessionId.generate(),
@@ -126,7 +123,6 @@ class ReadingSession(AggregateRoot[ReadingSessionId]):
             start_page=start_page,
             end_page=end_page,
             start_xpoint=start_xpoint,
-            content_hash=content_hash,
             device_id=device_id,
             ai_summary=None,
             _highlight_ids=[],

@@ -2,7 +2,6 @@
 
 from src.domain.common.value_objects import (
     BookId,
-    ContentHash,
     ReadingSessionId,
     UserId,
     XPointRange,
@@ -32,7 +31,6 @@ class ReadingSessionMapper:
             book_id=BookId(orm_model.book_id),
             start_time=orm_model.start_time,
             end_time=orm_model.end_time,
-            content_hash=ContentHash(orm_model.content_hash),
             start_xpoint=xpoint_range,
             start_page=orm_model.start_page,
             end_page=orm_model.end_page,
