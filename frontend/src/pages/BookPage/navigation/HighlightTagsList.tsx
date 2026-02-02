@@ -612,7 +612,11 @@ const useTagMutations = (bookId: number) => {
 
   const updateTagMutation = useUpdateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost({
     mutation: {
-      onMutate: async (variables: { bookId: number; tagId: number; data: { tag_group_id?: number | null } }) => {
+      onMutate: async (variables: {
+        bookId: number;
+        tagId: number;
+        data: { tag_group_id?: number | null };
+      }) => {
         await queryClient.cancelQueries({
           queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
@@ -651,7 +655,11 @@ const useTagMutations = (bookId: number) => {
           }
         );
       },
-      onError: (error: unknown, _variables: unknown, context: { previousBook: unknown } | undefined) => {
+      onError: (
+        error: unknown,
+        _variables: unknown,
+        context: { previousBook: unknown } | undefined
+      ) => {
         if (context?.previousBook) {
           queryClient.setQueryData(
             getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),

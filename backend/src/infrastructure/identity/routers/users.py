@@ -18,7 +18,11 @@ from src.exceptions import CrossbillError
 from src.infrastructure.identity.auth.token_service import TokenWithRefresh
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.identity.routers.auth import set_refresh_cookie
-from src.schemas.user_schemas import UserDetailsResponse, UserRegisterRequest, UserUpdateRequest
+from src.infrastructure.identity.schemas import (
+    UserDetailsResponse,
+    UserRegisterRequest,
+    UserUpdateRequest,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/users", tags=["users"])

@@ -1,6 +1,6 @@
 import { useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet } from '@/api/generated/highlights/highlights';
-import { useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet } from '@/api/generated/reading-sessions/reading-sessions';
 import type { BookDetails, ReadingSession } from '@/api/generated/model';
+import { useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet } from '@/api/generated/reading-sessions/reading-sessions';
 import { Spinner } from '@/components/animations/Spinner.tsx';
 import { ThreeColumnLayout } from '@/components/layout/Layouts';
 import { HighlightViewModal } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/HighlightViewModal';

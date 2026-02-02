@@ -28,6 +28,7 @@ import type {
   FlashcardUpdateResponse,
   FlashcardsWithHighlightsResponse,
   HTTPValidationError,
+  HighlightFlashcardSuggestionsResponse,
 } from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
@@ -486,3 +487,244 @@ export const useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete = <
     queryClient
   );
 };
+/**
+ * Get AI-generated flashcard suggestions for a highlight.
+
+Args:
+    highlight_id: ID of the highlight
+    current_user: Authenticated user
+
+Returns:
+    HighlightFlashcardSuggestionsResponse with list of flashcard suggestions
+
+Raises:
+    HTTPException 404: If highlight not found or not owned by user
+    HTTPException 500: For unexpected errors
+ * @summary Get Highlight Flashcard Suggestions
+ */
+export const getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet = (
+  highlightId: number,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<HighlightFlashcardSuggestionsResponse>({
+    url: `/api/v1/highlights/${highlightId}/flashcard_suggestions`,
+    method: 'GET',
+    signal,
+  });
+};
+
+export const getGetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGetQueryKey =
+  (highlightId?: number) => {
+    return [`/api/v1/highlights/${highlightId}/flashcard_suggestions`] as const;
+  };
+
+export const getGetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGetQueryOptions =
+  <
+    TData = Awaited<
+      ReturnType<
+        typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+      >
+    >,
+    TError = HTTPValidationError,
+  >(
+    highlightId: number,
+    options?: {
+      query?: Partial<
+        UseQueryOptions<
+          Awaited<
+            ReturnType<
+              typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+            >
+          >,
+          TError,
+          TData
+        >
+      >;
+    }
+  ) => {
+    const { query: queryOptions } = options ?? {};
+
+    const queryKey =
+      queryOptions?.queryKey ??
+      getGetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGetQueryKey(
+        highlightId
+      );
+
+    const queryFn: QueryFunction<
+      Awaited<
+        ReturnType<
+          typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+        >
+      >
+    > = ({ signal }) =>
+      getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet(
+        highlightId,
+        signal
+      );
+
+    return { queryKey, queryFn, enabled: !!highlightId, ...queryOptions } as UseQueryOptions<
+      Awaited<
+        ReturnType<
+          typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+        >
+      >,
+      TError,
+      TData
+    > & { queryKey: DataTag<QueryKey, TData, TError> };
+  };
+
+export type GetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGetQueryResult =
+  NonNullable<
+    Awaited<
+      ReturnType<
+        typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+      >
+    >
+  >;
+export type GetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGetQueryError =
+  HTTPValidationError;
+
+export function useGetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet<
+  TData = Awaited<
+    ReturnType<
+      typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+    >
+  >,
+  TError = HTTPValidationError,
+>(
+  highlightId: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+            >
+          >
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet<
+  TData = Awaited<
+    ReturnType<
+      typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+    >
+  >,
+  TError = HTTPValidationError,
+>(
+  highlightId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+            >
+          >
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet<
+  TData = Awaited<
+    ReturnType<
+      typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+    >
+  >,
+  TError = HTTPValidationError,
+>(
+  highlightId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Highlight Flashcard Suggestions
+ */
+
+export function useGetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet<
+  TData = Awaited<
+    ReturnType<
+      typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+    >
+  >,
+  TError = HTTPValidationError,
+>(
+  highlightId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions =
+    getGetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGetQueryOptions(
+      highlightId,
+      options
+    );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

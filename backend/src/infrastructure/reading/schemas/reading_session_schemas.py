@@ -1,11 +1,13 @@
 """Pydantic schemas for Reading Session API request/response validation."""
 
 from datetime import datetime as dt
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 from pydantic import BaseModel, Field, model_validator
 
-from src.schemas.highlight_schemas import Highlight
+if TYPE_CHECKING:
+    # Import at runtime is handled below to avoid circular imports
+    pass
 
 
 class ReadingSessionBase(BaseModel):
@@ -34,6 +36,10 @@ class ReadingSessionBase(BaseModel):
             )
 
         return self
+
+
+# Import Highlight after ReadingSessionBase is defined to avoid circular import issues
+from src.infrastructure.reading.schemas.highlight_schemas import Highlight  # noqa: E402
 
 
 class ReadingSession(ReadingSessionBase):

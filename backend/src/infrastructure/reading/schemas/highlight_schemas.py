@@ -1,17 +1,23 @@
 """Pydantic schemas for Highlight API request/response validation."""
 
 from datetime import datetime as dt
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from src.schemas.book_schemas import TagInBook
-from src.schemas.bookmark_schemas import Bookmark
-from src.schemas.flashcard_schemas import Flashcard
-from src.schemas.highlight_tag_schemas import (
+from src.infrastructure.library.schemas.book_schemas import TagInBook
+from src.infrastructure.reading.schemas.bookmark_schemas import Bookmark
+from src.infrastructure.reading.schemas.highlight_tag_schemas import (
     HighlightTagGroupInBook,
     HighlightTagInBook,
 )
+
+if TYPE_CHECKING:
+    # Import at runtime is handled below to avoid circular imports
+    pass
+
+# Import Flashcard after defining HighlightResponseBase to avoid circular imports
+# This will be moved after the class definitions
 
 
 class HighlightBase(BaseModel):
@@ -93,6 +99,10 @@ class HighlightResponseBase(HighlightBase):
             return result
 
         return data
+
+
+# Import Flashcard after HighlightResponseBase is defined to avoid circular import issues
+from src.infrastructure.learning.schemas.flashcard_schemas import Flashcard  # noqa: E402
 
 
 class Highlight(HighlightResponseBase):

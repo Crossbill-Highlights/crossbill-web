@@ -7,8 +7,8 @@ dependencies in those modules.
 
 from pydantic import BaseModel, Field
 
-from src.schemas.flashcard_schemas import Flashcard
-from src.schemas.highlight_schemas import HighlightResponseBase
+from src.infrastructure.learning.schemas.flashcard_schemas import Flashcard
+from src.infrastructure.reading.schemas.highlight_schemas import HighlightResponseBase
 
 
 class FlashcardWithHighlight(Flashcard):

@@ -1,42 +1,12 @@
-"""Pydantic schemas for API request/response validation."""
+"""Reading context schemas."""
 
-from src.schemas.book_schemas import (
-    Book,
-    BookBase,
-    BookCreate,
-    BooksListResponse,
-    BookWithHighlightCount,
-    CoverUploadResponse,
-    EpubUploadResponse,
-    EreaderBookMetadata,
-    RecentlyViewedBooksResponse,
-    TagInBook,
-)
-from src.schemas.bookmark_schemas import (
+from src.infrastructure.reading.schemas.bookmark_schemas import (
     Bookmark,
     BookmarkBase,
     BookmarkCreateRequest,
     BookmarksResponse,
 )
-from src.schemas.chapter_schemas import Chapter, ChapterBase
-from src.schemas.flashcard_api_schemas import (
-    FlashcardsWithHighlightsResponse,
-    FlashcardWithHighlight,
-)
-from src.schemas.flashcard_schemas import (
-    Flashcard,
-    FlashcardBase,
-    FlashcardCreate,
-    FlashcardCreateRequest,
-    FlashcardCreateResponse,
-    FlashcardDeleteResponse,
-    FlashcardsListResponse,
-    FlashcardSuggestionItem,
-    FlashcardUpdateRequest,
-    FlashcardUpdateResponse,
-    HighlightFlashcardSuggestionsResponse,
-)
-from src.schemas.highlight_schemas import (
+from src.infrastructure.reading.schemas.highlight_schemas import (
     BookDetails,
     BookHighlightSearchResponse,
     ChapterWithHighlights,
@@ -53,7 +23,7 @@ from src.schemas.highlight_schemas import (
     HighlightUploadRequest,
     HighlightUploadResponse,
 )
-from src.schemas.highlight_tag_schemas import (
+from src.infrastructure.reading.schemas.highlight_tag_schemas import (
     HighlightTag,
     HighlightTagAssociationRequest,
     HighlightTagBase,
@@ -66,7 +36,7 @@ from src.schemas.highlight_tag_schemas import (
     HighlightTagsResponse,
     HighlightTagUpdateRequest,
 )
-from src.schemas.reading_session_schemas import (
+from src.infrastructure.reading.schemas.reading_session_schemas import (
     ReadingSession,
     ReadingSessionAISummaryResponse,
     ReadingSessionsResponse,
@@ -74,46 +44,20 @@ from src.schemas.reading_session_schemas import (
     ReadingSessionUploadResponse,
     ReadingSessionUploadSessionItem,
 )
-from src.schemas.tag_schemas import BookUpdateRequest, Tag
-from src.schemas.user_schemas import UserDetailsResponse, UserRegisterRequest, UserUpdateRequest
 
 __all__ = [
-    "Book",
-    "BookBase",
-    "BookCreate",
     "BookDetails",
     "BookHighlightSearchResponse",
-    "BookUpdateRequest",
-    "BookWithHighlightCount",
     "Bookmark",
     "BookmarkBase",
     "BookmarkCreateRequest",
     "BookmarksResponse",
-    "BooksListResponse",
-    "Chapter",
-    "ChapterBase",
     "ChapterWithHighlights",
-    "CoverUploadResponse",
-    "EpubUploadResponse",
-    "EreaderBookMetadata",
-    "Flashcard",
-    "FlashcardBase",
-    "FlashcardCreate",
-    "FlashcardCreateRequest",
-    "FlashcardCreateResponse",
-    "FlashcardDeleteResponse",
-    "FlashcardSuggestionItem",
-    "FlashcardUpdateRequest",
-    "FlashcardUpdateResponse",
-    "FlashcardWithHighlight",
-    "FlashcardsListResponse",
-    "FlashcardsWithHighlightsResponse",
     "Highlight",
     "HighlightBase",
     "HighlightCreate",
     "HighlightDeleteRequest",
     "HighlightDeleteResponse",
-    "HighlightFlashcardSuggestionsResponse",
     "HighlightNoteUpdate",
     "HighlightNoteUpdateResponse",
     "HighlightResponseBase",
@@ -138,10 +82,4 @@ __all__ = [
     "ReadingSessionUploadResponse",
     "ReadingSessionUploadSessionItem",
     "ReadingSessionsResponse",
-    "RecentlyViewedBooksResponse",
-    "Tag",
-    "TagInBook",
-    "UserDetailsResponse",
-    "UserRegisterRequest",
-    "UserUpdateRequest",
 ]

@@ -1,8 +1,8 @@
-import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import {
   useCreateBookmarkApiV1BooksBookIdBookmarksPost,
   useDeleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete,
 } from '@/api/generated/bookmarks/bookmarks.ts';
+import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import type { Bookmark } from '@/api/generated/model';
 import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';

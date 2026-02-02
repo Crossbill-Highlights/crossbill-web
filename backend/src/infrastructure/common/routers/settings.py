@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from src.feature_flags import get_feature_flags
-from src.schemas.settings_schemas import AppSettingsResponse
+from src.infrastructure.common.schemas import AppSettingsResponse
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 

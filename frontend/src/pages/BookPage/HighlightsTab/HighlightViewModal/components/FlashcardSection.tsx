@@ -1,12 +1,10 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import {
   useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete,
+  useGetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet,
   useUpdateFlashcardApiV1FlashcardsFlashcardIdPut,
 } from '@/api/generated/flashcards/flashcards.ts';
-import {
-  useCreateFlashcardForHighlightApiV1HighlightsHighlightIdFlashcardsPost,
-  useGetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet,
-} from '@/api/generated/highlights/highlights.ts';
+import { useCreateFlashcardForHighlightApiV1HighlightsHighlightIdFlashcardsPost } from '@/api/generated/highlights/highlights.ts';
 import type { FlashcardSuggestionItem, Highlight } from '@/api/generated/model';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
