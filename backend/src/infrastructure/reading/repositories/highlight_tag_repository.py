@@ -151,6 +151,24 @@ class HighlightTagRepository:
 
     # Tag group methods
 
+    def find_groups_by_book(self, book_id: BookId) -> list[HighlightTagGroup]:
+        """
+        Find all tag groups for a book.
+
+        Args:
+            book_id: The book ID
+
+        Returns:
+            List of tag group entities, ordered by name
+        """
+        stmt = (
+            select(HighlightTagGroupORM)
+            .where(HighlightTagGroupORM.book_id == book_id.value)
+            .order_by(HighlightTagGroupORM.name)
+        )
+        orm_models = self.db.execute(stmt).scalars().all()
+        return [self.group_mapper.to_domain(orm) for orm in orm_models]
+
     def find_group_by_id(
         self, group_id: HighlightTagGroupId, book_id: BookId
     ) -> HighlightTagGroup | None:

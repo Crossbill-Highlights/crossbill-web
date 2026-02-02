@@ -417,6 +417,24 @@ class HighlightRepository:
         orms = self.db.execute(stmt).scalars().all()
         return [self.mapper.to_domain(orm) for orm in orms]
 
+    def count_by_book(self, book_id: BookId, user_id: UserId) -> int:
+        """
+        Count all non-deleted highlights for a book.
+
+        Args:
+            book_id: Book ID value object
+            user_id: User ID value object for authorization
+
+        Returns:
+            Count of non-deleted highlights
+        """
+        stmt = select(func.count(HighlightORM.id)).where(
+            HighlightORM.book_id == book_id.value,
+            HighlightORM.user_id == user_id.value,
+            HighlightORM.deleted_at.is_(None),
+        )
+        return self.db.execute(stmt).scalar() or 0
+
     def get_highlights_by_session_ids(
         self,
         session_ids: list[ReadingSessionId],

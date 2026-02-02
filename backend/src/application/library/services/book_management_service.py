@@ -27,8 +27,8 @@ from src.infrastructure.learning.repositories.flashcard_repository import (
 from src.infrastructure.library.repositories.book_repository import BookRepository
 from src.infrastructure.reading.repositories.bookmark_repository import BookmarkRepository
 from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
-from src.repositories.highlight_repository import (
-    HighlightRepository as LegacyHighlightRepository,
+from src.infrastructure.reading.repositories.highlight_tag_repository import (
+    HighlightTagRepository,
 )
 
 logger = logging.getLogger(__name__)
@@ -62,13 +62,11 @@ class BookManagementService:
         self.book_repository = BookRepository(db)
         self.bookmark_repository = BookmarkRepository(db)
         self.highlight_repository = HighlightRepository(db)
+        self.highlight_tag_repository = HighlightTagRepository(db)
         self.highlight_grouping_service = HighlightGroupingService()
 
         # Repositories
         self.flashcard_repository = FlashcardRepository(db)
-
-        # Legacy repositories (temporary)
-        self.legacy_highlight_repository = LegacyHighlightRepository(db)
 
         # Services
         self.ebook_deletion_service = EbookDeletionService()
@@ -174,20 +172,15 @@ class BookManagementService:
         tag_service = BookTagAssociationService(self.db)
         tags = tag_service.get_tags_for_book(book_id, user_id)
 
-        # Get legacy book for tag groups (temporary ORM access)
-        from src.repositories.book_repository import (  # noqa: PLC0415
-            BookRepository as LegacyBookRepository,
-        )
-
-        legacy_book_repo = LegacyBookRepository(self.db)
-        legacy_book = legacy_book_repo.get_by_id(book_id, user_id)
+        # Get highlight tag groups
+        highlight_tag_groups = self.highlight_tag_repository.find_groups_by_book(book_id_vo)
 
         # Return domain aggregation
         return BookDetailsAggregation(
             book=book,
             tags=tags,
             highlight_tags=highlight_tags,
-            highlight_tag_groups=legacy_book.highlight_tag_groups if legacy_book else [],
+            highlight_tag_groups=highlight_tag_groups,
             bookmarks=bookmarks,
             chapters_with_highlights=grouped,
         )
@@ -225,8 +218,8 @@ class BookManagementService:
         tags = tag_service.replace_book_tags(book_id, update_data.tags, user_id)
 
         # Get counts
-        highlight_count = self.legacy_highlight_repository.count_by_book_id(book_id, user_id)
-        flashcard_count = self.flashcard_repository.count_by_book(BookId(book_id), UserId(user_id))
+        highlight_count = self.highlight_repository.count_by_book(book_id_vo, user_id_vo)
+        flashcard_count = self.flashcard_repository.count_by_book(book_id_vo, user_id_vo)
 
         logger.info(f"Successfully updated book {book_id}")
 

@@ -156,7 +156,10 @@ def _build_book_details_schema(agg: BookDetailsAggregation) -> schemas.BookDetai
             for tag in agg.highlight_tags
         ],
         highlight_tag_groups=[
-            schemas.HighlightTagGroupInBook.model_validate(group)
+            schemas.HighlightTagGroupInBook(
+                id=group.id.value,
+                name=group.name,
+            )
             for group in agg.highlight_tag_groups
         ],
         bookmarks=[
