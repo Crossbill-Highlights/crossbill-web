@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from pydantic_ai import Agent
 
-from src.services.ai.ai_model import get_ai_model
+from src.infrastructure.ai.ai_model import get_ai_model
 
 
 def get_summary_agent() -> Agent[None, str]:

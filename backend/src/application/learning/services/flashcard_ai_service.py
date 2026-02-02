@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 
 from src.domain.common.value_objects.ids import HighlightId, UserId
 from src.exceptions import ValidationError
+from src.infrastructure.ai.ai_service import get_ai_flashcard_suggestions_from_text
 from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
-from src.services.ai.ai_service import get_ai_flashcard_suggestions_from_text
 
 logger = structlog.get_logger(__name__)
 

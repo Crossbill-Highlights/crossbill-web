@@ -8,10 +8,10 @@ from src.application.library.services.ebook_text_extraction_service import (
 )
 from src.domain.common.value_objects import ReadingSessionId, UserId
 from src.exceptions import ReadingSessionNotFoundError, ValidationError
+from src.infrastructure.ai.ai_service import get_ai_summary_from_text
 from src.infrastructure.reading.repositories.reading_session_repository import (
     ReadingSessionRepository,
 )
-from src.services.ai.ai_service import get_ai_summary_from_text
 
 logger = structlog.get_logger(__name__)
 
