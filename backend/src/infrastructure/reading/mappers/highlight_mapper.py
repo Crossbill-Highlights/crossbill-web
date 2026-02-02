@@ -9,7 +9,6 @@ Handles bidirectional conversion:
 from src.domain.common.value_objects import (
     BookId,
     ChapterId,
-    ContentHash,
     HighlightId,
     UserId,
     XPointRange,
@@ -44,7 +43,6 @@ class HighlightMapper:
             user_id=UserId(orm_model.user_id),
             book_id=BookId(orm_model.book_id),
             text=orm_model.text,
-            content_hash=ContentHash(orm_model.content_hash),
             datetime_str=orm_model.datetime,
             created_at=orm_model.created_at,
             updated_at=orm_model.updated_at,

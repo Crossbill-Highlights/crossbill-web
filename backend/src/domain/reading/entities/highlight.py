@@ -48,7 +48,7 @@ class Highlight(AggregateRoot[HighlightId]):
 
     # Content
     text: str
-    content_hash: ContentHash
+    content_hash: ContentHash = field(init=False)
 
     # Position (optional - may not always be available from e-reader)
     chapter_id: ChapterId | None = None
@@ -71,6 +71,8 @@ class Highlight(AggregateRoot[HighlightId]):
         """Validate invariants after initialization."""
         if self.page is not None and self.page < 0:
             raise DomainError("Page number cannot be negative")
+
+        self.content_hash = ContentHash.compute(self.text)
 
     # Query methods
 
@@ -197,11 +199,6 @@ class Highlight(AggregateRoot[HighlightId]):
             ValueError: If text is invalid
         """
         highlight_text = text
-
-        # Compute content hash for deduplication
-        # Hash is based on text only since deduplication happens within book context
-        content_hash = ContentHash.compute(text)
-
         now = dt_module.datetime.now(UTC)
         datetime_str = now.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -210,7 +207,6 @@ class Highlight(AggregateRoot[HighlightId]):
             user_id=user_id,
             book_id=book_id,
             text=highlight_text,
-            content_hash=content_hash,
             chapter_id=chapter_id,
             xpoints=xpoints,
             page=page,
@@ -229,7 +225,6 @@ class Highlight(AggregateRoot[HighlightId]):
         user_id: UserId,
         book_id: BookId,
         text: str,
-        content_hash: ContentHash,
         datetime_str: str,
         created_at: dt_module.datetime,
         updated_at: dt_module.datetime,
@@ -249,7 +244,6 @@ class Highlight(AggregateRoot[HighlightId]):
             user_id=user_id,
             book_id=book_id,
             text=text,
-            content_hash=content_hash,
             chapter_id=chapter_id,
             xpoints=xpoints,
             page=page,
