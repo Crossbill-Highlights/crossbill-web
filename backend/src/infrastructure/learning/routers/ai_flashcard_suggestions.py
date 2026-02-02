@@ -16,7 +16,7 @@ from src.infrastructure.identity.dependencies import get_current_user
 
 logger = structlog.get_logger(__name__)
 
-router = APIRouter(prefix="/highlights", tags=["highlights", "ai"])
+router = APIRouter(prefix="/highlights", tags=["flashcards"])
 
 
 @router.get(

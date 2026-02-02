@@ -27,11 +27,10 @@ from src.infrastructure.identity.auth.password_service import hash_password
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.routers import auth, users
 from src.infrastructure.learning.routers import ai_flashcard_suggestions, flashcards
-from src.infrastructure.library.routers import ereader
-from src.infrastructure.reading.routers import highlights, reading_sessions, reading_sessions_ai
-from src.routers import (
-    books,
-)
+from src.infrastructure.learning.routers import book_flashcards as learning_books
+from src.infrastructure.library.routers import books as library_books
+from src.infrastructure.library.routers import ereader as library_ereader
+from src.infrastructure.reading.routers import bookmarks, highlights, reading_sessions
 
 settings = get_settings()
 
@@ -238,17 +237,28 @@ async def crossbill_exception_handler(request: Request, exc: CrossbillError) -> 
 
 
 # Register routers
+
+# Library
+app.include_router(library_books.router, prefix=settings.API_V1_PREFIX)
+app.include_router(library_ereader.router, prefix=settings.API_V1_PREFIX)
+
+# Reading
 app.include_router(highlights.router, prefix=settings.API_V1_PREFIX)
-app.include_router(books.router, prefix=settings.API_V1_PREFIX)
+app.include_router(highlights.router, prefix=settings.API_V1_PREFIX)
+app.include_router(reading_sessions.router, prefix=settings.API_V1_PREFIX)
+app.include_router(bookmarks.router, prefix=settings.API_V1_PREFIX)
+
+# Learning
+app.include_router(learning_books.router, prefix=settings.API_V1_PREFIX)
 app.include_router(flashcards.router, prefix=settings.API_V1_PREFIX)
+app.include_router(ai_flashcard_suggestions.router, prefix=settings.API_V1_PREFIX)
+
+# Identity
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(users.router, prefix=settings.API_V1_PREFIX)
-app.include_router(reading_sessions.router, prefix=settings.API_V1_PREFIX)
-app.include_router(ereader.router, prefix=settings.API_V1_PREFIX)
-app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)
 
-app.include_router(reading_sessions_ai.router, prefix=settings.API_V1_PREFIX)
-app.include_router(ai_flashcard_suggestions.router, prefix=settings.API_V1_PREFIX)
+# Common
+app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health")

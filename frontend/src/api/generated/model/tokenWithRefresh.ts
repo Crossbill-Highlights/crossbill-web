@@ -5,6 +5,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * DTO for token pair with access and refresh tokens.
+ */
 export interface TokenWithRefresh {
   access_token: string;
   refresh_token: string;

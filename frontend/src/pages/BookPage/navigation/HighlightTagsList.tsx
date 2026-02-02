@@ -1,10 +1,8 @@
-import {
-  getGetBookDetailsApiV1BooksBookIdGetQueryKey,
-  useUpdateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost,
-} from '@/api/generated/books/books.ts';
+import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import {
   useCreateOrUpdateTagGroupApiV1HighlightsTagGroupPost,
   useDeleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete,
+  useUpdateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost,
 } from '@/api/generated/highlights/highlights.ts';
 import { HighlightTagGroupInBook, HighlightTagInBook } from '@/api/generated/model';
 import { Collapsable } from '@/components/animations/Collapsable.tsx';
@@ -614,7 +612,7 @@ const useTagMutations = (bookId: number) => {
 
   const updateTagMutation = useUpdateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost({
     mutation: {
-      onMutate: async (variables) => {
+      onMutate: async (variables: { bookId: number; tagId: number; data: { tag_group_id?: number | null } }) => {
         await queryClient.cancelQueries({
           queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
@@ -638,7 +636,7 @@ const useTagMutations = (bookId: number) => {
         );
         return { previousBook };
       },
-      onSuccess: (updatedTag) => {
+      onSuccess: (updatedTag: HighlightTagInBook) => {
         queryClient.setQueryData(
           getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
           (old: unknown) => {
@@ -653,7 +651,7 @@ const useTagMutations = (bookId: number) => {
           }
         );
       },
-      onError: (error: unknown, _variables, context) => {
+      onError: (error: unknown, _variables: unknown, context: { previousBook: unknown } | undefined) => {
         if (context?.previousBook) {
           queryClient.setQueryData(
             getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),

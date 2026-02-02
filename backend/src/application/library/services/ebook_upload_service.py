@@ -12,9 +12,11 @@ from sqlalchemy.orm import Session
 from src.domain.common import EntityNotFoundError
 from src.domain.common.value_objects.ids import UserId
 from src.exceptions import InvalidEbookError
-from src.infrastructure.library.repositories import BookRepository
-from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
-from src.infrastructure.library.repositories.file_repository import FileRepository
+from src.infrastructure.library.repositories import (
+    BookRepository,
+    ChapterRepository,
+    FileRepository,
+)
 
 logger = logging.getLogger(__name__)
 

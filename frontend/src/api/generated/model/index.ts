@@ -8,7 +8,6 @@
 export * from './apiRootApiV1Get200';
 export * from './appSettingsResponse';
 export * from './bodyLoginApiV1AuthLoginPost';
-export * from './bodyUploadBookCoverApiV1BooksBookIdMetadataCoverPost';
 export * from './bodyUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost';
 export * from './bodyUploadBookEpubApiV1EreaderBooksClientBookIdEpubPost';
 export * from './bookCreate';

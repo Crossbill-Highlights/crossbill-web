@@ -5,21 +5,296 @@
  * OpenAPI spec version: 0.1.0
  */
 import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
   MutationFunction,
   QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
   UseMutationOptions,
   UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult,
 } from '@tanstack/react-query';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
+  FlashcardCreateRequest,
+  FlashcardCreateResponse,
   FlashcardDeleteResponse,
   FlashcardUpdateRequest,
   FlashcardUpdateResponse,
+  FlashcardsWithHighlightsResponse,
   HTTPValidationError,
 } from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
+
+/**
+ * Create a standalone flashcard for a book (without a highlight).
+
+This creates a flashcard that is associated with a book but not tied
+to any specific highlight.
+
+Args:
+    book_id: ID of the book
+    request: Request containing question and answer
+    db: Database session
+
+Returns:
+    Created flashcard
+
+Raises:
+    HTTPException: If book not found or creation fails
+ * @summary Create Flashcard For Book
+ */
+export const createFlashcardForBookApiV1BooksBookIdFlashcardsPost = (
+  bookId: number,
+  flashcardCreateRequest: FlashcardCreateRequest,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<FlashcardCreateResponse>({
+    url: `/api/v1/books/${bookId}/flashcards`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: flashcardCreateRequest,
+    signal,
+  });
+};
+
+export const getCreateFlashcardForBookApiV1BooksBookIdFlashcardsPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFlashcardForBookApiV1BooksBookIdFlashcardsPost>>,
+    TError,
+    { bookId: number; data: FlashcardCreateRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createFlashcardForBookApiV1BooksBookIdFlashcardsPost>>,
+  TError,
+  { bookId: number; data: FlashcardCreateRequest },
+  TContext
+> => {
+  const mutationKey = ['createFlashcardForBookApiV1BooksBookIdFlashcardsPost'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createFlashcardForBookApiV1BooksBookIdFlashcardsPost>>,
+    { bookId: number; data: FlashcardCreateRequest }
+  > = (props) => {
+    const { bookId, data } = props ?? {};
+
+    return createFlashcardForBookApiV1BooksBookIdFlashcardsPost(bookId, data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateFlashcardForBookApiV1BooksBookIdFlashcardsPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createFlashcardForBookApiV1BooksBookIdFlashcardsPost>>
+>;
+export type CreateFlashcardForBookApiV1BooksBookIdFlashcardsPostMutationBody =
+  FlashcardCreateRequest;
+export type CreateFlashcardForBookApiV1BooksBookIdFlashcardsPostMutationError = HTTPValidationError;
+
+/**
+ * @summary Create Flashcard For Book
+ */
+export const useCreateFlashcardForBookApiV1BooksBookIdFlashcardsPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createFlashcardForBookApiV1BooksBookIdFlashcardsPost>>,
+      TError,
+      { bookId: number; data: FlashcardCreateRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof createFlashcardForBookApiV1BooksBookIdFlashcardsPost>>,
+  TError,
+  { bookId: number; data: FlashcardCreateRequest },
+  TContext
+> => {
+  return useMutation(
+    getCreateFlashcardForBookApiV1BooksBookIdFlashcardsPostMutationOptions(options),
+    queryClient
+  );
+};
+/**
+ * Get all flashcards for a book with embedded highlight data.
+
+Returns all flashcards ordered by creation date (newest first).
+
+Args:
+    book_id: ID of the book
+    db: Database session
+
+Returns:
+    List of flashcards with highlight data for the book
+
+Raises:
+    HTTPException: If book not found or fetching fails
+ * @summary Get Flashcards For Book
+ */
+export const getFlashcardsForBookApiV1BooksBookIdFlashcardsGet = (
+  bookId: number,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<FlashcardsWithHighlightsResponse>({
+    url: `/api/v1/books/${bookId}/flashcards`,
+    method: 'GET',
+    signal,
+  });
+};
+
+export const getGetFlashcardsForBookApiV1BooksBookIdFlashcardsGetQueryKey = (bookId?: number) => {
+  return [`/api/v1/books/${bookId}/flashcards`] as const;
+};
+
+export const getGetFlashcardsForBookApiV1BooksBookIdFlashcardsGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetFlashcardsForBookApiV1BooksBookIdFlashcardsGetQueryKey(bookId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>
+  > = ({ signal }) => getFlashcardsForBookApiV1BooksBookIdFlashcardsGet(bookId, signal);
+
+  return { queryKey, queryFn, enabled: !!bookId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetFlashcardsForBookApiV1BooksBookIdFlashcardsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>
+>;
+export type GetFlashcardsForBookApiV1BooksBookIdFlashcardsGetQueryError = HTTPValidationError;
+
+export function useGetFlashcardsForBookApiV1BooksBookIdFlashcardsGet<
+  TData = Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetFlashcardsForBookApiV1BooksBookIdFlashcardsGet<
+  TData = Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetFlashcardsForBookApiV1BooksBookIdFlashcardsGet<
+  TData = Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Flashcards For Book
+ */
+
+export function useGetFlashcardsForBookApiV1BooksBookIdFlashcardsGet<
+  TData = Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
+  TError = HTTPValidationError,
+>(
+  bookId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetFlashcardsForBookApiV1BooksBookIdFlashcardsGetQueryOptions(
+    bookId,
+    options
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * Update a flashcard's question and/or answer.
