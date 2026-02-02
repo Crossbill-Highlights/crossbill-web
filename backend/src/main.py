@@ -22,20 +22,16 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from src.config import configure_logging, get_settings
 from src.database import get_engine
 from src.exceptions import BookNotFoundError, CrossbillError, NotFoundError
+from src.infrastructure.common.routers import settings as settings_router
 from src.infrastructure.identity.auth.password_service import hash_password
 from src.infrastructure.identity.repositories.user_repository import UserRepository
+from src.infrastructure.identity.routers import auth, users
+from src.infrastructure.learning.routers import ai_flashcard_suggestions, flashcards
+from src.infrastructure.library.routers import ereader
+from src.infrastructure.reading.routers import highlights, reading_sessions, reading_sessions_ai
 from src.routers import (
-    auth,
     books,
-    ereader,
-    flashcards,
-    highlights,
-    highlights_ai,
-    reading_sessions,
-    reading_sessions_ai,
-    users,
 )
-from src.routers import settings as settings_router
 
 settings = get_settings()
 
@@ -252,7 +248,7 @@ app.include_router(ereader.router, prefix=settings.API_V1_PREFIX)
 app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)
 
 app.include_router(reading_sessions_ai.router, prefix=settings.API_V1_PREFIX)
-app.include_router(highlights_ai.router, prefix=settings.API_V1_PREFIX)
+app.include_router(ai_flashcard_suggestions.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health")
