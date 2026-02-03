@@ -4,13 +4,20 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from src import schemas
 from src.application.learning.services import FlashcardService
 from src.database import DatabaseSession
 from src.domain.common import DomainError
 from src.domain.identity import User
 from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.identity import get_current_user
+from src.infrastructure.learning.schemas import (
+    Flashcard,
+    FlashcardCreateRequest,
+    FlashcardCreateResponse,
+    FlashcardsWithHighlightsResponse,
+    FlashcardWithHighlight,
+)
+from src.infrastructure.reading.schemas import HighlightResponseBase, HighlightTagInBook
 
 logger = logging.getLogger(__name__)
 
@@ -19,15 +26,15 @@ router = APIRouter(prefix="/books", tags=["flashcards"])
 
 @router.post(
     "/{book_id}/flashcards",
-    response_model=schemas.FlashcardCreateResponse,
+    response_model=FlashcardCreateResponse,
     status_code=status.HTTP_201_CREATED,
 )
 def create_flashcard_for_book(
     book_id: int,
-    request: schemas.FlashcardCreateRequest,
+    request: FlashcardCreateRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.FlashcardCreateResponse:
+) -> FlashcardCreateResponse:
     """
     Create a standalone flashcard for a book (without a highlight).
 
@@ -54,7 +61,7 @@ def create_flashcard_for_book(
             answer=request.answer,
         )
         # Manually construct Pydantic schema from domain entity
-        flashcard = schemas.Flashcard(
+        flashcard = Flashcard(
             id=flashcard_entity.id.value,
             user_id=flashcard_entity.user_id.value,
             book_id=flashcard_entity.book_id.value,
@@ -64,7 +71,7 @@ def create_flashcard_for_book(
             question=flashcard_entity.question,
             answer=flashcard_entity.answer,
         )
-        return schemas.FlashcardCreateResponse(
+        return FlashcardCreateResponse(
             success=True,
             message="Flashcard created successfully",
             flashcard=flashcard,
@@ -81,14 +88,14 @@ def create_flashcard_for_book(
 
 @router.get(
     "/{book_id}/flashcards",
-    response_model=schemas.FlashcardsWithHighlightsResponse,
+    response_model=FlashcardsWithHighlightsResponse,
     status_code=status.HTTP_200_OK,
 )
 def get_flashcards_for_book(
     book_id: int,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.FlashcardsWithHighlightsResponse:
+) -> FlashcardsWithHighlightsResponse:
     """
     Get all flashcards for a book with embedded highlight data.
 
@@ -125,7 +132,7 @@ def get_flashcards_for_book(
                 end_xpoint = str(highlight.xpoints.end) if highlight.xpoints else None
 
                 # Manually construct highlight schema
-                highlight_schema = schemas.HighlightResponseBase(
+                highlight_schema = HighlightResponseBase(
                     id=highlight.id.value,
                     book_id=highlight.book_id.value,
                     chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
@@ -140,7 +147,7 @@ def get_flashcards_for_book(
                     created_at=highlight.created_at,
                     updated_at=highlight.updated_at,
                     highlight_tags=[
-                        schemas.HighlightTagInBook(
+                        HighlightTagInBook(
                             id=tag.id.value,
                             name=tag.name,
                             tag_group_id=tag.tag_group_id,
@@ -150,7 +157,7 @@ def get_flashcards_for_book(
                 )
 
             # Construct flashcard schema with highlight
-            flashcard_schema = schemas.FlashcardWithHighlight(
+            flashcard_schema = FlashcardWithHighlight(
                 id=fc.id.value,
                 user_id=fc.user_id.value,
                 book_id=fc.book_id.value,
@@ -161,7 +168,7 @@ def get_flashcards_for_book(
             )
             flashcards.append(flashcard_schema)
 
-        return schemas.FlashcardsWithHighlightsResponse(flashcards=flashcards)
+        return FlashcardsWithHighlightsResponse(flashcards=flashcards)
     except (CrossbillError, DomainError, ValidationError):
         raise
     except Exception as e:

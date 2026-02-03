@@ -5,7 +5,6 @@ from typing import Annotated
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src import schemas
 from src.application.learning.services.flashcard_ai_service import FlashcardAIService
 from src.database import DatabaseSession
 from src.domain.common.exceptions import DomainError
@@ -13,6 +12,10 @@ from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.identity.dependencies import get_current_user
+from src.infrastructure.learning.schemas import (
+    FlashcardSuggestionItem,
+    HighlightFlashcardSuggestionsResponse,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -21,7 +24,7 @@ router = APIRouter(prefix="/highlights", tags=["flashcards"])
 
 @router.get(
     "/{highlight_id}/flashcard_suggestions",
-    response_model=schemas.HighlightFlashcardSuggestionsResponse,
+    response_model=HighlightFlashcardSuggestionsResponse,
     status_code=status.HTTP_200_OK,
 )
 @require_ai_enabled
@@ -29,7 +32,7 @@ async def get_highlight_flashcard_suggestions(
     highlight_id: int,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.HighlightFlashcardSuggestionsResponse:
+) -> HighlightFlashcardSuggestionsResponse:
     """
     Get AI-generated flashcard suggestions for a highlight.
 
@@ -52,11 +55,10 @@ async def get_highlight_flashcard_suggestions(
 
         # Convert data classes to Pydantic schemas
         suggestions = [
-            schemas.FlashcardSuggestionItem(question=s.question, answer=s.answer)
-            for s in suggestions_data
+            FlashcardSuggestionItem(question=s.question, answer=s.answer) for s in suggestions_data
         ]
 
-        return schemas.HighlightFlashcardSuggestionsResponse(suggestions=suggestions)
+        return HighlightFlashcardSuggestionsResponse(suggestions=suggestions)
     except (CrossbillError, DomainError, ValidationError):
         raise
     except Exception as e:

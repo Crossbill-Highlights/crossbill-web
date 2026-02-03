@@ -5,13 +5,18 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src import schemas
 from src.application.learning.services.flashcard_service import FlashcardService
 from src.database import DatabaseSession
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.identity.dependencies import get_current_user
+from src.infrastructure.learning.schemas import (
+    Flashcard,
+    FlashcardDeleteResponse,
+    FlashcardUpdateRequest,
+    FlashcardUpdateResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +25,15 @@ router = APIRouter(prefix="/flashcards", tags=["flashcards"])
 
 @router.put(
     "/{flashcard_id}",
-    response_model=schemas.FlashcardUpdateResponse,
+    response_model=FlashcardUpdateResponse,
     status_code=status.HTTP_200_OK,
 )
 def update_flashcard(
     flashcard_id: int,
-    request: schemas.FlashcardUpdateRequest,
+    request: FlashcardUpdateRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.FlashcardUpdateResponse:
+) -> FlashcardUpdateResponse:
     """
     Update a flashcard's question and/or answer.
 
@@ -52,7 +57,7 @@ def update_flashcard(
             answer=request.answer,
         )
         # Manually construct Pydantic schema from domain entity
-        flashcard = schemas.Flashcard(
+        flashcard = Flashcard(
             id=flashcard_entity.id.value,
             user_id=flashcard_entity.user_id.value,
             book_id=flashcard_entity.book_id.value,
@@ -62,7 +67,7 @@ def update_flashcard(
             question=flashcard_entity.question,
             answer=flashcard_entity.answer,
         )
-        return schemas.FlashcardUpdateResponse(
+        return FlashcardUpdateResponse(
             success=True,
             message="Flashcard updated successfully",
             flashcard=flashcard,
@@ -79,14 +84,14 @@ def update_flashcard(
 
 @router.delete(
     "/{flashcard_id}",
-    response_model=schemas.FlashcardDeleteResponse,
+    response_model=FlashcardDeleteResponse,
     status_code=status.HTTP_200_OK,
 )
 def delete_flashcard(
     flashcard_id: int,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.FlashcardDeleteResponse:
+) -> FlashcardDeleteResponse:
     """
     Delete a flashcard.
 
@@ -103,7 +108,7 @@ def delete_flashcard(
     try:
         service = FlashcardService(db)
         service.delete_flashcard(flashcard_id=flashcard_id, user_id=current_user.id.value)
-        return schemas.FlashcardDeleteResponse(
+        return FlashcardDeleteResponse(
             success=True,
             message="Flashcard deleted successfully",
         )

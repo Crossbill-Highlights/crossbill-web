@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from src import schemas
+from src.infrastructure.reading.schemas import Bookmark, BookmarkCreateRequest, BookmarksResponse
 from src.application.reading.services import BookmarkService
 from src.database import DatabaseSession
 from src.domain.identity import User
@@ -18,15 +18,15 @@ router = APIRouter(prefix="/books", tags=["bookmarks"])
 
 @router.post(
     "/{book_id}/bookmarks",
-    response_model=schemas.Bookmark,
+    response_model=Bookmark,
     status_code=status.HTTP_201_CREATED,
 )
 def create_bookmark(
     book_id: int,
-    request: schemas.BookmarkCreateRequest,
+    request: BookmarkCreateRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.Bookmark:
+) -> Bookmark:
     """
     Create a bookmark for a highlight in a book.
 
@@ -51,7 +51,7 @@ def create_bookmark(
         # Manually construct schema from domain entity
         # created_at is always set for persisted bookmarks
         assert bookmark.created_at is not None
-        return schemas.Bookmark(
+        return Bookmark(
             id=bookmark.id.value,
             book_id=bookmark.book_id.value,
             highlight_id=bookmark.highlight_id.value,
@@ -111,14 +111,14 @@ def delete_bookmark(
 
 @router.get(
     "/{book_id}/bookmarks",
-    response_model=schemas.BookmarksResponse,
+    response_model=BookmarksResponse,
     status_code=status.HTTP_200_OK,
 )
 def get_bookmarks(
     book_id: int,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.BookmarksResponse:
+) -> BookmarksResponse:
     """
     Get all bookmarks for a book.
 
@@ -144,14 +144,14 @@ def get_bookmarks(
         for b in bookmarks:
             assert b.created_at is not None
             bookmark_schemas.append(
-                schemas.Bookmark(
+                Bookmark(
                     id=b.id.value,
                     book_id=b.book_id.value,
                     highlight_id=b.highlight_id.value,
                     created_at=b.created_at,
                 )
             )
-        return schemas.BookmarksResponse(bookmarks=bookmark_schemas)
+        return BookmarksResponse(bookmarks=bookmark_schemas)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise

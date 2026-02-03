@@ -10,7 +10,6 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from src import schemas  # Only for input parameter types
 from src.application.library.services.book_tag_association_service import (
     BookTagAssociationService,
 )
@@ -25,6 +24,10 @@ from src.infrastructure.learning.repositories.flashcard_repository import (
     FlashcardRepository,
 )
 from src.infrastructure.library.repositories.book_repository import BookRepository
+from src.infrastructure.library.schemas import (
+    BookCreate,
+    BookUpdateRequest,
+)  # Only for input parameter types
 from src.infrastructure.reading.repositories.bookmark_repository import BookmarkRepository
 from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
 from src.infrastructure.reading.repositories.highlight_tag_repository import (
@@ -71,7 +74,7 @@ class BookManagementService:
         # Services
         self.ebook_deletion_service = EbookDeletionService()
 
-    def create_book(self, book_data: schemas.BookCreate, user_id: int) -> tuple[Book, bool]:
+    def create_book(self, book_data: BookCreate, user_id: int) -> tuple[Book, bool]:
         """
         Get or create a book based on client_book_id.
 
@@ -186,7 +189,7 @@ class BookManagementService:
         )
 
     def update_book(
-        self, book_id: int, update_data: schemas.BookUpdateRequest, user_id: int
+        self, book_id: int, update_data: BookUpdateRequest, user_id: int
     ) -> tuple[Book, int, int, list[Tag]]:
         """
         Update book information.

@@ -5,7 +5,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from src import schemas
 from src.application.library.services.book_cover_service import BookCoverService
 from src.application.library.services.book_management_service import BookManagementService
 from src.application.library.services.ebook_upload_service import EbookUploadService
@@ -14,6 +13,12 @@ from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError
 from src.infrastructure.identity.dependencies import get_current_user
+from src.infrastructure.library.schemas import (
+    BookCreate,
+    CoverUploadResponse,
+    EpubUploadResponse,
+    EreaderBookMetadata,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,14 +27,14 @@ router = APIRouter(prefix="/ereader", tags=["ereader"])
 
 @router.post(
     "/books",
-    response_model=schemas.EreaderBookMetadata,
+    response_model=EreaderBookMetadata,
     status_code=status.HTTP_200_OK,
 )
 def create_book(
-    book_data: schemas.BookCreate,
+    book_data: BookCreate,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.EreaderBookMetadata:
+) -> EreaderBookMetadata:
     """
     Create or get a book by client_book_id.
 
@@ -54,7 +59,7 @@ def create_book(
 
         # Return metadata in the same format as GET /ereader/books/{client_book_id}
         metadata = service.get_metadata_for_ereader(book_data.client_book_id, current_user.id.value)
-        return schemas.EreaderBookMetadata(
+        return EreaderBookMetadata(
             book_id=metadata.book_id,
             bookname=metadata.title,
             author=metadata.author,
@@ -81,14 +86,14 @@ def create_book(
 
 @router.get(
     "/books/{client_book_id}",
-    response_model=schemas.EreaderBookMetadata,
+    response_model=EreaderBookMetadata,
     status_code=status.HTTP_200_OK,
 )
 def get_book_metadata(
     client_book_id: str,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.EreaderBookMetadata:
+) -> EreaderBookMetadata:
     """
     Get basic book metadata by client_book_id for ereader operations.
 
@@ -109,7 +114,7 @@ def get_book_metadata(
     try:
         service = BookManagementService(db)
         metadata = service.get_metadata_for_ereader(client_book_id, current_user.id.value)
-        return schemas.EreaderBookMetadata(
+        return EreaderBookMetadata(
             book_id=metadata.book_id,
             bookname=metadata.title,
             author=metadata.author,
@@ -136,7 +141,7 @@ def get_book_metadata(
 
 @router.post(
     "/books/{client_book_id}/cover",
-    response_model=schemas.CoverUploadResponse,
+    response_model=CoverUploadResponse,
     status_code=status.HTTP_200_OK,
 )
 def upload_book_cover(
@@ -144,7 +149,7 @@ def upload_book_cover(
     cover: Annotated[UploadFile, File(...)],
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.CoverUploadResponse:
+) -> CoverUploadResponse:
     """
     Upload a book cover image using client_book_id.
 
@@ -169,7 +174,7 @@ def upload_book_cover(
             client_book_id, cover, current_user.id.value
         )
         db.commit()
-        return schemas.CoverUploadResponse(
+        return CoverUploadResponse(
             success=True,
             message="Cover uploaded successfully",
             cover_url=cover_url,
@@ -198,7 +203,7 @@ MAX_EBOOK_SIZE = 50 * 1024 * 1024
 
 @router.post(
     "/books/{client_book_id}/epub",
-    response_model=schemas.EpubUploadResponse,
+    response_model=EpubUploadResponse,
     status_code=status.HTTP_200_OK,
 )
 def upload_book_epub(
@@ -206,7 +211,7 @@ def upload_book_epub(
     epub: Annotated[UploadFile, File(...)],
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.EpubUploadResponse:
+) -> EpubUploadResponse:
     """
     Upload an ebook file (EPUB) for a book using client_book_id.
 
@@ -251,7 +256,7 @@ def upload_book_epub(
         # Commit the database update
         db.commit()
 
-        return schemas.EpubUploadResponse(
+        return EpubUploadResponse(
             success=True,
             message="Ebook uploaded successfully",
         )

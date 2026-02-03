@@ -5,7 +5,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from src import schemas
 from src.application.reading.services import (
     ReadingSessionAISummaryService,
     ReadingSessionQueryService,
@@ -17,6 +16,14 @@ from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError, ReadingSessionNotFoundError, ValidationError
 from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.identity.dependencies import get_current_user
+from src.infrastructure.reading.schemas import (
+    Highlight,
+    ReadingSession,
+    ReadingSessionAISummaryResponse,
+    ReadingSessionsResponse,
+    ReadingSessionUploadRequest,
+    ReadingSessionUploadResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,14 +32,14 @@ router = APIRouter(prefix="", tags=["reading_sessions"])
 
 @router.post(
     "/reading_sessions/upload",
-    response_model=schemas.ReadingSessionUploadResponse,
+    response_model=ReadingSessionUploadResponse,
     status_code=status.HTTP_200_OK,
 )
 async def upload_reading_sessions(
-    request: schemas.ReadingSessionUploadRequest,
+    request: ReadingSessionUploadRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.ReadingSessionUploadResponse:
+) -> ReadingSessionUploadResponse:
     """
     Upload reading sessions from KOReader for a single book.
 
@@ -79,7 +86,7 @@ async def upload_reading_sessions(
 
         message = ". ".join(message_parts) + "." if message_parts else "No sessions to process"
 
-        return schemas.ReadingSessionUploadResponse(
+        return ReadingSessionUploadResponse(
             success=True,
             message=message,
             book_id=result.book_id.value,  # Extract .value from BookId
@@ -96,7 +103,7 @@ async def upload_reading_sessions(
 
 @router.get(
     "/books/{book_id}/reading_sessions",
-    response_model=schemas.ReadingSessionsResponse,
+    response_model=ReadingSessionsResponse,
     status_code=status.HTTP_200_OK,
 )
 async def get_book_reading_sessions(
@@ -105,7 +112,7 @@ async def get_book_reading_sessions(
     current_user: Annotated[User, Depends(get_current_user)],
     limit: int = Query(30, ge=1, le=1000, description="Maximum sessions to return"),
     offset: int = Query(0, ge=0, description="Number of sessions to skip"),
-) -> schemas.ReadingSessionsResponse:
+) -> ReadingSessionsResponse:
     """
     Get reading sessions for a specific book.
 
@@ -157,7 +164,7 @@ async def get_book_reading_sessions(
 
                 # Construct Highlight schema directly with named parameters
                 highlight_schemas.append(
-                    schemas.Highlight(
+                    Highlight(
                         id=highlight.id.value,
                         book_id=highlight.book_id.value,
                         chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
@@ -181,7 +188,7 @@ async def get_book_reading_sessions(
             assert session.created_at is not None, "Persisted session must have created_at"
 
             sessions_schemas.append(
-                schemas.ReadingSession(
+                ReadingSession(
                     id=session.id.value,
                     book_id=session.book_id.value,
                     device_id=session.device_id,
@@ -199,7 +206,7 @@ async def get_book_reading_sessions(
                 )
             )
 
-        return schemas.ReadingSessionsResponse(
+        return ReadingSessionsResponse(
             sessions=sessions_schemas,
             total=result.total,
             offset=result.offset,
@@ -217,7 +224,7 @@ async def get_book_reading_sessions(
 
 @router.get(
     "/{reading_session_id}/ai_summary",
-    response_model=schemas.ReadingSessionAISummaryResponse,
+    response_model=ReadingSessionAISummaryResponse,
     status_code=status.HTTP_200_OK,
 )
 @require_ai_enabled
@@ -225,7 +232,7 @@ async def get_reading_session_ai_summary(
     reading_session_id: int,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.ReadingSessionAISummaryResponse:
+) -> ReadingSessionAISummaryResponse:
     """
     Get AI-generated summary for a reading session.
 
@@ -249,7 +256,7 @@ async def get_reading_session_ai_summary(
     try:
         service = ReadingSessionAISummaryService(db)
         summary = await service.get_or_generate_summary(reading_session_id, current_user.id.value)
-        return schemas.ReadingSessionAISummaryResponse(summary=summary)
+        return ReadingSessionAISummaryResponse(summary=summary)
     except ReadingSessionNotFoundError as e:
         logger.warning(
             f"Reading session {reading_session_id} not found for user {current_user.id.value}"

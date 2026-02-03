@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette import status
 from starlette.responses import FileResponse
 
-from src import schemas
 from src.application.library.services import BookManagementService, GetBooksWithCountsService
 from src.application.library.services.book_cover_service import BookCoverService
 from src.application.library.services.get_recently_viewed_books_service import (
@@ -16,9 +15,27 @@ from src.database import DatabaseSession
 from src.domain.common import DomainError
 from src.domain.identity import User
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
-from src.domain.reading.services import ChapterWithHighlights
+from src.domain.reading.services import ChapterWithHighlights as DomainChapterWithHighlights
 from src.exceptions import CrossbillError
 from src.infrastructure.identity import get_current_user
+from src.infrastructure.learning.schemas import Flashcard
+from src.infrastructure.library.schemas import (
+    BooksListResponse,
+    BookUpdateRequest,
+    BookWithHighlightCount,
+    RecentlyViewedBooksResponse,
+    TagInBook,
+)
+from src.infrastructure.reading.schemas import (
+    BookDetails,
+    Bookmark,
+    Highlight,
+    HighlightTagGroupInBook,
+    HighlightTagInBook,
+)
+from src.infrastructure.reading.schemas import (
+    ChapterWithHighlights as ChapterWithHighlightsSchema,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +43,8 @@ router = APIRouter(prefix="/books", tags=["books"])
 
 
 def _map_chapters_to_schemas(
-    chapters_grouped: list[ChapterWithHighlights],
-) -> list[schemas.ChapterWithHighlights]:
+    chapters_grouped: list[DomainChapterWithHighlights],
+) -> list[ChapterWithHighlightsSchema]:
     """
     Map domain ChapterWithHighlights to Pydantic schemas.
 
@@ -45,7 +62,7 @@ def _map_chapters_to_schemas(
             h = hw.highlight
             chapter = hw.chapter
 
-            highlight_schema = schemas.Highlight(
+            highlight_schema = Highlight(
                 id=h.id.value,
                 book_id=h.book_id.value,
                 chapter_id=h.chapter_id.value if h.chapter_id else None,
@@ -56,7 +73,7 @@ def _map_chapters_to_schemas(
                 note=h.note,
                 datetime=h.datetime,
                 flashcards=[
-                    schemas.Flashcard(
+                    Flashcard(
                         id=fc.id.value,
                         user_id=fc.user_id.value,
                         book_id=fc.book_id.value,
@@ -67,7 +84,7 @@ def _map_chapters_to_schemas(
                     for fc in hw.flashcards
                 ],
                 highlight_tags=[
-                    schemas.HighlightTagInBook(
+                    HighlightTagInBook(
                         id=tag.id.value,
                         name=tag.name,
                         tag_group_id=tag.tag_group_id,
@@ -84,7 +101,7 @@ def _map_chapters_to_schemas(
         # Get chapter info from first highlight's chapter
         first_chapter = chapter_group.highlights[0].chapter if chapter_group.highlights else None
 
-        chapter_with_highlights = schemas.ChapterWithHighlights(
+        chapter_with_highlights = ChapterWithHighlightsSchema(
             id=chapter_group.chapter_id,
             name=chapter_group.chapter_name or "",
             chapter_number=chapter_group.chapter_number,
@@ -97,7 +114,7 @@ def _map_chapters_to_schemas(
     return chapters_with_highlights
 
 
-def _build_book_details_schema(agg: BookDetailsAggregation) -> schemas.BookDetails:
+def _build_book_details_schema(agg: BookDetailsAggregation) -> BookDetails:
     """
     Build BookDetails Pydantic schema from BookDetailsAggregation.
 
@@ -107,7 +124,7 @@ def _build_book_details_schema(agg: BookDetailsAggregation) -> schemas.BookDetai
     Returns:
         BookDetails Pydantic schema
     """
-    return schemas.BookDetails(
+    return BookDetails(
         id=agg.book.id.value,
         client_book_id=agg.book.client_book_id,
         title=agg.book.title,
@@ -117,9 +134,9 @@ def _build_book_details_schema(agg: BookDetailsAggregation) -> schemas.BookDetai
         description=agg.book.description,
         language=agg.book.language,
         page_count=agg.book.page_count,
-        tags=[schemas.TagInBook(id=tag.id.value, name=tag.name) for tag in agg.tags],
+        tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in agg.tags],
         highlight_tags=[
-            schemas.HighlightTagInBook(
+            HighlightTagInBook(
                 id=tag.id.value,
                 name=tag.name,
                 tag_group_id=tag.tag_group_id,
@@ -127,14 +144,14 @@ def _build_book_details_schema(agg: BookDetailsAggregation) -> schemas.BookDetai
             for tag in agg.highlight_tags
         ],
         highlight_tag_groups=[
-            schemas.HighlightTagGroupInBook(
+            HighlightTagGroupInBook(
                 id=group.id.value,
                 name=group.name,
             )
             for group in agg.highlight_tag_groups
         ],
         bookmarks=[
-            schemas.Bookmark(
+            Bookmark(
                 id=b.id.value,
                 book_id=b.book_id.value,
                 highlight_id=b.highlight_id.value,
@@ -149,7 +166,7 @@ def _build_book_details_schema(agg: BookDetailsAggregation) -> schemas.BookDetai
     )
 
 
-@router.get("/", response_model=schemas.BooksListResponse, status_code=status.HTTP_200_OK)
+@router.get("/", response_model=BooksListResponse, status_code=status.HTTP_200_OK)
 def get_books(
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -157,7 +174,7 @@ def get_books(
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of books to return"),
     only_with_flashcards: bool = Query(False, description="Return only books with flashcards"),
     search: str | None = Query(None, description="Search text to filter books by title or author"),
-) -> schemas.BooksListResponse:
+) -> BooksListResponse:
     """
     Get all books with their highlight counts, sorted alphabetically by title.
 
@@ -180,7 +197,7 @@ def get_books(
         )
 
         books_list = [
-            schemas.BookWithHighlightCount(
+            BookWithHighlightCount(
                 id=book.id.value,
                 client_book_id=book.client_book_id,
                 title=book.title,
@@ -192,7 +209,7 @@ def get_books(
                 page_count=book.page_count,
                 highlight_count=highlight_count,
                 flashcard_count=flashcard_count,
-                tags=[schemas.TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
+                tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
                 created_at=book.created_at,
                 updated_at=book.updated_at,
                 last_viewed=book.last_viewed,
@@ -200,7 +217,7 @@ def get_books(
             for book, highlight_count, flashcard_count, tags in results
         ]
 
-        return schemas.BooksListResponse(books=books_list, total=total, offset=offset, limit=limit)
+        return BooksListResponse(books=books_list, total=total, offset=offset, limit=limit)
     except Exception as e:
         logger.error(f"Failed to fetch books: {e!s}", exc_info=True)
         raise HTTPException(
@@ -211,14 +228,14 @@ def get_books(
 
 @router.get(
     "/recently-viewed",
-    response_model=schemas.RecentlyViewedBooksResponse,
+    response_model=RecentlyViewedBooksResponse,
     status_code=status.HTTP_200_OK,
 )
 def get_recently_viewed_books(
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
     limit: int = Query(10, ge=1, le=50, description="Maximum number of books to return"),
-) -> schemas.RecentlyViewedBooksResponse:
+) -> RecentlyViewedBooksResponse:
     """
     Get recently viewed books with their highlight counts.
 
@@ -239,7 +256,7 @@ def get_recently_viewed_books(
         results = service.get_recently_viewed(current_user.id.value, limit)
 
         books_list = [
-            schemas.BookWithHighlightCount(
+            BookWithHighlightCount(
                 id=book.id.value,
                 client_book_id=book.client_book_id,
                 title=book.title,
@@ -251,7 +268,7 @@ def get_recently_viewed_books(
                 page_count=book.page_count,
                 highlight_count=highlight_count,
                 flashcard_count=flashcard_count,
-                tags=[schemas.TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
+                tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
                 created_at=book.created_at,
                 updated_at=book.updated_at,
                 last_viewed=book.last_viewed,
@@ -259,7 +276,7 @@ def get_recently_viewed_books(
             for book, highlight_count, flashcard_count, tags in results
         ]
 
-        return schemas.RecentlyViewedBooksResponse(books=books_list)
+        return RecentlyViewedBooksResponse(books=books_list)
     except Exception as e:
         logger.error(f"Failed to fetch recently viewed books: {e!s}", exc_info=True)
         raise HTTPException(
@@ -268,12 +285,12 @@ def get_recently_viewed_books(
         ) from e
 
 
-@router.get("/{book_id}", response_model=schemas.BookDetails, status_code=status.HTTP_200_OK)
+@router.get("/{book_id}", response_model=BookDetails, status_code=status.HTTP_200_OK)
 def get_book_details(
     book_id: int,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.BookDetails:
+) -> BookDetails:
     """
     Get detailed information about a book including its chapters and highlights.
 
@@ -309,15 +326,15 @@ def get_book_details(
 
 @router.post(
     "/{book_id}",
-    response_model=schemas.BookWithHighlightCount,
+    response_model=BookWithHighlightCount,
     status_code=status.HTTP_200_OK,
 )
 def update_book(
     book_id: int,
-    request: schemas.BookUpdateRequest,
+    request: BookUpdateRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.BookWithHighlightCount:
+) -> BookWithHighlightCount:
     """
     Update book information.
 
@@ -340,7 +357,7 @@ def update_book(
             book_id, request, current_user.id.value
         )
         db.commit()
-        return schemas.BookWithHighlightCount(
+        return BookWithHighlightCount(
             id=book.id.value,
             client_book_id=book.client_book_id,
             title=book.title,
@@ -352,7 +369,7 @@ def update_book(
             page_count=book.page_count,
             highlight_count=highlight_count,
             flashcard_count=flashcard_count,
-            tags=[schemas.TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
+            tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
             created_at=book.created_at,
             updated_at=book.updated_at,
             last_viewed=book.last_viewed,

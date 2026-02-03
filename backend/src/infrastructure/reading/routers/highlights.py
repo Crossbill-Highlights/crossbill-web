@@ -6,7 +6,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from src import schemas
 from src.application.learning.services.flashcard_service import FlashcardService
 from src.application.reading.services.book_highlight_deletion_service import (
     BookHighlightDeletionService,
@@ -39,7 +38,33 @@ from src.domain.reading.services.highlight_grouping_service import (
 )
 from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.identity.dependencies import get_current_user
+from src.infrastructure.learning.schemas import (
+    Flashcard,
+    FlashcardCreateRequest,
+    FlashcardCreateResponse,
+)
 from src.infrastructure.reading.repositories import HighlightRepository, HighlightTagRepository
+from src.infrastructure.reading.schemas import (
+    BookHighlightSearchResponse,
+    ChapterWithHighlights,
+    Highlight,
+    HighlightDeleteRequest,
+    HighlightDeleteResponse,
+    HighlightNoteUpdate,
+    HighlightNoteUpdateResponse,
+    HighlightSearchResponse,
+    HighlightSearchResult,
+    HighlightTag,
+    HighlightTagAssociationRequest,
+    HighlightTagCreateRequest,
+    HighlightTagGroup,
+    HighlightTagGroupCreateRequest,
+    HighlightTagInBook,
+    HighlightTagsResponse,
+    HighlightTagUpdateRequest,
+    HighlightUploadRequest,
+    HighlightUploadResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,14 +73,14 @@ router = APIRouter(prefix="", tags=["highlights"])
 
 @router.post(
     "/highlights/upload",
-    response_model=schemas.HighlightUploadResponse,
+    response_model=HighlightUploadResponse,
     status_code=status.HTTP_200_OK,
 )
 async def upload_highlights(
-    request: schemas.HighlightUploadRequest,
+    request: HighlightUploadRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.HighlightUploadResponse:
+) -> HighlightUploadResponse:
     """
     Upload highlights from KOReader.
 
@@ -93,7 +118,7 @@ async def upload_highlights(
             user_id=current_user.id.value,
         )
 
-        return schemas.HighlightUploadResponse(
+        return HighlightUploadResponse(
             success=True,
             message="Successfully synced highlights",
             book_id=0,  # TODO: Return actual book_id from service if needed
@@ -116,7 +141,7 @@ async def upload_highlights(
 
 @router.get(
     "/highlights//search",
-    response_model=schemas.HighlightSearchResponse,
+    response_model=HighlightSearchResponse,
     status_code=status.HTTP_200_OK,
 )
 def search_highlights(
@@ -132,7 +157,7 @@ def search_highlights(
         None, alias="bookId", ge=1, description="Optional book ID to filter results"
     ),
     limit: int = Query(100, ge=1, le=500, description="Maximum number of results to return"),
-) -> schemas.HighlightSearchResponse:
+) -> HighlightSearchResponse:
     """
     Search for highlights using full-text search.
 
@@ -157,7 +182,7 @@ def search_highlights(
 
         # Convert domain entities to schemas in route handler
         search_results = [
-            schemas.HighlightSearchResult(
+            HighlightSearchResult(
                 id=highlight.id.value,
                 text=highlight.text,
                 page=highlight.page,
@@ -170,7 +195,7 @@ def search_highlights(
                 chapter_name=chapter.name if chapter else None,
                 chapter_number=chapter.chapter_number if chapter else None,
                 highlight_tags=[
-                    schemas.HighlightTagInBook(
+                    HighlightTagInBook(
                         id=tag.id.value, name=tag.name, tag_group_id=tag.tag_group_id
                     )
                     for tag in highlight_tags
@@ -181,7 +206,7 @@ def search_highlights(
             for highlight, book, chapter, highlight_tags, _ in results
         ]
 
-        return schemas.HighlightSearchResponse(highlights=search_results, total=len(search_results))
+        return HighlightSearchResponse(highlights=search_results, total=len(search_results))
     except Exception as e:
         logger.error(f"Failed to search highlights: {e!s}", exc_info=True)
         raise HTTPException(
@@ -192,15 +217,15 @@ def search_highlights(
 
 @router.post(
     "/highlights/{highlight_id}/note",
-    response_model=schemas.HighlightNoteUpdateResponse,
+    response_model=HighlightNoteUpdateResponse,
     status_code=status.HTTP_200_OK,
 )
 def update_highlight_note(
     highlight_id: int,
-    request: schemas.HighlightNoteUpdate,
+    request: HighlightNoteUpdate,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.HighlightNoteUpdateResponse:
+) -> HighlightNoteUpdateResponse:
     """
     Update the note field of a highlight.
 
@@ -231,7 +256,7 @@ def update_highlight_note(
         db.commit()
 
         # Build response from domain entities
-        highlight_schema = schemas.Highlight(
+        highlight_schema = Highlight(
             id=highlight.id.value,
             book_id=highlight.book_id.value,
             chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
@@ -244,7 +269,7 @@ def update_highlight_note(
             note=highlight.note,
             datetime=highlight.datetime,
             highlight_tags=[
-                schemas.HighlightTagInBook(
+                HighlightTagInBook(
                     id=tag.id.value,
                     name=tag.name,
                     tag_group_id=tag.tag_group_id,
@@ -252,7 +277,7 @@ def update_highlight_note(
                 for tag in highlight_tags
             ],
             flashcards=[
-                schemas.Flashcard(
+                Flashcard(
                     id=fc.id.value,
                     user_id=fc.user_id.value,
                     book_id=fc.book_id.value,
@@ -266,7 +291,7 @@ def update_highlight_note(
             updated_at=highlight.updated_at,
         )
 
-        return schemas.HighlightNoteUpdateResponse(
+        return HighlightNoteUpdateResponse(
             success=True,
             message="Note updated successfully",
             highlight=highlight_schema,
@@ -283,14 +308,14 @@ def update_highlight_note(
 
 @router.post(
     "/highlights/tag_group",
-    response_model=schemas.HighlightTagGroup,
+    response_model=HighlightTagGroup,
     status_code=status.HTTP_200_OK,
 )
 def create_or_update_tag_group(
-    request: schemas.HighlightTagGroupCreateRequest,
+    request: HighlightTagGroupCreateRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.HighlightTagGroup:
+) -> HighlightTagGroup:
     """
     Create a new tag group or update an existing one.
 
@@ -325,7 +350,7 @@ def create_or_update_tag_group(
             )
 
         # Manually construct response to handle value objects
-        return schemas.HighlightTagGroup(
+        return HighlightTagGroup(
             id=tag_group.id.value,
             book_id=tag_group.book_id.value,
             name=tag_group.name,
@@ -398,15 +423,15 @@ def delete_tag_group(
 
 @router.post(
     "/highlights/{highlight_id}/flashcards",
-    response_model=schemas.FlashcardCreateResponse,
+    response_model=FlashcardCreateResponse,
     status_code=status.HTTP_201_CREATED,
 )
 def create_flashcard_for_highlight(
     highlight_id: int,
-    request: schemas.FlashcardCreateRequest,
+    request: FlashcardCreateRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.FlashcardCreateResponse:
+) -> FlashcardCreateResponse:
     """
     Create a flashcard for a highlight.
 
@@ -433,7 +458,7 @@ def create_flashcard_for_highlight(
             answer=request.answer,
         )
         # Manually construct Pydantic schema from domain entity
-        flashcard = schemas.Flashcard(
+        flashcard = Flashcard(
             id=flashcard_entity.id.value,
             user_id=flashcard_entity.user_id.value,
             book_id=flashcard_entity.book_id.value,
@@ -443,7 +468,7 @@ def create_flashcard_for_highlight(
             question=flashcard_entity.question,
             answer=flashcard_entity.answer,
         )
-        return schemas.FlashcardCreateResponse(
+        return FlashcardCreateResponse(
             success=True,
             message="Flashcard created successfully",
             flashcard=flashcard,
@@ -463,7 +488,7 @@ def create_flashcard_for_highlight(
 
 def _map_chapters_to_schemas(
     chapters_grouped: list[ChapterWithHighlightsDomain],
-) -> list[schemas.ChapterWithHighlights]:
+) -> list[ChapterWithHighlights]:
     """
     Map domain ChapterWithHighlights to Pydantic schemas.
 
@@ -481,7 +506,7 @@ def _map_chapters_to_schemas(
             h = hw.highlight
             chapter = hw.chapter
 
-            highlight_schema = schemas.Highlight(
+            highlight_schema = Highlight(
                 id=h.id.value,
                 book_id=h.book_id.value,
                 chapter_id=h.chapter_id.value if h.chapter_id else None,
@@ -492,7 +517,7 @@ def _map_chapters_to_schemas(
                 note=h.note,
                 datetime=h.datetime,
                 flashcards=[
-                    schemas.Flashcard(
+                    Flashcard(
                         id=fc.id.value,
                         user_id=fc.user_id.value,
                         book_id=fc.book_id.value,
@@ -503,7 +528,7 @@ def _map_chapters_to_schemas(
                     for fc in hw.flashcards
                 ],
                 highlight_tags=[
-                    schemas.HighlightTagInBook(
+                    HighlightTagInBook(
                         id=tag.id.value,
                         name=tag.name,
                         tag_group_id=tag.tag_group_id,
@@ -520,7 +545,7 @@ def _map_chapters_to_schemas(
         # Get chapter info from first highlight's chapter
         first_chapter = chapter_group.highlights[0].chapter if chapter_group.highlights else None
 
-        chapter_with_highlights = schemas.ChapterWithHighlights(
+        chapter_with_highlights = ChapterWithHighlights(
             id=chapter_group.chapter_id,
             name=chapter_group.chapter_name or "",
             chapter_number=chapter_group.chapter_number,
@@ -535,7 +560,7 @@ def _map_chapters_to_schemas(
 
 @router.get(
     "/books/{book_id}/highlights",
-    response_model=schemas.BookHighlightSearchResponse,
+    response_model=BookHighlightSearchResponse,
     status_code=status.HTTP_200_OK,
 )
 def search_book_highlights(
@@ -548,7 +573,7 @@ def search_book_highlights(
         min_length=1,
         description="Text to search for in highlights",
     ),
-) -> schemas.BookHighlightSearchResponse:
+) -> BookHighlightSearchResponse:
     """
     Search for highlights in book using full-text search.
 
@@ -560,7 +585,7 @@ def search_book_highlights(
         chapters_grouped, total = service.search_book_highlights(
             book_id, current_user.id.value, search_text
         )
-        return schemas.BookHighlightSearchResponse(
+        return BookHighlightSearchResponse(
             chapters=_map_chapters_to_schemas(chapters_grouped),
             total=total,
         )
@@ -581,15 +606,15 @@ def search_book_highlights(
 
 @router.delete(
     "/books/{book_id}/highlight",
-    response_model=schemas.HighlightDeleteResponse,
+    response_model=HighlightDeleteResponse,
     status_code=status.HTTP_200_OK,
 )
 def delete_highlights(
     book_id: int,
-    request: schemas.HighlightDeleteRequest,
+    request: HighlightDeleteRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.HighlightDeleteResponse:
+) -> HighlightDeleteResponse:
     """
     Soft delete highlights from a book.
 
@@ -614,7 +639,7 @@ def delete_highlights(
             book_id, request.highlight_ids, current_user.id.value
         )
         db.commit()
-        return schemas.HighlightDeleteResponse(
+        return HighlightDeleteResponse(
             success=True,
             message=f"Successfully deleted {deleted_count} highlight(s)",
             deleted_count=deleted_count,
@@ -636,14 +661,14 @@ def delete_highlights(
 
 @router.get(
     "/books/{book_id}/highlight_tags",
-    response_model=schemas.HighlightTagsResponse,
+    response_model=HighlightTagsResponse,
     status_code=status.HTTP_200_OK,
 )
 def get_highlight_tags(
     book_id: int,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.HighlightTagsResponse:
+) -> HighlightTagsResponse:
     """
     Get all highlight tags for a book.
 
@@ -660,9 +685,9 @@ def get_highlight_tags(
     try:
         service = HighlightTagService(db)
         tags = service.get_tags_for_book(book_id, current_user.id.value)
-        return schemas.HighlightTagsResponse(
+        return HighlightTagsResponse(
             tags=[
-                schemas.HighlightTag(
+                HighlightTag(
                     id=tag.id.value,
                     book_id=tag.book_id.value,
                     name=tag.name,
@@ -683,15 +708,15 @@ def get_highlight_tags(
 
 @router.post(
     "/books/{book_id}/highlight_tag",
-    response_model=schemas.HighlightTag,
+    response_model=HighlightTag,
     status_code=status.HTTP_201_CREATED,
 )
 def create_highlight_tag(
     book_id: int,
-    request: schemas.HighlightTagCreateRequest,
+    request: HighlightTagCreateRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.HighlightTag:
+) -> HighlightTag:
     """
     Create a new highlight tag for a book.
 
@@ -709,7 +734,7 @@ def create_highlight_tag(
     try:
         service = HighlightTagService(db)
         tag = service.create_tag(book_id, request.name, user_id=current_user.id.value)
-        return schemas.HighlightTag(
+        return HighlightTag(
             id=tag.id.value,
             book_id=tag.book_id.value,
             name=tag.name,
@@ -786,16 +811,16 @@ def delete_highlight_tag(
 
 @router.post(
     "/books/{book_id}/highlight_tag/{tag_id}",
-    response_model=schemas.HighlightTag,
+    response_model=HighlightTag,
     status_code=status.HTTP_200_OK,
 )
 def update_highlight_tag(
     book_id: int,
     tag_id: int,
-    request: schemas.HighlightTagUpdateRequest,
+    request: HighlightTagUpdateRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.HighlightTag:
+) -> HighlightTag:
     """
     Update a highlight tag's name and/or tag group association.
 
@@ -842,7 +867,7 @@ def update_highlight_tag(
                 user_id=current_user.id.value,
             )
 
-        return schemas.HighlightTag(
+        return HighlightTag(
             id=tag.id.value,
             book_id=tag.book_id.value,
             name=tag.name,
@@ -878,16 +903,16 @@ def update_highlight_tag(
 
 @router.post(
     "/books/{book_id}/highlight/{highlight_id}/tag",
-    response_model=schemas.Highlight,
+    response_model=Highlight,
     status_code=status.HTTP_200_OK,
 )
 def add_tag_to_highlight(
     book_id: int,
     highlight_id: int,
-    request: schemas.HighlightTagAssociationRequest,
+    request: HighlightTagAssociationRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.Highlight:
+) -> Highlight:
     """
     Add a tag to a highlight.
 
@@ -935,7 +960,7 @@ def add_tag_to_highlight(
         highlight, flashcards, highlight_tags = result
 
         # Manually construct schema from domain entities
-        return schemas.Highlight(
+        return Highlight(
             id=highlight.id.value,
             book_id=highlight.book_id.value,
             chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
@@ -948,7 +973,7 @@ def add_tag_to_highlight(
             note=highlight.note,
             datetime=highlight.datetime,
             highlight_tags=[
-                schemas.HighlightTagInBook(
+                HighlightTagInBook(
                     id=tag.id.value,
                     name=tag.name,
                     tag_group_id=tag.tag_group_id,
@@ -956,7 +981,7 @@ def add_tag_to_highlight(
                 for tag in highlight_tags
             ],
             flashcards=[
-                schemas.Flashcard(
+                Flashcard(
                     id=fc.id.value,
                     user_id=fc.user_id.value,
                     book_id=fc.book_id.value,
@@ -990,7 +1015,7 @@ def add_tag_to_highlight(
 
 @router.delete(
     "/books/{book_id}/highlight/{highlight_id}/tag/{tag_id}",
-    response_model=schemas.Highlight,
+    response_model=Highlight,
     status_code=status.HTTP_200_OK,
 )
 def remove_tag_from_highlight(
@@ -999,7 +1024,7 @@ def remove_tag_from_highlight(
     tag_id: int,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-) -> schemas.Highlight:
+) -> Highlight:
     """
     Remove a tag from a highlight.
 
@@ -1034,7 +1059,7 @@ def remove_tag_from_highlight(
         highlight, flashcards, highlight_tags = result
 
         # Manually construct schema from domain entities
-        return schemas.Highlight(
+        return Highlight(
             id=highlight.id.value,
             book_id=highlight.book_id.value,
             chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
@@ -1047,7 +1072,7 @@ def remove_tag_from_highlight(
             note=highlight.note,
             datetime=highlight.datetime,
             highlight_tags=[
-                schemas.HighlightTagInBook(
+                HighlightTagInBook(
                     id=tag.id.value,
                     name=tag.name,
                     tag_group_id=tag.tag_group_id,
@@ -1055,7 +1080,7 @@ def remove_tag_from_highlight(
                 for tag in highlight_tags
             ],
             flashcards=[
-                schemas.Flashcard(
+                Flashcard(
                     id=fc.id.value,
                     user_id=fc.user_id.value,
                     book_id=fc.book_id.value,
