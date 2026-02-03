@@ -12,16 +12,13 @@ from src.exceptions import BookNotFoundError, ValidationError
 logger = structlog.get_logger(__name__)
 
 
-class BookmarkService:
-    """Application service for bookmark CRUD operations."""
-
+class BookmarkUseCase:
     def __init__(
         self,
         book_repository: BookRepositoryProtocol,
         bookmark_repository: BookmarkRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
     ) -> None:
-        """Initialize service with database session."""
         self.book_repository = book_repository
         self.bookmark_repository = bookmark_repository
         self.highlight_repository = highlight_repository

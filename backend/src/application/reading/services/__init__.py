@@ -1,6 +1,7 @@
 """Application services for reading use cases."""
 
-from .bookmark_service import BookmarkService
+from src.application.reading.use_cases.bookmark_use_case import BookmarkUseCase
+
 from .highlight_upload_service import HighlightService, HighlightUploadData
 from .reading_session_ai_summary_service import ReadingSessionAISummaryService
 from .reading_session_query_service import (
@@ -15,7 +16,7 @@ from .reading_session_upload_service import (
 )
 
 __all__ = [
-    "BookmarkService",
+    "BookmarkUseCase",
     "HighlightService",
     "HighlightUploadData",
     "ReadingSessionAISummaryService",

@@ -249,10 +249,11 @@ class BookmarkService:
 from dependency_injector import containers, providers
 from sqlalchemy.orm import Session
 
-from src.application.reading.services.bookmark_service import BookmarkService
+from src.application.reading.use_cases.bookmark_use_case import BookmarkUseCase
 from src.infrastructure.reading.repositories.bookmark_repository import BookmarkRepository
 from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
 from src.infrastructure.library.repositories.book_repository import BookRepository
+
 
 class Container(containers.DeclarativeContainer):
     """Dependency injection container (Composition Root)."""
@@ -267,11 +268,12 @@ class Container(containers.DeclarativeContainer):
 
     # Application service providers
     bookmark_service = providers.Factory(
-        BookmarkService,
+        BookmarkUseCase,
         bookmark_repository=bookmark_repository,
         book_repository=book_repository,
         highlight_repository=highlight_repository,
     )
+
 
 # Global container instance
 container = Container()

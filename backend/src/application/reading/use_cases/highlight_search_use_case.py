@@ -4,31 +4,26 @@ Book-scoped highlight search application service.
 Provides full-text search within a specific book's highlights.
 """
 
-from sqlalchemy.orm import Session
-
+from src.application.reading.protocols.book_repository import BookRepositoryProtocol
+from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights,
     HighlightGroupingService,
 )
 from src.exceptions import BookNotFoundError
-from src.infrastructure.library.repositories.book_repository import BookRepository
-from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
 
 
-class BookHighlightSearchService:
+class HighlightSearchUseCase:
     """Application service for searching highlights within a book."""
 
-    def __init__(self, db: Session) -> None:
-        """
-        Initialize service.
-
-        Args:
-            db: SQLAlchemy database session
-        """
-        self.db = db
-        self.book_repository = BookRepository(db)
-        self.highlight_repository = HighlightRepository(db)
+    def __init__(
+        self,
+        book_repository: BookRepositoryProtocol,
+        highlight_repository: HighlightRepositoryProtocol,
+    ) -> None:
+        self.book_repository = book_repository
+        self.highlight_repository = highlight_repository
         self.highlight_grouping_service = HighlightGroupingService()
 
     def search_book_highlights(

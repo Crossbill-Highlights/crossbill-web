@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from src.application.reading.services.bookmark_service import BookmarkService
+from src.application.reading.use_cases.bookmark_use_case import BookmarkUseCase
 from src.core import container
 from src.database import DatabaseSession
 from src.domain.identity import User
@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/books", tags=["bookmarks"])
 
 
-def get_bookmark_service(
+def get_bookmark_use_case(
     db: DatabaseSession,
-) -> BookmarkService:
+) -> BookmarkUseCase:
     """
     FastAPI dependency that provides BookmarkService.
 
@@ -27,7 +27,7 @@ def get_bookmark_service(
     database session from FastAPI.
     """
     container.db.override(db)
-    return container.bookmark_service()
+    return container.bookmark_use_case()
 
 
 @router.post(
@@ -39,7 +39,7 @@ def create_bookmark(
     book_id: int,
     request: BookmarkCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    service: BookmarkService = Depends(get_bookmark_service),
+    use_case: BookmarkUseCase = Depends(get_bookmark_use_case),
 ) -> Bookmark:
     """
     Create a bookmark for a highlight in a book.
@@ -50,7 +50,7 @@ def create_bookmark(
     Args:
         book_id: ID of the book
         request: Request containing the highlight_id to bookmark
-        service: BookmarkService injected via dependency container
+        use_case: BookmarkService injected via dependency container
 
     Returns:
         Created Bookmark
@@ -59,7 +59,7 @@ def create_bookmark(
         HTTPException: If book or highlight not found, or creation fails
     """
     try:
-        bookmark = service.create_bookmark(book_id, request.highlight_id, current_user.id.value)
+        bookmark = use_case.create_bookmark(book_id, request.highlight_id, current_user.id.value)
 
         # Manually construct schema from domain entity
         # created_at is always set for persisted bookmarks
@@ -89,7 +89,7 @@ def delete_bookmark(
     book_id: int,
     bookmark_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    service: BookmarkService = Depends(get_bookmark_service),
+    use_case: BookmarkUseCase = Depends(get_bookmark_use_case),
 ) -> None:
     """
     Delete a bookmark from a book.
@@ -100,13 +100,13 @@ def delete_bookmark(
     Args:
         book_id: ID of the book
         bookmark_id: ID of the bookmark to delete
-        service: BookmarkService injected via dependency container
+        use_case: BookmarkService injected via dependency container
 
     Raises:
         HTTPException: If book not found or deletion fails
     """
     try:
-        service.delete_bookmark(book_id, bookmark_id, current_user.id.value)
+        use_case.delete_bookmark(book_id, bookmark_id, current_user.id.value)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -129,7 +129,7 @@ def delete_bookmark(
 def get_bookmarks(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    service: BookmarkService = Depends(get_bookmark_service),
+    use_case: BookmarkUseCase = Depends(get_bookmark_use_case),
 ) -> BookmarksResponse:
     """
     Get all bookmarks for a book.
@@ -138,7 +138,7 @@ def get_bookmarks(
 
     Args:
         book_id: ID of the book
-        service: BookmarkService injected via dependency container
+        use_case: BookmarkService injected via dependency container
 
     Returns:
         List of bookmarks for the book
@@ -147,7 +147,7 @@ def get_bookmarks(
         HTTPException: If book not found or fetching fails
     """
     try:
-        bookmarks = service.get_bookmarks_by_book(book_id, current_user.id.value)
+        bookmarks = use_case.get_bookmarks_by_book(book_id, current_user.id.value)
 
         # Manually construct schemas from domain entities
         # created_at is always set for persisted bookmarks
