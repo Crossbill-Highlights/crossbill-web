@@ -96,7 +96,7 @@ class BookmarkRepository:
             # Create new
             orm_model = self.mapper.to_orm(bookmark)
             self.db.add(orm_model)
-            self.db.flush()
+            self.db.commit()
             self.db.refresh(orm_model)
             return self.mapper.to_domain(orm_model)
         # Bookmarks are immutable - no update case
@@ -128,5 +128,5 @@ class BookmarkRepository:
             return False
 
         self.db.delete(bookmark_orm)
-        self.db.flush()
+        self.db.commit()
         return True

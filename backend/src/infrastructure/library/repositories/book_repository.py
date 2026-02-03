@@ -57,13 +57,13 @@ class BookRepository:
             # Create new
             orm_model = self.mapper.to_orm(book)
             self.db.add(orm_model)
-            self.db.flush()
+            self.db.commit()
             return self.mapper.to_domain(orm_model)
         # Update existing
         stmt = select(BookORM).where(BookORM.id == book.id.value)
         existing_orm = self.db.execute(stmt).scalar_one()
         self.mapper.to_orm(book, existing_orm)
-        self.db.flush()
+        self.db.commit()
         return self.mapper.to_domain(existing_orm)
 
     def delete(self, book: Book) -> None:
@@ -75,7 +75,7 @@ class BookRepository:
         stmt = select(BookORM).where(BookORM.id == book.id.value)
         book_orm = self.db.execute(stmt).scalar_one()
         self.db.delete(book_orm)
-        self.db.flush()
+        self.db.commit()
 
     def get_recently_viewed_books(
         self, user_id: UserId, limit: int = 10

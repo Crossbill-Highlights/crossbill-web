@@ -1,14 +1,13 @@
 """Application service for bookmark operations."""
 
 import structlog
-from sqlalchemy.orm import Session
 
+from src.application.reading.protocols.book_repository import BookRepositoryProtocol
+from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
+from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.domain.common.value_objects.ids import BookId, BookmarkId, HighlightId, UserId
 from src.domain.reading.entities.bookmark import Bookmark
 from src.exceptions import BookNotFoundError, ValidationError
-from src.infrastructure.library.repositories.book_repository import BookRepository
-from src.infrastructure.reading.repositories.bookmark_repository import BookmarkRepository
-from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
 
 logger = structlog.get_logger(__name__)
 
@@ -16,12 +15,16 @@ logger = structlog.get_logger(__name__)
 class BookmarkService:
     """Application service for bookmark CRUD operations."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(
+        self,
+        book_repository: BookRepositoryProtocol,
+        bookmark_repository: BookmarkRepositoryProtocol,
+        highlight_repository: HighlightRepositoryProtocol,
+    ) -> None:
         """Initialize service with database session."""
-        self.db = db
-        self.bookmark_repository = BookmarkRepository(db)
-        self.book_repository = BookRepository(db)
-        self.highlight_repository = HighlightRepository(db)
+        self.book_repository = book_repository
+        self.bookmark_repository = bookmark_repository
+        self.highlight_repository = highlight_repository
 
     def create_bookmark(self, book_id: int, highlight_id: int, user_id: int) -> Bookmark:
         """
@@ -75,7 +78,6 @@ class BookmarkService:
         # Create new bookmark
         bookmark = Bookmark.create(book_id=book_id_vo, highlight_id=highlight_id_vo)
         bookmark = self.bookmark_repository.save(bookmark)
-        self.db.commit()
 
         logger.info(
             "created_bookmark",
@@ -109,7 +111,6 @@ class BookmarkService:
 
         # Delete bookmark (idempotent)
         deleted = self.bookmark_repository.delete(bookmark_id_vo, user_id_vo)
-        self.db.commit()
 
         if deleted:
             logger.info("deleted_bookmark", bookmark_id=bookmark_id, book_id=book_id)

@@ -4,16 +4,30 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from src.infrastructure.reading.schemas import Bookmark, BookmarkCreateRequest, BookmarksResponse
-from src.application.reading.services import BookmarkService
+from src.application.reading.services.bookmark_service import BookmarkService
+from src.core import container
 from src.database import DatabaseSession
 from src.domain.identity import User
 from src.exceptions import CrossbillError
 from src.infrastructure.identity import get_current_user
+from src.infrastructure.reading.schemas import Bookmark, BookmarkCreateRequest, BookmarksResponse
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/books", tags=["bookmarks"])
+
+
+def get_bookmark_service(
+    db: DatabaseSession,
+) -> BookmarkService:
+    """
+    FastAPI dependency that provides BookmarkService.
+
+    Overrides the container's db dependency with the request-scoped
+    database session from FastAPI.
+    """
+    container.db.override(db)
+    return container.bookmark_service()
 
 
 @router.post(
@@ -24,8 +38,8 @@ router = APIRouter(prefix="/books", tags=["bookmarks"])
 def create_bookmark(
     book_id: int,
     request: BookmarkCreateRequest,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    service: BookmarkService = Depends(get_bookmark_service),
 ) -> Bookmark:
     """
     Create a bookmark for a highlight in a book.
@@ -36,7 +50,7 @@ def create_bookmark(
     Args:
         book_id: ID of the book
         request: Request containing the highlight_id to bookmark
-        db: Database session
+        service: BookmarkService injected via dependency container
 
     Returns:
         Created Bookmark
@@ -45,7 +59,6 @@ def create_bookmark(
         HTTPException: If book or highlight not found, or creation fails
     """
     try:
-        service = BookmarkService(db)
         bookmark = service.create_bookmark(book_id, request.highlight_id, current_user.id.value)
 
         # Manually construct schema from domain entity
@@ -75,8 +88,8 @@ def create_bookmark(
 def delete_bookmark(
     book_id: int,
     bookmark_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    service: BookmarkService = Depends(get_bookmark_service),
 ) -> None:
     """
     Delete a bookmark from a book.
@@ -87,13 +100,12 @@ def delete_bookmark(
     Args:
         book_id: ID of the book
         bookmark_id: ID of the bookmark to delete
-        db: Database session
+        service: BookmarkService injected via dependency container
 
     Raises:
         HTTPException: If book not found or deletion fails
     """
     try:
-        service = BookmarkService(db)
         service.delete_bookmark(book_id, bookmark_id, current_user.id.value)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
@@ -116,8 +128,8 @@ def delete_bookmark(
 )
 def get_bookmarks(
     book_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    service: BookmarkService = Depends(get_bookmark_service),
 ) -> BookmarksResponse:
     """
     Get all bookmarks for a book.
@@ -126,7 +138,7 @@ def get_bookmarks(
 
     Args:
         book_id: ID of the book
-        db: Database session
+        service: BookmarkService injected via dependency container
 
     Returns:
         List of bookmarks for the book
@@ -135,7 +147,6 @@ def get_bookmarks(
         HTTPException: If book not found or fetching fails
     """
     try:
-        service = BookmarkService(db)
         bookmarks = service.get_bookmarks_by_book(book_id, current_user.id.value)
 
         # Manually construct schemas from domain entities
