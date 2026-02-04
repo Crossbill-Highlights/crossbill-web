@@ -1,4 +1,3 @@
-
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.domain.common.value_objects import BookId, HighlightId, UserId
@@ -6,7 +5,11 @@ from src.exceptions import BookNotFoundError
 
 
 class HighlightDeleteUseCase:
-    def __init__(self, book_repository: BookRepositoryProtocol, highlight_repository: HighlightRepositoryProtocol) -> None:
+    def __init__(
+        self,
+        book_repository: BookRepositoryProtocol,
+        highlight_repository: HighlightRepositoryProtocol,
+    ) -> None:
         self.book_repository = book_repository
         self.highlight_repository = highlight_repository
 
