@@ -78,7 +78,9 @@ class HighlightGroupingService:
                     chapter_id=chapter_id,
                     chapter_name=chapter.name if chapter else None,
                     chapter_number=chapter.chapter_number if chapter else None,
-                    highlights=grouped[chapter_id],
+                    highlights=sorted(
+                        grouped[chapter_id], key=lambda p: p.highlight.page or p.highlight.id.value
+                    ),
                 )
             )
 
