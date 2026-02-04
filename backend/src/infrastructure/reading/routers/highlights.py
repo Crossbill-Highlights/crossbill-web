@@ -140,7 +140,7 @@ async def upload_highlights(
 
 
 @router.get(
-    "/highlights//search",
+    "/highlights/search",
     response_model=HighlightSearchResponse,
     status_code=status.HTTP_200_OK,
 )
