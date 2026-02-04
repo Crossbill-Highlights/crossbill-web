@@ -1,5 +1,5 @@
 """
-Book-scoped highlight search application service.
+Book-scoped highlight search.
 
 Provides full-text search within a specific book's highlights.
 """
@@ -15,8 +15,6 @@ from src.exceptions import BookNotFoundError
 
 
 class HighlightSearchUseCase:
-    """Application service for searching highlights within a book."""
-
     def __init__(
         self,
         book_repository: BookRepositoryProtocol,

@@ -10,9 +10,6 @@ from src.application.learning.services.flashcard_service import FlashcardService
 from src.application.reading.services.book_highlight_deletion_service import (
     BookHighlightDeletionService,
 )
-from src.application.reading.services.book_highlight_search_service import (
-    BookHighlightSearchService,
-)
 from src.application.reading.services.highlight_tag_association_service import (
     HighlightTagAssociationService,
 )
@@ -28,6 +25,8 @@ from src.application.reading.services.search_highlights_service import SearchHig
 from src.application.reading.services.update_highlight_note_service import (
     UpdateHighlightNoteService,
 )
+from src.application.reading.use_cases.highlight_search_use_case import HighlightSearchUseCase
+from src.core import container
 from src.database import DatabaseSession
 from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects import HighlightId, HighlightTagId, UserId
@@ -69,6 +68,13 @@ from src.infrastructure.reading.schemas import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="", tags=["highlights"])
+
+
+def get_search_highlights_use_case(
+    db: DatabaseSession,
+) -> HighlightSearchUseCase:
+    container.db.override(db)
+    return container.highlight_search_use_case()
 
 
 @router.post(
@@ -565,7 +571,6 @@ def _map_chapters_to_schemas(
 )
 def search_book_highlights(
     book_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
     search_text: str = Query(
         ...,
@@ -573,6 +578,7 @@ def search_book_highlights(
         min_length=1,
         description="Text to search for in highlights",
     ),
+    use_case: HighlightSearchUseCase = Depends(get_search_highlights_use_case),
 ) -> BookHighlightSearchResponse:
     """
     Search for highlights in book using full-text search.
@@ -581,8 +587,7 @@ def search_book_highlights(
     Results are ranked by relevance and excludes soft-deleted highlights.
     """
     try:
-        service = BookHighlightSearchService(db)
-        chapters_grouped, total = service.search_book_highlights(
+        chapters_grouped, total = use_case.search_book_highlights(
             book_id, current_user.id.value, search_text
         )
         return BookHighlightSearchResponse(
