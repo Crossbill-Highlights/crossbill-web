@@ -3,7 +3,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
+from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.library.entities.chapter import Chapter
 from src.infrastructure.library.mappers.chapter_mapper import ChapterMapper
 from src.models import Book as BookORM
@@ -50,31 +50,6 @@ class ChapterRepository:
                 result[orm_model.chapter_number] = self.mapper.to_domain(orm_model)
 
         return result
-
-    def find_by_id(self, chapter_id: ChapterId) -> Chapter | None:
-        """Find chapter by ID."""
-        stmt = select(ChapterORM).where(ChapterORM.id == chapter_id.value)
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
-
-        if not orm_model:
-            return None
-
-        return self.mapper.to_domain(orm_model)
-
-    def save(self, chapter: Chapter) -> Chapter:
-        """Persist chapter to database."""
-        if chapter.id.value == 0:
-            # Create new
-            orm_model = self.mapper.to_orm(chapter)
-            self.db.add(orm_model)
-            self.db.flush()
-            return self.mapper.to_domain(orm_model)
-        # Update existing
-        stmt = select(ChapterORM).where(ChapterORM.id == chapter.id.value)
-        existing_orm = self.db.execute(stmt).scalar_one()
-        self.mapper.to_orm(chapter, existing_orm)
-        self.db.flush()
-        return self.mapper.to_domain(existing_orm)
 
     def sync_chapters_from_toc(
         self, book_id: BookId, user_id: UserId, chapters: list[tuple[str, int, str | None]]

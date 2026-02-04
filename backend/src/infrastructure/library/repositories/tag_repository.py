@@ -17,43 +17,7 @@ class TagRepository:
         self.db = db
         self.mapper = TagMapper()
 
-    def find_by_id(self, tag_id: TagId, user_id: UserId) -> Tag | None:
-        """
-        Find a tag by ID and user ID.
-
-        Args:
-            tag_id: The tag ID
-            user_id: The user ID
-
-        Returns:
-            Tag entity if found, None otherwise
-        """
-        stmt = select(TagORM).where(
-            TagORM.id == tag_id.value,
-            TagORM.user_id == user_id.value,
-        )
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
-        return self.mapper.to_domain(orm_model) if orm_model else None
-
-    def find_by_name(self, name: str, user_id: UserId) -> Tag | None:
-        """
-        Find a tag by name and user ID.
-
-        Args:
-            name: The tag name
-            user_id: The user ID
-
-        Returns:
-            Tag entity if found, None otherwise
-        """
-        stmt = select(TagORM).where(
-            TagORM.name == name,
-            TagORM.user_id == user_id.value,
-        )
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
-        return self.mapper.to_domain(orm_model) if orm_model else None
-
-    def find_by_names(self, names: list[str], user_id: UserId) -> list[Tag]:
+    def _find_by_names(self, names: list[str], user_id: UserId) -> list[Tag]:
         """
         Get multiple tags by their names for a specific user in a single query.
 
@@ -97,55 +61,6 @@ class TagRepository:
         orm_models = self.db.execute(stmt).scalars().all()
         return [self.mapper.to_domain(orm) for orm in orm_models]
 
-    def save(self, tag: Tag) -> Tag:
-        """
-        Save a tag entity.
-
-        Args:
-            tag: The tag entity to save
-
-        Returns:
-            Saved tag entity with updated ID
-        """
-        if tag.id.value == 0:
-            # Create new
-            orm_model = self.mapper.to_orm(tag)
-            self.db.add(orm_model)
-            self.db.flush()
-            self.db.refresh(orm_model)
-            return self.mapper.to_domain(orm_model)
-        # Update existing
-        stmt = select(TagORM).where(TagORM.id == tag.id.value)
-        existing_orm = self.db.execute(stmt).scalar_one()
-        self.mapper.to_orm(tag, existing_orm)
-        self.db.flush()
-        return self.mapper.to_domain(existing_orm)
-
-    def delete(self, tag_id: TagId, user_id: UserId) -> bool:
-        """
-        Delete a tag.
-
-        Args:
-            tag_id: The tag ID
-            user_id: The user ID
-
-        Returns:
-            True if deleted, False if not found
-        """
-        tag_orm = self.db.execute(
-            select(TagORM).where(
-                TagORM.id == tag_id.value,
-                TagORM.user_id == user_id.value,
-            )
-        ).scalar_one_or_none()
-
-        if not tag_orm:
-            return False
-
-        self.db.delete(tag_orm)
-        self.db.flush()
-        return True
-
     def get_or_create_many(self, names: list[str], user_id: UserId) -> list[Tag]:
         """
         Get existing tags or create new ones for a list of names.
@@ -170,7 +85,7 @@ class TagRepository:
             return []
 
         # Single query to get all existing tags
-        existing_tags = self.find_by_names(normalized, user_id)
+        existing_tags = self._find_by_names(normalized, user_id)
         existing_names = {tag.name for tag in existing_tags}
 
         # Find names that need to be created

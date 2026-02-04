@@ -6,12 +6,12 @@ Uses ReadingSessionMapper internally for conversions.
 """
 
 import logging
-from dataclasses import dataclass
 
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
+from src.application.reading.protocols.reading_session_repository import BulkCreateResult
 from src.domain.common.value_objects import BookId, HighlightId, ReadingSessionId, UserId
 from src.domain.reading.entities.reading_session import ReadingSession
 from src.exceptions import ServiceError
@@ -20,14 +20,6 @@ from src.models import ReadingSession as ReadingSessionORM
 from src.models import reading_session_highlights
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class BulkCreateResult:
-    """Result of bulk create operation for reading sessions."""
-
-    created_count: int
-    created_sessions: list[ReadingSession]
 
 
 class ReadingSessionRepository:
