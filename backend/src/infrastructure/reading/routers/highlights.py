@@ -36,6 +36,7 @@ from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights as ChapterWithHighlightsDomain,
 )
 from src.exceptions import CrossbillError, ValidationError
+from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.learning.schemas import (
     Flashcard,
@@ -68,13 +69,6 @@ from src.infrastructure.reading.schemas import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="", tags=["highlights"])
-
-
-def get_search_highlights_use_case(
-    db: DatabaseSession,
-) -> HighlightSearchUseCase:
-    container.db.override(db)
-    return container.highlight_search_use_case()
 
 
 @router.post(
@@ -578,7 +572,9 @@ def search_book_highlights(
         min_length=1,
         description="Text to search for in highlights",
     ),
-    use_case: HighlightSearchUseCase = Depends(get_search_highlights_use_case),
+    use_case: HighlightSearchUseCase = Depends(
+        inject_use_case(container.highlight_search_use_case)
+    ),
 ) -> BookHighlightSearchResponse:
     """
     Search for highlights in book using full-text search.

@@ -389,6 +389,92 @@ class HighlightMapper:
 - ✅ No business logic in routes
 - ✅ Handle transactions (commit/rollback)
 
+#### Dependency Injection Pattern
+
+We use a simple `inject()` function to eliminate boilerplate dependency functions for use cases.
+
+**Core Utility** (`src/infrastructure/common/di.py`):
+```python
+from collections.abc import Callable
+from typing import TypeVar
+
+from dependency_injector.providers import Provider
+from src.core import container
+from src.database import DatabaseSession
+
+T = TypeVar("T")
+
+def inject_use_case(provider: Provider[T]) -> Callable[[DatabaseSession], T]:
+    """
+    Create a FastAPI dependency for a container provider.
+
+    Automatically handles container.db override with request-scoped database session.
+    """
+    def dependency(db: DatabaseSession) -> T:
+        container.db.override(db)
+        return provider()
+
+    return dependency
+```
+
+**Usage in Routes**:
+
+```python
+from fastapi import Depends
+from src.application.reading.use_cases.bookmark_use_case import BookmarkUseCase
+from src.core import container
+from src.infrastructure.common.di import inject_use_case
+
+
+@router.post("/{book_id}/bookmarks")
+def create_bookmark(
+        book_id: int,
+        request: BookmarkCreateRequest,
+        current_user: CurrentUser,
+        use_case: BookmarkUseCase = Depends(inject_use_case(container.bookmark_use_case)),
+):
+    bookmark = use_case.create_bookmark(book_id, request.highlight_id, current_user.id)
+    # ... rest of the route
+```
+
+**Benefits**:
+- ✅ **No boilerplate**: Eliminates manual dependency functions
+- ✅ **Type-safe**: Full IDE autocomplete and type checking
+- ✅ **Simple**: Easy to understand and use
+- ✅ **Consistent**: Same pattern for all use cases
+
+**Before (Manual Dependency Function)**:
+```python
+def get_bookmark_use_case(db: DatabaseSession) -> BookmarkUseCase:
+    container.db.override(db)
+    return container.bookmark_use_case()
+
+@router.post("/{book_id}/bookmarks")
+def create_bookmark(
+    use_case: BookmarkUseCase = Depends(get_bookmark_use_case),
+):
+    ...
+```
+
+**After (Using inject)**:
+```python
+@router.post("/{book_id}/bookmarks")
+def create_bookmark(
+    use_case: BookmarkUseCase = Depends(inject(container.bookmark_use_case)),
+):
+    ...
+```
+
+**Adding a New Use Case**:
+1. Add the use case to the container in `src/core.py`
+2. Use in your route: `use_case: NewUseCase = Depends(inject(container.new_use_case))`
+
+**Why This Pattern?**
+- Eliminates repetitive dependency functions that all do the same thing
+- Maintains type safety and IDE support
+- Simple and explicit - no magic
+- Follows the Single Responsibility Principle - the `inject()` function handles container overrides
+
 **Example Route**:
 ```python
 @router.post("/{highlight_id}/note")
@@ -929,7 +1015,8 @@ def test_update_highlight_note_success(client, auth_headers):
 ### 5. API Routes
 
 ✅ **DO**:
-- Use application services
+- Use application services via dependency injection (see [Dependency Injection Pattern](#dependency-injection-pattern))
+- Use type aliases from `use_case_dependencies.py` for clean dependencies
 - Convert domain → DTOs
 - Handle transactions
 - Provide good error messages
@@ -938,6 +1025,7 @@ def test_update_highlight_note_success(client, auth_headers):
 - Put business logic in routes
 - Access repositories directly
 - Bypass application services
+- Write manual dependency functions for use cases (use the `inject()` pattern instead)
 
 ---
 

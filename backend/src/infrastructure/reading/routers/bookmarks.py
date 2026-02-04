@@ -6,28 +6,15 @@ from starlette import status
 
 from src.application.reading.use_cases.bookmark_use_case import BookmarkUseCase
 from src.core import container
-from src.database import DatabaseSession
 from src.domain.identity import User
 from src.exceptions import CrossbillError
+from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.reading.schemas import Bookmark, BookmarkCreateRequest, BookmarksResponse
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/books", tags=["bookmarks"])
-
-
-def get_bookmark_use_case(
-    db: DatabaseSession,
-) -> BookmarkUseCase:
-    """
-    FastAPI dependency that provides BookmarkService.
-
-    Overrides the container's db dependency with the request-scoped
-    database session from FastAPI.
-    """
-    container.db.override(db)
-    return container.bookmark_use_case()
 
 
 @router.post(
@@ -39,7 +26,7 @@ def create_bookmark(
     book_id: int,
     request: BookmarkCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookmarkUseCase = Depends(get_bookmark_use_case),
+    use_case: BookmarkUseCase = Depends(inject_use_case(container.bookmark_use_case)),
 ) -> Bookmark:
     """
     Create a bookmark for a highlight in a book.
@@ -89,7 +76,7 @@ def delete_bookmark(
     book_id: int,
     bookmark_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookmarkUseCase = Depends(get_bookmark_use_case),
+    use_case: BookmarkUseCase = Depends(inject_use_case(container.bookmark_use_case)),
 ) -> None:
     """
     Delete a bookmark from a book.
@@ -129,7 +116,7 @@ def delete_bookmark(
 def get_bookmarks(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookmarkUseCase = Depends(get_bookmark_use_case),
+    use_case: BookmarkUseCase = Depends(inject_use_case(container.bookmark_use_case)),
 ) -> BookmarksResponse:
     """
     Get all bookmarks for a book.
