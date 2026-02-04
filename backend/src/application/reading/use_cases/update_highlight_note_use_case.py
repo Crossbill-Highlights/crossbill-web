@@ -1,30 +1,13 @@
-"""
-Update highlight note use case.
-
-Updates the note field of a highlight using domain entity behavior.
-"""
-
-from sqlalchemy.orm import Session
-
+from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.domain.common.value_objects import HighlightId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.highlight_tag import HighlightTag
-from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
 
 
-class UpdateHighlightNoteService:
-    """Application service for updating highlight notes."""
-
-    def __init__(self, db: Session) -> None:
-        """
-        Initialize service.
-
-        Args:
-            db: SQLAlchemy database session
-        """
-        self.db = db
-        self.highlight_repository = HighlightRepository(db)
+class HighlightUpdateNoteUseCase:
+    def __init__(self, highlight_repository: HighlightRepositoryProtocol) -> None:
+        self.highlight_repository = highlight_repository
 
     def update_note(
         self, highlight_id: int, user_id: int, note: str | None
@@ -57,9 +40,6 @@ class UpdateHighlightNoteService:
 
         # Persist changes
         self.highlight_repository.save(highlight)
-
-        # Flush to ensure relationships are available
-        self.db.flush()
 
         # Load with relations to return complete data
         result = self.highlight_repository.find_by_id_with_relations(highlight_id_vo, user_id_vo)

@@ -18,13 +18,13 @@ from src.application.reading.services.highlight_upload_service import (
     HighlightService as DomainHighlightService,
 )
 from src.application.reading.services.highlight_upload_service import HighlightUploadData
-from src.application.reading.services.update_highlight_note_service import (
-    UpdateHighlightNoteService,
-)
 from src.application.reading.use_cases.highlight_delete_use_case import (
     HighlightDeleteUseCase,
 )
 from src.application.reading.use_cases.highlight_search_use_case import HighlightSearchUseCase
+from src.application.reading.use_cases.update_highlight_note_use_case import (
+    HighlightUpdateNoteUseCase,
+)
 from src.core import container
 from src.database import DatabaseSession
 from src.domain.common.exceptions import DomainError
@@ -144,8 +144,10 @@ async def upload_highlights(
 def update_highlight_note(
     highlight_id: int,
     request: HighlightNoteUpdate,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: HighlightUpdateNoteUseCase = Depends(
+        inject_use_case(container.highlight_update_note_use_case)
+    ),
 ) -> HighlightNoteUpdateResponse:
     """
     Update the note field of a highlight.
@@ -153,17 +155,16 @@ def update_highlight_note(
     Args:
         highlight_id: ID of the highlight to update
         request: Note update request
-        db: Database session
 
     Returns:
         HighlightNoteUpdateResponse with the updated highlight
 
     Raises:
         HTTPException: If highlight not found or update fails
+        :param use_case:
     """
     try:
-        service = UpdateHighlightNoteService(db)
-        result = service.update_note(highlight_id, current_user.id.value, request.note)
+        result = use_case.update_note(highlight_id, current_user.id.value, request.note)
 
         if result is None:
             raise HTTPException(
@@ -172,9 +173,6 @@ def update_highlight_note(
             )
 
         highlight, flashcards, highlight_tags = result
-
-        # Commit the transaction
-        db.commit()
 
         # Build response from domain entities
         highlight_schema = Highlight(
