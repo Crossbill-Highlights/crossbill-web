@@ -1,30 +1,14 @@
-"""
-Book highlight deletion application service.
 
-Handles soft deletion of highlights with cascade to bookmarks/flashcards.
-"""
-
-from sqlalchemy.orm import Session
-
+from src.application.reading.protocols.book_repository import BookRepositoryProtocol
+from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.domain.common.value_objects import BookId, HighlightId, UserId
 from src.exceptions import BookNotFoundError
-from src.infrastructure.library.repositories.book_repository import BookRepository
-from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
 
 
-class BookHighlightDeletionService:
-    """Application service for deleting highlights from a book."""
-
-    def __init__(self, db: Session) -> None:
-        """
-        Initialize service.
-
-        Args:
-            db: SQLAlchemy database session
-        """
-        self.db = db
-        self.book_repository = BookRepository(db)
-        self.highlight_repository = HighlightRepository(db)
+class HighlightDeleteUseCase:
+    def __init__(self, book_repository: BookRepositoryProtocol, highlight_repository: HighlightRepositoryProtocol) -> None:
+        self.book_repository = book_repository
+        self.highlight_repository = highlight_repository
 
     def delete_highlights(self, book_id: int, highlight_ids: list[int], user_id: int) -> int:
         """

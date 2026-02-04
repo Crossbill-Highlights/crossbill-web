@@ -7,9 +7,6 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.application.learning.services.flashcard_service import FlashcardService
-from src.application.reading.services.book_highlight_deletion_service import (
-    BookHighlightDeletionService,
-)
 from src.application.reading.services.highlight_tag_association_service import (
     HighlightTagAssociationService,
 )
@@ -24,6 +21,9 @@ from src.application.reading.services.highlight_upload_service import HighlightU
 from src.application.reading.services.search_highlights_service import SearchHighlightsService
 from src.application.reading.services.update_highlight_note_service import (
     UpdateHighlightNoteService,
+)
+from src.application.reading.use_cases.highlight_delete_use_case import (
+    HighlightDeleteUseCase,
 )
 from src.application.reading.use_cases.highlight_search_use_case import HighlightSearchUseCase
 from src.core import container
@@ -613,8 +613,10 @@ def search_book_highlights(
 def delete_highlights(
     book_id: int,
     request: HighlightDeleteRequest,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: HighlightDeleteUseCase = Depends(
+        inject_use_case(container.highlight_delete_use_case)
+    ),
 ) -> HighlightDeleteResponse:
     """
     Soft delete highlights from a book.
@@ -626,20 +628,18 @@ def delete_highlights(
     Args:
         book_id: ID of the book
         request: Request containing list of highlight IDs to delete
-        db: Database session
 
     Returns:
         HighlightDeleteResponse with deletion status and count
 
     Raises:
         HTTPException: If book is not found or deletion fails
+        :param use_case:
     """
     try:
-        service = BookHighlightDeletionService(db)
-        deleted_count = service.delete_highlights(
+        deleted_count = use_case.delete_highlights(
             book_id, request.highlight_ids, current_user.id.value
         )
-        db.commit()
         return HighlightDeleteResponse(
             success=True,
             message=f"Successfully deleted {deleted_count} highlight(s)",

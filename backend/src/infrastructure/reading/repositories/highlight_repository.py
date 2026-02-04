@@ -128,7 +128,7 @@ class HighlightRepository:
             # Create new highlight
             orm_model = self.mapper.to_orm(highlight)
             self.db.add(orm_model)
-            self.db.flush()  # Get ID without committing
+            self.db.commit()  # Get ID without committing
 
             # Return domain entity with real ID
             return self.mapper.to_domain(orm_model)
@@ -138,7 +138,7 @@ class HighlightRepository:
 
         # Update ORM model using mapper
         self.mapper.to_orm(highlight, existing_orm)
-        self.db.flush()
+        self.db.commit()
 
         return self.mapper.to_domain(existing_orm)
 
@@ -199,7 +199,7 @@ class HighlightRepository:
 
         # Bulk insert
         self.db.bulk_save_objects(orm_models, return_defaults=True)
-        self.db.flush()
+        self.db.commit()
 
         # Convert back to domain entities with real IDs
         return [self.mapper.to_domain(orm) for orm in orm_models]
@@ -349,7 +349,7 @@ class HighlightRepository:
         result = self.db.execute(stmt_soft_delete)
         count = getattr(result, "rowcount", 0) or 0
 
-        self.db.flush()
+        self.db.commit()
         logger.info(
             f"Soft deleted {count} highlights, {bookmarks_deleted} associated bookmarks, "
             f"and {flashcards_deleted} associated flashcards for book_id={book_id.value}, user_id={user_id.value}"
