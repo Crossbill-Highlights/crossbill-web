@@ -18,8 +18,6 @@ from src.infrastructure.reading.schemas.highlight_schemas import (
     HighlightNoteUpdate,
     HighlightNoteUpdateResponse,
     HighlightResponseBase,
-    HighlightSearchResponse,
-    HighlightSearchResult,
     HighlightUploadRequest,
     HighlightUploadResponse,
 )
@@ -61,8 +59,6 @@ __all__ = [
     "HighlightNoteUpdate",
     "HighlightNoteUpdateResponse",
     "HighlightResponseBase",
-    "HighlightSearchResponse",
-    "HighlightSearchResult",
     "HighlightTag",
     "HighlightTagAssociationRequest",
     "HighlightTagBase",

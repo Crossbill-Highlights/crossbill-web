@@ -38,7 +38,7 @@ highlights they want to return to later.
 Args:
     book_id: ID of the book
     request: Request containing the highlight_id to bookmark
-    db: Database session
+    use_case: BookmarkService injected via dependency container
 
 Returns:
     Created Bookmark
@@ -136,7 +136,7 @@ Returns all bookmarks ordered by creation date (newest first).
 
 Args:
     book_id: ID of the book
-    db: Database session
+    use_case: BookmarkService injected via dependency container
 
 Returns:
     List of bookmarks for the book
@@ -295,7 +295,7 @@ will succeed and return 200 without error.
 Args:
     book_id: ID of the book
     bookmark_id: ID of the bookmark to delete
-    db: Database session
+    use_case: BookmarkService injected via dependency container
 
 Raises:
     HTTPException: If book not found or deletion fails

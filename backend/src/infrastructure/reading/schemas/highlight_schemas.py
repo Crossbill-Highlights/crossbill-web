@@ -194,36 +194,6 @@ class HighlightDeleteResponse(BaseModel):
     deleted_count: int = Field(..., ge=0, description="Number of highlights deleted")
 
 
-class HighlightSearchResult(BaseModel):
-    """Schema for highlight search result with book and chapter data."""
-
-    id: int
-    text: str
-    page: int | None
-    note: str | None
-    datetime: str
-    book_id: int
-    book_title: str
-    book_author: str | None
-    chapter_id: int | None
-    chapter_name: str | None
-    chapter_number: int | None = Field(None, description="Chapter order number from TOC")
-    highlight_tags: list[HighlightTagInBook] = Field(
-        ..., description="List of highlight tags for this highlight"
-    )
-    created_at: dt
-    updated_at: dt
-
-    model_config = {"from_attributes": True}
-
-
-class HighlightSearchResponse(BaseModel):
-    """Schema for highlight search response."""
-
-    highlights: list[HighlightSearchResult] = Field(..., description="List of matching highlights")
-    total: int = Field(..., ge=0, description="Total number of results")
-
-
 class BookHighlightSearchResponse(BaseModel):
     """Schema for book-scoped highlight search response grouped by chapter."""
 

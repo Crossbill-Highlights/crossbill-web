@@ -30,7 +30,6 @@ import type {
   HighlightDeleteResponse,
   HighlightNoteUpdate,
   HighlightNoteUpdateResponse,
-  HighlightSearchResponse,
   HighlightTag,
   HighlightTagAssociationRequest,
   HighlightTagCreateRequest,
@@ -41,7 +40,6 @@ import type {
   HighlightUploadRequest,
   HighlightUploadResponse,
   SearchBookHighlightsApiV1BooksBookIdHighlightsGetParams,
-  SearchHighlightsApiV1HighlightsSearchGetParams,
 } from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
@@ -144,172 +142,6 @@ export const useUploadHighlightsApiV1HighlightsUploadPost = <
     queryClient
   );
 };
-/**
- * Search for highlights using full-text search.
-
-Searches across all highlight text using PostgreSQL full-text search.
-Results are ranked by relevance and excludes soft-deleted highlights.
-
-Args:
-    db: Database session
-    search_text: Text to search for
-    book_id: Optional book ID to filter by specific book
-    limit: Maximum number of results to return
-
-Returns:
-    HighlightSearchResponse with matching highlights and their book/chapter data
-
-Raises:
-    HTTPException: If search fails due to server error
- * @summary Search Highlights
- */
-export const searchHighlightsApiV1HighlightsSearchGet = (
-  params: SearchHighlightsApiV1HighlightsSearchGetParams,
-  signal?: AbortSignal
-) => {
-  return axiosInstance<HighlightSearchResponse>({
-    url: `/api/v1/highlights//search`,
-    method: 'GET',
-    params,
-    signal,
-  });
-};
-
-export const getSearchHighlightsApiV1HighlightsSearchGetQueryKey = (
-  params?: SearchHighlightsApiV1HighlightsSearchGetParams
-) => {
-  return [`/api/v1/highlights//search`, ...(params ? [params] : [])] as const;
-};
-
-export const getSearchHighlightsApiV1HighlightsSearchGetQueryOptions = <
-  TData = Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>,
-  TError = HTTPValidationError,
->(
-  params: SearchHighlightsApiV1HighlightsSearchGetParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>,
-        TError,
-        TData
-      >
-    >;
-  }
-) => {
-  const { query: queryOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ?? getSearchHighlightsApiV1HighlightsSearchGetQueryKey(params);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>
-  > = ({ signal }) => searchHighlightsApiV1HighlightsSearchGet(params, signal);
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type SearchHighlightsApiV1HighlightsSearchGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>
->;
-export type SearchHighlightsApiV1HighlightsSearchGetQueryError = HTTPValidationError;
-
-export function useSearchHighlightsApiV1HighlightsSearchGet<
-  TData = Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>,
-  TError = HTTPValidationError,
->(
-  params: SearchHighlightsApiV1HighlightsSearchGetParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>,
-          TError,
-          Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>
-        >,
-        'initialData'
-      >;
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useSearchHighlightsApiV1HighlightsSearchGet<
-  TData = Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>,
-  TError = HTTPValidationError,
->(
-  params: SearchHighlightsApiV1HighlightsSearchGetParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>,
-          TError,
-          Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>
-        >,
-        'initialData'
-      >;
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useSearchHighlightsApiV1HighlightsSearchGet<
-  TData = Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>,
-  TError = HTTPValidationError,
->(
-  params: SearchHighlightsApiV1HighlightsSearchGetParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>,
-        TError,
-        TData
-      >
-    >;
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-/**
- * @summary Search Highlights
- */
-
-export function useSearchHighlightsApiV1HighlightsSearchGet<
-  TData = Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>,
-  TError = HTTPValidationError,
->(
-  params: SearchHighlightsApiV1HighlightsSearchGetParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof searchHighlightsApiV1HighlightsSearchGet>>,
-        TError,
-        TData
-      >
-    >;
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getSearchHighlightsApiV1HighlightsSearchGetQueryOptions(params, options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>;
-  };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
 /**
  * Update the note field of a highlight.
 
@@ -878,13 +710,13 @@ ensuring that user deletions persist across syncs.
 Args:
     book_id: ID of the book
     request: Request containing list of highlight IDs to delete
-    db: Database session
 
 Returns:
     HighlightDeleteResponse with deletion status and count
 
 Raises:
     HTTPException: If book is not found or deletion fails
+    :param use_case:
  * @summary Delete Highlights
  */
 export const deleteHighlightsApiV1BooksBookIdHighlightDelete = (

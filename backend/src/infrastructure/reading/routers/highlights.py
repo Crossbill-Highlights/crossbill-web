@@ -18,7 +18,6 @@ from src.application.reading.services.highlight_upload_service import (
     HighlightService as DomainHighlightService,
 )
 from src.application.reading.services.highlight_upload_service import HighlightUploadData
-from src.application.reading.services.search_highlights_service import SearchHighlightsService
 from src.application.reading.services.update_highlight_note_service import (
     UpdateHighlightNoteService,
 )
@@ -52,8 +51,6 @@ from src.infrastructure.reading.schemas import (
     HighlightDeleteResponse,
     HighlightNoteUpdate,
     HighlightNoteUpdateResponse,
-    HighlightSearchResponse,
-    HighlightSearchResult,
     HighlightTag,
     HighlightTagAssociationRequest,
     HighlightTagCreateRequest,
@@ -133,82 +130,6 @@ async def upload_highlights(
         ) from e
     except Exception as e:
         logger.error(f"Failed to upload highlights: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
-
-
-@router.get(
-    "/highlights/search",
-    response_model=HighlightSearchResponse,
-    status_code=status.HTTP_200_OK,
-)
-def search_highlights(
-    db: DatabaseSession,
-    current_user: Annotated[User, Depends(get_current_user)],
-    search_text: str = Query(
-        ...,
-        alias="searchText",
-        min_length=1,
-        description="Text to search for in highlights",
-    ),
-    book_id: int | None = Query(
-        None, alias="bookId", ge=1, description="Optional book ID to filter results"
-    ),
-    limit: int = Query(100, ge=1, le=500, description="Maximum number of results to return"),
-) -> HighlightSearchResponse:
-    """
-    Search for highlights using full-text search.
-
-    Searches across all highlight text using PostgreSQL full-text search.
-    Results are ranked by relevance and excludes soft-deleted highlights.
-
-    Args:
-        db: Database session
-        search_text: Text to search for
-        book_id: Optional book ID to filter by specific book
-        limit: Maximum number of results to return
-
-    Returns:
-        HighlightSearchResponse with matching highlights and their book/chapter data
-
-    Raises:
-        HTTPException: If search fails due to server error
-    """
-    try:
-        service = SearchHighlightsService(db)
-        results = service.search(search_text, current_user.id.value, book_id, limit)
-
-        # Convert domain entities to schemas in route handler
-        search_results = [
-            HighlightSearchResult(
-                id=highlight.id.value,
-                text=highlight.text,
-                page=highlight.page,
-                note=highlight.note,
-                datetime=highlight.datetime,
-                book_id=book.id.value,
-                book_title=book.title,
-                book_author=book.author,
-                chapter_id=chapter.id.value if chapter else None,
-                chapter_name=chapter.name if chapter else None,
-                chapter_number=chapter.chapter_number if chapter else None,
-                highlight_tags=[
-                    HighlightTagInBook(
-                        id=tag.id.value, name=tag.name, tag_group_id=tag.tag_group_id
-                    )
-                    for tag in highlight_tags
-                ],
-                created_at=highlight.created_at,
-                updated_at=highlight.updated_at,
-            )
-            for highlight, book, chapter, highlight_tags, _ in results
-        ]
-
-        return HighlightSearchResponse(highlights=search_results, total=len(search_results))
-    except Exception as e:
-        logger.error(f"Failed to search highlights: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again later.",
