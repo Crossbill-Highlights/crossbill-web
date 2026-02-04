@@ -17,28 +17,6 @@ class BookmarkRepository:
         self.db = db
         self.mapper = BookmarkMapper()
 
-    def find_by_id(self, bookmark_id: BookmarkId, user_id: UserId) -> Bookmark | None:
-        """
-        Find a bookmark by ID with user ownership check.
-
-        Args:
-            bookmark_id: The bookmark ID
-            user_id: The user ID for ownership verification
-
-        Returns:
-            Bookmark entity if found and owned by user, None otherwise
-        """
-        stmt = (
-            select(BookmarkORM)
-            .join(BookORM, BookmarkORM.book_id == BookORM.id)
-            .where(
-                BookmarkORM.id == bookmark_id.value,
-                BookORM.user_id == user_id.value,
-            )
-        )
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
-        return self.mapper.to_domain(orm_model) if orm_model else None
-
     def find_by_book_and_highlight(
         self, book_id: BookId, highlight_id: HighlightId
     ) -> Bookmark | None:

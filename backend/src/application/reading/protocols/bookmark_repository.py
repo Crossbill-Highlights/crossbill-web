@@ -5,7 +5,6 @@ from src.domain.reading.entities.bookmark import Bookmark
 
 
 class BookmarkRepositoryProtocol(Protocol):
-    def find_by_id(self, bookmark_id: BookmarkId, user_id: UserId) -> Bookmark | None: ...
     def find_by_book_and_highlight(
         self, book_id: BookId, highlight_id: HighlightId
     ) -> Bookmark | None: ...
