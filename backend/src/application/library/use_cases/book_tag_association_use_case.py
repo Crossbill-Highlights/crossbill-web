@@ -1,28 +1,37 @@
 """
-Application service for managing book-tag associations.
+Use case for managing book-tag associations.
 
 Handles adding and replacing tags on books.
 """
 
 import structlog
-from sqlalchemy.orm import Session
 
+from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.library.protocols.tag_repository import TagRepositoryProtocol
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.library.entities.tag import Tag
 from src.domain.reading.exceptions import BookNotFoundError
-from src.infrastructure.library.repositories.book_repository import BookRepository
-from src.infrastructure.library.repositories.tag_repository import TagRepository
 
 logger = structlog.get_logger(__name__)
 
 
-class BookTagAssociationService:
-    """Application service for managing book-tag associations."""
+class BookTagAssociationUseCase:
+    """Use case for managing book-tag associations."""
 
-    def __init__(self, db: Session) -> None:
-        self.db = db
-        self.tag_repository = TagRepository(db)
-        self.book_repository = BookRepository(db)
+    def __init__(
+        self,
+        tag_repository: TagRepositoryProtocol,
+        book_repository: BookRepositoryProtocol,
+    ) -> None:
+        """
+        Initialize use case with dependencies.
+
+        Args:
+            tag_repository: Tag repository protocol implementation
+            book_repository: Book repository protocol implementation
+        """
+        self.tag_repository = tag_repository
+        self.book_repository = book_repository
 
     def add_tags_to_book(self, book_id: int, tag_names: list[str], user_id: int) -> list[Tag]:
         """
@@ -39,11 +48,9 @@ class BookTagAssociationService:
         Raises:
             BookNotFoundError: If book not found
         """
-        # Convert to value objects
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        # Validate book exists
         book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(f"Book with id {book_id} not found")
@@ -52,15 +59,10 @@ class BookTagAssociationService:
             # Return existing tags if no new ones to add
             return self.tag_repository.find_tags_for_book(book_id_vo, user_id_vo)
 
-        # Get or create tags (bulk operation)
         all_tags = self.tag_repository.get_or_create_many(tag_names, user_id_vo)
-
-        # Add tags to book using repository (handles duplicates)
         tag_ids = [tag.id for tag in all_tags]
         self.tag_repository.add_tags_to_book(book_id_vo, tag_ids, user_id_vo)
-        self.db.commit()
 
-        # Log the operation
         logger.info(
             "added_tags_to_book",
             book_id=book_id,
@@ -68,7 +70,6 @@ class BookTagAssociationService:
             tag_names=[tag.name for tag in all_tags],
         )
 
-        # Return all tags for book
         return self.tag_repository.find_tags_for_book(book_id_vo, user_id_vo)
 
     def replace_book_tags(self, book_id: int, tag_names: list[str], user_id: int) -> list[Tag]:
@@ -86,22 +87,17 @@ class BookTagAssociationService:
         Raises:
             BookNotFoundError: If book not found
         """
-        # Convert to value objects
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        # Validate book exists
         book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(f"Book with id {book_id} not found")
 
-        # Get or create tags (bulk operation)
         tags = self.tag_repository.get_or_create_many(tag_names, user_id_vo)
 
-        # Replace book tags using repository
         tag_ids = [tag.id for tag in tags]
         self.tag_repository.replace_book_tags(book_id_vo, tag_ids, user_id_vo)
-        self.db.commit()
 
         logger.info(
             "replaced_book_tags",
@@ -126,11 +122,9 @@ class BookTagAssociationService:
         Raises:
             BookNotFoundError: If book not found
         """
-        # Convert to value objects
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        # Validate book exists
         book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(f"Book with id {book_id} not found")

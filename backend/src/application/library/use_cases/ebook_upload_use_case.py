@@ -1,4 +1,4 @@
-"""Application service for ebook upload operations."""
+"""Use case for ebook upload operations."""
 
 import logging
 import re
@@ -7,16 +7,13 @@ from pathlib import Path
 from typing import Any
 
 from ebooklib import epub
-from sqlalchemy.orm import Session
 
-from src.domain.common import EntityNotFoundError
+from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
+from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.domain.common.value_objects.ids import UserId
+from src.domain.reading.exceptions import BookNotFoundError
 from src.exceptions import InvalidEbookError
-from src.infrastructure.library.repositories import (
-    BookRepository,
-    ChapterRepository,
-    FileRepository,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +76,7 @@ def _validate_epub(content: bytes) -> bool:
         return False
 
 
+# TODO: should this and helper functions here be a domain service?
 def _extract_toc_hierarchy(
     toc_items: list[Any], current_number: int = 1, parent_name: str | None = None
 ) -> list[tuple[str, int, str | None]]:
@@ -126,15 +124,26 @@ def _extract_toc_hierarchy(
     return chapters
 
 
-class EbookUploadService:
-    """Application service for uploading ebook files."""
+class EbookUploadUseCase:
+    """Use case for uploading ebook files."""
 
-    def __init__(self, db: Session) -> None:
-        """Initialize service with database session."""
-        self.db = db
-        self.book_repo = BookRepository(db)
-        self.chapter_repo = ChapterRepository(db)
-        self.file_repo = FileRepository()
+    def __init__(
+        self,
+        book_repository: BookRepositoryProtocol,
+        chapter_repository: ChapterRepositoryProtocol,
+        file_repository: FileRepositoryProtocol,
+    ) -> None:
+        """
+        Initialize use case with dependencies.
+
+        Args:
+            book_repository: Book repository protocol implementation
+            chapter_repository: Chapter repository protocol implementation
+            file_repository: File repository protocol implementation
+        """
+        self.book_repository = book_repository
+        self.chapter_repository = chapter_repository
+        self.file_repository = file_repository
 
     def upload_ebook(
         self,
@@ -198,14 +207,14 @@ class EbookUploadService:
             InvalidEbookError: If epub structure validation fails
         """
         # Find book by client_book_id
-        book = self.book_repo.find_by_client_book_id(client_book_id, user_id)
+        book = self.book_repository.find_by_client_book_id(client_book_id, user_id)
         if not book:
-            raise EntityNotFoundError("Book", f"client_book_id={client_book_id}")
+            raise BookNotFoundError(f"client_book_id={client_book_id}")
 
-        # Validate epub structure
         if not _validate_epub(content):
             raise InvalidEbookError("EPUB structure validation failed", ebook_type="EPUB")
 
+        # TODO: These likely belong to the repository level
         # Generate filename: sanitized_title_bookid.epub
         sanitized_title = _sanitize_filename(book.title)
         epub_filename = f"{sanitized_title}_{book.id.value}.epub"
@@ -215,21 +224,20 @@ class EbookUploadService:
         if book.file_path and book.file_type == "epub":
             old_file_path = book.file_path
 
-        # Save new epub file
-        epub_path = self.file_repo.save_epub(book.id, content, epub_filename)
-
         # Delete old epub file if it exists and has different name
         if old_file_path and old_file_path != epub_filename:
-            self.file_repo.delete_epub(book.id)
+            self.file_repository.delete_epub(book.id)
 
-        # Update book entity
+        # Save new epub file
+        epub_path = self.file_repository.save_epub(book.id, content, epub_filename)
         book.update_file(epub_filename, "epub")
-        self.db.flush()
 
         # Parse TOC and save chapters to database
+        # TODO: this parsing logic might belong to domain level
         toc_chapters = self._parse_toc_from_epub(epub_path)
         if toc_chapters:
-            self.chapter_repo.sync_chapters_from_toc(book.id, user_id, toc_chapters)
+            # TODO: maybe we could pass domain objects to the repository?
+            self.chapter_repository.sync_chapters_from_toc(book.id, user_id, toc_chapters)
 
         return epub_filename, str(epub_path)
 

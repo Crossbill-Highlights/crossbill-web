@@ -143,7 +143,7 @@ class ChapterRepository:
                     parent_id=parent_id,
                 )
                 self.db.add(chapter)
-                self.db.flush()  # Flush to get ID for potential child chapters
+                self.db.commit()
                 self.db.refresh(chapter)
 
                 # Add to tracking dictionaries for subsequent parent lookups
@@ -151,9 +151,8 @@ class ChapterRepository:
                 chapter_by_name_and_parent[chapter_key] = chapter
                 created_count += 1
 
-        # Flush updates
         if chapters_to_update:
-            self.db.flush()
+            self.db.commit()
             logger.info(f"Updated {len(chapters_to_update)} existing chapters")
 
         logger.info(

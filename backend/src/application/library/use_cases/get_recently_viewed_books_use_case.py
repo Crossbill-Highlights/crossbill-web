@@ -4,26 +4,23 @@ Get recently viewed books use case.
 Retrieves books ordered by last viewed timestamp with highlight and flashcard counts.
 """
 
-from sqlalchemy.orm import Session
-
+from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.domain.common.value_objects import UserId
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.tag import Tag
-from src.infrastructure.library.repositories.book_repository import BookRepository
 
 
-class GetRecentlyViewedBooksService:
-    """Application service for retrieving recently viewed books."""
+class GetRecentlyViewedBooksUseCase:
+    """Use case for retrieving recently viewed books."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, book_repository: BookRepositoryProtocol) -> None:
         """
-        Initialize service.
+        Initialize use case with dependencies.
 
         Args:
-            db: SQLAlchemy database session
+            book_repository: Book repository protocol implementation
         """
-        self.db = db
-        self.book_repository = BookRepository(db)
+        self.book_repository = book_repository
 
     def get_recently_viewed(
         self, user_id: int, limit: int = 10

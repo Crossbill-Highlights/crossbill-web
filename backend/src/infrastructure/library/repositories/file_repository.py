@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 class FileRepository:
     """Repository for managing book files (EPUB, PDF, covers)."""
 
+    # TODO: BOOK ID PITÄISI SISÄLLYTTÄÄ TIEDOSTOPOLKUUN JOTTA DELETE TOIMISI!!!
     def save_epub(self, book_id: BookId, content: bytes, filename: str) -> Path:
         """
         Save an EPUB file to disk.

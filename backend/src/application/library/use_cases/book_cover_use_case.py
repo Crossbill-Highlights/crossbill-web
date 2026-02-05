@@ -1,5 +1,5 @@
 """
-Book cover management application service.
+Book cover management use case.
 
 Handles cover file operations and validation for the library context.
 """
@@ -8,12 +8,12 @@ import logging
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
-from sqlalchemy.orm import Session
 
+from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.library.protocols.file_repository import FileRepositoryProtocol
+from src.domain.common import ValidationError
 from src.domain.common.value_objects import BookId, UserId
 from src.exceptions import BookNotFoundError
-from src.infrastructure.library.repositories.book_repository import BookRepository
-from src.infrastructure.library.repositories.file_repository import FileRepository
 
 logger = logging.getLogger(__name__)
 
@@ -31,19 +31,23 @@ IMAGE_SIGNATURES = {
 WEBP_MIN_HEADER_SIZE = 12
 
 
-class BookCoverService:
-    """Application service for book cover management operations."""
+class BookCoverUseCase:
+    """Use case for book cover management operations."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(
+        self,
+        book_repository: BookRepositoryProtocol,
+        file_repository: FileRepositoryProtocol,
+    ) -> None:
         """
-        Initialize service.
+        Initialize use case with dependencies.
 
         Args:
-            db: SQLAlchemy database session
+            book_repository: Book repository protocol implementation
+            file_repository: File repository protocol implementation
         """
-        self.db = db
-        self.book_repository = BookRepository(db)
-        self.file_repository = FileRepository()
+        self.book_repository = book_repository
+        self.file_repository = file_repository
 
     def upload_cover(self, book_id: int, cover: UploadFile, user_id: int) -> str:
         """
@@ -65,35 +69,30 @@ class BookCoverService:
             BookNotFoundError: If book is not found
             HTTPException: If file validation fails or upload fails
         """
-        # Convert primitives to value objects
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        # Verify book exists
         book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
-        # Check content-type header
         allowed_types = {"image/jpeg", "image/png", "image/webp"}
         if cover.content_type not in allowed_types:
-            raise HTTPException(
-                status_code=400, detail="Only JPEG, PNG, and WebP images are allowed"
-            )
+            raise ValidationError("Only JPEG, PNG, and WebP images are allowed")
 
-        # Read with size limit
         content = cover.file.read(MAX_COVER_SIZE + 1)
         if len(content) > MAX_COVER_SIZE:
-            raise HTTPException(status_code=400, detail="File too large (max 5MB)")
+            raise ValidationError("File too large (max 5MB)")
 
-        # Verify magic bytes
         file_type = self._validate_image_type(content)
         if file_type not in {"jpeg", "png", "webp"}:
-            raise HTTPException(status_code=400, detail="Invalid image file")
+            raise ValidationError("Invalid image file")
 
+        # TODO: Do not set id here. Set it in the repository implementation
         cover_filename = f"{book_id}.jpg"
         self.file_repository.save_cover(book_id_vo, content, cover_filename)
 
+        # TODO: Do we need to save the cover image api url to the database? Frontend could infer the path by book id...?
         # Update book's cover field in database using domain method
         cover_url = f"/api/v1/books/{book_id}/cover"
         book.update_cover(cover_url)
@@ -122,7 +121,6 @@ class BookCoverService:
             BookNotFoundError: If book is not found for the given client_book_id
             HTTPException: If file validation fails or upload fails
         """
-        # Convert primitives to value objects
         user_id_vo = UserId(user_id)
 
         book = self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)

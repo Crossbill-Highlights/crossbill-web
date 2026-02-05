@@ -1,5 +1,5 @@
 """
-Book management application service.
+Book management use case.
 
 Handles CRUD operations and book details aggregation for the library context.
 """
@@ -8,31 +8,28 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from sqlalchemy.orm import Session
-
-from src.application.library.services.book_tag_association_service import (
-    BookTagAssociationService,
+from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
+from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.library.use_cases.book_tag_association_use_case import (
+    BookTagAssociationUseCase,
 )
-from src.application.library.services.ebook_deletion_service import EbookDeletionService
+from src.application.library.use_cases.ebook_deletion_use_case import EbookDeletionUseCase
+from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
+from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
+from src.application.reading.protocols.highlight_tag_repository import (
+    HighlightTagRepositoryProtocol,
+)
+from src.application.reading.use_cases.highlight_tag_use_case import HighlightTagUseCase
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.tag import Tag
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
 from src.domain.reading.services.highlight_grouping_service import HighlightGroupingService
 from src.exceptions import BookNotFoundError
-from src.infrastructure.learning.repositories.flashcard_repository import (
-    FlashcardRepository,
-)
-from src.infrastructure.library.repositories.book_repository import BookRepository
 from src.infrastructure.library.schemas import (
     BookCreate,
     BookUpdateRequest,
 )  # Only for input parameter types
-from src.infrastructure.reading.repositories.bookmark_repository import BookmarkRepository
-from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
-from src.infrastructure.reading.repositories.highlight_tag_repository import (
-    HighlightTagRepository,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -51,28 +48,44 @@ class EreaderMetadata:
     has_ebook: bool
 
 
-class BookManagementService:
-    """Application service for book management operations."""
+class BookManagementUseCase:
+    """Use case for book management operations."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(
+        self,
+        book_repository: BookRepositoryProtocol,
+        bookmark_repository: BookmarkRepositoryProtocol,
+        highlight_repository: HighlightRepositoryProtocol,
+        highlight_tag_repository: HighlightTagRepositoryProtocol,
+        flashcard_repository: FlashcardRepositoryProtocol,
+        book_tag_association_use_case: BookTagAssociationUseCase,
+        ebook_deletion_use_case: EbookDeletionUseCase,
+        highlight_tag_use_case: HighlightTagUseCase,
+        highlight_grouping_service: HighlightGroupingService,
+    ) -> None:
         """
-        Initialize service.
+        Initialize use case with dependencies.
 
         Args:
-            db: SQLAlchemy database session
+            book_repository: Book repository protocol implementation
+            bookmark_repository: Bookmark repository protocol implementation
+            highlight_repository: Highlight repository protocol implementation
+            highlight_tag_repository: Highlight tag repository protocol implementation
+            flashcard_repository: Flashcard repository protocol implementation
+            book_tag_association_use_case: Book tag association use case
+            ebook_deletion_use_case: Ebook deletion use case
+            highlight_tag_use_case: Highlight tag use case
+            highlight_grouping_service: Highlight grouping domain service
         """
-        self.db = db
-        self.book_repository = BookRepository(db)
-        self.bookmark_repository = BookmarkRepository(db)
-        self.highlight_repository = HighlightRepository(db)
-        self.highlight_tag_repository = HighlightTagRepository(db)
-        self.highlight_grouping_service = HighlightGroupingService()
-
-        # Repositories
-        self.flashcard_repository = FlashcardRepository(db)
-
-        # Services
-        self.ebook_deletion_service = EbookDeletionService()
+        self.book_repository = book_repository
+        self.bookmark_repository = bookmark_repository
+        self.highlight_repository = highlight_repository
+        self.highlight_tag_repository = highlight_tag_repository
+        self.flashcard_repository = flashcard_repository
+        self.book_tag_association_use_case = book_tag_association_use_case
+        self.ebook_deletion_use_case = ebook_deletion_use_case
+        self.highlight_tag_use_case = highlight_tag_use_case
+        self.highlight_grouping_service = highlight_grouping_service
 
     def create_book(self, book_data: BookCreate, user_id: int) -> tuple[Book, bool]:
         """
@@ -112,10 +125,11 @@ class BookManagementService:
         # Save book
         book = self.book_repository.save(book)
 
-        # Add tags using DDD service
+        # Add tags using use case
         if book_data.keywords:
-            tag_service = BookTagAssociationService(self.db)
-            tag_service.add_tags_to_book(book.id.value, book_data.keywords, user_id)
+            self.book_tag_association_use_case.add_tags_to_book(
+                book.id.value, book_data.keywords, user_id
+            )
 
         return book, True
 
@@ -148,16 +162,7 @@ class BookManagementService:
         book = self.book_repository.save(book)
 
         # Get highlight tags using use case (from reading context)
-        from src.application.reading.use_cases.highlight_tag_use_case import (  # noqa: PLC0415
-            HighlightTagUseCase,
-        )
-        from src.infrastructure.reading.repositories import (  # noqa: PLC0415
-            HighlightTagRepository,
-        )
-
-        tag_repository = HighlightTagRepository(self.db)
-        highlight_tag_use_case = HighlightTagUseCase(tag_repository, self.book_repository)
-        highlight_tags = highlight_tag_use_case.get_tags_for_book(book_id, user_id)
+        highlight_tags = self.highlight_tag_use_case.get_tags_for_book(book_id, user_id)
 
         # Get all highlights for book (returns domain entities)
         highlights_with_context = self.highlight_repository.search(
@@ -175,9 +180,8 @@ class BookManagementService:
         # Get bookmarks (returns domain entities)
         bookmarks = self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)
 
-        # Get tags using DDD service
-        tag_service = BookTagAssociationService(self.db)
-        tags = tag_service.get_tags_for_book(book_id, user_id)
+        # Get tags using use case
+        tags = self.book_tag_association_use_case.get_tags_for_book(book_id, user_id)
 
         # Get highlight tag groups
         highlight_tag_groups = self.highlight_tag_repository.find_groups_by_book(book_id_vo)
@@ -220,9 +224,10 @@ class BookManagementService:
         if not book:
             raise BookNotFoundError(book_id)
 
-        # Update tags using DDD service
-        tag_service = BookTagAssociationService(self.db)
-        tags = tag_service.replace_book_tags(book_id, update_data.tags, user_id)
+        # Update tags using use case
+        tags = self.book_tag_association_use_case.replace_book_tags(
+            book_id, update_data.tags, user_id
+        )
 
         # Get counts
         highlight_count = self.highlight_repository.count_by_book(book_id_vo, user_id_vo)
@@ -231,7 +236,7 @@ class BookManagementService:
         logger.info(f"Successfully updated book {book_id}")
 
         # Return domain entities
-        return (book, highlight_count, flashcard_count, tags)
+        return book, highlight_count, flashcard_count, tags
 
     def delete_book(self, book_id: int, user_id: int) -> None:
         """
@@ -247,19 +252,14 @@ class BookManagementService:
         Raises:
             BookNotFoundError: If book is not found
         """
-        # Convert primitives to value objects
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        # Verify book exists
         book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
-        # Delete associated epub file if it exists
-        self.ebook_deletion_service.delete_ebook(book_id)
-
-        # Delete book (cascades handled by database)
+        self.ebook_deletion_use_case.delete_ebook(book_id)
         self.book_repository.delete(book)
 
         logger.info(f"Successfully deleted book {book_id}")
@@ -281,7 +281,6 @@ class BookManagementService:
         Raises:
             BookNotFoundError: If book is not found for the given client_book_id
         """
-        # Convert primitives to value objects
         user_id_vo = UserId(user_id)
 
         book = self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)

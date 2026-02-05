@@ -5,13 +5,14 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from src.application.library.services.book_cover_service import BookCoverService
-from src.application.library.services.book_management_service import BookManagementService
-from src.application.library.services.ebook_upload_service import EbookUploadService
-from src.database import DatabaseSession
+from src.application.library.use_cases.book_cover_use_case import BookCoverUseCase
+from src.application.library.use_cases.book_management_use_case import BookManagementUseCase
+from src.application.library.use_cases.ebook_upload_use_case import EbookUploadUseCase
+from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError
+from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.library.schemas import (
     BookCreate,
@@ -32,8 +33,8 @@ router = APIRouter(prefix="/ereader", tags=["ereader"])
 )
 def create_book(
     book_data: BookCreate,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: BookManagementUseCase = Depends(inject_use_case(container.book_management_use_case)),
 ) -> EreaderBookMetadata:
     """
     Create or get a book by client_book_id.
@@ -44,21 +45,17 @@ def create_book(
 
     Args:
         book_data: Book creation data (same format as highlight upload)
-        db: Database session
         current_user: Authenticated user
 
     Returns:
         EreaderBookMetadata with book_id, bookname, author, has_cover, has_epub
     """
     try:
-        service = BookManagementService(db)
-        service.create_book(book_data, current_user.id.value)
+        use_case.create_book(book_data, current_user.id.value)
 
-        # Commit the book creation
-        db.commit()
-
-        # Return metadata in the same format as GET /ereader/books/{client_book_id}
-        metadata = service.get_metadata_for_ereader(book_data.client_book_id, current_user.id.value)
+        metadata = use_case.get_metadata_for_ereader(
+            book_data.client_book_id, current_user.id.value
+        )
         return EreaderBookMetadata(
             book_id=metadata.book_id,
             bookname=metadata.title,
@@ -91,8 +88,8 @@ def create_book(
 )
 def get_book_metadata(
     client_book_id: str,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: BookManagementUseCase = Depends(inject_use_case(container.book_management_use_case)),
 ) -> EreaderBookMetadata:
     """
     Get basic book metadata by client_book_id for ereader operations.
@@ -102,7 +99,6 @@ def get_book_metadata(
 
     Args:
         client_book_id: The client-provided stable book identifier
-        db: Database session
         current_user: Authenticated user
 
     Returns:
@@ -112,8 +108,7 @@ def get_book_metadata(
         HTTPException: 404 if book is not found
     """
     try:
-        service = BookManagementService(db)
-        metadata = service.get_metadata_for_ereader(client_book_id, current_user.id.value)
+        metadata = use_case.get_metadata_for_ereader(client_book_id, current_user.id.value)
         return EreaderBookMetadata(
             book_id=metadata.book_id,
             bookname=metadata.title,
@@ -147,8 +142,8 @@ def get_book_metadata(
 def upload_book_cover(
     client_book_id: str,
     cover: Annotated[UploadFile, File(...)],
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: BookCoverUseCase = Depends(inject_use_case(container.book_cover_use_case)),
 ) -> CoverUploadResponse:
     """
     Upload a book cover image using client_book_id.
@@ -159,7 +154,6 @@ def upload_book_cover(
     Args:
         client_book_id: The client-provided stable book identifier
         cover: Uploaded image file (JPEG, PNG, or WebP)
-        db: Database session
         current_user: Authenticated user
 
     Returns:
@@ -169,11 +163,9 @@ def upload_book_cover(
         HTTPException: 404 if book is not found, or if upload fails
     """
     try:
-        service = BookCoverService(db)
-        cover_url = service.upload_cover_by_client_book_id(
+        cover_url = use_case.upload_cover_by_client_book_id(
             client_book_id, cover, current_user.id.value
         )
-        db.commit()
         return CoverUploadResponse(
             success=True,
             message="Cover uploaded successfully",
@@ -209,8 +201,8 @@ MAX_EBOOK_SIZE = 50 * 1024 * 1024
 def upload_book_epub(
     client_book_id: str,
     epub: Annotated[UploadFile, File(...)],
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: EbookUploadUseCase = Depends(inject_use_case(container.ebook_upload_use_case)),
 ) -> EpubUploadResponse:
     """
     Upload an ebook file (EPUB) for a book using client_book_id.
@@ -221,7 +213,6 @@ def upload_book_epub(
     Args:
         client_book_id: The client-provided stable book identifier
         epub: Uploaded ebook file (EPUB or PDF)
-        db: Database session
         current_user: Authenticated user
 
     Returns:
@@ -247,14 +238,9 @@ def upload_book_epub(
                 detail=f"File too large (max {MAX_EBOOK_SIZE // (1024 * 1024)}MB)",
             )
 
-        # Upload the ebook through service layer
-        service = EbookUploadService(db)
-        service.upload_ebook(
+        use_case.upload_ebook(
             client_book_id, content, epub.content_type or "", current_user.id.value
         )
-
-        # Commit the database update
-        db.commit()
 
         return EpubUploadResponse(
             success=True,

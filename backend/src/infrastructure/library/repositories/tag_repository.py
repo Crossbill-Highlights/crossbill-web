@@ -96,7 +96,7 @@ class TagRepository:
         if new_names:
             new_tag_orms = [TagORM(name=name, user_id=user_id.value) for name in new_names]
             self.db.add_all(new_tag_orms)
-            self.db.flush()
+            self.db.commit()
             new_tags = [self.mapper.to_domain(orm) for orm in new_tag_orms]
 
         return existing_tags + new_tags
@@ -145,7 +145,7 @@ class TagRepository:
         # Add associations
         if tag_orms:
             book_orm.tags.extend(tag_orms)
-            self.db.flush()
+            self.db.commit()
 
     def replace_book_tags(self, book_id: BookId, tag_ids: list[TagId], user_id: UserId) -> None:
         """
@@ -180,4 +180,4 @@ class TagRepository:
 
         # Replace entire collection
         book_orm.tags = tag_orms
-        self.db.flush()
+        self.db.commit()

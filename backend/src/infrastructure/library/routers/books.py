@@ -6,17 +6,21 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette import status
 from starlette.responses import FileResponse
 
-from src.application.library.services import BookManagementService, GetBooksWithCountsService
-from src.application.library.services.book_cover_service import BookCoverService
-from src.application.library.services.get_recently_viewed_books_service import (
-    GetRecentlyViewedBooksService,
+from src.application.library.use_cases.book_cover_use_case import BookCoverUseCase
+from src.application.library.use_cases.book_management_use_case import BookManagementUseCase
+from src.application.library.use_cases.get_books_with_counts_use_case import (
+    GetBooksWithCountsUseCase,
 )
-from src.database import DatabaseSession
+from src.application.library.use_cases.get_recently_viewed_books_use_case import (
+    GetRecentlyViewedBooksUseCase,
+)
+from src.core import container
 from src.domain.common import DomainError
 from src.domain.identity import User
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
 from src.domain.reading.services import ChapterWithHighlights as DomainChapterWithHighlights
 from src.exceptions import CrossbillError
+from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.learning.schemas import Flashcard
 from src.infrastructure.library.schemas import (
@@ -168,8 +172,10 @@ def _build_book_details_schema(agg: BookDetailsAggregation) -> BookDetails:
 
 @router.get("/", response_model=BooksListResponse, status_code=status.HTTP_200_OK)
 def get_books(
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: GetBooksWithCountsUseCase = Depends(
+        inject_use_case(container.get_books_with_counts_use_case)
+    ),
     offset: int = Query(0, ge=0, description="Number of books to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of books to return"),
     only_with_flashcards: bool = Query(False, description="Return only books with flashcards"),
@@ -179,7 +185,6 @@ def get_books(
     Get all books with their highlight counts, sorted alphabetically by title.
 
     Args:
-        db: Database session
         offset: Number of books to skip (for pagination)
         limit: Maximum number of books to return (for pagination)
         search: Optional search text to filter books by title or author
@@ -191,8 +196,7 @@ def get_books(
         HTTPException: If fetching books fails due to server error
     """
     try:
-        service = GetBooksWithCountsService(db)
-        results, total = service.get_books_with_counts(
+        results, total = use_case.get_books_with_counts(
             current_user.id.value, offset, limit, only_with_flashcards, search
         )
 
@@ -232,8 +236,10 @@ def get_books(
     status_code=status.HTTP_200_OK,
 )
 def get_recently_viewed_books(
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: GetRecentlyViewedBooksUseCase = Depends(
+        inject_use_case(container.get_recently_viewed_books_use_case)
+    ),
     limit: int = Query(10, ge=1, le=50, description="Maximum number of books to return"),
 ) -> RecentlyViewedBooksResponse:
     """
@@ -242,7 +248,6 @@ def get_recently_viewed_books(
     Returns books that have been viewed at least once, ordered by most recently viewed.
 
     Args:
-        db: Database session
         limit: Maximum number of books to return (default: 10, max: 50)
 
     Returns:
@@ -252,8 +257,7 @@ def get_recently_viewed_books(
         HTTPException: If fetching books fails due to server error
     """
     try:
-        service = GetRecentlyViewedBooksService(db)
-        results = service.get_recently_viewed(current_user.id.value, limit)
+        results = use_case.get_recently_viewed(current_user.id.value, limit)
 
         books_list = [
             BookWithHighlightCount(
@@ -288,15 +292,14 @@ def get_recently_viewed_books(
 @router.get("/{book_id}", response_model=BookDetails, status_code=status.HTTP_200_OK)
 def get_book_details(
     book_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: BookManagementUseCase = Depends(inject_use_case(container.book_management_use_case)),
 ) -> BookDetails:
     """
     Get detailed information about a book including its chapters and highlights.
 
     Args:
         book_id: ID of the book to retrieve
-        db: Database session
 
     Returns:
         BookDetails with chapters and their highlights
@@ -305,9 +308,7 @@ def get_book_details(
         HTTPException: If book is not found or fetching fails
     """
     try:
-        service = BookManagementService(db)
-        agg = service.get_book_details(book_id, current_user.id.value)
-        db.commit()
+        agg = use_case.get_book_details(book_id, current_user.id.value)
         return _build_book_details_schema(agg)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
@@ -332,8 +333,8 @@ def get_book_details(
 def update_book(
     book_id: int,
     request: BookUpdateRequest,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: BookManagementUseCase = Depends(inject_use_case(container.book_management_use_case)),
 ) -> BookWithHighlightCount:
     """
     Update book information.
@@ -343,7 +344,6 @@ def update_book(
     Args:
         book_id: ID of the book to update
         request: Book update request containing tags
-        db: Database session
 
     Returns:
         Updated book with highlight count and tags
@@ -352,11 +352,9 @@ def update_book(
         HTTPException: If book is not found or update fails
     """
     try:
-        service = BookManagementService(db)
-        book, highlight_count, flashcard_count, tags = service.update_book(
+        book, highlight_count, flashcard_count, tags = use_case.update_book(
             book_id, request, current_user.id.value
         )
-        db.commit()
         return BookWithHighlightCount(
             id=book.id.value,
             client_book_id=book.client_book_id,
@@ -392,8 +390,8 @@ def update_book(
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_book(
     book_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: BookManagementUseCase = Depends(inject_use_case(container.book_management_use_case)),
 ) -> None:
     """
     Delete a book and all its contents (hard delete).
@@ -404,15 +402,12 @@ def delete_book(
 
     Args:
         book_id: ID of the book to delete
-        db: Database session
 
     Raises:
         HTTPException: If book is not found or deletion fails
     """
     try:
-        service = BookManagementService(db)
-        service.delete_book(book_id, current_user.id.value)
-        db.commit()
+        use_case.delete_book(book_id, current_user.id.value)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -431,8 +426,8 @@ def delete_book(
 @router.get("/{book_id}/cover", status_code=status.HTTP_200_OK)
 def get_book_cover(
     book_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: BookCoverUseCase = Depends(inject_use_case(container.book_cover_use_case)),
 ) -> FileResponse:
     """
     Get the cover image for a book.
@@ -442,7 +437,6 @@ def get_book_cover(
 
     Args:
         book_id: ID of the book
-        db: Database session
         current_user: Authenticated user
 
     Returns:
@@ -451,6 +445,5 @@ def get_book_cover(
     Raises:
         HTTPException: If book is not found, user doesn't own it, or cover doesn't exist
     """
-    service = BookCoverService(db)
-    cover_path = service.get_cover_path(book_id, current_user.id.value)
+    cover_path = use_case.get_cover_path(book_id, current_user.id.value)
     return FileResponse(cover_path, media_type="image/jpeg")
