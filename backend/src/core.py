@@ -1,6 +1,9 @@
 from dependency_injector import containers, providers
 from sqlalchemy.orm import Session
 
+from src.application.identity.use_cases.authentication_use_case import AuthenticationUseCase
+from src.application.identity.use_cases.register_user_use_case import RegisterUserUseCase
+from src.application.identity.use_cases.update_user_use_case import UpdateUserUseCase
 from src.application.learning.use_cases.flashcard_ai_use_case import FlashcardAIUseCase
 from src.application.learning.use_cases.flashcard_use_case import FlashcardUseCase
 from src.application.library.services.ebook_text_extraction_service import (
@@ -44,6 +47,9 @@ from src.application.reading.use_cases.update_highlight_note_use_case import (
 )
 from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
 from src.domain.reading.services.highlight_grouping_service import HighlightGroupingService
+from src.infrastructure.identity.repositories.user_repository import UserRepository
+from src.infrastructure.identity.services.password_service_adapter import PasswordServiceAdapter
+from src.infrastructure.identity.services.token_service_adapter import TokenServiceAdapter
 from src.infrastructure.learning.repositories.flashcard_repository import FlashcardRepository
 from src.infrastructure.library.repositories import BookRepository
 from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
@@ -76,6 +82,11 @@ class Container(containers.DeclarativeContainer):
     flashcard_repository = providers.Factory(FlashcardRepository, db=db)
     file_repository = providers.Factory(FileRepository)
     ebook_text_extraction_service = providers.Factory(EbookTextExtractionService, db=db)
+
+    # Identity repositories and services
+    user_repository = providers.Factory(UserRepository, db=db)
+    password_service = providers.Singleton(PasswordServiceAdapter)
+    token_service = providers.Singleton(TokenServiceAdapter)
 
     # Domain services (pure domain logic, no db)
     highlight_deduplication_service = providers.Factory(HighlightDeduplicationService)
@@ -203,6 +214,27 @@ class Container(containers.DeclarativeContainer):
     flashcard_ai_use_case = providers.Factory(
         FlashcardAIUseCase,
         highlight_repository=highlight_repository,
+    )
+
+    # Identity use cases
+    update_user_use_case = providers.Factory(
+        UpdateUserUseCase,
+        user_repository=user_repository,
+        password_service=password_service,
+    )
+
+    authentication_use_case = providers.Factory(
+        AuthenticationUseCase,
+        user_repository=user_repository,
+        password_service=password_service,
+        token_service=token_service,
+    )
+
+    register_user_use_case = providers.Factory(
+        RegisterUserUseCase,
+        user_repository=user_repository,
+        password_service=password_service,
+        token_service=token_service,
     )
 
 

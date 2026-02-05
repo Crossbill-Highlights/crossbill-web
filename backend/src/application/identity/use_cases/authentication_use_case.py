@@ -1,29 +1,31 @@
-"""Application service for authentication operations."""
+"""Use case for authentication operations."""
 
 import structlog
-from sqlalchemy.orm import Session
 
+from src.application.identity.protocols.password_service import PasswordServiceProtocol
+from src.application.identity.protocols.token_service import TokenServiceProtocol
+from src.application.identity.protocols.user_repository import UserRepositoryProtocol
 from src.domain.common.value_objects.ids import UserId
 from src.domain.identity.entities.user import User
 from src.domain.identity.exceptions import InvalidCredentialsError, UserNotFoundError
-from src.infrastructure.identity.auth.password_service import get_dummy_hash, verify_password
-from src.infrastructure.identity.auth.token_service import (
-    TokenWithRefresh,
-    create_token_pair,
-    verify_refresh_token,
-)
-from src.infrastructure.identity.repositories.user_repository import UserRepository
+from src.infrastructure.identity.services.token_service import TokenWithRefresh
 
 logger = structlog.get_logger(__name__)
 
 
-class AuthenticationService:
-    """Application service for authentication operations."""
+class AuthenticationUseCase:
+    """Use case for authentication operations."""
 
-    def __init__(self, db: Session) -> None:
-        """Initialize service with database session."""
-        self.db = db
-        self.user_repository = UserRepository(db)
+    def __init__(
+        self,
+        user_repository: UserRepositoryProtocol,
+        password_service: PasswordServiceProtocol,
+        token_service: TokenServiceProtocol,
+    ) -> None:
+        """Initialize use case with dependencies."""
+        self.user_repository = user_repository
+        self.password_service = password_service
+        self.token_service = token_service
 
     def authenticate_user(self, email: str, password: str) -> tuple[User, TokenWithRefresh]:
         """
@@ -39,21 +41,19 @@ class AuthenticationService:
         Raises:
             InvalidCredentialsError: If credentials are invalid
         """
-        # Find user by email
         user = self.user_repository.find_by_email(email)
 
         # Use constant-time comparison to prevent timing attacks
         if not user:
-            # Use dummy hash to make timing consistent
-            verify_password(password, get_dummy_hash())
+            self.password_service.verify_password(password, self.password_service.get_dummy_hash())
             raise InvalidCredentialsError
 
-        # Verify password
-        if not user.hashed_password or not verify_password(password, user.hashed_password):
+        if not user.hashed_password or not self.password_service.verify_password(
+            password, user.hashed_password
+        ):
             raise InvalidCredentialsError
 
-        # Create token pair
-        token_pair = create_token_pair(user.id.value)
+        token_pair = self.token_service.create_token_pair(user.id.value)
 
         logger.info("user_authenticated", user_id=user.id.value, email=email)
 
@@ -72,18 +72,15 @@ class AuthenticationService:
         Raises:
             InvalidCredentialsError: If refresh token is invalid or user not found
         """
-        # Verify refresh token
-        user_id = verify_refresh_token(refresh_token)
+        user_id = self.token_service.verify_refresh_token(refresh_token)
         if user_id is None:
             raise InvalidCredentialsError
 
-        # Load user
         user = self.user_repository.find_by_id(UserId(user_id))
         if not user:
             raise InvalidCredentialsError
 
-        # Create new token pair
-        token_pair = create_token_pair(user.id.value)
+        token_pair = self.token_service.create_token_pair(user.id.value)
 
         logger.info("access_token_refreshed", user_id=user.id.value)
 

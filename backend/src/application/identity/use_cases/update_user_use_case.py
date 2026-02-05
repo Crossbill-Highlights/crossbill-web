@@ -1,24 +1,27 @@
-"""Application service for user profile management."""
+"""Use case for user profile management."""
 
 import structlog
-from sqlalchemy.orm import Session
 
+from src.application.identity.protocols.password_service import PasswordServiceProtocol
+from src.application.identity.protocols.user_repository import UserRepositoryProtocol
 from src.domain.common.value_objects.ids import UserId
 from src.domain.identity.entities.user import User
 from src.domain.identity.exceptions import PasswordVerificationError, UserNotFoundError
-from src.infrastructure.identity.auth.password_service import hash_password, verify_password
-from src.infrastructure.identity.repositories.user_repository import UserRepository
 
 logger = structlog.get_logger(__name__)
 
 
-class UserProfileService:
-    """Application service for user profile operations."""
+class UpdateUserUseCase:
+    """Use case for user profile operations."""
 
-    def __init__(self, db: Session) -> None:
-        """Initialize service with database session."""
-        self.db = db
-        self.user_repository = UserRepository(db)
+    def __init__(
+        self,
+        user_repository: UserRepositoryProtocol,
+        password_service: PasswordServiceProtocol,
+    ) -> None:
+        """Initialize use case with dependencies."""
+        self.user_repository = user_repository
+        self.password_service = password_service
 
     def update_user(
         self,
@@ -49,29 +52,22 @@ class UserProfileService:
         if not user:
             raise UserNotFoundError(user_id)
 
-        # Update email if provided
         if email is not None:
             user.update_email(email)
 
-        # Update password if provided
         if new_password is not None:
-            # Validate current password is provided
             if current_password is None:
                 raise PasswordVerificationError
 
-            # Verify current password
-            if not user.hashed_password or not verify_password(
+            if not user.hashed_password or not self.password_service.verify_password(
                 current_password, user.hashed_password
             ):
                 raise PasswordVerificationError
 
-            # Hash and update password
-            hashed_password = hash_password(new_password)
+            hashed_password = self.password_service.hash_password(new_password)
             user.update_password(hashed_password)
 
-        # Save user
         user = self.user_repository.save(user)
-        self.db.commit()
 
         logger.info("user_profile_updated", user_id=user_id)
 

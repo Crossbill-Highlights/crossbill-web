@@ -8,11 +8,12 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from starlette import status
 
-from src.application.identity.services.authentication_service import AuthenticationService
+from src.application.identity.use_cases.authentication_use_case import AuthenticationUseCase
 from src.config import get_settings
-from src.database import DatabaseSession
+from src.core import container
 from src.domain.identity.exceptions import InvalidCredentialsError
-from src.infrastructure.identity.auth.token_service import (
+from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.identity.services.token_service import (
     REFRESH_TOKEN_EXPIRE_DAYS,
     TokenWithRefresh,
 )
@@ -59,12 +60,11 @@ async def login(
     request: Request,
     response: Response,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: DatabaseSession,
+    use_case: AuthenticationUseCase = Depends(inject_use_case(container.authentication_use_case)),
 ) -> TokenWithRefresh:
     # OAuth2PasswordRequestForm uses 'username' field, but we use it for email
     try:
-        auth_service = AuthenticationService(db)
-        _, token_pair = auth_service.authenticate_user(form_data.username, form_data.password)
+        _, token_pair = use_case.authenticate_user(form_data.username, form_data.password)
         set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
     except InvalidCredentialsError:
@@ -80,9 +80,9 @@ async def login(
 async def refresh(
     request: Request,
     response: Response,
-    db: DatabaseSession,
     body: RefreshTokenRequest | None = None,
     refresh_token: Annotated[str | None, Cookie()] = None,
+    use_case: AuthenticationUseCase = Depends(inject_use_case(container.authentication_use_case)),
 ) -> TokenWithRefresh:
     """
     Refresh the access token using a refresh token.
@@ -103,8 +103,7 @@ async def refresh(
         )
 
     try:
-        auth_service = AuthenticationService(db)
-        _, token_pair = auth_service.refresh_access_token(token)
+        _, token_pair = use_case.refresh_access_token(token)
         set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
     except InvalidCredentialsError:

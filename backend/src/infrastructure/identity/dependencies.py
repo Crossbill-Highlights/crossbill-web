@@ -1,16 +1,19 @@
 """FastAPI dependencies for identity and authentication."""
 
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
+from src.core import container
 from src.database import DatabaseSession
-from src.domain.common.value_objects.ids import UserId
 from src.domain.identity.entities.user import User
+from src.domain.identity.exceptions import UserNotFoundError
 from src.exceptions import CredentialsException
-from src.infrastructure.identity.auth.token_service import verify_access_token
-from src.infrastructure.identity.repositories.user_repository import UserRepository
+from src.infrastructure.identity.services.token_service import verify_access_token
+
+if TYPE_CHECKING:
+    pass
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
@@ -35,9 +38,10 @@ async def get_current_user(
     if user_id is None:
         raise CredentialsException
 
-    user_repository = UserRepository(db)
-    user = user_repository.find_by_id(UserId(user_id))
-    if user is None:
-        raise CredentialsException
+    container.db.override(db)
+    use_case = container.authentication_use_case()
 
-    return user
+    try:
+        return use_case.get_user_by_id(user_id)
+    except UserNotFoundError:
+        raise CredentialsException from None

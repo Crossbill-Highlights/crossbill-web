@@ -82,7 +82,7 @@ class UserRepository:
             try:
                 orm_model = self.mapper.to_orm(user)
                 self.db.add(orm_model)
-                self.db.flush()
+                self.db.commit()
                 self.db.refresh(orm_model)
                 logger.info(f"Created user with email: {user.email} (id={orm_model.id})")
                 return self.mapper.to_domain(orm_model)
@@ -100,7 +100,7 @@ class UserRepository:
                 raise ValueError(f"User with id {user.id.value} not found")
 
             orm_model = self.mapper.to_orm(user, orm_model)
-            self.db.flush()
+            self.db.commit()
             self.db.refresh(orm_model)
             logger.info(f"Updated user {user.id.value}")
             return self.mapper.to_domain(orm_model)

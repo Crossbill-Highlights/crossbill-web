@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from src.application.identity.services.user_profile_service import UserProfileService
-from src.application.identity.services.user_registration_service import UserRegistrationService
+from src.application.identity.use_cases.register_user_use_case import RegisterUserUseCase
+from src.application.identity.use_cases.update_user_use_case import UpdateUserUseCase
+from src.core import container
 from src.database import DatabaseSession
 from src.domain.identity.entities.user import User
 from src.domain.identity.exceptions import (
@@ -15,7 +16,7 @@ from src.domain.identity.exceptions import (
     RegistrationDisabledError,
 )
 from src.exceptions import CrossbillError
-from src.infrastructure.identity.auth.token_service import TokenWithRefresh
+from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.identity.routers.auth import set_refresh_cookie
 from src.infrastructure.identity.schemas import (
@@ -23,6 +24,7 @@ from src.infrastructure.identity.schemas import (
     UserRegisterRequest,
     UserUpdateRequest,
 )
+from src.infrastructure.identity.services.token_service import TokenWithRefresh
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/users", tags=["users"])
@@ -32,7 +34,11 @@ limiter = Limiter(key_func=get_remote_address)
 @router.post("/register")
 @limiter.limit("5/minute")  # type: ignore[misc]
 async def register(
-    request: Request, response: Response, register_data: UserRegisterRequest, db: DatabaseSession
+    request: Request,
+    response: Response,
+    register_data: UserRegisterRequest,
+    db: DatabaseSession,
+    use_case: RegisterUserUseCase = Depends(inject_use_case(container.register_user_use_case)),
 ) -> TokenWithRefresh:
     """
     Register a new user account.
@@ -41,8 +47,8 @@ async def register(
     Returns token pair for immediate login after registration.
     """
     try:
-        service = UserRegistrationService(db)
-        _, token_pair = service.register_user(register_data.email, register_data.password)
+        _, token_pair = use_case.register_user(register_data.email, register_data.password)
+        db.commit()
         set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
     except RegistrationDisabledError:
@@ -80,6 +86,7 @@ async def update_me(
     current_user: Annotated[User, Depends(get_current_user)],
     db: DatabaseSession,
     update_data: UserUpdateRequest,
+    use_case: UpdateUserUseCase = Depends(inject_use_case(container.update_user_use_case)),
 ) -> UserDetailsResponse:
     """
     Update the current user's profile.
@@ -88,13 +95,13 @@ async def update_me(
     - To change password: provide both `current_password` and `new_password` fields
     """
     try:
-        service = UserProfileService(db)
-        user = service.update_user(
+        user = use_case.update_user(
             user_id=current_user.id.value,
             email=update_data.email,
             current_password=update_data.current_password,
             new_password=update_data.new_password,
         )
+        db.commit()
         return UserDetailsResponse(email=user.email, id=user.id.value)
     except PasswordVerificationError:
         raise HTTPException(

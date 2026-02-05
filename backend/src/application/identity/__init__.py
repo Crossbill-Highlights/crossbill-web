@@ -1,11 +1,11 @@
 """Identity application layer."""
 
-from src.application.identity.services.authentication_service import AuthenticationService
-from src.application.identity.services.user_profile_service import UserProfileService
-from src.application.identity.services.user_registration_service import UserRegistrationService
+from src.application.identity.use_cases.authentication_use_case import AuthenticationUseCase
+from src.application.identity.use_cases.register_user_use_case import RegisterUserUseCase
+from src.application.identity.use_cases.update_user_use_case import UpdateUserUseCase
 
 __all__ = [
-    "AuthenticationService",
-    "UserProfileService",
-    "UserRegistrationService",
+    "AuthenticationUseCase",
+    "RegisterUserUseCase",
+    "UpdateUserUseCase",
 ]

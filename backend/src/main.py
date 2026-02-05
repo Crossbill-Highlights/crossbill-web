@@ -23,9 +23,9 @@ from src.config import configure_logging, get_settings
 from src.database import get_engine
 from src.exceptions import BookNotFoundError, CrossbillError, NotFoundError
 from src.infrastructure.common.routers import settings as settings_router
-from src.infrastructure.identity.auth.password_service import hash_password
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.routers import auth, users
+from src.infrastructure.identity.services.password_service import hash_password
 from src.infrastructure.learning.routers import ai_flashcard_suggestions, flashcards
 from src.infrastructure.learning.routers import book_flashcards as learning_books
 from src.infrastructure.library.routers import books as library_books
