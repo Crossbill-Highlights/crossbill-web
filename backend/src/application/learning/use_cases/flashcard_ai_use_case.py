@@ -1,14 +1,13 @@
-"""Application service for flashcard AI operations."""
+"""Use case for flashcard AI operations."""
 
 from dataclasses import dataclass
 
 import structlog
-from sqlalchemy.orm import Session
 
+from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.domain.common.value_objects.ids import HighlightId, UserId
-from src.exceptions import ValidationError
+from src.exceptions import NotFoundError
 from src.infrastructure.ai.ai_service import get_ai_flashcard_suggestions_from_text
-from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
 
 logger = structlog.get_logger(__name__)
 
@@ -21,13 +20,15 @@ class FlashcardSuggestion:
     answer: str
 
 
-class FlashcardAIService:
-    """Application service for flashcard AI operations."""
+class FlashcardAIUseCase:
+    """Use case for flashcard AI operations."""
 
-    def __init__(self, db: Session) -> None:
-        """Initialize service with database session."""
-        self.db = db
-        self.highlight_repository = HighlightRepository(db)
+    def __init__(
+        self,
+        highlight_repository: HighlightRepositoryProtocol,
+    ) -> None:
+        """Initialize use case with repository protocols."""
+        self.highlight_repository = highlight_repository
 
     async def get_flashcard_suggestions(
         self, highlight_id: int, user_id: int
@@ -45,19 +46,15 @@ class FlashcardAIService:
         Raises:
             ValidationError: If highlight not found or user doesn't own it
         """
-        # Convert to value objects
         highlight_id_vo = HighlightId(highlight_id)
         user_id_vo = UserId(user_id)
 
-        # Validate highlight exists and belongs to user
         highlight = self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
-            raise ValidationError(f"Highlight with id {highlight_id} not found", status_code=404)
+            raise NotFoundError(f"Highlight with id {highlight_id} not found")
 
-        # Get AI suggestions from highlight text
         ai_suggestions = await get_ai_flashcard_suggestions_from_text(highlight.text)
 
-        # Convert to data classes
         suggestions = [
             FlashcardSuggestion(question=suggestion.question, answer=suggestion.answer)
             for suggestion in ai_suggestions

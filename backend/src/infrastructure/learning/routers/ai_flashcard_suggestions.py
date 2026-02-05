@@ -5,12 +5,13 @@ from typing import Annotated
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.application.learning.services.flashcard_ai_service import FlashcardAIService
-from src.database import DatabaseSession
+from src.application.learning.use_cases.flashcard_ai_use_case import FlashcardAIUseCase
+from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.common.dependencies import require_ai_enabled
+from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.learning.schemas import (
     FlashcardSuggestionItem,
@@ -30,8 +31,8 @@ router = APIRouter(prefix="/highlights", tags=["flashcards"])
 @require_ai_enabled
 async def get_highlight_flashcard_suggestions(
     highlight_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: FlashcardAIUseCase = Depends(inject_use_case(container.flashcard_ai_use_case)),
 ) -> HighlightFlashcardSuggestionsResponse:
     """
     Get AI-generated flashcard suggestions for a highlight.
@@ -39,6 +40,7 @@ async def get_highlight_flashcard_suggestions(
     Args:
         highlight_id: ID of the highlight
         current_user: Authenticated user
+        use_case: FlashcardAIUseCase injected via dependency container
 
     Returns:
         HighlightFlashcardSuggestionsResponse with list of flashcard suggestions
@@ -48,8 +50,7 @@ async def get_highlight_flashcard_suggestions(
         HTTPException 500: For unexpected errors
     """
     try:
-        service = FlashcardAIService(db)
-        suggestions_data = await service.get_flashcard_suggestions(
+        suggestions_data = await use_case.get_flashcard_suggestions(
             highlight_id, current_user.id.value
         )
 

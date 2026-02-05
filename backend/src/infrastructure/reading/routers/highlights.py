@@ -6,7 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from src.application.learning.services.flashcard_service import FlashcardService
+from src.application.learning.use_cases.flashcard_use_case import FlashcardUseCase
 from src.application.reading.use_cases.highlight_delete_use_case import (
     HighlightDeleteUseCase,
 )
@@ -347,8 +347,8 @@ def delete_tag_group(
 def create_flashcard_for_highlight(
     highlight_id: int,
     request: FlashcardCreateRequest,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: FlashcardUseCase = Depends(inject_use_case(container.flashcard_use_case)),
 ) -> FlashcardCreateResponse:
     """
     Create a flashcard for a highlight.
@@ -359,7 +359,7 @@ def create_flashcard_for_highlight(
     Args:
         highlight_id: ID of the highlight
         request: Request containing question and answer
-        db: Database session
+        use_case: FlashcardUseCase injected via dependency container
 
     Returns:
         Created flashcard
@@ -368,8 +368,7 @@ def create_flashcard_for_highlight(
         HTTPException: If highlight not found or creation fails
     """
     try:
-        service = FlashcardService(db)
-        flashcard_entity = service.create_flashcard_for_highlight(
+        flashcard_entity = use_case.create_flashcard_for_highlight(
             highlight_id=highlight_id,
             user_id=current_user.id.value,
             question=request.question,

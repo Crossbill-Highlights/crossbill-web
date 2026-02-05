@@ -3,7 +3,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from src.domain.common.value_objects.ids import BookId, FlashcardId, HighlightId, UserId
+from src.domain.common.value_objects.ids import BookId, FlashcardId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
 from src.infrastructure.learning.mappers.flashcard_mapper import FlashcardMapper
 from src.models import Flashcard as FlashcardORM
@@ -56,28 +56,6 @@ class FlashcardRepository:
         orm_models = self.db.execute(stmt).scalars().all()
         return [self.mapper.to_domain(orm) for orm in orm_models]
 
-    def find_by_highlight(self, highlight_id: HighlightId, user_id: UserId) -> list[Flashcard]:
-        """
-        Get all flashcards for a highlight.
-
-        Args:
-            highlight_id: The highlight ID
-            user_id: The user ID for ownership verification
-
-        Returns:
-            List of flashcard entities ordered by created_at DESC
-        """
-        stmt = (
-            select(FlashcardORM)
-            .where(
-                FlashcardORM.highlight_id == highlight_id.value,
-                FlashcardORM.user_id == user_id.value,
-            )
-            .order_by(FlashcardORM.created_at.desc())
-        )
-        orm_models = self.db.execute(stmt).scalars().all()
-        return [self.mapper.to_domain(orm) for orm in orm_models]
-
     def count_by_book(self, book_id: BookId, user_id: UserId) -> int:
         """
         Count flashcards for a book.
@@ -109,7 +87,7 @@ class FlashcardRepository:
             # Create new
             orm_model = self.mapper.to_orm(flashcard)
             self.db.add(orm_model)
-            self.db.flush()
+            self.db.commit()
             self.db.refresh(orm_model)
             return self.mapper.to_domain(orm_model)
         # Update existing
@@ -117,7 +95,7 @@ class FlashcardRepository:
         if not orm_model:
             raise ValueError(f"Flashcard {flashcard.id.value} not found")
         self.mapper.to_orm(flashcard, orm_model)
-        self.db.flush()
+        self.db.commit()
         self.db.refresh(orm_model)
         return self.mapper.to_domain(orm_model)
 
@@ -142,5 +120,5 @@ class FlashcardRepository:
             return False
 
         self.db.delete(flashcard_orm)
-        self.db.flush()
+        self.db.commit()
         return True

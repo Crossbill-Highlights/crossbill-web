@@ -4,11 +4,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from src.application.learning.services import FlashcardService
-from src.database import DatabaseSession
+from src.application.learning.use_cases.flashcard_use_case import FlashcardUseCase
+from src.core import container
 from src.domain.common import DomainError
 from src.domain.identity import User
 from src.exceptions import CrossbillError, ValidationError
+from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.learning.schemas import (
     Flashcard,
@@ -32,8 +33,8 @@ router = APIRouter(prefix="/books", tags=["flashcards"])
 def create_flashcard_for_book(
     book_id: int,
     request: FlashcardCreateRequest,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: FlashcardUseCase = Depends(inject_use_case(container.flashcard_use_case)),
 ) -> FlashcardCreateResponse:
     """
     Create a standalone flashcard for a book (without a highlight).
@@ -44,7 +45,7 @@ def create_flashcard_for_book(
     Args:
         book_id: ID of the book
         request: Request containing question and answer
-        db: Database session
+        use_case: FlashcardUseCase injected via dependency container
 
     Returns:
         Created flashcard
@@ -53,8 +54,7 @@ def create_flashcard_for_book(
         HTTPException: If book not found or creation fails
     """
     try:
-        service = FlashcardService(db)
-        flashcard_entity = service.create_flashcard_for_book(
+        flashcard_entity = use_case.create_flashcard_for_book(
             book_id=book_id,
             user_id=current_user.id.value,
             question=request.question,
@@ -93,8 +93,8 @@ def create_flashcard_for_book(
 )
 def get_flashcards_for_book(
     book_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: FlashcardUseCase = Depends(inject_use_case(container.flashcard_use_case)),
 ) -> FlashcardsWithHighlightsResponse:
     """
     Get all flashcards for a book with embedded highlight data.
@@ -103,7 +103,7 @@ def get_flashcards_for_book(
 
     Args:
         book_id: ID of the book
-        db: Database session
+        use_case: FlashcardUseCase injected via dependency container
 
     Returns:
         List of flashcards with highlight data for the book
@@ -112,9 +112,8 @@ def get_flashcards_for_book(
         HTTPException: If book not found or fetching fails
     """
     try:
-        # Get flashcards with highlights from service (returns DTOs)
-        service = FlashcardService(db)
-        flashcards_with_highlights = service.get_flashcards_by_book(book_id, current_user.id.value)
+        # Get flashcards with highlights from use case (returns DTOs)
+        flashcards_with_highlights = use_case.get_flashcards_by_book(book_id, current_user.id.value)
 
         # Convert DTOs to Pydantic schemas
         flashcards = []

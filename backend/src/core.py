@@ -1,6 +1,8 @@
 from dependency_injector import containers, providers
 from sqlalchemy.orm import Session
 
+from src.application.learning.use_cases.flashcard_ai_use_case import FlashcardAIUseCase
+from src.application.learning.use_cases.flashcard_use_case import FlashcardUseCase
 from src.application.library.services.ebook_text_extraction_service import (
     EbookTextExtractionService,
 )
@@ -188,6 +190,19 @@ class Container(containers.DeclarativeContainer):
         ebook_deletion_use_case=ebook_deletion_use_case,
         highlight_tag_use_case=highlight_tag_use_case,
         highlight_grouping_service=highlight_grouping_service,
+    )
+
+    # Learning module use cases
+    flashcard_use_case = providers.Factory(
+        FlashcardUseCase,
+        flashcard_repository=flashcard_repository,
+        book_repository=book_repository,
+        highlight_repository=highlight_repository,
+    )
+
+    flashcard_ai_use_case = providers.Factory(
+        FlashcardAIUseCase,
+        highlight_repository=highlight_repository,
     )
 
 

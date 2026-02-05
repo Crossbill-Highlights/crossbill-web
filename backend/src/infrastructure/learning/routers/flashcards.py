@@ -5,11 +5,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.application.learning.services.flashcard_service import FlashcardService
-from src.database import DatabaseSession
+from src.application.learning.use_cases.flashcard_use_case import FlashcardUseCase
+from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError, ValidationError
+from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.learning.schemas import (
     Flashcard,
@@ -31,8 +32,8 @@ router = APIRouter(prefix="/flashcards", tags=["flashcards"])
 def update_flashcard(
     flashcard_id: int,
     request: FlashcardUpdateRequest,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: FlashcardUseCase = Depends(inject_use_case(container.flashcard_use_case)),
 ) -> FlashcardUpdateResponse:
     """
     Update a flashcard's question and/or answer.
@@ -40,7 +41,7 @@ def update_flashcard(
     Args:
         flashcard_id: ID of the flashcard to update
         request: Request containing updated question and/or answer
-        db: Database session
+        use_case: FlashcardUseCase injected via dependency container
 
     Returns:
         Updated flashcard
@@ -49,8 +50,7 @@ def update_flashcard(
         HTTPException: If flashcard not found or update fails
     """
     try:
-        service = FlashcardService(db)
-        flashcard_entity = service.update_flashcard(
+        flashcard_entity = use_case.update_flashcard(
             flashcard_id=flashcard_id,
             user_id=current_user.id.value,
             question=request.question,
@@ -89,15 +89,15 @@ def update_flashcard(
 )
 def delete_flashcard(
     flashcard_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: FlashcardUseCase = Depends(inject_use_case(container.flashcard_use_case)),
 ) -> FlashcardDeleteResponse:
     """
     Delete a flashcard.
 
     Args:
         flashcard_id: ID of the flashcard to delete
-        db: Database session
+        use_case: FlashcardUseCase injected via dependency container
 
     Returns:
         Deletion confirmation
@@ -106,8 +106,7 @@ def delete_flashcard(
         HTTPException: If flashcard not found or deletion fails
     """
     try:
-        service = FlashcardService(db)
-        service.delete_flashcard(flashcard_id=flashcard_id, user_id=current_user.id.value)
+        use_case.delete_flashcard(flashcard_id=flashcard_id, user_id=current_user.id.value)
         return FlashcardDeleteResponse(
             success=True,
             message="Flashcard deleted successfully",
