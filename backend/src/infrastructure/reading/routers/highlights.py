@@ -7,21 +7,21 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.application.learning.services.flashcard_service import FlashcardService
-from src.application.reading.services.highlight_tag_association_service import (
-    HighlightTagAssociationService,
-)
-from src.application.reading.services.highlight_tag_group_service import (
-    HighlightTagGroupService,
-)
-from src.application.reading.services.highlight_tag_service import HighlightTagService
-from src.application.reading.services.highlight_upload_service import (
-    HighlightService as DomainHighlightService,
-)
-from src.application.reading.services.highlight_upload_service import HighlightUploadData
 from src.application.reading.use_cases.highlight_delete_use_case import (
     HighlightDeleteUseCase,
 )
 from src.application.reading.use_cases.highlight_search_use_case import HighlightSearchUseCase
+from src.application.reading.use_cases.highlight_tag_association_use_case import (
+    HighlightTagAssociationUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_group_use_case import (
+    HighlightTagGroupUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_use_case import HighlightTagUseCase
+from src.application.reading.use_cases.highlight_upload_use_case import (
+    HighlightUploadData,
+    HighlightUploadUseCase,
+)
 from src.application.reading.use_cases.update_highlight_note_use_case import (
     HighlightUpdateNoteUseCase,
 )
@@ -75,8 +75,10 @@ router = APIRouter(prefix="", tags=["highlights"])
 )
 async def upload_highlights(
     request: HighlightUploadRequest,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: HighlightUploadUseCase = Depends(
+        inject_use_case(container.highlight_upload_use_case)
+    ),
 ) -> HighlightUploadResponse:
     """
     Upload highlights from KOReader.
@@ -86,7 +88,6 @@ async def upload_highlights(
 
     Args:
         request: Highlight upload request containing book metadata and highlights
-        db: Database session
 
     Returns:
         HighlightUploadResponse with upload statistics
@@ -108,8 +109,7 @@ async def upload_highlights(
             for h in request.highlights
         ]
 
-        service = DomainHighlightService(db)
-        created, skipped = service.upload_highlights(
+        created, skipped = use_case.upload_highlights(
             client_book_id=request.client_book_id,
             highlight_data_list=highlight_data_list,
             user_id=current_user.id.value,
@@ -232,15 +232,16 @@ def update_highlight_note(
 )
 def create_or_update_tag_group(
     request: HighlightTagGroupCreateRequest,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: HighlightTagGroupUseCase = Depends(
+        inject_use_case(container.highlight_tag_group_use_case)
+    ),
 ) -> HighlightTagGroup:
     """
     Create a new tag group or update an existing one.
 
     Args:
         request: Tag group creation/update request
-        db: Database session
 
     Returns:
         Created or updated HighlightTagGroup
@@ -249,12 +250,10 @@ def create_or_update_tag_group(
         HTTPException: If creation/update fails
     """
     try:
-        service = HighlightTagGroupService(db)
-
         # Create or update based on whether ID is provided
         if request.id is not None:
             # Update existing
-            tag_group = service.update_group(
+            tag_group = use_case.update_group(
                 group_id=request.id,
                 book_id=request.book_id,
                 new_name=request.name,
@@ -262,7 +261,7 @@ def create_or_update_tag_group(
             )
         else:
             # Create new
-            tag_group = service.create_group(
+            tag_group = use_case.create_group(
                 book_id=request.book_id,
                 name=request.name,
                 user_id=current_user.id.value,
@@ -309,22 +308,22 @@ def create_or_update_tag_group(
 )
 def delete_tag_group(
     tag_group_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: HighlightTagGroupUseCase = Depends(
+        inject_use_case(container.highlight_tag_group_use_case)
+    ),
 ) -> None:
     """
     Delete a tag group.
 
     Args:
         tag_group_id: ID of the tag group to delete
-        db: Database session
 
     Raises:
         HTTPException: If tag group not found or deletion fails
     """
     try:
-        service = HighlightTagGroupService(db)
-        success = service.delete_group(tag_group_id, current_user.id.value)
+        success = use_case.delete_group(tag_group_id, current_user.id.value)
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -586,15 +585,14 @@ def delete_highlights(
 )
 def get_highlight_tags(
     book_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: HighlightTagUseCase = Depends(inject_use_case(container.highlight_tag_use_case)),
 ) -> HighlightTagsResponse:
     """
     Get all highlight tags for a book.
 
     Args:
         book_id: ID of the book
-        db: Database session
 
     Returns:
         List of HighlightTags for the book
@@ -603,8 +601,7 @@ def get_highlight_tags(
         HTTPException: If book is not found
     """
     try:
-        service = HighlightTagService(db)
-        tags = service.get_tags_for_book(book_id, current_user.id.value)
+        tags = use_case.get_tags_for_book(book_id, current_user.id.value)
         return HighlightTagsResponse(
             tags=[
                 HighlightTag(
@@ -634,8 +631,8 @@ def get_highlight_tags(
 def create_highlight_tag(
     book_id: int,
     request: HighlightTagCreateRequest,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: HighlightTagUseCase = Depends(inject_use_case(container.highlight_tag_use_case)),
 ) -> HighlightTag:
     """
     Create a new highlight tag for a book.
@@ -643,7 +640,6 @@ def create_highlight_tag(
     Args:
         book_id: ID of the book
         request: Request containing tag name
-        db: Database session
 
     Returns:
         Created HighlightTag
@@ -652,8 +648,7 @@ def create_highlight_tag(
         HTTPException: If book is not found, tag already exists, or creation fails
     """
     try:
-        service = HighlightTagService(db)
-        tag = service.create_tag(book_id, request.name, user_id=current_user.id.value)
+        tag = use_case.create_tag(book_id, request.name, user_id=current_user.id.value)
         return HighlightTag(
             id=tag.id.value,
             book_id=tag.book_id.value,
@@ -683,8 +678,8 @@ def create_highlight_tag(
 def delete_highlight_tag(
     book_id: int,
     tag_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: HighlightTagUseCase = Depends(inject_use_case(container.highlight_tag_use_case)),
 ) -> None:
     """
     Delete a highlight tag from a book.
@@ -694,14 +689,12 @@ def delete_highlight_tag(
     Args:
         book_id: ID of the book
         tag_id: ID of the tag to delete
-        db: Database session
 
     Raises:
         HTTPException: If tag is not found, doesn't belong to book, or deletion fails
     """
     try:
-        service = HighlightTagService(db)
-        deleted = service.delete_tag(book_id, tag_id, current_user.id.value)
+        deleted = use_case.delete_tag(book_id, tag_id, current_user.id.value)
         if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -740,6 +733,10 @@ def update_highlight_tag(
     request: HighlightTagUpdateRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    tag_use_case: HighlightTagUseCase = Depends(inject_use_case(container.highlight_tag_use_case)),
+    group_use_case: HighlightTagGroupUseCase = Depends(
+        inject_use_case(container.highlight_tag_group_use_case)
+    ),
 ) -> HighlightTag:
     """
     Update a highlight tag's name and/or tag group association.
@@ -748,7 +745,6 @@ def update_highlight_tag(
         book_id: ID of the book
         tag_id: ID of the tag to update
         request: Request containing updated tag information
-        db: Database session
 
     Returns:
         Updated HighlightTag
@@ -757,18 +753,17 @@ def update_highlight_tag(
         HTTPException: If tag not found, doesn't belong to book, or update fails
     """
     try:
-        tag_service = HighlightTagService(db)
-        group_service = HighlightTagGroupService(db)
-
         # Update name if provided
         if request.name is not None:
-            tag = tag_service.update_tag_name(
+            tag = tag_use_case.update_tag_name(
                 book_id=book_id,
                 tag_id=tag_id,
                 new_name=request.name,
                 user_id=current_user.id.value,
             )
         else:
+            # TODO: Fix this direct repository call. It is apparently done just so that tag is not
+            # undefined before we return from this route.
             # Load tag for group update
             tag_repo = HighlightTagRepository(db)
             tag = tag_repo.find_by_id(HighlightTagId(tag_id), UserId(current_user.id.value))
@@ -780,7 +775,7 @@ def update_highlight_tag(
 
         # Update group association if provided (including None to clear)
         if hasattr(request, "tag_group_id"):
-            tag = group_service.update_tag_group_association(
+            tag = group_use_case.update_tag_group_association(
                 book_id=book_id,
                 tag_id=tag_id,
                 group_id=request.tag_group_id,
@@ -832,6 +827,9 @@ def add_tag_to_highlight(
     request: HighlightTagAssociationRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: HighlightTagAssociationUseCase = Depends(
+        inject_use_case(container.highlight_tag_association_use_case)
+    ),
 ) -> Highlight:
     """
     Add a tag to a highlight.
@@ -843,7 +841,6 @@ def add_tag_to_highlight(
         book_id: ID of the book
         highlight_id: ID of the highlight
         request: Request containing either tag name or tag_id
-        db: Database session
 
     Returns:
         Updated Highlight with tags
@@ -852,13 +849,11 @@ def add_tag_to_highlight(
         HTTPException: If highlight or tag not found, or association fails
     """
     try:
-        service = HighlightTagAssociationService(db)
-
         # Add tag by ID or by name (with get_or_create)
         if request.tag_id is not None:
-            service.add_tag_by_id(highlight_id, request.tag_id, current_user.id.value)
+            use_case.add_tag_by_id(highlight_id, request.tag_id, current_user.id.value)
         elif request.name is not None:
-            service.add_tag_by_name(book_id, highlight_id, request.name, current_user.id.value)
+            use_case.add_tag_by_name(book_id, highlight_id, request.name, current_user.id.value)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -944,6 +939,9 @@ def remove_tag_from_highlight(
     tag_id: int,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: HighlightTagAssociationUseCase = Depends(
+        inject_use_case(container.highlight_tag_association_use_case)
+    ),
 ) -> Highlight:
     """
     Remove a tag from a highlight.
@@ -952,7 +950,6 @@ def remove_tag_from_highlight(
         book_id: ID of the book
         highlight_id: ID of the highlight
         tag_id: ID of the tag to remove
-        db: Database session
 
     Returns:
         Updated Highlight with tags
@@ -961,8 +958,7 @@ def remove_tag_from_highlight(
         HTTPException: If highlight not found or removal fails
     """
     try:
-        service = HighlightTagAssociationService(db)
-        service.remove_tag(highlight_id, tag_id, current_user.id.value)
+        use_case.remove_tag(highlight_id, tag_id, current_user.id.value)
 
         # Reload highlight with relations to get updated tags
         highlight_repo = HighlightRepository(db)

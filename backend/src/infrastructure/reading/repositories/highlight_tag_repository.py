@@ -114,14 +114,14 @@ class HighlightTagRepository:
             # Create new
             orm_model = self.mapper.to_orm(tag)
             self.db.add(orm_model)
-            self.db.flush()
+            self.db.commit()
             self.db.refresh(orm_model)
             return self.mapper.to_domain(orm_model)
         # Update existing
         stmt = select(HighlightTagORM).where(HighlightTagORM.id == tag.id.value)
         existing_orm = self.db.execute(stmt).scalar_one()
         self.mapper.to_orm(tag, existing_orm)
-        self.db.flush()
+        self.db.commit()
         return self.mapper.to_domain(existing_orm)
 
     def delete(self, tag_id: HighlightTagId, user_id: UserId) -> bool:
@@ -146,7 +146,7 @@ class HighlightTagRepository:
             return False
 
         self.db.delete(tag_orm)
-        self.db.flush()
+        self.db.commit()
         return True
 
     # Tag group methods
@@ -221,14 +221,14 @@ class HighlightTagRepository:
             # Create new
             orm_model = self.group_mapper.to_orm(group)
             self.db.add(orm_model)
-            self.db.flush()
+            self.db.commit()
             self.db.refresh(orm_model)
             return self.group_mapper.to_domain(orm_model)
         # Update existing
         stmt = select(HighlightTagGroupORM).where(HighlightTagGroupORM.id == group.id.value)
         existing_orm = self.db.execute(stmt).scalar_one()
         self.group_mapper.to_orm(group, existing_orm)
-        self.db.flush()
+        self.db.commit()
         return self.group_mapper.to_domain(existing_orm)
 
     def delete_group(self, group_id: HighlightTagGroupId) -> bool:
@@ -249,7 +249,7 @@ class HighlightTagRepository:
             return False
 
         self.db.delete(group_orm)
-        self.db.flush()
+        self.db.commit()
         return True
 
     # Tag-Highlight association methods
@@ -289,7 +289,7 @@ class HighlightTagRepository:
         # Add association if not already present
         if tag_orm not in highlight_orm.highlight_tags:
             highlight_orm.highlight_tags.append(tag_orm)
-            self.db.flush()
+            self.db.commit()
             return True
 
         return False
@@ -329,7 +329,7 @@ class HighlightTagRepository:
         # Remove association if present
         if tag_orm in highlight_orm.highlight_tags:
             highlight_orm.highlight_tags.remove(tag_orm)
-            self.db.flush()
+            self.db.commit()
             return True
 
         return False

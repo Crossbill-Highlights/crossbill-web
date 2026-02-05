@@ -1,22 +1,23 @@
-"""Service for querying reading sessions with highlights and content."""
+"""Use case for querying reading sessions with highlights and content."""
 
 from dataclasses import dataclass
 
 import structlog
-from sqlalchemy.orm import Session
 
-from src.application.library.services.ebook_text_extraction_service import (
-    EbookTextExtractionService,
+from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.reading.protocols.ebook_text_extraction_service import (
+    EbookTextExtractionServiceProtocol,
+)
+from src.application.reading.protocols.highlight_repository import (
+    HighlightRepositoryProtocol,
+)
+from src.application.reading.protocols.reading_session_repository import (
+    ReadingSessionRepositoryProtocol,
 )
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.reading_session import ReadingSession
 from src.exceptions import BookNotFoundError
-from src.infrastructure.library.repositories.book_repository import BookRepository
-from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
-from src.infrastructure.reading.repositories.reading_session_repository import (
-    ReadingSessionRepository,
-)
 
 logger = structlog.get_logger(__name__)
 
@@ -40,16 +41,20 @@ class ReadingSessionQueryResult:
     limit: int
 
 
-class ReadingSessionQueryService:
-    """Service for querying reading sessions."""
+class ReadingSessionQueryUseCase:
+    """Use case for querying reading sessions."""
 
-    def __init__(self, db: Session) -> None:
-        """Initialize service with database session."""
-        self.db = db
-        self.book_repo = BookRepository(db)
-        self.session_repo = ReadingSessionRepository(db)
-        self.highlight_repo = HighlightRepository(db)
-        self.text_extraction_service = EbookTextExtractionService(db)
+    def __init__(
+        self,
+        session_repository: ReadingSessionRepositoryProtocol,
+        book_repository: BookRepositoryProtocol,
+        highlight_repository: HighlightRepositoryProtocol,
+        text_extraction_service: EbookTextExtractionServiceProtocol,
+    ) -> None:
+        self.session_repository = session_repository
+        self.book_repository = book_repository
+        self.highlight_repository = highlight_repository
+        self.text_extraction_service = text_extraction_service
 
     def get_sessions_for_book(
         self,
@@ -78,21 +83,18 @@ class ReadingSessionQueryService:
         user_id_vo = UserId(user_id)
 
         # Validate book exists and belongs to user
-        book = self.book_repo.find_by_id(book_id_vo, user_id_vo)
+        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
-        # Fetch sessions via repository (paginated)
-        sessions = self.session_repo.find_by_book_id(book_id_vo, user_id_vo, limit, offset)
-        total = self.session_repo.count_by_book_id(book_id_vo, user_id_vo)
+        sessions = self.session_repository.find_by_book_id(book_id_vo, user_id_vo, limit, offset)
+        total = self.session_repository.count_by_book_id(book_id_vo, user_id_vo)
 
-        # Fetch highlights for all sessions in one query
         session_ids = [s.id for s in sessions]
-        highlights_by_session = self.highlight_repo.get_highlights_by_session_ids(
+        highlights_by_session = self.highlight_repository.get_highlights_by_session_ids(
             session_ids, user_id_vo
         )
 
-        # Build DTOs
         sessions_with_highlights = []
         for session in sessions:
             highlights = highlights_by_session.get(session.id, [])
@@ -102,8 +104,8 @@ class ReadingSessionQueryService:
             if include_content and session.start_xpoint:
                 try:
                     extracted_content = self.text_extraction_service.extract_text(
-                        book_id,
-                        user_id,
+                        book_id_vo,
+                        user_id_vo,
                         session.start_xpoint.start.to_string(),
                         session.start_xpoint.end.to_string(),
                     )

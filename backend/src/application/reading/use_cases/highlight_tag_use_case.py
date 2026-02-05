@@ -1,30 +1,33 @@
 """
-Application service for highlight tag CRUD operations.
+Use case for highlight tag CRUD operations.
 
 Handles core tag operations: create, delete, rename, and list.
 """
 
 import structlog
-from sqlalchemy.orm import Session
 
+from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.reading.protocols.highlight_tag_repository import (
+    HighlightTagRepositoryProtocol,
+)
+from src.domain.common import ValidationError
 from src.domain.common.value_objects.ids import BookId, HighlightTagId, UserId
 from src.domain.reading.entities.highlight_tag import HighlightTag
-from src.exceptions import CrossbillError
-from src.infrastructure.library.repositories.book_repository import BookRepository
-from src.infrastructure.reading.repositories.highlight_tag_repository import (
-    HighlightTagRepository,
-)
+from src.exceptions import CrossbillError, NotFoundError
 
 logger = structlog.get_logger(__name__)
 
 
-class HighlightTagService:
-    """Application service for highlight tag CRUD operations."""
+class HighlightTagUseCase:
+    """Use case for highlight tag CRUD operations."""
 
-    def __init__(self, db: Session) -> None:
-        self.db = db
-        self.tag_repository = HighlightTagRepository(db)
-        self.book_repository = BookRepository(db)
+    def __init__(
+        self,
+        tag_repository: HighlightTagRepositoryProtocol,
+        book_repository: BookRepositoryProtocol,
+    ) -> None:
+        self.tag_repository = tag_repository
+        self.book_repository = book_repository
 
     def create_tag(self, book_id: int, name: str, user_id: int) -> HighlightTag:
         """
@@ -47,7 +50,7 @@ class HighlightTagService:
 
         book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
-            raise ValueError(f"Book with id {book_id} not found")
+            raise NotFoundError(f"Book with id {book_id} not found")
 
         existing_tag = self.tag_repository.find_by_book_and_name(
             book_id_vo, name.strip(), user_id_vo
@@ -62,7 +65,6 @@ class HighlightTagService:
         )
 
         tag = self.tag_repository.save(tag)
-        self.db.commit()
 
         logger.info("created_highlight_tag", tag_id=tag.id.value, book_id=book_id)
         return tag
@@ -90,11 +92,10 @@ class HighlightTagService:
             return False
 
         if tag.book_id.value != book_id:
-            raise ValueError(f"Tag {tag_id} does not belong to book {book_id}")
+            raise NotFoundError(f"Tag {tag_id} does not belong to book {book_id}")
 
         success = self.tag_repository.delete(tag_id_vo, user_id_vo)
         if success:
-            self.db.commit()
             logger.info("deleted_highlight_tag", tag_id=tag_id, book_id=book_id)
 
         return success
@@ -122,13 +123,12 @@ class HighlightTagService:
         user_id_vo = UserId(user_id)
         book_id_vo = BookId(book_id)
 
-        # Load tag
         tag = self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
         if not tag:
-            raise ValueError(f"Tag with id {tag_id} not found")
+            raise NotFoundError(f"Tag with id {tag_id} not found")
 
         if tag.book_id != book_id_vo:
-            raise ValueError(f"Tag {tag_id} does not belong to book {book_id}")
+            raise ValidationError(f"Tag {tag_id} does not belong to book {book_id}")
 
         if new_name.strip() != tag.name:
             existing = self.tag_repository.find_by_book_and_name(
@@ -140,9 +140,7 @@ class HighlightTagService:
                 )
 
         tag.rename(new_name)
-
         tag = self.tag_repository.save(tag)
-        self.db.commit()
 
         logger.info("updated_highlight_tag_name", tag_id=tag_id, new_name=new_name)
         return tag
@@ -164,9 +162,8 @@ class HighlightTagService:
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        # Validate book exists
         book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
-            raise ValueError(f"Book with id {book_id} not found")
+            raise NotFoundError(f"Book with id {book_id} not found")
 
         return self.tag_repository.find_by_book(book_id_vo, user_id_vo)

@@ -33,8 +33,8 @@ class EbookTextExtractionService:
 
     def extract_text(
         self,
-        book_id: int,
-        user_id: int,
+        book_id: BookId,
+        user_id: UserId,
         start: str | int,
         end: str | int,
     ) -> str:
@@ -68,8 +68,8 @@ class EbookTextExtractionService:
 
     def _extract_epub_text(
         self,
-        book_id: int,
-        user_id: int,
+        book_id: BookId,
+        user_id: UserId,
         start_xpoint: str,
         end_xpoint: str,
     ) -> str:
@@ -90,14 +90,14 @@ class EbookTextExtractionService:
             XPointNavigationError: If cannot navigate to xpoint in EPUB
         """
         # Verify book ownership
-        book = self.book_repo.find_by_id(BookId(book_id), UserId(user_id))
+        book = self.book_repo.find_by_id(book_id, user_id)
         if not book or not book.file_path or book.file_type != "epub":
-            raise BookNotFoundError(book_id, message="EPUB file not found for this book")
+            raise BookNotFoundError(book_id.value, message="EPUB file not found for this book")
 
         # Get EPUB file path
         epub_path = self.file_repo.find_epub(book.id)
         if not epub_path or not epub_path.exists():
-            raise BookNotFoundError(book_id, message="EPUB file not found on disk")
+            raise BookNotFoundError(book_id.value, message="EPUB file not found on disk")
 
         # Parse XPoints using domain object
         start = XPoint.parse(start_xpoint)

@@ -1,11 +1,17 @@
-"""Service for uploading reading sessions with deduplication and highlight linking."""
+"""Use case for uploading reading sessions with deduplication and highlight linking."""
 
 from dataclasses import dataclass
 from datetime import datetime
 
 import structlog
-from sqlalchemy.orm import Session
 
+from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.reading.protocols.highlight_repository import (
+    HighlightRepositoryProtocol,
+)
+from src.application.reading.protocols.reading_session_repository import (
+    ReadingSessionRepositoryProtocol,
+)
 from src.config import get_settings
 from src.domain.common.value_objects import (
     BookId,
@@ -16,11 +22,6 @@ from src.domain.common.value_objects import (
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.reading_session import ReadingSession
 from src.exceptions import BookNotFoundError
-from src.infrastructure.library.repositories.book_repository import BookRepository
-from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
-from src.infrastructure.reading.repositories.reading_session_repository import (
-    ReadingSessionRepository,
-)
 
 logger = structlog.get_logger(__name__)
 
@@ -48,15 +49,21 @@ class ReadingSessionUploadResult:
     linked_highlights_count: int
 
 
-class ReadingSessionUploadService:
-    """Service for uploading and processing reading sessions."""
+class ReadingSessionUploadUseCase:
+    """Use case for uploading and processing reading sessions."""
 
-    def __init__(self, db: Session) -> None:
-        """Initialize service with database session."""
-        self.db = db
-        self.book_repo = BookRepository(db)
-        self.session_repo = ReadingSessionRepository(db)
-        self.highlight_repo = HighlightRepository(db)
+    def __init__(
+        self,
+        session_repository: ReadingSessionRepositoryProtocol,
+        book_repository: BookRepositoryProtocol,
+        highlight_repository: HighlightRepositoryProtocol,
+    ) -> None:
+        self.session_repository = session_repository
+        self.book_repository = book_repository
+        self.highlight_repository = highlight_repository
+
+        settings = get_settings()
+        self.min_duration = settings.MINIMUM_READING_SESSION_DURATION
 
     def upload_reading_sessions(
         self,
@@ -92,7 +99,7 @@ class ReadingSessionUploadService:
 
         # Get book by client_book_id
         user_id_vo = UserId(user_id)
-        book = self.book_repo.find_by_client_book_id(client_book_id, user_id_vo)
+        book = self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)
 
         if not book:
             logger.error(
@@ -117,19 +124,9 @@ class ReadingSessionUploadService:
             )
 
         # Filter out sessions shorter than minimum duration
-        settings = get_settings()
-        min_duration = settings.MINIMUM_READING_SESSION_DURATION
-        before_duration_filter = len(sessions)
         sessions = [
-            s for s in sessions if (s.end_time - s.start_time).total_seconds() >= min_duration
+            s for s in sessions if (s.end_time - s.start_time).total_seconds() >= self.min_duration
         ]
-        filtered_too_short = before_duration_filter - len(sessions)
-        if filtered_too_short > 0:
-            logger.debug(
-                "filtered_sessions_below_minimum_duration",
-                filtered_count=filtered_too_short,
-                min_duration_seconds=min_duration,
-            )
 
         # Create domain entities with NEW hash
         domain_sessions: list[ReadingSession] = []
@@ -160,8 +157,7 @@ class ReadingSessionUploadService:
             sessions_to_save=len(domain_sessions),
         )
 
-        # Bulk create via repository
-        result = self.session_repo.bulk_create(user_id_vo, domain_sessions)
+        result = self.session_repository.bulk_create(user_id_vo, domain_sessions)
         created_count = result.created_count
         skipped_duplicate_count = len(domain_sessions) - created_count
 
@@ -182,8 +178,6 @@ class ReadingSessionUploadService:
                 linked_count=linked_count,
                 session_count=len(result.created_sessions),
             )
-
-        self.db.commit()
 
         logger.info(
             "reading_session_upload_complete",
@@ -220,7 +214,7 @@ class ReadingSessionUploadService:
             Total number of highlight-session links created
         """
         # Get all highlights for this book via repository
-        highlights = self.highlight_repo.find_by_book_id(book_id, user_id)
+        highlights = self.highlight_repository.find_by_book_id(book_id, user_id)
 
         if not highlights:
             return 0
@@ -237,7 +231,7 @@ class ReadingSessionUploadService:
 
         # Bulk insert links via repository
         if session_highlight_pairs:
-            return self.session_repo.link_highlights_to_sessions(session_highlight_pairs)
+            return self.session_repository.link_highlights_to_sessions(session_highlight_pairs)
 
         return 0
 
@@ -262,7 +256,6 @@ class ReadingSessionUploadService:
         """
         matching = []
 
-        # Determine if this is a page-based or xpoint-based session
         is_page_based = session.start_page is not None and session.end_page is not None
         is_xpoint_based = session.start_xpoint is not None
 

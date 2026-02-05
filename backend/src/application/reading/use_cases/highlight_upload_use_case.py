@@ -1,5 +1,5 @@
 """
-Domain-centric service for highlight use cases.
+Use case for highlight upload operations.
 
 Orchestrates highlight upload using domain entities and repositories.
 No Pydantic dependencies - works with domain entities only.
@@ -8,15 +8,16 @@ No Pydantic dependencies - works with domain entities only.
 from dataclasses import dataclass
 
 import structlog
-from sqlalchemy.orm import Session
 
+from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.reading.protocols.chapter_repository import ChapterRepositoryProtocol
+from src.application.reading.protocols.highlight_repository import (
+    HighlightRepositoryProtocol,
+)
 from src.domain.common.value_objects import ChapterId, UserId, XPointRange
 from src.domain.reading.entities.highlight import Highlight
-from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
-from src.infrastructure.library.repositories.book_repository import BookRepository
-from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
-from src.infrastructure.reading.repositories.highlight_repository import HighlightRepository
+from src.exceptions import NotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -24,7 +25,7 @@ logger = structlog.get_logger(__name__)
 @dataclass
 class HighlightUploadData:
     """
-    Simple data class for passing highlight data from API layer to service layer.
+    Simple data class for passing highlight data from API layer to use case layer.
     """
 
     text: str
@@ -36,21 +37,29 @@ class HighlightUploadData:
     note: str | None = None
 
 
-class HighlightService:
-    """Domain-centric service for highlight operations."""
+class HighlightUploadUseCase:
+    """Use case for highlight upload operations."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(
+        self,
+        highlight_repository: HighlightRepositoryProtocol,
+        book_repository: BookRepositoryProtocol,
+        chapter_repository: ChapterRepositoryProtocol,
+        deduplication_service: HighlightDeduplicationService,
+    ) -> None:
         """
-        Initialize service with database session.
+        Initialize use case with dependencies.
 
         Args:
-            db: SQLAlchemy database session
+            highlight_repository: Repository for highlight persistence
+            book_repository: Repository for book lookup
+            chapter_repository: Repository for chapter lookup
+            deduplication_service: Domain service for deduplication logic
         """
-        self.db = db
-        self.highlight_repo = HighlightRepository(db)
-        self.book_repo = BookRepository(db)
-        self.chapter_repo = ChapterRepository(db)
-        self.deduplication_service = HighlightDeduplicationService()
+        self.highlight_repository = highlight_repository
+        self.book_repository = book_repository
+        self.chapter_repository = chapter_repository
+        self.deduplication_service = deduplication_service
 
     def upload_highlights(
         self,
@@ -86,17 +95,14 @@ class HighlightService:
         )
 
         user_id_vo = UserId(user_id)
-        book = self.book_repo.find_by_client_book_id(client_book_id, user_id_vo)
+        book = self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)
 
         if not book:
             logger.error(
                 "book_not_found_for_highlight_upload",
                 client_book_id=client_book_id,
             )
-            raise BookNotFoundError(
-                message=f"Book with client_book_id '{client_book_id}' not found. "
-                "Please create the book first"
-            )
+            raise NotFoundError(f"Book with client_book_id '{client_book_id}' not found.")
 
         book_id = book.id
 
@@ -104,7 +110,9 @@ class HighlightService:
         chapter_numbers: set[int] = {
             data.chapter_number for data in highlight_data_list if data.chapter_number is not None
         }
-        chapters_by_number = self.chapter_repo.get_by_numbers(book.id, chapter_numbers, user_id_vo)
+        chapters_by_number = self.chapter_repository.get_by_numbers(
+            book.id, chapter_numbers, user_id_vo
+        )
 
         # Step 3: Create domain entities using factory methods
         new_highlights: list[Highlight] = []
@@ -148,7 +156,7 @@ class HighlightService:
             new_highlights.append(highlight)
 
         # Step 4: Deduplication using domain service
-        existing_hashes = self.highlight_repo.get_existing_hashes(
+        existing_hashes = self.highlight_repository.get_existing_hashes(
             user_id_vo, book_id, [h.content_hash for h in new_highlights]
         )
 
@@ -158,10 +166,7 @@ class HighlightService:
 
         # Step 5: Bulk save unique highlights
         if unique:
-            self.highlight_repo.bulk_save(unique)
-
-        # Step 6: Commit transaction
-        self.db.commit()
+            self.highlight_repository.bulk_save(unique)
 
         logger.info(
             "upload_complete",

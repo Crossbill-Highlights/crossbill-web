@@ -233,7 +233,7 @@ class ReadingSessionRepository:
 
         # Update ORM model using mapper
         self.mapper.to_orm(session, existing_orm)
-        self.db.flush()
+        self.db.commit()
 
         return self.mapper.to_domain(existing_orm)
 
@@ -264,6 +264,6 @@ class ReadingSessionRepository:
 
         # Bulk insert into join table
         self.db.execute(reading_session_highlights.insert(), links_to_insert)
-        self.db.flush()
+        self.db.commit()
 
         return len(links_to_insert)

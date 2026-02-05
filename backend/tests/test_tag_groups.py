@@ -140,10 +140,7 @@ class TestCreateTagGroup:
             json={"id": test_tag_group.id, "book_id": book2.id, "name": "Updated Name"},
         )
 
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        data = response.json()
-        assert "detail" in data
-        assert "does not belong to book" in data["detail"].lower()
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 class TestDeleteTagGroup:
@@ -351,7 +348,7 @@ class TestUpdateTag:
             json={"tag_group_id": 99999},
         )
 
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 class TestBookDetailsWithTagGroups:

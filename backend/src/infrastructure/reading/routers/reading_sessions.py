@@ -5,16 +5,21 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from src.application.reading.services import (
-    ReadingSessionAISummaryService,
-    ReadingSessionQueryService,
-    ReadingSessionUploadData,
-    ReadingSessionUploadService,
+from src.application.reading.use_cases.reading_session_ai_summary_use_case import (
+    ReadingSessionAISummaryUseCase,
 )
-from src.database import DatabaseSession
+from src.application.reading.use_cases.reading_session_query_use_case import (
+    ReadingSessionQueryUseCase,
+)
+from src.application.reading.use_cases.reading_session_upload_use_case import (
+    ReadingSessionUploadData,
+    ReadingSessionUploadUseCase,
+)
+from src.core import container
 from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError, ReadingSessionNotFoundError, ValidationError
 from src.infrastructure.common.dependencies import require_ai_enabled
+from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.reading.schemas import (
     Highlight,
@@ -37,8 +42,10 @@ router = APIRouter(prefix="", tags=["reading_sessions"])
 )
 async def upload_reading_sessions(
     request: ReadingSessionUploadRequest,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: ReadingSessionUploadUseCase = Depends(
+        inject_use_case(container.reading_session_upload_use_case)
+    ),
 ) -> ReadingSessionUploadResponse:
     """
     Upload reading sessions from KOReader for a single book.
@@ -52,8 +59,6 @@ async def upload_reading_sessions(
         ReadingSessionUploadResponse with upload statistics
     """
     try:
-        service = ReadingSessionUploadService(db)
-
         # Convert Pydantic schemas to DTOs
         upload_data = [
             ReadingSessionUploadData(
@@ -68,8 +73,8 @@ async def upload_reading_sessions(
             for s in request.sessions
         ]
 
-        # Call service
-        result = service.upload_reading_sessions(
+        # Call use case
+        result = use_case.upload_reading_sessions(
             client_book_id=request.client_book_id,
             sessions=upload_data,
             user_id=current_user.id.value,
@@ -108,10 +113,12 @@ async def upload_reading_sessions(
 )
 async def get_book_reading_sessions(
     book_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
     limit: int = Query(30, ge=1, le=1000, description="Maximum sessions to return"),
     offset: int = Query(0, ge=0, description="Number of sessions to skip"),
+    use_case: ReadingSessionQueryUseCase = Depends(
+        inject_use_case(container.reading_session_query_use_case)
+    ),
 ) -> ReadingSessionsResponse:
     """
     Get reading sessions for a specific book.
@@ -120,7 +127,6 @@ async def get_book_reading_sessions(
 
     Args:
         book_id: ID of the book
-        db: Database session
         limit: Maximum number of sessions
         offset: Pagination offset
 
@@ -128,10 +134,8 @@ async def get_book_reading_sessions(
         ReadingSessionsResponse with sessions list
     """
     try:
-        service = ReadingSessionQueryService(db)
-
-        # Call service
-        result = service.get_sessions_for_book(
+        # Call use case
+        result = use_case.get_sessions_for_book(
             book_id=book_id,
             user_id=current_user.id.value,
             limit=limit,
@@ -230,8 +234,10 @@ async def get_book_reading_sessions(
 @require_ai_enabled
 async def get_reading_session_ai_summary(
     reading_session_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
+    use_case: ReadingSessionAISummaryUseCase = Depends(
+        inject_use_case(container.reading_session_ai_summary_use_case)
+    ),
 ) -> ReadingSessionAISummaryResponse:
     """
     Get AI-generated summary for a reading session.
@@ -241,7 +247,6 @@ async def get_reading_session_ai_summary(
 
     Args:
         reading_session_id: ID of the reading session
-        db: Database session
         current_user: Authenticated user
 
     Returns:
@@ -254,8 +259,7 @@ async def get_reading_session_ai_summary(
     """
 
     try:
-        service = ReadingSessionAISummaryService(db)
-        summary = await service.get_or_generate_summary(reading_session_id, current_user.id.value)
+        summary = await use_case.get_or_generate_summary(reading_session_id, current_user.id.value)
         return ReadingSessionAISummaryResponse(summary=summary)
     except ReadingSessionNotFoundError as e:
         logger.warning(

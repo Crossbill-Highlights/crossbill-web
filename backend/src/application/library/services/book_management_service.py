@@ -147,13 +147,17 @@ class BookManagementService:
         book.mark_as_viewed()
         book = self.book_repository.save(book)
 
-        # Get highlight tags using DDD service (from reading context)
-        from src.application.reading.services.highlight_tag_service import (  # noqa: PLC0415
-            HighlightTagService,
+        # Get highlight tags using use case (from reading context)
+        from src.application.reading.use_cases.highlight_tag_use_case import (  # noqa: PLC0415
+            HighlightTagUseCase,
+        )
+        from src.infrastructure.reading.repositories import (  # noqa: PLC0415
+            HighlightTagRepository,
         )
 
-        highlight_tag_service = HighlightTagService(self.db)
-        highlight_tags = highlight_tag_service.get_tags_for_book(book_id, user_id)
+        tag_repository = HighlightTagRepository(self.db)
+        highlight_tag_use_case = HighlightTagUseCase(tag_repository, self.book_repository)
+        highlight_tags = highlight_tag_use_case.get_tags_for_book(book_id, user_id)
 
         # Get all highlights for book (returns domain entities)
         highlights_with_context = self.highlight_repository.search(

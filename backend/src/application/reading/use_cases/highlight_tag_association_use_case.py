@@ -1,32 +1,35 @@
 """
-Application service for managing highlight-tag associations.
+Use case for managing highlight-tag associations.
 
 Handles adding and removing tags from highlights.
 """
 
 import structlog
-from sqlalchemy.orm import Session
 
+from src.application.reading.protocols.highlight_repository import (
+    HighlightRepositoryProtocol,
+)
+from src.application.reading.protocols.highlight_tag_repository import (
+    HighlightTagRepositoryProtocol,
+)
 from src.domain.common.value_objects.ids import BookId, HighlightId, HighlightTagId, UserId
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.highlight_tag import HighlightTag
-from src.infrastructure.reading.repositories.highlight_repository import (
-    HighlightRepository,
-)
-from src.infrastructure.reading.repositories.highlight_tag_repository import (
-    HighlightTagRepository,
-)
+from src.exceptions import NotFoundError
 
 logger = structlog.get_logger(__name__)
 
 
-class HighlightTagAssociationService:
-    """Application service for managing tag-highlight associations."""
+class HighlightTagAssociationUseCase:
+    """Use case for managing tag-highlight associations."""
 
-    def __init__(self, db: Session) -> None:
-        self.db = db
-        self.highlight_repository = HighlightRepository(db)
-        self.tag_repository = HighlightTagRepository(db)
+    def __init__(
+        self,
+        highlight_repository: HighlightRepositoryProtocol,
+        tag_repository: HighlightTagRepositoryProtocol,
+    ) -> None:
+        self.highlight_repository = highlight_repository
+        self.tag_repository = tag_repository
 
     def add_tag_by_id(self, highlight_id: int, tag_id: int, user_id: int) -> Highlight:
         """
@@ -50,11 +53,11 @@ class HighlightTagAssociationService:
         # Load entities
         highlight = self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
-            raise ValueError(f"Highlight with id {highlight_id} not found")
+            raise NotFoundError(f"Highlight with id {highlight_id} not found")
 
         tag = self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
         if not tag:
-            raise ValueError(f"Tag with id {tag_id} not found")
+            raise NotFoundError(f"Tag with id {tag_id} not found")
 
         # Use domain entity to validate
         highlight.add_tag(tag)
@@ -62,7 +65,6 @@ class HighlightTagAssociationService:
         # Persist association via repository
         added = self.tag_repository.add_tag_to_highlight(highlight_id_vo, tag_id_vo, user_id_vo)
         if added:
-            self.db.commit()
             logger.info("added_tag_to_highlight", highlight_id=highlight_id, tag_id=tag_id)
 
         return highlight
@@ -92,16 +94,12 @@ class HighlightTagAssociationService:
         # Load highlight
         highlight = self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
-            raise ValueError(f"Highlight with id {highlight_id} not found")
-
-        # Verify highlight belongs to book
-        if highlight.book_id != book_id_vo:
-            raise ValueError(f"Highlight {highlight_id} does not belong to book {book_id}")
+            raise NotFoundError(f"Highlight with id {highlight_id} not found")
 
         # Validate tag name
         tag_name = tag_name.strip()
         if not tag_name:
-            raise ValueError("Tag name cannot be empty")
+            raise NotFoundError("Tag name cannot be empty")
 
         # Get or create tag
         tag = self.tag_repository.find_by_book_and_name(book_id_vo, tag_name, user_id_vo)
@@ -112,17 +110,15 @@ class HighlightTagAssociationService:
                 book_id=book_id_vo,
                 name=tag_name,
             )
-            tag = self.tag_repository.save(tag)
-            self.db.flush()
 
         # Use domain entity to validate
         highlight.add_tag(tag)
 
         # Persist association via repository
+        tag = self.tag_repository.save(tag)
         tag_id_vo = HighlightTagId(tag.id.value)
         added = self.tag_repository.add_tag_to_highlight(highlight_id_vo, tag_id_vo, user_id_vo)
         if added:
-            self.db.commit()
             logger.info(
                 "added_tag_to_highlight_by_name",
                 highlight_id=highlight_id,
@@ -154,14 +150,13 @@ class HighlightTagAssociationService:
         # Load highlight
         highlight = self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
-            raise ValueError(f"Highlight with id {highlight_id} not found")
+            raise NotFoundError(f"Highlight with id {highlight_id} not found")
 
         # Remove association via repository
         removed = self.tag_repository.remove_tag_from_highlight(
             highlight_id_vo, tag_id_vo, user_id_vo
         )
         if removed:
-            self.db.commit()
             logger.info("removed_tag_from_highlight", highlight_id=highlight_id, tag_id=tag_id)
 
         return highlight

@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Protocol
 
-from src.domain.common.value_objects.ids import BookId, UserId
+from src.domain.common.value_objects.ids import BookId
 
 
 class FileRepositoryProtocol(Protocol):
@@ -22,4 +22,3 @@ class FileRepositoryProtocol(Protocol):
     def find_pdf(self, book_id: BookId) -> Path | None: ...
 
     def find_cover(self, book_id: BookId) -> Path | None: ...
-

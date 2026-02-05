@@ -11,6 +11,7 @@ from src.application.library.services.ebook_text_extraction_service import (
     EbookTextExtractionService,
 )
 from src.config import EPUBS_DIR
+from src.domain.common.value_objects import BookId, UserId
 from src.exceptions import BookNotFoundError, XPointNavigationError, XPointParseError
 from src.models import Book, User
 from tests.conftest import create_test_book
@@ -119,8 +120,8 @@ class TestEpubTextExtraction:
         # DocFragment[2] = first chapter (spine[1], after nav)
         # The text "This is the first paragraph of chapter one." starts at position 0
         result = service.extract_text(
-            book_id=test_epub_book.id,
-            user_id=test_user.id,
+            book_id=BookId(test_epub_book.id),
+            user_id=UserId(test_user.id),
             start="/body/DocFragment[2]/body/div/p[1]/text().8",  # "the"
             end="/body/DocFragment[2]/body/div/p[1]/text().27",  # end of "first paragraph"
         )
@@ -135,8 +136,8 @@ class TestEpubTextExtraction:
 
         # DocFragment[2] = first chapter (spine[1], after nav)
         result = service.extract_text(
-            book_id=test_epub_book.id,
-            user_id=test_user.id,
+            book_id=BookId(test_epub_book.id),
+            user_id=UserId(test_user.id),
             start="/body/DocFragment[2]/body/div/p[1]/text().0",
             end="/body/DocFragment[2]/body/div/p[1]/text().44",
         )
@@ -151,8 +152,8 @@ class TestEpubTextExtraction:
 
         # DocFragment[2] is the first chapter (spine[0] is nav, spine[1] is chapter 1)
         result = service.extract_text(
-            book_id=test_epub_book.id,
-            user_id=test_user.id,
+            book_id=BookId(test_epub_book.id),
+            user_id=UserId(test_user.id),
             start="/body/DocFragment[2]/body/div/p[1]/text().0",
             end="/body/DocFragment[2]/body/div/p[1]/text().7",
         )
@@ -167,8 +168,8 @@ class TestEpubTextExtraction:
 
         with pytest.raises(XPointParseError):
             service.extract_text(
-                book_id=test_epub_book.id,
-                user_id=test_user.id,
+                book_id=BookId(test_epub_book.id),
+                user_id=UserId(test_user.id),
                 start="invalid",
                 end="/body/div/p[1]/text().10",
             )
@@ -181,8 +182,8 @@ class TestEpubTextExtraction:
 
         with pytest.raises(XPointNavigationError) as exc_info:
             service.extract_text(
-                book_id=test_epub_book.id,
-                user_id=test_user.id,
+                book_id=BookId(test_epub_book.id),
+                user_id=UserId(test_user.id),
                 start="/body/div/p[999]/text().0",
                 end="/body/div/p[999]/text().10",
             )
@@ -197,8 +198,8 @@ class TestEpubTextExtraction:
 
         with pytest.raises(XPointNavigationError) as exc_info:
             service.extract_text(
-                book_id=test_epub_book.id,
-                user_id=test_user.id,
+                book_id=BookId(test_epub_book.id),
+                user_id=UserId(test_user.id),
                 start="/body/DocFragment[999]/body/div/p[1]/text().0",
                 end="/body/DocFragment[999]/body/div/p[1]/text().10",
             )
@@ -217,8 +218,8 @@ class TestEpubTextExtraction:
 
         with pytest.raises(BookNotFoundError) as exc_info:
             service.extract_text(
-                book_id=book.id,
-                user_id=test_user.id,
+                book_id=BookId(book.id),
+                user_id=UserId(test_user.id),
                 start="/body/div/p[1]/text().0",
                 end="/body/div/p[1]/text().10",
             )
