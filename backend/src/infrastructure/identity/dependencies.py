@@ -38,10 +38,12 @@ async def get_current_user(
     if user_id is None:
         raise CredentialsException
 
-    container.db.override(db)
-    use_case = container.authentication_use_case()
-
     try:
+        container.db.override(db)
+        use_case = container.authentication_use_case()
         return use_case.get_user_by_id(user_id)
     except UserNotFoundError:
         raise CredentialsException from None
+    finally:
+        # Reset override after request completes
+        container.db.reset_override()

@@ -17,7 +17,11 @@ def inject_use_case(provider: Provider[T]) -> Callable[[DatabaseSession], T]:
     """
 
     def dependency(db: DatabaseSession) -> T:
-        container.db.override(db)
-        return provider()
+        try:
+            container.db.override(db)
+            return provider()
+        finally:
+            # Reset override after request completes
+            container.db.reset_override()
 
     return dependency

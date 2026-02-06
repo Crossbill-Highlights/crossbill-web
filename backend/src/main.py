@@ -16,11 +16,10 @@ from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from sqlalchemy.orm import sessionmaker
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from src.config import configure_logging, get_settings
-from src.database import get_engine
+from src.database import dispose_engine, get_session_factory, initialize_database
 from src.exceptions import BookNotFoundError, CrossbillError, NotFoundError
 from src.infrastructure.common.routers import settings as settings_router
 from src.infrastructure.identity.repositories.user_repository import UserRepository
@@ -49,8 +48,8 @@ def _initialize_admin_password() -> None:
         logger.info("admin_password_skip", reason="ADMIN_PASSWORD not set")
         return
 
-    engine = get_engine(settings)
-    session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    # Use singleton session factory instead of creating new engine
+    session_factory = get_session_factory(settings)
     db = session_factory()
 
     try:
@@ -92,10 +91,17 @@ def _initialize_admin_password() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan context manager."""
+    # Initialize database engine and connection pool once at startup
+    initialize_database(settings)
+
     # Skip database initialization during tests
     if not os.getenv("TESTING"):
         _initialize_admin_password()
+
     yield
+
+    # Cleanup on shutdown
+    dispose_engine()
 
 
 app = FastAPI(
