@@ -12,14 +12,20 @@ import { queryClient } from '@/lib/queryClient';
 import { BookTitle } from '@/pages/BookPage/BookTitle/BookTitle.tsx';
 import { FlashcardsTab } from '@/pages/BookPage/FlashcardsTab/FlashcardsTab.tsx';
 import { HighlightsTab } from '@/pages/BookPage/HighlightsTab/HighlightsTab.tsx';
-import { FlashcardsIcon, HighlightsIcon, ReadingSessionIcon } from '@/theme/Icons.tsx';
+import { StructureTab } from '@/pages/BookPage/StructureTab/StructureTab.tsx';
+import {
+  ChapterListIcon,
+  FlashcardsIcon,
+  HighlightsIcon,
+  ReadingSessionIcon,
+} from '@/theme/Icons.tsx';
 import { Alert, Box, Tab, Tabs, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { flatMap } from 'lodash';
 import { useCallback, useEffect, useMemo } from 'react';
 import { ReadingSessionsTab } from './ReadingSessionsTab/ReadingSessionsTab';
 
-type TabValue = 'highlights' | 'flashcards' | 'readingSessions';
+type TabValue = 'highlights' | 'flashcards' | 'readingSessions' | 'structure';
 
 const BookTabs = ({
   activeTab,
@@ -84,6 +90,18 @@ const BookTabs = ({
             <ReadingSessionIcon sx={{ fontSize: 20 }} />
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               Reading Sessions
+            </Typography>
+          </Box>
+        }
+        sx={{ textTransform: 'none' }}
+      />
+      <Tab
+        value="structure"
+        label={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ChapterListIcon sx={{ fontSize: 20 }} />
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Structure
             </Typography>
           </Box>
         }
@@ -252,6 +270,7 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
         {activeTab === 'readingSessions' && (
           <ReadingSessionsTab book={book} isDesktop={isDesktop} />
         )}
+        {activeTab === 'structure' && <StructureTab book={book} />}
       </FadeInOut>
     </PageContainer>
   );

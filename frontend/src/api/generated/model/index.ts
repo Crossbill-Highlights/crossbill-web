@@ -19,6 +19,7 @@ export * from './bookmarksResponse';
 export * from './booksListResponse';
 export * from './bookUpdateRequest';
 export * from './bookWithHighlightCount';
+export * from './chapterPrereadingResponse';
 export * from './chapterWithHighlights';
 export * from './coverUploadResponse';
 export * from './epubUploadResponse';

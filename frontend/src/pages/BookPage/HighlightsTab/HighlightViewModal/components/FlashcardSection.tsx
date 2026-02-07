@@ -11,7 +11,7 @@ import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import type { FlashcardWithContext } from '@/pages/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
 import { FlashcardListCard } from '@/pages/BookPage/FlashcardsTab/FlashcardListCard.tsx';
 import { FlashcardSuggestionCard } from '@/pages/BookPage/FlashcardsTab/FlashcardSuggestionCard.tsx';
-import { AISummaryIcon } from '@/theme/Icons.tsx';
+import { AIIcon } from '@/theme/Icons.tsx';
 import { Box, Button, CircularProgress, Stack, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { sortBy } from 'lodash';
@@ -167,7 +167,7 @@ const FlashcardSuggestions = ({
         <Button
           variant="text"
           size="small"
-          startIcon={<AISummaryIcon />}
+          startIcon={<AIIcon />}
           onClick={onFetchSuggestions}
           disabled={disabled || isLoading}
           sx={{ mb: 1 }}

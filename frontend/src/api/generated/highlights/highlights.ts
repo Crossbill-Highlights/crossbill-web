@@ -52,7 +52,6 @@ Duplicates are identified by the combination of book, text, and datetime.
 
 Args:
     request: Highlight upload request containing book metadata and highlights
-    db: Database session
 
 Returns:
     HighlightUploadResponse with upload statistics
@@ -148,13 +147,13 @@ export const useUploadHighlightsApiV1HighlightsUploadPost = <
 Args:
     highlight_id: ID of the highlight to update
     request: Note update request
-    db: Database session
 
 Returns:
     HighlightNoteUpdateResponse with the updated highlight
 
 Raises:
     HTTPException: If highlight not found or update fails
+    :param use_case:
  * @summary Update Highlight Note
  */
 export const updateHighlightNoteApiV1HighlightsHighlightIdNotePost = (
@@ -245,7 +244,6 @@ export const useUpdateHighlightNoteApiV1HighlightsHighlightIdNotePost = <
 
 Args:
     request: Tag group creation/update request
-    db: Database session
 
 Returns:
     Created or updated HighlightTagGroup
@@ -341,7 +339,6 @@ export const useCreateOrUpdateTagGroupApiV1HighlightsTagGroupPost = <
 
 Args:
     tag_group_id: ID of the tag group to delete
-    db: Database session
 
 Raises:
     HTTPException: If tag group not found or deletion fails
@@ -436,7 +433,7 @@ The flashcard will also be linked to the highlight's book.
 Args:
     highlight_id: ID of the highlight
     request: Request containing question and answer
-    db: Database session
+    use_case: FlashcardUseCase injected via dependency container
 
 Returns:
     Created flashcard
@@ -806,7 +803,6 @@ export const useDeleteHighlightsApiV1BooksBookIdHighlightDelete = <
 
 Args:
     book_id: ID of the book
-    db: Database session
 
 Returns:
     List of HighlightTags for the book
@@ -968,7 +964,6 @@ export function useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet<
 Args:
     book_id: ID of the book
     request: Request containing tag name
-    db: Database session
 
 Returns:
     Created HighlightTag
@@ -1068,7 +1063,6 @@ This will also remove the tag from all highlights it was associated with.
 Args:
     book_id: ID of the book
     tag_id: ID of the tag to delete
-    db: Database session
 
 Raises:
     HTTPException: If tag is not found, doesn't belong to book, or deletion fails
@@ -1162,7 +1156,6 @@ Args:
     book_id: ID of the book
     tag_id: ID of the tag to update
     request: Request containing updated tag information
-    db: Database session
 
 Returns:
     Updated HighlightTag
@@ -1266,7 +1259,6 @@ Args:
     book_id: ID of the book
     highlight_id: ID of the highlight
     request: Request containing either tag name or tag_id
-    db: Database session
 
 Returns:
     Updated Highlight with tags
@@ -1368,7 +1360,6 @@ Args:
     book_id: ID of the book
     highlight_id: ID of the highlight
     tag_id: ID of the tag to remove
-    db: Database session
 
 Returns:
     Updated Highlight with tags

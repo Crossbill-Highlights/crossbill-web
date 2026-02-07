@@ -41,7 +41,6 @@ uploading highlights, covers, or EPUB files.
 
 Args:
     book_data: Book creation data (same format as highlight upload)
-    db: Database session
     current_user: Authenticated user
 
 Returns:
@@ -131,7 +130,6 @@ decide whether it needs to upload cover images, epub files, etc.
 
 Args:
     client_book_id: The client-provided stable book identifier
-    db: Database session
     current_user: Authenticated user
 
 Returns:
@@ -300,7 +298,6 @@ Used by KOReader which identifies books by client_book_id.
 Args:
     client_book_id: The client-provided stable book identifier
     cover: Uploaded image file (JPEG, PNG, or WebP)
-    db: Database session
     current_user: Authenticated user
 
 Returns:
@@ -406,7 +403,6 @@ Used by KOReader which identifies books by client_book_id.
 Args:
     client_book_id: The client-provided stable book identifier
     epub: Uploaded ebook file (EPUB or PDF)
-    db: Database session
     current_user: Authenticated user
 
 Returns:

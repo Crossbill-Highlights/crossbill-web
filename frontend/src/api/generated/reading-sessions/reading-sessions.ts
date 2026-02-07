@@ -132,7 +132,6 @@ Returns reading sessions ordered by start time (newest first).
 
 Args:
     book_id: ID of the book
-    db: Database session
     limit: Maximum number of sessions
     offset: Pagination offset
 
@@ -309,7 +308,6 @@ from the read content and caches it.
 
 Args:
     reading_session_id: ID of the reading session
-    db: Database session
     current_user: Authenticated user
 
 Returns:
