@@ -64,11 +64,11 @@ class ChapterPrereadingUseCase:
 
         # 3. Extract chapter text
         try:
-            chapter_text = self.text_extraction.extract_text(
+            chapter_text = self.text_extraction.extract_chapter_text(
                 book_id=chapter.book_id,
                 user_id=user_id,
-                start=chapter.start_xpoint,
-                end=chapter.end_xpoint or chapter.start_xpoint,
+                start_xpoint=chapter.start_xpoint,
+                end_xpoint=chapter.end_xpoint,
             )
         except Exception as e:
             logger.error("failed_to_extract_chapter_text", error=str(e))

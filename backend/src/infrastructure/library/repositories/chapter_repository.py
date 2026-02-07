@@ -63,7 +63,10 @@ class ChapterRepository:
         return result
 
     def sync_chapters_from_toc(
-        self, book_id: BookId, user_id: UserId, chapters: list[tuple[str, int, str | None]]
+        self,
+        book_id: BookId,
+        user_id: UserId,
+        chapters: list[tuple[str, int, str | None, str | None, str | None]],
     ) -> int:
         """
         Synchronize chapters from TOC data, creating new and updating existing chapters.
@@ -74,7 +77,7 @@ class ChapterRepository:
         Args:
             book_id: ID of the book
             user_id: ID of the user (for ownership verification)
-            chapters: List of (chapter_name, chapter_number, parent_name) tuples
+            chapters: List of (chapter_name, chapter_number, parent_name, start_xpoint, end_xpoint) tuples
 
         Returns:
             Number of chapters created (not including updates)
@@ -83,7 +86,7 @@ class ChapterRepository:
             return 0
 
         # Get existing chapters for this book by names
-        chapter_names = {name for name, _, _ in chapters}
+        chapter_names = {name for name, _, _, _, _ in chapters}
 
         stmt = (
             select(ChapterORM)
@@ -113,7 +116,7 @@ class ChapterRepository:
         created_count = 0
 
         # Process chapters in order (parents before children due to sequential numbering)
-        for name, chapter_number, parent_name in chapters:
+        for name, chapter_number, parent_name, start_xpoint, end_xpoint in chapters:
             # Determine parent_id from parent_name
             parent_id = None
             if parent_name and parent_name in chapter_by_name:
@@ -137,6 +140,14 @@ class ChapterRepository:
                         existing_chapter.parent_id = parent_id
                         needs_update = True
 
+                    if existing_chapter.start_xpoint != start_xpoint:
+                        existing_chapter.start_xpoint = start_xpoint
+                        needs_update = True
+
+                    if existing_chapter.end_xpoint != end_xpoint:
+                        existing_chapter.end_xpoint = end_xpoint
+                        needs_update = True
+
                     if needs_update:
                         chapters_to_update.append(existing_chapter)
                 else:
@@ -152,6 +163,8 @@ class ChapterRepository:
                     name=name,
                     chapter_number=chapter_number,
                     parent_id=parent_id,
+                    start_xpoint=start_xpoint,
+                    end_xpoint=end_xpoint,
                 )
                 self.db.add(chapter)
                 self.db.commit()

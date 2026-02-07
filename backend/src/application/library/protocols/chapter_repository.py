@@ -14,7 +14,10 @@ class ChapterRepositoryProtocol(Protocol):
         ...
 
     def sync_chapters_from_toc(
-        self, book_id: BookId, user_id: UserId, chapters: list[tuple[str, int, str | None]]
+        self,
+        book_id: BookId,
+        user_id: UserId,
+        chapters: list[tuple[str, int, str | None, str | None, str | None]],
     ) -> int:
         """
         Synchronize chapters from TOC data, creating new and updating existing chapters.
@@ -25,7 +28,7 @@ class ChapterRepositoryProtocol(Protocol):
         Args:
             book_id: ID of the book
             user_id: ID of the user (for ownership verification)
-            chapters: List of (chapter_name, chapter_number, parent_name) tuples
+            chapters: List of (chapter_name, chapter_number, parent_name, start_xpoint, end_xpoint) tuples
 
         Returns:
             Number of chapters created (not including updates)
