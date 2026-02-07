@@ -72,9 +72,10 @@ class ChapterPrereadingUseCase:
             )
         except Exception as e:
             logger.error("failed_to_extract_chapter_text", error=str(e))
-            raise DomainError(f"Failed to extract chapter content: {e}")
+            raise DomainError(f"Failed to extract chapter content: {e}") from e
 
-        if not chapter_text or len(chapter_text.strip()) < 50:
+        min_chapter_length = 50
+        if not chapter_text or len(chapter_text.strip()) < min_chapter_length:
             raise DomainError(
                 "Chapter content is too short to generate meaningful prereading content"
             )
@@ -84,7 +85,7 @@ class ChapterPrereadingUseCase:
             ai_result = await get_ai_prereading_from_text(chapter_text)
         except Exception as e:
             logger.error("ai_service_failed", error=str(e))
-            raise DomainError(f"Failed to generate prereading content: {e}")
+            raise DomainError(f"Failed to generate prereading content: {e}") from e
 
         # 5. Create entity
         entity = ChapterPrereadingContent.create(

@@ -466,6 +466,7 @@ def _map_chapters_to_schemas(
             id=chapter_group.chapter_id,
             name=chapter_group.chapter_name or "",
             chapter_number=chapter_group.chapter_number,
+            parent_id=chapter_group.parent_id,
             highlights=highlight_schemas,
             created_at=first_chapter.created_at if first_chapter else datetime.now(UTC),
             updated_at=first_chapter.created_at if first_chapter else datetime.now(UTC),

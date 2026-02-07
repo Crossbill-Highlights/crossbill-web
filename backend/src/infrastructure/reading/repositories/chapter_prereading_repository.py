@@ -55,12 +55,11 @@ class ChapterPrereadingRepository:
             self.db.commit()
             self.db.refresh(orm)
             return self.mapper.to_domain(orm)
-        else:
-            orm = self.mapper.to_orm(content)
-            self.db.add(orm)
-            self.db.commit()
-            self.db.refresh(orm)
-            return self.mapper.to_domain(orm)
+        orm = self.mapper.to_orm(content)
+        self.db.add(orm)
+        self.db.commit()
+        self.db.refresh(orm)
+        return self.mapper.to_domain(orm)
 
     def delete(self, id: PrereadingContentId) -> None:
         """Delete prereading content by ID."""

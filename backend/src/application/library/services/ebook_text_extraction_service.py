@@ -469,7 +469,7 @@ class EbookTextExtractionService:
 
         return "".join(result_parts)
 
-    def extract_chapter_text(
+    def extract_chapter_text(  # noqa: PLR0912
         self,
         book_id: BookId,
         user_id: UserId,

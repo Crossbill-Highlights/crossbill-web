@@ -74,7 +74,7 @@ class ChapterRepository:
 
         return result
 
-    def sync_chapters_from_toc(
+    def sync_chapters_from_toc(  # noqa: PLR0912
         self,
         book_id: BookId,
         user_id: UserId,

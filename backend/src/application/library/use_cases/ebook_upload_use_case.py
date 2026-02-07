@@ -4,7 +4,7 @@ import logging
 import re
 from io import BytesIO
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from ebooklib import epub
 from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
@@ -246,7 +246,7 @@ class EbookUploadUseCase:
         return epub_filename, str(epub_path)
 
     @staticmethod
-    def _build_href_to_spine_index(book: Any) -> dict[str, int]:
+    def _build_href_to_spine_index(book: Any) -> dict[str, int]:  # noqa: ANN401
         """
         Build a mapping from spine item file names to 1-based spine indices.
 
@@ -297,10 +297,10 @@ class EbookUploadUseCase:
 
     @staticmethod
     def _resolve_href_to_xpoint(
-        book: Any,
+        book: Any,  # noqa: ANN401
         href: str,
         spine_mapping: dict[str, int],
-        html_cache: dict[int, etree._Element],  # pyright: ignore[reportUnknownParameterType]
+        html_cache: dict[int, etree._Element],  # pyright: ignore[reportPrivateUsage]
     ) -> str | None:
         """Resolve a TOC href to a precise XPoint string.
 
@@ -354,20 +354,20 @@ class EbookUploadUseCase:
         tree = html_cache[spine_idx]
 
         # Find element with the fragment ID
-        elements = tree.xpath(f'//*[@id="{fragment_id}"]')
-        if not elements:
+        xpath_result = tree.xpath(f'//*[@id="{fragment_id}"]')
+        if not isinstance(xpath_result, list) or not xpath_result:
             logger.warning(
                 f"Fragment #{fragment_id} not found in spine item {spine_idx}, "
                 f"falling back to body-level XPoint"
             )
             return base_xpoint
 
-        element = elements[0]
+        element = cast(etree._Element, xpath_result[0])  # pyright: ignore[reportPrivateUsage]
 
         # Compute XPath from root and strip /html prefix
         element_xpath: str = tree.getroottree().getpath(element)
         if element_xpath.startswith("/html"):
-            element_xpath = element_xpath[len("/html"):]
+            element_xpath = element_xpath[len("/html") :]
 
         return f"/body/DocFragment[{spine_idx}]{element_xpath}"
 
@@ -405,15 +405,13 @@ class EbookUploadUseCase:
             # Build spine mapping and compute XPoints
             spine_mapping = self._build_href_to_spine_index(book)
             result: list[tuple[str, int, str | None, str | None, str | None]] = []
-            html_cache: dict[int, etree._Element] = {}
+            html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
             # First pass: compute start_xpoints (with precise fragment resolution)
             start_xpoints: list[str | None] = []
             for _title, _number, _parent, href in chapters_with_hrefs:
                 if href:
-                    xpoint = self._resolve_href_to_xpoint(
-                        book, href, spine_mapping, html_cache
-                    )
+                    xpoint = self._resolve_href_to_xpoint(book, href, spine_mapping, html_cache)
                     start_xpoints.append(xpoint)
                 else:
                     start_xpoints.append(None)
