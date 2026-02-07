@@ -72,6 +72,18 @@ const BookTabs = ({
         sx={{ textTransform: 'none' }}
       />
       <Tab
+        value="structure"
+        label={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ChapterListIcon sx={{ fontSize: 20 }} />
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Book Structure
+            </Typography>
+          </Box>
+        }
+        sx={{ textTransform: 'none' }}
+      />
+      <Tab
         value="flashcards"
         label={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -90,18 +102,6 @@ const BookTabs = ({
             <ReadingSessionIcon sx={{ fontSize: 20 }} />
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               Reading Sessions
-            </Typography>
-          </Box>
-        }
-        sx={{ textTransform: 'none' }}
-      />
-      <Tab
-        value="structure"
-        label={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ChapterListIcon sx={{ fontSize: 20 }} />
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              Structure
             </Typography>
           </Box>
         }
@@ -270,7 +270,7 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
         {activeTab === 'readingSessions' && (
           <ReadingSessionsTab book={book} isDesktop={isDesktop} />
         )}
-        {activeTab === 'structure' && <StructureTab book={book} />}
+        {activeTab === 'structure' && <StructureTab book={book} isDesktop={isDesktop} />}
       </FadeInOut>
     </PageContainer>
   );
