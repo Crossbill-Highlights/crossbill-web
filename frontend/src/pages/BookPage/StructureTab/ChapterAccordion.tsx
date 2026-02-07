@@ -48,14 +48,20 @@ export const ChapterAccordion = ({ chapter, allChapters, depth = 0 }: ChapterAcc
       sx={{
         boxShadow: 'none',
         '&:before': { display: 'none' },
-        bgcolor: 'background.paper',
+        bgcolor: 'transparent',
         ml: depth * 2,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        '&:last-of-type': {
+          borderBottom: depth > 0 ? 'none' : '1px solid',
+          borderColor: 'divider',
+        },
       }}
     >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Typography variant="body1">{chapter.name}</Typography>
       </AccordionSummary>
-      <AccordionDetails>
+      <AccordionDetails sx={{ pt: 0 }}>
         <AIFeature>
           <PrereadingContent
             content={prereading}
