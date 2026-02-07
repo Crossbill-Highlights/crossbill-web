@@ -9,10 +9,10 @@ Backend API for crossbill - a self-hosted web app to sync highlights from KORead
 - PostgreSQL database with Docker support
 - Alembic database migrations
 - Poetry dependency management
+- Hexagonal architecture
 - Ruff linting
-- Black code formatting
 - pytest testing framework
-- Strong typing with mypy
+- Strong typing with pyright
 
 ## Prerequisites
 
@@ -47,12 +47,6 @@ poetry install
 cp .env.example .env
 ```
 
-The `.env` file is already configured to connect to the Docker PostgreSQL instance.
-
-**Alternative: SQLite for local development**
-If you prefer to use SQLite without Docker, edit `.env` and change the DATABASE_URL:
-```
-DATABASE_URL=sqlite:///./crossbill.db
 ```
 
 ### 4. Run migrations
@@ -116,12 +110,12 @@ poetry run ruff check --fix .  # Auto-fix issues
 
 ### Formatting
 ```bash
-poetry run black .
+poetry run ruff format
 ```
 
 ### Type checking
 ```bash
-poetry run mypy src
+poetry run pyright
 ```
 
 ### Creating migrations
