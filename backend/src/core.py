@@ -23,6 +23,9 @@ from src.application.library.use_cases.get_recently_viewed_books_use_case import
     GetRecentlyViewedBooksUseCase,
 )
 from src.application.reading.use_cases.bookmark_use_case import BookmarkUseCase
+from src.application.reading.use_cases.chapter_prereading_use_case import (
+    ChapterPrereadingUseCase,
+)
 from src.application.reading.use_cases.highlight_delete_use_case import HighlightDeleteUseCase
 from src.application.reading.use_cases.highlight_search_use_case import HighlightSearchUseCase
 from src.application.reading.use_cases.highlight_tag_association_use_case import (
@@ -60,6 +63,9 @@ from src.infrastructure.reading.repositories import (
     HighlightRepository,
     HighlightTagRepository,
 )
+from src.infrastructure.reading.repositories.chapter_prereading_repository import (
+    ChapterPrereadingRepository,
+)
 from src.infrastructure.reading.repositories.reading_session_repository import (
     ReadingSessionRepository,
 )
@@ -80,6 +86,7 @@ class Container(containers.DeclarativeContainer):
     reading_session_repository = providers.Factory(ReadingSessionRepository, db=db)
     tag_repository = providers.Factory(TagRepository, db=db)
     flashcard_repository = providers.Factory(FlashcardRepository, db=db)
+    chapter_prereading_repository = providers.Factory(ChapterPrereadingRepository, db=db)
     file_repository = providers.Factory(FileRepository)
     ebook_text_extraction_service = providers.Factory(EbookTextExtractionService, db=db)
 
@@ -152,6 +159,12 @@ class Container(containers.DeclarativeContainer):
     reading_session_ai_summary_use_case = providers.Factory(
         ReadingSessionAISummaryUseCase,
         session_repository=reading_session_repository,
+        text_extraction_service=ebook_text_extraction_service,
+    )
+    chapter_prereading_use_case = providers.Factory(
+        ChapterPrereadingUseCase,
+        prereading_repo=chapter_prereading_repository,
+        chapter_repo=chapter_repository,
         text_extraction_service=ebook_text_extraction_service,
     )
 

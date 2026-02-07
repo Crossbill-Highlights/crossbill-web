@@ -13,7 +13,9 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
+from sqlalchemy.dialects.postgresql import TSVECTOR
+from sqlalchemy.types import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
@@ -541,7 +543,7 @@ class ChapterPrereadingContent(Base):
         ForeignKey("chapters.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
     )
     summary: Mapped[str] = mapped_column(Text, nullable=False)
-    keypoints: Mapped[list] = mapped_column(JSONB, nullable=False)
+    keypoints: Mapped[list] = mapped_column(JSON().with_variant(PG_JSONB, "postgresql"), nullable=False)
     generated_at: Mapped[dt] = mapped_column(DateTime(timezone=True), nullable=False)
     ai_model: Mapped[str] = mapped_column(String(100), nullable=False)
 
