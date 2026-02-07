@@ -1,6 +1,12 @@
-import type { BookDetails, ChapterWithHighlights } from '@/api/generated/model';
+import type {
+  BookDetails,
+  ChapterPrereadingResponse,
+  ChapterWithHighlights,
+} from '@/api/generated/model';
+import { useGetBookPrereadingApiV1BooksBookIdPrereadingGet } from '@/api/generated/prereading/prereading';
 import { ThreeColumnLayout } from '@/components/layout/Layouts';
 import { Box, Typography } from '@mui/material';
+import { useMemo } from 'react';
 import { ChapterAccordion } from './ChapterAccordion';
 
 interface StructureTabProps {
@@ -9,6 +15,18 @@ interface StructureTabProps {
 }
 
 export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
+  const { data: bookPrereading } = useGetBookPrereadingApiV1BooksBookIdPrereadingGet(book.id);
+
+  const prereadingByChapterId = useMemo(() => {
+    const map: Record<number, ChapterPrereadingResponse> = {};
+    if (bookPrereading?.items) {
+      for (const item of bookPrereading.items) {
+        map[item.chapter_id] = item;
+      }
+    }
+    return map;
+  }, [bookPrereading]);
+
   if (book.chapters.length === 0) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -24,7 +42,13 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
   const content = (
     <Box>
       {topLevelChapters.map((chapter) => (
-        <ChapterAccordion key={chapter.id} chapter={chapter} allChapters={book.chapters} />
+        <ChapterAccordion
+          key={chapter.id}
+          chapter={chapter}
+          allChapters={book.chapters}
+          bookId={book.id}
+          prereadingByChapterId={prereadingByChapterId}
+        />
       ))}
     </Box>
   );

@@ -490,17 +490,8 @@ export const useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete = <
 /**
  * Get AI-generated flashcard suggestions for a highlight.
 
-Args:
-    highlight_id: ID of the highlight
-    current_user: Authenticated user
-    use_case: FlashcardAIUseCase injected via dependency container
-
-Returns:
-    HighlightFlashcardSuggestionsResponse with list of flashcard suggestions
-
-Raises:
-    HTTPException 404: If highlight not found or not owned by user
-    HTTPException 500: For unexpected errors
+Uses scoped DB sessions to release connections before the AI call,
+preventing connection pool exhaustion during slow AI responses.
  * @summary Get Highlight Flashcard Suggestions
  */
 export const getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet = (

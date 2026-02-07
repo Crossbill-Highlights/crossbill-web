@@ -11,11 +11,12 @@ from src.application.reading.use_cases.chapter_prereading_use_case import (
 )
 from src.core import container
 from src.domain.common.exceptions import DomainError
-from src.domain.common.value_objects.ids import ChapterId, UserId
+from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.identity import User
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.reading.schemas.chapter_prereading_schemas import (
+    BookPrereadingResponse,
     ChapterPrereadingResponse,
 )
 
@@ -94,3 +95,42 @@ async def generate_chapter_prereading(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate prereading content",
         ) from e
+
+
+book_prereading_router = APIRouter(prefix="/books", tags=["prereading"])
+
+
+@book_prereading_router.get(
+    "/{book_id}/prereading",
+    response_model=BookPrereadingResponse,
+    status_code=status.HTTP_200_OK,
+)
+def get_book_prereading(
+    book_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: ChapterPrereadingUseCase = Depends(
+        inject_use_case(container.chapter_prereading_use_case)
+    ),
+) -> BookPrereadingResponse:
+    """Get all prereading content for chapters in a book."""
+    try:
+        results = use_case.get_all_prereading_for_book(
+            book_id=BookId(book_id),
+            user_id=UserId(current_user.id.value),
+        )
+
+        return BookPrereadingResponse(
+            items=[
+                ChapterPrereadingResponse(
+                    id=r.id.value,
+                    chapter_id=r.chapter_id.value,
+                    summary=r.summary,
+                    keypoints=r.keypoints,
+                    generated_at=r.generated_at,
+                    ai_model=r.ai_model,
+                )
+                for r in results
+            ]
+        )
+    except DomainError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e

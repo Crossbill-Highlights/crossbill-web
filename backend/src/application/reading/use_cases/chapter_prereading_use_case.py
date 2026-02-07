@@ -14,7 +14,7 @@ from src.application.reading.protocols.ebook_text_extraction_service import (
     EbookTextExtractionServiceProtocol,
 )
 from src.domain.common.exceptions import DomainError
-from src.domain.common.value_objects.ids import ChapterId, UserId
+from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
 )
@@ -35,6 +35,17 @@ class ChapterPrereadingUseCase:
         self.prereading_repo = prereading_repo
         self.chapter_repo = chapter_repo
         self.text_extraction = text_extraction_service
+
+    def get_all_prereading_for_book(
+        self, book_id: BookId, user_id: UserId
+    ) -> list[ChapterPrereadingContent]:
+        """Get all prereading content for chapters in a book."""
+        # Verify book ownership by checking chapters exist for this user
+        chapters = self.chapter_repo.find_all_by_book(book_id, user_id)
+        if not chapters:
+            raise DomainError(f"Book {book_id.value} not found or has no chapters")
+
+        return self.prereading_repo.find_all_by_book_id(book_id)
 
     def get_prereading_content(
         self, chapter_id: ChapterId, user_id: UserId

@@ -16,3 +16,9 @@ class ChapterPrereadingResponse(BaseModel):
     ai_model: str
 
     model_config = {"from_attributes": True}
+
+
+class BookPrereadingResponse(BaseModel):
+    """Response schema for batch prereading content for a book."""
+
+    items: list[ChapterPrereadingResponse]
