@@ -9,7 +9,7 @@ from src.domain.reading.entities.chapter_prereading_content import (
 )
 
 
-def test_create_prereading_content():
+def test_create_prereading_content() -> None:
     """Test creating valid prereading content."""
     content = ChapterPrereadingContent.create(
         chapter_id=ChapterId(1),
@@ -29,7 +29,7 @@ def test_create_prereading_content():
     assert content.ai_model == "gpt-4"
 
 
-def test_create_strips_whitespace():
+def test_create_strips_whitespace() -> None:
     """Test that create factory strips whitespace from fields."""
     content = ChapterPrereadingContent.create(
         chapter_id=ChapterId(1),
@@ -44,7 +44,7 @@ def test_create_strips_whitespace():
     assert content.ai_model == "gpt-4"
 
 
-def test_create_with_id():
+def test_create_with_id() -> None:
     """Test reconstituting from persistence."""
     now = datetime.now(UTC)
     content = ChapterPrereadingContent.create_with_id(
@@ -60,7 +60,7 @@ def test_create_with_id():
     assert content.generated_at == now
 
 
-def test_empty_summary_raises_error():
+def test_empty_summary_raises_error() -> None:
     """Test that empty summary raises DomainError."""
     with pytest.raises(DomainError, match="Summary cannot be empty"):
         ChapterPrereadingContent.create(
@@ -72,7 +72,7 @@ def test_empty_summary_raises_error():
         )
 
 
-def test_whitespace_only_summary_raises_error():
+def test_whitespace_only_summary_raises_error() -> None:
     """Test that whitespace-only summary raises DomainError."""
     with pytest.raises(DomainError, match="Summary cannot be empty"):
         ChapterPrereadingContent.create(
@@ -84,7 +84,7 @@ def test_whitespace_only_summary_raises_error():
         )
 
 
-def test_empty_keypoints_raises_error():
+def test_empty_keypoints_raises_error() -> None:
     """Test that empty keypoints list raises DomainError."""
     with pytest.raises(DomainError, match="Keypoints list cannot be empty"):
         ChapterPrereadingContent.create(
@@ -96,7 +96,7 @@ def test_empty_keypoints_raises_error():
         )
 
 
-def test_empty_keypoint_string_raises_error():
+def test_empty_keypoint_string_raises_error() -> None:
     """Test that keypoints with empty strings raise DomainError."""
     with pytest.raises(DomainError, match="Keypoints cannot contain empty strings"):
         ChapterPrereadingContent.create(
@@ -108,7 +108,7 @@ def test_empty_keypoint_string_raises_error():
         )
 
 
-def test_empty_ai_model_raises_error():
+def test_empty_ai_model_raises_error() -> None:
     """Test that empty AI model raises DomainError."""
     with pytest.raises(DomainError, match="AI model cannot be empty"):
         ChapterPrereadingContent.create(

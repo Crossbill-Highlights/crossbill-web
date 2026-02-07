@@ -26,9 +26,7 @@ class ChapterPrereadingRepository:
         orm = self.db.execute(stmt).scalar_one_or_none()
         return self.mapper.to_domain(orm) if orm else None
 
-    def find_by_chapter_id(
-        self, chapter_id: ChapterId
-    ) -> ChapterPrereadingContent | None:
+    def find_by_chapter_id(self, chapter_id: ChapterId) -> ChapterPrereadingContent | None:
         """Find prereading content for a specific chapter."""
         stmt = select(PrereadingContentORM).where(
             PrereadingContentORM.chapter_id == chapter_id.value

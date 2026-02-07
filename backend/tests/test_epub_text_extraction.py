@@ -2,7 +2,6 @@
 
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any
 
 import pytest
 from ebooklib import epub
@@ -270,9 +269,7 @@ class TestExtractChapterText:
         assert "Chapter two begins here with new content." in result
         assert "More text in the second chapter." in result
 
-    def test_multi_fragment_chapter(
-        self, db_session: Session, test_user: User
-    ) -> None:
+    def test_multi_fragment_chapter(self, db_session: Session, test_user: User) -> None:
         """Extract text for a chapter spanning multiple spine items."""
         book = create_test_book(
             db_session=db_session,
@@ -316,9 +313,7 @@ class TestExtractChapterText:
             if epub_path.exists():
                 epub_path.unlink()
 
-    def test_same_fragment_chapters(
-        self, db_session: Session, test_user: User
-    ) -> None:
+    def test_same_fragment_chapters(self, db_session: Session, test_user: User) -> None:
         """Extract text when two chapters share the same spine item."""
         book = create_test_book(
             db_session=db_session,
@@ -353,9 +348,7 @@ class TestExtractChapterText:
             if epub_path.exists():
                 epub_path.unlink()
 
-    def test_same_fragment_fallback_body_level(
-        self, db_session: Session, test_user: User
-    ) -> None:
+    def test_same_fragment_fallback_body_level(self, db_session: Session, test_user: User) -> None:
         """Same fragment with both body-level XPoints returns full fragment text."""
         book = create_test_book(
             db_session=db_session,
@@ -390,9 +383,7 @@ class TestExtractChapterText:
             if epub_path.exists():
                 epub_path.unlink()
 
-    def test_precise_xpoint_cross_fragment(
-        self, db_session: Session, test_user: User
-    ) -> None:
+    def test_precise_xpoint_cross_fragment(self, db_session: Session, test_user: User) -> None:
         """Extract text with precise XPoints spanning across fragments."""
         book = create_test_book(
             db_session=db_session,
@@ -461,9 +452,7 @@ class TestExtractChapterText:
             if epub_path.exists():
                 epub_path.unlink()
 
-    def test_last_chapter_precise_xpoint(
-        self, db_session: Session, test_user: User
-    ) -> None:
+    def test_last_chapter_precise_xpoint(self, db_session: Session, test_user: User) -> None:
         """Extract last chapter with precise start XPoint (no end_xpoint)."""
         book = create_test_book(
             db_session=db_session,
@@ -542,7 +531,7 @@ def _create_shared_spine_epub(epub_path: Path) -> None:
 class TestResolveHrefToXpoint:
     """Test suite for _resolve_href_to_xpoint XPoint resolution."""
 
-    def _make_epub_with_fragments(self, tmp_path: Path) -> Any:
+    def _make_epub_with_fragments(self, tmp_path: Path) -> epub.EpubBook:
         """Create an ebooklib EpubBook with known fragment IDs for testing.
 
         Writes and reads back the EPUB so spine items have proper
@@ -575,10 +564,10 @@ class TestResolveHrefToXpoint:
     def test_href_with_fragment_resolves_to_precise_xpoint(self, tmp_path: Path) -> None:
         """Href with #fragment produces precise XPoint with element path."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)
-        html_cache: dict[int, etree._Element] = {}
+        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        result = EbookUploadUseCase._resolve_href_to_xpoint(
+        result = EbookUploadUseCase._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml#main", spine_mapping, html_cache
         )
 
@@ -589,10 +578,10 @@ class TestResolveHrefToXpoint:
     def test_href_without_fragment_returns_body_level(self, tmp_path: Path) -> None:
         """Href without #fragment produces body-level XPoint."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)
-        html_cache: dict[int, etree._Element] = {}
+        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        result = EbookUploadUseCase._resolve_href_to_xpoint(
+        result = EbookUploadUseCase._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml", spine_mapping, html_cache
         )
 
@@ -601,10 +590,10 @@ class TestResolveHrefToXpoint:
     def test_href_with_nonexistent_fragment_falls_back(self, tmp_path: Path) -> None:
         """Href with unknown #fragment falls back to body-level XPoint."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)
-        html_cache: dict[int, etree._Element] = {}
+        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        result = EbookUploadUseCase._resolve_href_to_xpoint(
+        result = EbookUploadUseCase._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml#nonexistent", spine_mapping, html_cache
         )
 
@@ -613,10 +602,10 @@ class TestResolveHrefToXpoint:
     def test_href_with_unknown_file_returns_none(self, tmp_path: Path) -> None:
         """Href pointing to unknown file returns None."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)
-        html_cache: dict[int, etree._Element] = {}
+        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        result = EbookUploadUseCase._resolve_href_to_xpoint(
+        result = EbookUploadUseCase._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "unknown.xhtml#intro", spine_mapping, html_cache
         )
 
@@ -625,16 +614,16 @@ class TestResolveHrefToXpoint:
     def test_html_cache_is_reused(self, tmp_path: Path) -> None:
         """Multiple calls for same spine item reuse cached HTML tree."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)
-        html_cache: dict[int, etree._Element] = {}
+        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        EbookUploadUseCase._resolve_href_to_xpoint(
+        EbookUploadUseCase._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml#intro", spine_mapping, html_cache
         )
         assert 2 in html_cache
         cached_tree = html_cache[2]
 
-        EbookUploadUseCase._resolve_href_to_xpoint(
+        EbookUploadUseCase._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml#main", spine_mapping, html_cache
         )
         # Same object in cache — not re-parsed

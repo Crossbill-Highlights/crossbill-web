@@ -31,9 +31,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False, autoincrement=True),
         sa.Column("chapter_id", sa.Integer(), nullable=False),
         sa.Column("summary", sa.Text(), nullable=False),
-        sa.Column(
-            "keypoints", postgresql.JSONB(astext_type=sa.Text()), nullable=False
-        ),
+        sa.Column("keypoints", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column("generated_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("ai_model", sa.String(length=100), nullable=False),
         sa.ForeignKeyConstraint(["chapter_id"], ["chapters.id"], ondelete="CASCADE"),
