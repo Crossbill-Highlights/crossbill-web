@@ -4,7 +4,7 @@ Modern React application for managing and viewing book highlights from KOReader.
 
 ## Tech Stack
 
-- **React 18+** - UI library
+- **React 19+** - UI library
 - **TypeScript 5+** - Type safety
 - **Vite** - Fast build tool and dev server
 - **Material UI** - Component library
