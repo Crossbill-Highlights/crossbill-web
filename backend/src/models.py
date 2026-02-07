@@ -13,7 +13,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import TSVECTOR
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
@@ -209,6 +209,8 @@ class Chapter(Base):
     )
     name: Mapped[str] = mapped_column(String(500), nullable=False)
     chapter_number: Mapped[int | None] = mapped_column(nullable=True, index=True)
+    start_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
+    end_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -222,6 +224,9 @@ class Chapter(Base):
     # Relationships
     book: Mapped["Book"] = relationship(back_populates="chapters")
     highlights: Mapped[list["Highlight"]] = relationship(back_populates="chapter")
+    prereading_content: Mapped["ChapterPrereadingContent | None"] = relationship(
+        back_populates="chapter", uselist=False, cascade="all, delete-orphan"
+    )
     # Self-referential relationship for hierarchical chapters
     parent: Mapped["Chapter | None"] = relationship(
         "Chapter", remote_side="Chapter.id", back_populates="children"
@@ -524,3 +529,25 @@ class ReadingSession(Base):
         return (
             f"<ReadingSession(id={self.id}, book_id={self.book_id}, start_time={self.start_time})>"
         )
+
+
+class ChapterPrereadingContent(Base):
+    """ORM model for chapter pre-reading content."""
+
+    __tablename__ = "chapter_prereading_contents"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    chapter_id: Mapped[int] = mapped_column(
+        ForeignKey("chapters.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
+    )
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    keypoints: Mapped[list] = mapped_column(JSONB, nullable=False)
+    generated_at: Mapped[dt] = mapped_column(DateTime(timezone=True), nullable=False)
+    ai_model: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    # Relationships
+    chapter: Mapped["Chapter"] = relationship(back_populates="prereading_content")
+
+    def __repr__(self) -> str:
+        """String representation of ChapterPrereadingContent."""
+        return f"<ChapterPrereadingContent(id={self.id}, chapter_id={self.chapter_id})>"

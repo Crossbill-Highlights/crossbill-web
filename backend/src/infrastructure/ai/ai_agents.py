@@ -21,6 +21,30 @@ class FlashcardSuggestion(BaseModel):
     answer: str
 
 
+class PrereadingContent(BaseModel):
+    summary: str
+    keypoints: list[str]
+
+
+def get_prereading_agent() -> Agent[None, PrereadingContent]:
+    return Agent(
+        get_ai_model(),
+        output_type=PrereadingContent,
+        instructions="""
+        You are helping a reader prepare to read a book chapter.
+        Generate pre-reading content to help the reader set expectations and think about
+        what they are going to read before they start.
+
+        Generate:
+        1. A brief summary (2-3 sentences) of what this chapter covers
+        2. 3-5 key points or concepts the reader should watch for
+
+        Focus on helping the reader understand what to expect from the chapter.
+        Be concise and specific.
+        """,
+    )
+
+
 def get_flashcard_agent() -> Agent[None, list[FlashcardSuggestion]]:
     return Agent(
         get_ai_model(),
