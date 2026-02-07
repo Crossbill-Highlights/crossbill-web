@@ -206,6 +206,7 @@ class Container(containers.DeclarativeContainer):
     book_management_use_case = providers.Factory(
         BookManagementUseCase,
         book_repository=book_repository,
+        chapter_repository=chapter_repository,
         bookmark_repository=bookmark_repository,
         highlight_repository=highlight_repository,
         highlight_tag_repository=highlight_tag_repository,

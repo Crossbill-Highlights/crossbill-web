@@ -27,6 +27,7 @@ class ChapterWithHighlights:
     chapter_name: str | None
     chapter_number: int | None
     highlights: list[HighlightWithContext]
+    parent_id: int | None = None
 
 
 class HighlightGroupingService:

@@ -14,6 +14,8 @@ export interface ChapterWithHighlights {
   name: string;
   /** Chapter order number from TOC */
   chapter_number?: number | null;
+  /** Parent chapter ID for hierarchy */
+  parent_id?: number | null;
   /** List of highlights in this chapter */
   highlights: Highlight[];
   created_at: string;

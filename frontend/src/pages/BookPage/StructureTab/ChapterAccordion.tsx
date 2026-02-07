@@ -6,16 +6,18 @@ import {
 } from '@/api/generated/prereading/prereading';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { ExpandMoreIcon } from '@/theme/Icons.tsx';
-import { Accordion, AccordionDetails, AccordionSummary, Typography } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { PrereadingContent } from './PrereadingContent';
 
 interface ChapterAccordionProps {
   chapter: ChapterWithHighlights;
+  allChapters: ChapterWithHighlights[];
+  depth?: number;
 }
 
-export const ChapterAccordion = ({ chapter }: ChapterAccordionProps) => {
+export const ChapterAccordion = ({ chapter, allChapters, depth = 0 }: ChapterAccordionProps) => {
   const [expanded, setExpanded] = useState(false);
   const queryClient = useQueryClient();
 
@@ -37,6 +39,8 @@ export const ChapterAccordion = ({ chapter }: ChapterAccordionProps) => {
       },
     });
 
+  const childChapters = allChapters.filter((ch) => ch.parent_id === chapter.id);
+
   return (
     <Accordion
       expanded={expanded}
@@ -45,6 +49,7 @@ export const ChapterAccordion = ({ chapter }: ChapterAccordionProps) => {
         boxShadow: 'none',
         '&:before': { display: 'none' },
         bgcolor: 'background.paper',
+        ml: depth * 2,
       }}
     >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -58,6 +63,18 @@ export const ChapterAccordion = ({ chapter }: ChapterAccordionProps) => {
             isGenerating={isPending}
           />
         </AIFeature>
+        {childChapters.length > 0 && (
+          <Box sx={{ mt: 1 }}>
+            {childChapters.map((child) => (
+              <ChapterAccordion
+                key={child.id}
+                chapter={child}
+                allChapters={allChapters}
+                depth={depth + 1}
+              />
+            ))}
+          </Box>
+        )}
       </AccordionDetails>
     </Accordion>
   );

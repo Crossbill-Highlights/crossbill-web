@@ -1,4 +1,4 @@
-import type { BookDetails } from '@/api/generated/model';
+import type { BookDetails, ChapterWithHighlights } from '@/api/generated/model';
 import { Box, Typography } from '@mui/material';
 import { ChapterAccordion } from './ChapterAccordion';
 
@@ -17,10 +17,12 @@ export const StructureTab = ({ book }: StructureTabProps) => {
     );
   }
 
+  const topLevelChapters = book.chapters.filter((ch: ChapterWithHighlights) => !ch.parent_id);
+
   return (
     <Box sx={{ width: '100%', maxWidth: '800px', mx: 'auto' }}>
-      {book.chapters.map((chapter) => (
-        <ChapterAccordion key={chapter.id} chapter={chapter} />
+      {topLevelChapters.map((chapter) => (
+        <ChapterAccordion key={chapter.id} chapter={chapter} allChapters={book.chapters} />
       ))}
     </Box>
   );

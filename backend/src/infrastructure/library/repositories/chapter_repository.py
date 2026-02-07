@@ -30,6 +30,18 @@ class ChapterRepository:
         orm_model = self.db.execute(stmt).scalar_one_or_none()
         return self.mapper.to_domain(orm_model) if orm_model else None
 
+    def find_all_by_book(self, book_id: BookId, user_id: UserId) -> list[Chapter]:
+        """Find all chapters for a book, ordered by chapter_number."""
+        stmt = (
+            select(ChapterORM)
+            .join(BookORM, BookORM.id == ChapterORM.book_id)
+            .where(BookORM.id == book_id.value)
+            .where(BookORM.user_id == user_id.value)
+            .order_by(ChapterORM.chapter_number)
+        )
+        orm_models = self.db.execute(stmt).scalars().all()
+        return [self.mapper.to_domain(m) for m in orm_models]
+
     def get_by_numbers(
         self, book_id: BookId, chapter_numbers: set[int], user_id: UserId
     ) -> dict[int, Chapter]:
