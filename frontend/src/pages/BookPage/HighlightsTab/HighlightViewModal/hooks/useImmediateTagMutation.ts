@@ -1,9 +1,9 @@
+import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import {
-  getGetBookDetailsApiV1BooksBookIdGetQueryKey,
   getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey,
   useAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost,
   useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete,
-} from '@/api/generated/books/books.ts';
+} from '@/api/generated/highlights/highlights.ts';
 import type { HighlightTagInBook } from '@/api/generated/model';
 import { useQueryClient } from '@tanstack/react-query';
 import { filter, map } from 'lodash';
@@ -73,7 +73,7 @@ export const useImmediateTagMutation = ({
 
   const addTagMutation = useAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost({
     mutation: {
-      onSuccess: (data) => {
+      onSuccess: (data: { highlight_tags: HighlightTagInBook[] }) => {
         setCurrentTags(data.highlight_tags);
         void queryClient.invalidateQueries({
           queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
@@ -82,7 +82,7 @@ export const useImmediateTagMutation = ({
           queryKey: getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey(bookId),
         });
       },
-      onError: (error) => {
+      onError: (error: Error) => {
         console.error('Failed to add tag:', error);
         showSnackbar('Failed to add tag. Please try again.', 'error');
       },
@@ -92,7 +92,7 @@ export const useImmediateTagMutation = ({
   const removeTagMutation =
     useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete({
       mutation: {
-        onSuccess: (data) => {
+        onSuccess: (data: { highlight_tags: HighlightTagInBook[] }) => {
           setCurrentTags(data.highlight_tags);
           void queryClient.invalidateQueries({
             queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
@@ -101,7 +101,7 @@ export const useImmediateTagMutation = ({
             queryKey: getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey(bookId),
           });
         },
-        onError: (error) => {
+        onError: (error: Error) => {
           console.error('Failed to remove tag:', error);
           showSnackbar('Failed to remove tag. Please try again.', 'error');
         },

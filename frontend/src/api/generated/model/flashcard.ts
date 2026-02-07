@@ -23,6 +23,4 @@ export interface Flashcard {
   user_id: number;
   book_id: number;
   highlight_id: number | null;
-  created_at: string;
-  updated_at: string;
 }

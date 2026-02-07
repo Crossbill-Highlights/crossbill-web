@@ -1,0 +1,13 @@
+from typing import Protocol
+
+from src.domain.common.value_objects.ids import BookId, BookmarkId, HighlightId, UserId
+from src.domain.reading.entities.bookmark import Bookmark
+
+
+class BookmarkRepositoryProtocol(Protocol):
+    def find_by_book_and_highlight(
+        self, book_id: BookId, highlight_id: HighlightId
+    ) -> Bookmark | None: ...
+    def find_by_book(self, book_id: BookId, user_id: UserId) -> list[Bookmark]: ...
+    def save(self, bookmark: Bookmark) -> Bookmark: ...
+    def delete(self, bookmark_id: BookmarkId, user_id: UserId) -> bool: ...

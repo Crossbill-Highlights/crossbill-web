@@ -12,7 +12,10 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from src.database import Base, get_db
-from src.hash_utils import compute_highlight_hash
+from src.domain.common.value_objects import ContentHash
+from src.domain.common.value_objects.ids import UserId
+from src.domain.identity.entities.user import User as DomainUser
+from src.infrastructure.identity.dependencies import get_current_user
 from src.main import app
 from src.models import (
     Book,
@@ -22,7 +25,6 @@ from src.models import (
     HighlightTagGroup,
     User,
 )
-from src.services.auth_service import get_current_user
 
 
 def create_test_book(
@@ -74,12 +76,11 @@ def create_test_highlight(
     """Create a test highlight with properly computed content_hash.
 
     This helper ensures all test highlights have valid content_hash values.
+    Hash is computed from text only, matching domain entity behavior.
     """
-    content_hash = compute_highlight_hash(
-        text=text,
-        book_title=book.title,
-        book_author=book.author,
-    )
+    # Compute hash from text only (deduplication happens within book context)
+    content_hash = ContentHash.compute(text).value
+
     highlight = Highlight(
         book_id=book.id,
         user_id=user_id,
@@ -153,8 +154,15 @@ def client(db_session: Session, test_user: User) -> Generator[TestClient, Any, N
         finally:
             pass
 
-    async def override_get_current_user() -> User:
-        return test_user
+    async def override_get_current_user() -> DomainUser:
+        # Convert ORM User to domain User entity for tests
+        return DomainUser.create_with_id(
+            id=UserId(test_user.id),
+            email=test_user.email,
+            hashed_password=test_user.hashed_password,
+            created_at=test_user.created_at,
+            updated_at=test_user.updated_at,
+        )
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user

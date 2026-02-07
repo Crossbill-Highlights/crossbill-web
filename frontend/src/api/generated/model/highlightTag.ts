@@ -18,6 +18,4 @@ export interface HighlightTag {
   id: number;
   book_id: number;
   tag_group_id?: number | null;
-  created_at: string;
-  updated_at: string;
 }

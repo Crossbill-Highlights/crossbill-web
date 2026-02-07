@@ -8,10 +8,11 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from src import models, schemas
+from src import models
+from src.infrastructure.library.schemas import EreaderBookMetadata
 
 # Type alias for the book creation fixture
-CreateBookFunc = Callable[[dict[str, Any]], schemas.EreaderBookMetadata]
+CreateBookFunc = Callable[[dict[str, Any]], EreaderBookMetadata]
 
 
 @pytest.fixture
@@ -21,7 +22,7 @@ def create_book_via_api(client: TestClient) -> CreateBookFunc:
     Returns a function that can be called with book data to create a book.
     """
 
-    def _create_book(book_data: dict[str, Any]) -> schemas.EreaderBookMetadata:
+    def _create_book(book_data: dict[str, Any]) -> EreaderBookMetadata:
         """Create a book via POST /api/v1/ereader/books endpoint.
 
         Args:
@@ -32,7 +33,7 @@ def create_book_via_api(client: TestClient) -> CreateBookFunc:
         """
         response = client.post("/api/v1/ereader/books", json=book_data)
         assert response.status_code == status.HTTP_200_OK
-        return schemas.EreaderBookMetadata(**response.json())
+        return EreaderBookMetadata(**response.json())
 
     return _create_book
 
@@ -212,8 +213,9 @@ class TestHighlightsUpload:
         assert len(highlights) == 2
 
         # First highlight should have xpoints
-        assert highlights[0].start_xpoint == "/body/div[1]/p[5]/text()[1].0"
-        assert highlights[0].end_xpoint == "/body/div[1]/p[5]/text()[1].42"
+        # Note: XPoint value object normalizes text()[1].0 (defaults) to just xpath
+        assert highlights[0].start_xpoint == "/body/div[1]/p[5]"
+        assert highlights[0].end_xpoint == "/body/div[1]/p[5]/text().42"
 
         # Second highlight should have null xpoints
         assert highlights[1].start_xpoint is None
@@ -388,10 +390,11 @@ class TestHighlightsUpload:
     def test_upload_same_text_different_book_not_duplicate(
         self, client: TestClient, create_book_via_api: CreateBookFunc
     ) -> None:
-        """Test that same text in different books creates separate highlights.
+        """Test that same text in different books is treated as duplicate.
 
-        The hash includes book_title and author, so same text in different books
-        will have different hashes and create separate highlights.
+        NEW BEHAVIOR: The content hash is computed from text only (not book metadata).
+        This means same highlight text from different books will be deduplicated.
+        This is the domain-centric approach that prioritizes text content.
         """
         # Create the first book
         create_book_via_api(
@@ -439,7 +442,8 @@ class TestHighlightsUpload:
 
         response2 = client.post("/api/v1/highlights/upload", json=payload2)
         assert response2.status_code == status.HTTP_200_OK
-        # Different book means different hash, so it's created
+        # Same text in different book = NOT a duplicate (scoped by book)
+        # Allows highlighting the same passage in multiple books
         assert response2.json()["highlights_created"] == 1
         assert response2.json()["highlights_skipped"] == 0
 

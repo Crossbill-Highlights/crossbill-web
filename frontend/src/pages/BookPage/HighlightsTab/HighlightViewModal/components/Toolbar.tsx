@@ -1,8 +1,8 @@
 import {
-  getGetBookDetailsApiV1BooksBookIdGetQueryKey,
   useCreateBookmarkApiV1BooksBookIdBookmarksPost,
   useDeleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete,
-} from '@/api/generated/books/books.ts';
+} from '@/api/generated/bookmarks/bookmarks.ts';
+import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import type { Bookmark } from '@/api/generated/model';
 import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
@@ -129,7 +129,7 @@ const useBookmarkMutations = (
           queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
       },
-      onError: (error) => {
+      onError: (error: Error) => {
         console.error('Failed to create bookmark:', error);
         showSnackbar('Failed to create bookmark. Please try again.', 'error');
       },
@@ -143,7 +143,7 @@ const useBookmarkMutations = (
           queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
       },
-      onError: (error) => {
+      onError: (error: Error) => {
         console.error('Failed to delete bookmark:', error);
         showSnackbar('Failed to delete bookmark. Please try again.', 'error');
       },

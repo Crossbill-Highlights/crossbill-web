@@ -10,7 +10,8 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from src import models, schemas
+from src import models
+from src.infrastructure.library.schemas import EreaderBookMetadata
 from tests.conftest import create_test_book, create_test_highlight
 
 # Default user ID used by services (matches conftest default user)
@@ -34,7 +35,7 @@ class BookWithChapterAndHighlights(NamedTuple):
 
 
 # Type alias for the book creation fixture
-CreateBookFunc = Callable[[dict[str, Any]], schemas.EreaderBookMetadata]
+CreateBookFunc = Callable[[dict[str, Any]], EreaderBookMetadata]
 
 
 @pytest.fixture
@@ -44,7 +45,7 @@ def create_book_via_api(client: TestClient) -> CreateBookFunc:
     Returns a function that can be called with book data to create a book.
     """
 
-    def _create_book(book_data: dict[str, Any]) -> schemas.EreaderBookMetadata:
+    def _create_book(book_data: dict[str, Any]) -> EreaderBookMetadata:
         """Create a book via POST /api/v1/ereader/books endpoint.
 
         Args:
@@ -55,7 +56,7 @@ def create_book_via_api(client: TestClient) -> CreateBookFunc:
         """
         response = client.post("/api/v1/ereader/books", json=book_data)
         assert response.status_code == status.HTTP_200_OK
-        return schemas.EreaderBookMetadata(**response.json())
+        return EreaderBookMetadata(**response.json())
 
     return _create_book
 
@@ -356,19 +357,26 @@ class TestHighlightSyncWithSoftDelete:
         self,
         client: TestClient,
         db_session: Session,
-        book_with_soft_deleted_highlight: BookWithHighlights,
-        create_book_via_api: CreateBookFunc,
     ) -> None:
-        create_book_via_api(
-            {
-                "client_book_id": "test-client-book-id",
-                "title": "Test Book",
-                "author": "Test Author",
-            }
-        )
-
         """Test that sync does not recreate soft-deleted highlights."""
-        book = book_with_soft_deleted_highlight.book
+        # Create book with soft-deleted highlight and matching client_book_id
+        book = create_test_book(
+            db_session=db_session,
+            user_id=DEFAULT_USER_ID,
+            title="Test Book",
+            author="Test Author",
+            isbn="1234567890",
+            client_book_id="test-client-book-id",
+        )
+        create_test_highlight(
+            db_session=db_session,
+            book=book,
+            user_id=DEFAULT_USER_ID,
+            text="Deleted Highlight",
+            page=10,
+            datetime_str="2024-01-15 14:30:22",
+            deleted_at=datetime.now(UTC),
+        )
 
         # Try to sync the same highlight again
         payload = {

@@ -1,8 +1,8 @@
+import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import {
-  getGetBookDetailsApiV1BooksBookIdGetQueryKey,
   getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey,
   useDeleteHighlightsApiV1BooksBookIdHighlightDelete,
-} from '@/api/generated/books/books.ts';
+} from '@/api/generated/highlights/highlights.ts';
 import type { Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
@@ -84,7 +84,7 @@ export const HighlightViewModal = ({
         });
         onClose();
       },
-      onError: (error) => {
+      onError: (error: Error) => {
         console.error('Failed to delete highlight:', error);
         showSnackbar('Failed to delete highlight. Please try again.', 'error');
       },

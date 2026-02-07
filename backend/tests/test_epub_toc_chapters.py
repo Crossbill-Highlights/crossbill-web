@@ -1,6 +1,6 @@
 """Tests for EPUB ToC chapter creation and update logic.
 
-This test suite focuses on the complex logic in EpubService._save_chapters_from_toc,
+This test suite focuses on the complex logic in EbookUploadService._save_chapters_from_toc,
 which handles:
 - Creating new chapters from ToC
 - Updating existing chapters
@@ -17,14 +17,15 @@ import pytest
 from sqlalchemy.orm import Session
 
 from src import models
-from src.services.ebook.epub.epub_service import EpubService
+from src.domain.common.value_objects.ids import BookId, UserId
+from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
 from tests.conftest import create_test_book
 
 
 @pytest.fixture
-def epub_service(db_session: Session) -> EpubService:
-    """Create an EpubService instance with test database session."""
-    return EpubService(db=db_session)
+def chapter_repo(db_session: Session) -> ChapterRepository:
+    """Create a ChapterRepository instance with test database session."""
+    return ChapterRepository(db=db_session)
 
 
 @pytest.fixture
@@ -42,13 +43,13 @@ class TestSimpleChapterCreation:
     """Test basic chapter creation without hierarchy."""
 
     def test_create_single_chapter(
-        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ) -> None:
         """Test creating a single chapter from ToC."""
         chapters: list[tuple[str, int, str | None]] = [("Introduction", 1, None)]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 1
@@ -59,7 +60,7 @@ class TestSimpleChapterCreation:
         assert db_chapters[0].parent_id is None
 
     def test_create_multiple_chapters(
-        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test creating multiple chapters from ToC."""
         chapters: list[tuple[str, int, str | None]] = [
@@ -68,8 +69,8 @@ class TestSimpleChapterCreation:
             ("Chapter 3", 3, None),
         ]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 3
@@ -84,13 +85,13 @@ class TestSimpleChapterCreation:
         assert all(ch.parent_id is None for ch in db_chapters)
 
     def test_empty_chapters_list(
-        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test handling empty chapters list."""
         chapters: list[tuple[str, int, str | None]] = []
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 0
@@ -102,7 +103,7 @@ class TestHierarchicalChapters:
     """Test hierarchical parent-child chapter relationships."""
 
     def test_simple_parent_child(
-        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test creating parent chapter with child chapters."""
         chapters: list[tuple[str, int, str | None]] = [
@@ -111,8 +112,8 @@ class TestHierarchicalChapters:
             ("Chapter 2", 3, "Part I"),
         ]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 3
@@ -138,7 +139,7 @@ class TestHierarchicalChapters:
         assert chapter2.parent_id == part1.id
 
     def test_multiple_parent_levels(
-        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test creating multiple levels of parent-child hierarchy."""
         chapters: list[tuple[str, int, str | None]] = [
@@ -149,8 +150,8 @@ class TestHierarchicalChapters:
             ("Chapter 2", 5, "Part I"),
         ]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 5
@@ -178,7 +179,7 @@ class TestDuplicateChapterNames:
     """
 
     def test_duplicate_names_different_parents_allowed(
-        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test that chapters with same name under different parents are both created.
 
@@ -192,8 +193,8 @@ class TestDuplicateChapterNames:
             ("Harjoitukset", 4, "Part II"),  # Exercises for Part II
         ]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 4
@@ -221,7 +222,7 @@ class TestDuplicateChapterNames:
 
     def test_duplicate_names_at_root_level_skipped(
         self,
-        epub_service: EpubService,
+        chapter_repo: ChapterRepository,
         test_book_for_toc: models.Book,
         db_session: Session,
         caplog: pytest.LogCaptureFixture,
@@ -236,8 +237,8 @@ class TestDuplicateChapterNames:
             ("Preface", 2, None),  # Duplicate at root level
         ]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         # Only one created, duplicate skipped
@@ -252,7 +253,7 @@ class TestDuplicateChapterNames:
 
     def test_true_duplicate_in_toc_skipped(
         self,
-        epub_service: EpubService,
+        chapter_repo: ChapterRepository,
         test_book_for_toc: models.Book,
         db_session: Session,
         caplog: pytest.LogCaptureFixture,
@@ -268,8 +269,8 @@ class TestDuplicateChapterNames:
             ("Chapter 1", 3, "Part I"),  # True duplicate - same name and parent
         ]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         # Only 2 chapters created (duplicate skipped)
@@ -292,7 +293,7 @@ class TestUpdatingExistingChapters:
     """Test updating existing chapters when re-uploading ToC."""
 
     def test_update_chapter_number(
-        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test updating chapter_number for existing chapter."""
         # Create initial chapter
@@ -309,8 +310,8 @@ class TestUpdatingExistingChapters:
         # Re-upload with different chapter number
         chapters: list[tuple[str, int, str | None]] = [("Chapter 1", 5, None)]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 0  # No new chapters created
@@ -319,7 +320,7 @@ class TestUpdatingExistingChapters:
         assert existing_chapter.chapter_number == 5  # Updated
 
     def test_update_parent_id(
-        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test updating parent_id for existing chapter when they share the same parent.
 
@@ -351,8 +352,8 @@ class TestUpdatingExistingChapters:
             ("Chapter 1", 5, "Part I"),  # Same parent, different number
         ]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 0  # No new chapters
@@ -362,7 +363,7 @@ class TestUpdatingExistingChapters:
         assert child.chapter_number == 5  # Updated
 
     def test_mixed_create_and_update(
-        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test creating new chapters while updating existing ones."""
         # Create initial chapter
@@ -383,8 +384,8 @@ class TestUpdatingExistingChapters:
             ("Chapter 3", 7, None),  # New - create
         ]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 2  # Only new chapters counted
@@ -399,7 +400,7 @@ class TestUpdatingExistingChapters:
         assert db_chapters[0].chapter_number == 5  # Updated
 
     def test_reupload_with_duplicate_chapter_names(
-        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test re-uploading EPUB TOC when book already has duplicate chapter names under different parents.
 
@@ -418,15 +419,15 @@ class TestUpdatingExistingChapters:
             ("Harjoitukset", 4, "Part II"),
         ]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=initial_chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=initial_chapters
         )
         assert created_count == 4
 
         # Re-upload the same TOC (simulating re-uploading the EPUB file via API)
         # This should detect all existing chapters and update them, not try to create duplicates
-        created_count_2 = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=initial_chapters
+        created_count_2 = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=initial_chapters
         )
 
         # Should create 0 new chapters (all already exist)
@@ -460,7 +461,7 @@ class TestEdgeCases:
     """Test edge cases and potential issues in the ToC logic."""
 
     def test_duplicate_parent_names_correct_assignment(
-        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test that duplicate parent names work correctly with the fixed logic.
 
@@ -493,8 +494,8 @@ class TestEdgeCases:
             ),  # Should have parent_id = Introduction under Part II
         ]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 6
@@ -522,7 +523,7 @@ class TestEdgeCases:
         assert chapter1_under_intro2.parent_id == intro2.id
 
     def test_parent_referenced_before_definition(
-        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test that parent chapters must come before children in ToC.
 
@@ -535,8 +536,8 @@ class TestEdgeCases:
             ("Part I", 2, None),  # Parent comes after
         ]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 2
@@ -554,15 +555,15 @@ class TestEdgeCases:
         assert part1.parent_id is None
 
     def test_nonexistent_parent_name(
-        self, epub_service: EpubService, test_book_for_toc: models.Book, db_session: Session
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test handling of parent_name that doesn't exist in ToC."""
         chapters: list[tuple[str, int, str | None]] = [
             ("Chapter 1", 1, "Part I"),  # References parent that never appears
         ]
 
-        created_count = epub_service._save_chapters_from_toc(  # pyright: ignore
-            book_id=test_book_for_toc.id, user_id=1, chapters=chapters
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 1

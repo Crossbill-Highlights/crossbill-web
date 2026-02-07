@@ -13,29 +13,23 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pwdlib import PasswordHash
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from sqlalchemy.orm import sessionmaker
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from src.config import configure_logging, get_settings
-from src.database import get_engine
+from src.database import dispose_engine, get_session_factory, initialize_database
 from src.exceptions import BookNotFoundError, CrossbillError, NotFoundError
-from src.repositories import UserRepository
-from src.routers import (
-    auth,
-    books,
-    ereader,
-    flashcards,
-    highlights,
-    highlights_ai,
-    reading_sessions,
-    reading_sessions_ai,
-    users,
-)
-from src.routers import settings as settings_router
+from src.infrastructure.common.routers import settings as settings_router
+from src.infrastructure.identity.repositories.user_repository import UserRepository
+from src.infrastructure.identity.routers import auth, users
+from src.infrastructure.identity.services.password_service import hash_password
+from src.infrastructure.learning.routers import ai_flashcard_suggestions, flashcards
+from src.infrastructure.learning.routers import book_flashcards as learning_books
+from src.infrastructure.library.routers import books as library_books
+from src.infrastructure.library.routers import ereader as library_ereader
+from src.infrastructure.reading.routers import bookmarks, highlights, reading_sessions
 
 settings = get_settings()
 
@@ -54,13 +48,14 @@ def _initialize_admin_password() -> None:
         logger.info("admin_password_skip", reason="ADMIN_PASSWORD not set")
         return
 
-    engine = get_engine(settings)
-    session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    # Use singleton session factory instead of creating new engine
+    session_factory = get_session_factory(settings)
     db = session_factory()
 
     try:
-        user_repo = UserRepository(db)
-        admin_user = user_repo.get_by_email(settings.ADMIN_USERNAME)
+        # Use repository to find and update admin user
+        user_repository = UserRepository(db)
+        admin_user = user_repository.find_by_email(settings.ADMIN_USERNAME)
 
         if not admin_user:
             logger.warning(
@@ -69,7 +64,7 @@ def _initialize_admin_password() -> None:
             )
             return
 
-        if admin_user.hashed_password:
+        if admin_user.has_password():
             logger.info(
                 "admin_password_skip",
                 reason="password already set",
@@ -77,8 +72,12 @@ def _initialize_admin_password() -> None:
             )
             return
 
-        password_hash = PasswordHash.recommended()
-        admin_user.hashed_password = password_hash.hash(settings.ADMIN_PASSWORD)
+        # Hash password and update domain entity
+        hashed = hash_password(settings.ADMIN_PASSWORD)
+        admin_user.update_password(hashed)
+
+        # Save via repository
+        user_repository.save(admin_user)
         db.commit()
 
         logger.info(
@@ -92,10 +91,17 @@ def _initialize_admin_password() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan context manager."""
+    # Initialize database engine and connection pool once at startup
+    initialize_database(settings)
+
     # Skip database initialization during tests
     if not os.getenv("TESTING"):
         _initialize_admin_password()
+
     yield
+
+    # Cleanup on shutdown
+    dispose_engine()
 
 
 app = FastAPI(
@@ -237,17 +243,28 @@ async def crossbill_exception_handler(request: Request, exc: CrossbillError) -> 
 
 
 # Register routers
+
+# Library
+app.include_router(library_books.router, prefix=settings.API_V1_PREFIX)
+app.include_router(library_ereader.router, prefix=settings.API_V1_PREFIX)
+
+# Reading
 app.include_router(highlights.router, prefix=settings.API_V1_PREFIX)
-app.include_router(books.router, prefix=settings.API_V1_PREFIX)
+app.include_router(highlights.router, prefix=settings.API_V1_PREFIX)
+app.include_router(reading_sessions.router, prefix=settings.API_V1_PREFIX)
+app.include_router(bookmarks.router, prefix=settings.API_V1_PREFIX)
+
+# Learning
+app.include_router(learning_books.router, prefix=settings.API_V1_PREFIX)
 app.include_router(flashcards.router, prefix=settings.API_V1_PREFIX)
+app.include_router(ai_flashcard_suggestions.router, prefix=settings.API_V1_PREFIX)
+
+# Identity
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(users.router, prefix=settings.API_V1_PREFIX)
-app.include_router(reading_sessions.router, prefix=settings.API_V1_PREFIX)
-app.include_router(ereader.router, prefix=settings.API_V1_PREFIX)
-app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)
 
-app.include_router(reading_sessions_ai.router, prefix=settings.API_V1_PREFIX)
-app.include_router(highlights_ai.router, prefix=settings.API_V1_PREFIX)
+# Common
+app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health")

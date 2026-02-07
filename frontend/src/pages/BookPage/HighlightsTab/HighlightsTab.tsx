@@ -1,7 +1,7 @@
 import {
   useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet,
   useSearchBookHighlightsApiV1BooksBookIdHighlightsGet,
-} from '@/api/generated/books/books.ts';
+} from '@/api/generated/highlights/highlights.ts';
 import type {
   BookDetails,
   Bookmark,

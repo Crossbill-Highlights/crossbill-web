@@ -1,5 +1,5 @@
 import type { Bookmark, ReadingSession } from '@/api/generated/model';
-import { useGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet } from '@/api/generated/reading-sessions/reading-sessions';
+import { useGetReadingSessionAiSummaryApiV1ReadingSessionIdAiSummaryGet } from '@/api/generated/reading-sessions/reading-sessions';
 import { MetadataRow } from '@/components/cards/MetadataRow.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { useSettings } from '@/context/SettingsContext';
@@ -80,7 +80,7 @@ export const ReadingSessionCard = ({
   const { showSnackbar } = useSnackbar();
 
   const { data, isLoading, error, refetch } =
-    useGetReadingSessionAiSummaryApiV1ReadingSessionsReadingSessionIdAiSummaryGet(session.id, {
+    useGetReadingSessionAiSummaryApiV1ReadingSessionIdAiSummaryGet(session.id, {
       query: {
         enabled: false,
         retry: false,
