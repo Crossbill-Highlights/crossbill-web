@@ -3,7 +3,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from src.domain.common.value_objects.ids import BookId, UserId
+from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.library.entities.chapter import Chapter
 from src.infrastructure.library.mappers.chapter_mapper import ChapterMapper
 from src.models import Book as BookORM
@@ -18,6 +18,17 @@ class ChapterRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
         self.mapper = ChapterMapper()
+
+    def find_by_id(self, chapter_id: ChapterId, user_id: UserId) -> Chapter | None:
+        """Find a chapter by ID with ownership verification."""
+        stmt = (
+            select(ChapterORM)
+            .join(BookORM, BookORM.id == ChapterORM.book_id)
+            .where(ChapterORM.id == chapter_id.value)
+            .where(BookORM.user_id == user_id.value)
+        )
+        orm_model = self.db.execute(stmt).scalar_one_or_none()
+        return self.mapper.to_domain(orm_model) if orm_model else None
 
     def get_by_numbers(
         self, book_id: BookId, chapter_numbers: set[int], user_id: UserId

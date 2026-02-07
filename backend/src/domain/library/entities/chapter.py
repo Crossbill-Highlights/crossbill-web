@@ -28,6 +28,8 @@ class Chapter(Entity[ChapterId]):
     # Optional fields
     parent_id: ChapterId | None = None
     chapter_number: int | None = None
+    start_xpoint: str | None = None
+    end_xpoint: str | None = None
 
     def __post_init__(self) -> None:
         """Validate invariants."""
@@ -54,6 +56,8 @@ class Chapter(Entity[ChapterId]):
         name: str,
         chapter_number: int | None = None,
         parent_id: ChapterId | None = None,
+        start_xpoint: str | None = None,
+        end_xpoint: str | None = None,
     ) -> "Chapter":
         """Factory for creating new chapter."""
         return cls(
@@ -62,6 +66,8 @@ class Chapter(Entity[ChapterId]):
             parent_id=parent_id,
             name=name.strip(),
             chapter_number=chapter_number,
+            start_xpoint=start_xpoint,
+            end_xpoint=end_xpoint,
             created_at=datetime.now(UTC),
         )
 
@@ -74,6 +80,8 @@ class Chapter(Entity[ChapterId]):
         created_at: datetime,
         chapter_number: int | None = None,
         parent_id: ChapterId | None = None,
+        start_xpoint: str | None = None,
+        end_xpoint: str | None = None,
     ) -> "Chapter":
         """Factory for reconstituting chapter from persistence."""
         return cls(
@@ -82,5 +90,7 @@ class Chapter(Entity[ChapterId]):
             parent_id=parent_id,
             name=name,
             chapter_number=chapter_number,
+            start_xpoint=start_xpoint,
+            end_xpoint=end_xpoint,
             created_at=created_at,
         )
