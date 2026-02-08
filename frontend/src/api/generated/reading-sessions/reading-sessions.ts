@@ -303,8 +303,20 @@ export function useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet<
 /**
  * Get AI-generated summary for a reading session.
 
-Uses scoped DB sessions to release connections before the AI call,
-preventing connection pool exhaustion during slow AI responses.
+Returns cached summary if available, otherwise generates new summary
+from the read content and caches it.
+
+Args:
+    reading_session_id: ID of the reading session
+    current_user: Authenticated user
+
+Returns:
+    ReadingSessionAISummaryResponse with the AI summary
+
+Raises:
+    HTTPException 404: If reading session not found or not owned by user
+    HTTPException 400: If session has no position data or PDF not supported
+    HTTPException 500: For unexpected errors
  * @summary Get Reading Session Ai Summary
  */
 export const getReadingSessionAiSummaryApiV1ReadingSessionIdAiSummaryGet = (

@@ -14,5 +14,4 @@ export interface ChapterPrereadingResponse {
   summary: string;
   keypoints: string[];
   generated_at: string;
-  ai_model: string;
 }

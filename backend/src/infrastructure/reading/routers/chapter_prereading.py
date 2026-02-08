@@ -53,7 +53,6 @@ def get_chapter_prereading(
             summary=result.summary,
             keypoints=result.keypoints,
             generated_at=result.generated_at,
-            ai_model=result.ai_model,
         )
     except DomainError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
@@ -84,7 +83,6 @@ async def generate_chapter_prereading(
             summary=result.summary,
             keypoints=result.keypoints,
             generated_at=result.generated_at,
-            ai_model=result.ai_model,
         )
     except DomainError as e:
         if "not found" in str(e).lower():
@@ -127,7 +125,6 @@ def get_book_prereading(
                     summary=r.summary,
                     keypoints=r.keypoints,
                     generated_at=r.generated_at,
-                    ai_model=r.ai_model,
                 )
                 for r in results
             ]

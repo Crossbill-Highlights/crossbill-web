@@ -184,9 +184,6 @@ export function useGetChapterPrereadingApiV1ChaptersChapterIdPrereadingGet<
 
 /**
  * Generate prereading content for a chapter.
-
-Uses scoped DB sessions to release connections before the AI call,
-preventing connection pool exhaustion during slow AI responses.
  * @summary Generate Chapter Prereading
  */
 export const generateChapterPrereadingApiV1ChaptersChapterIdPrereadingGeneratePost = (

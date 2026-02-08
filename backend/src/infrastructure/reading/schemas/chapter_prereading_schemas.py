@@ -13,7 +13,6 @@ class ChapterPrereadingResponse(BaseModel):
     summary: str
     keypoints: list[str]
     generated_at: datetime
-    ai_model: str
 
     model_config = {"from_attributes": True}
 
