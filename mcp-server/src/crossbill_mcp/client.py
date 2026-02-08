@@ -166,7 +166,7 @@ class CrossbillClient:
         highlight_id: int | None = None,
     ) -> dict:
         """Create a flashcard for a book or linked to a highlight."""
-        if highlight_id:
+        if highlight_id is not None:
             response = await self._request(
                 "POST",
                 f"/api/v1/highlights/{highlight_id}/flashcards",
