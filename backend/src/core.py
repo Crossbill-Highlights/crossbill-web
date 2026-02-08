@@ -6,9 +6,6 @@ from src.application.identity.use_cases.register_user_use_case import RegisterUs
 from src.application.identity.use_cases.update_user_use_case import UpdateUserUseCase
 from src.application.learning.use_cases.flashcard_ai_use_case import FlashcardAIUseCase
 from src.application.learning.use_cases.flashcard_use_case import FlashcardUseCase
-from src.application.library.services.ebook_text_extraction_service import (
-    EbookTextExtractionService,
-)
 from src.application.library.use_cases.book_cover_use_case import BookCoverUseCase
 from src.application.library.use_cases.book_management_use_case import BookManagementUseCase
 from src.application.library.use_cases.book_tag_association_use_case import (
@@ -23,6 +20,9 @@ from src.application.library.use_cases.get_recently_viewed_books_use_case import
     GetRecentlyViewedBooksUseCase,
 )
 from src.application.reading.use_cases.bookmark_use_case import BookmarkUseCase
+from src.application.reading.use_cases.chapter_prereading_use_case import (
+    ChapterPrereadingUseCase,
+)
 from src.application.reading.use_cases.highlight_delete_use_case import HighlightDeleteUseCase
 from src.application.reading.use_cases.highlight_search_use_case import HighlightSearchUseCase
 from src.application.reading.use_cases.highlight_tag_association_use_case import (
@@ -47,6 +47,7 @@ from src.application.reading.use_cases.update_highlight_note_use_case import (
 )
 from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
 from src.domain.reading.services.highlight_grouping_service import HighlightGroupingService
+from src.infrastructure.ai.ai_service import AIService
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.services.password_service_adapter import PasswordServiceAdapter
 from src.infrastructure.identity.services.token_service_adapter import TokenServiceAdapter
@@ -55,10 +56,17 @@ from src.infrastructure.library.repositories import BookRepository
 from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
 from src.infrastructure.library.repositories.file_repository import FileRepository
 from src.infrastructure.library.repositories.tag_repository import TagRepository
+from src.infrastructure.library.services.epub_text_extraction_service import (
+    EpubTextExtractionService,
+)
+from src.infrastructure.library.services.epub_toc_parser_service import EpubTocParserService
 from src.infrastructure.reading.repositories import (
     BookmarkRepository,
     HighlightRepository,
     HighlightTagRepository,
+)
+from src.infrastructure.reading.repositories.chapter_prereading_repository import (
+    ChapterPrereadingRepository,
 )
 from src.infrastructure.reading.repositories.reading_session_repository import (
     ReadingSessionRepository,
@@ -80,8 +88,13 @@ class Container(containers.DeclarativeContainer):
     reading_session_repository = providers.Factory(ReadingSessionRepository, db=db)
     tag_repository = providers.Factory(TagRepository, db=db)
     flashcard_repository = providers.Factory(FlashcardRepository, db=db)
+    chapter_prereading_repository = providers.Factory(ChapterPrereadingRepository, db=db)
     file_repository = providers.Factory(FileRepository)
-    ebook_text_extraction_service = providers.Factory(EbookTextExtractionService, db=db)
+
+    # Infrastructure services (no db dependency)
+    ebook_text_extraction_service = providers.Factory(EpubTextExtractionService)
+    epub_toc_parser_service = providers.Factory(EpubTocParserService)
+    ai_service = providers.Factory(AIService)
 
     # Identity repositories and services
     user_repository = providers.Factory(UserRepository, db=db)
@@ -148,11 +161,24 @@ class Container(containers.DeclarativeContainer):
         book_repository=book_repository,
         highlight_repository=highlight_repository,
         text_extraction_service=ebook_text_extraction_service,
+        file_repo=file_repository,
     )
     reading_session_ai_summary_use_case = providers.Factory(
         ReadingSessionAISummaryUseCase,
         session_repository=reading_session_repository,
         text_extraction_service=ebook_text_extraction_service,
+        book_repo=book_repository,
+        file_repo=file_repository,
+        ai_summary_service=ai_service,
+    )
+    chapter_prereading_use_case = providers.Factory(
+        ChapterPrereadingUseCase,
+        prereading_repo=chapter_prereading_repository,
+        chapter_repo=chapter_repository,
+        text_extraction_service=ebook_text_extraction_service,
+        book_repo=book_repository,
+        file_repo=file_repository,
+        ai_prereading_service=ai_service,
     )
 
     # Library module, application use cases
@@ -188,11 +214,13 @@ class Container(containers.DeclarativeContainer):
         book_repository=book_repository,
         chapter_repository=chapter_repository,
         file_repository=file_repository,
+        epub_toc_parser=epub_toc_parser_service,
     )
 
     book_management_use_case = providers.Factory(
         BookManagementUseCase,
         book_repository=book_repository,
+        chapter_repository=chapter_repository,
         bookmark_repository=bookmark_repository,
         highlight_repository=highlight_repository,
         highlight_tag_repository=highlight_tag_repository,
@@ -214,6 +242,7 @@ class Container(containers.DeclarativeContainer):
     flashcard_ai_use_case = providers.Factory(
         FlashcardAIUseCase,
         highlight_repository=highlight_repository,
+        ai_flashcard_service=ai_service,
     )
 
     # Identity use cases

@@ -37,7 +37,6 @@ import { axiosInstance } from '../../axios-instance';
  * Get all books with their highlight counts, sorted alphabetically by title.
 
 Args:
-    db: Database session
     offset: Number of books to skip (for pagination)
     limit: Maximum number of books to return (for pagination)
     search: Optional search text to filter books by title or author
@@ -173,7 +172,6 @@ export function useGetBooksApiV1BooksGet<
 Returns books that have been viewed at least once, ordered by most recently viewed.
 
 Args:
-    db: Database session
     limit: Maximum number of books to return (default: 10, max: 50)
 
 Returns:
@@ -338,7 +336,6 @@ export function useGetRecentlyViewedBooksApiV1BooksRecentlyViewedGet<
 
 Args:
     book_id: ID of the book to retrieve
-    db: Database session
 
 Returns:
     BookDetails with chapters and their highlights
@@ -471,7 +468,6 @@ Currently supports updating tags only. The tags will be replaced with the provid
 Args:
     book_id: ID of the book to update
     request: Book update request containing tags
-    db: Database session
 
 Returns:
     Updated book with highlight count and tags
@@ -565,7 +561,6 @@ chapters, and highlights.
 
 Args:
     book_id: ID of the book to delete
-    db: Database session
 
 Raises:
     HTTPException: If book is not found or deletion fails
@@ -648,7 +643,6 @@ Only users who own the book can access its cover.
 
 Args:
     book_id: ID of the book
-    db: Database session
     current_user: Authenticated user
 
 Returns:

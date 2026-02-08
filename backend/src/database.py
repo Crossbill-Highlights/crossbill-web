@@ -35,8 +35,8 @@ def initialize_database(settings: Settings) -> None:
     else:
         _engine = create_engine(
             settings.DATABASE_URL,
-            pool_size=5,  # Base pool size
-            max_overflow=10,  # Allow 10 extra connections under load
+            pool_size=20,  # Base pool size
+            max_overflow=30,  # Allow 10 extra connections under load
             pool_pre_ping=True,  # Verify connections before use
             pool_recycle=3600,  # Recycle connections after 1 hour
         )

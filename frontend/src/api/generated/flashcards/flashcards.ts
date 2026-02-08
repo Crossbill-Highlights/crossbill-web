@@ -42,7 +42,7 @@ to any specific highlight.
 Args:
     book_id: ID of the book
     request: Request containing question and answer
-    db: Database session
+    use_case: FlashcardUseCase injected via dependency container
 
 Returns:
     Created flashcard
@@ -141,7 +141,7 @@ Returns all flashcards ordered by creation date (newest first).
 
 Args:
     book_id: ID of the book
-    db: Database session
+    use_case: FlashcardUseCase injected via dependency container
 
 Returns:
     List of flashcards with highlight data for the book
@@ -303,7 +303,7 @@ export function useGetFlashcardsForBookApiV1BooksBookIdFlashcardsGet<
 Args:
     flashcard_id: ID of the flashcard to update
     request: Request containing updated question and/or answer
-    db: Database session
+    use_case: FlashcardUseCase injected via dependency container
 
 Returns:
     Updated flashcard
@@ -399,7 +399,7 @@ export const useUpdateFlashcardApiV1FlashcardsFlashcardIdPut = <
 
 Args:
     flashcard_id: ID of the flashcard to delete
-    db: Database session
+    use_case: FlashcardUseCase injected via dependency container
 
 Returns:
     Deletion confirmation
@@ -493,6 +493,7 @@ export const useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete = <
 Args:
     highlight_id: ID of the highlight
     current_user: Authenticated user
+    use_case: FlashcardAIUseCase injected via dependency container
 
 Returns:
     HighlightFlashcardSuggestionsResponse with list of flashcard suggestions

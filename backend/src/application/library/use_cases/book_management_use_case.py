@@ -10,6 +10,7 @@ from pathlib import Path
 
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
 from src.application.library.use_cases.book_tag_association_use_case import (
     BookTagAssociationUseCase,
 )
@@ -24,7 +25,10 @@ from src.domain.common.value_objects import BookId, UserId
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.tag import Tag
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
-from src.domain.reading.services.highlight_grouping_service import HighlightGroupingService
+from src.domain.reading.services.highlight_grouping_service import (
+    ChapterWithHighlights,
+    HighlightGroupingService,
+)
 from src.exceptions import BookNotFoundError
 from src.infrastructure.library.schemas import (
     BookCreate,
@@ -54,6 +58,7 @@ class BookManagementUseCase:
     def __init__(
         self,
         book_repository: BookRepositoryProtocol,
+        chapter_repository: ChapterRepositoryProtocol,
         bookmark_repository: BookmarkRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
         highlight_tag_repository: HighlightTagRepositoryProtocol,
@@ -68,6 +73,7 @@ class BookManagementUseCase:
 
         Args:
             book_repository: Book repository protocol implementation
+            chapter_repository: Chapter repository protocol implementation
             bookmark_repository: Bookmark repository protocol implementation
             highlight_repository: Highlight repository protocol implementation
             highlight_tag_repository: Highlight tag repository protocol implementation
@@ -78,6 +84,7 @@ class BookManagementUseCase:
             highlight_grouping_service: Highlight grouping domain service
         """
         self.book_repository = book_repository
+        self.chapter_repository = chapter_repository
         self.bookmark_repository = bookmark_repository
         self.highlight_repository = highlight_repository
         self.highlight_tag_repository = highlight_tag_repository
@@ -172,10 +179,36 @@ class BookManagementUseCase:
             limit=10000,
         )
 
-        # Use domain service to group highlights
+        # Use domain service to group highlights by chapter
         grouped = self.highlight_grouping_service.group_by_chapter(
             [(h, c, tags, flashcards) for h, _, c, tags, flashcards in highlights_with_context]
         )
+
+        # Load ALL chapters for this book (not just those with highlights)
+        all_chapters = self.chapter_repository.find_all_by_book(book_id_vo, user_id_vo)
+
+        # Merge: ensure every chapter appears, even those without highlights
+        grouped_by_id = {g.chapter_id: g for g in grouped}
+        merged: list[ChapterWithHighlights] = []
+        for ch in all_chapters:
+            if ch.id.value in grouped_by_id:
+                existing = grouped_by_id.pop(ch.id.value)
+                # Ensure parent_id is set from the chapter entity
+                existing.parent_id = ch.parent_id.value if ch.parent_id else None
+                merged.append(existing)
+            else:
+                merged.append(
+                    ChapterWithHighlights(
+                        chapter_id=ch.id.value,
+                        chapter_name=ch.name,
+                        chapter_number=ch.chapter_number,
+                        highlights=[],
+                        parent_id=ch.parent_id.value if ch.parent_id else None,
+                    )
+                )
+        # Append any highlight groups for chapters not in all_chapters (e.g. deleted chapters)
+        for remaining in grouped_by_id.values():
+            merged.append(remaining)
 
         # Get bookmarks (returns domain entities)
         bookmarks = self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)
@@ -193,7 +226,7 @@ class BookManagementUseCase:
             highlight_tags=highlight_tags,
             highlight_tag_groups=highlight_tag_groups,
             bookmarks=bookmarks,
-            chapters_with_highlights=grouped,
+            chapters_with_highlights=merged,
         )
 
     def update_book(

@@ -15,6 +15,8 @@ class ChapterMapper:
             created_at=orm_model.created_at,
             chapter_number=orm_model.chapter_number,
             parent_id=ChapterId(orm_model.parent_id) if orm_model.parent_id else None,
+            start_xpoint=orm_model.start_xpoint,
+            end_xpoint=orm_model.end_xpoint,
         )
 
     def to_orm(self, domain_entity: Chapter, orm_model: ChapterORM | None = None) -> ChapterORM:
@@ -25,6 +27,8 @@ class ChapterMapper:
             orm_model.parent_id = domain_entity.parent_id.value if domain_entity.parent_id else None
             orm_model.name = domain_entity.name
             orm_model.chapter_number = domain_entity.chapter_number
+            orm_model.start_xpoint = domain_entity.start_xpoint
+            orm_model.end_xpoint = domain_entity.end_xpoint
             return orm_model
 
         # Create new
@@ -34,5 +38,7 @@ class ChapterMapper:
             parent_id=domain_entity.parent_id.value if domain_entity.parent_id else None,
             name=domain_entity.name,
             chapter_number=domain_entity.chapter_number,
+            start_xpoint=domain_entity.start_xpoint,
+            end_xpoint=domain_entity.end_xpoint,
             created_at=domain_entity.created_at,
         )

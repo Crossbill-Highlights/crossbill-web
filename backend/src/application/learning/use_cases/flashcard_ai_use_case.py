@@ -4,10 +4,12 @@ from dataclasses import dataclass
 
 import structlog
 
+from src.application.learning.protocols.ai_flashcard_service import (
+    AIFlashcardServiceProtocol,
+)
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.domain.common.value_objects.ids import HighlightId, UserId
 from src.exceptions import NotFoundError
-from src.infrastructure.ai.ai_service import get_ai_flashcard_suggestions_from_text
 
 logger = structlog.get_logger(__name__)
 
@@ -26,9 +28,11 @@ class FlashcardAIUseCase:
     def __init__(
         self,
         highlight_repository: HighlightRepositoryProtocol,
+        ai_flashcard_service: AIFlashcardServiceProtocol,
     ) -> None:
         """Initialize use case with repository protocols."""
         self.highlight_repository = highlight_repository
+        self.ai_flashcard_service = ai_flashcard_service
 
     async def get_flashcard_suggestions(
         self, highlight_id: int, user_id: int
@@ -53,11 +57,12 @@ class FlashcardAIUseCase:
         if not highlight:
             raise NotFoundError(f"Highlight with id {highlight_id} not found")
 
-        ai_suggestions = await get_ai_flashcard_suggestions_from_text(highlight.text)
+        ai_suggestions = await self.ai_flashcard_service.generate_flashcard_suggestions(
+            highlight.text
+        )
 
         suggestions = [
-            FlashcardSuggestion(question=suggestion.question, answer=suggestion.answer)
-            for suggestion in ai_suggestions
+            FlashcardSuggestion(question=s.question, answer=s.answer) for s in ai_suggestions
         ]
 
         logger.info(

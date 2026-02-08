@@ -2,6 +2,11 @@
 
 import structlog
 
+from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.library.protocols.file_repository import FileRepositoryProtocol
+from src.application.reading.protocols.ai_text_summary_service import (
+    AITextSummaryServiceProtocol,
+)
 from src.application.reading.protocols.ebook_text_extraction_service import (
     EbookTextExtractionServiceProtocol,
 )
@@ -9,8 +14,7 @@ from src.application.reading.protocols.reading_session_repository import (
     ReadingSessionRepositoryProtocol,
 )
 from src.domain.common.value_objects import ReadingSessionId, UserId
-from src.exceptions import ReadingSessionNotFoundError, ValidationError
-from src.infrastructure.ai.ai_service import get_ai_summary_from_text
+from src.exceptions import BookNotFoundError, ReadingSessionNotFoundError, ValidationError
 
 logger = structlog.get_logger(__name__)
 
@@ -22,10 +26,16 @@ class ReadingSessionAISummaryUseCase:
         self,
         session_repository: ReadingSessionRepositoryProtocol,
         text_extraction_service: EbookTextExtractionServiceProtocol,
+        book_repo: BookRepositoryProtocol,
+        file_repo: FileRepositoryProtocol,
+        ai_summary_service: AITextSummaryServiceProtocol,
     ) -> None:
         """Initialize use case with dependencies."""
         self.session_repository = session_repository
         self.text_extraction_service = text_extraction_service
+        self.book_repo = book_repo
+        self.file_repo = file_repo
+        self.ai_summary_service = ai_summary_service
 
     async def get_or_generate_summary(self, session_id: int, user_id: int) -> str:
         """
@@ -67,20 +77,27 @@ class ReadingSessionAISummaryUseCase:
                 session_id=session_id,
                 book_id=session.book_id.value,
             )
+
+            # Resolve epub path
+            book = self.book_repo.find_by_id(session.book_id, user_id_vo)
+            if not book or not book.file_path or book.file_type != "epub":
+                raise BookNotFoundError(
+                    session.book_id.value, message="EPUB file not found for this book"
+                )
+
+            epub_path = self.file_repo.find_epub(book.id)
+            if not epub_path or not epub_path.exists():
+                raise BookNotFoundError(
+                    session.book_id.value, message="EPUB file not found on disk"
+                )
+
             content = self.text_extraction_service.extract_text(
-                session.book_id,
-                user_id_vo,
-                session.start_xpoint.start.to_string(),
-                session.start_xpoint.end.to_string(),
+                epub_path=epub_path,
+                start_xpoint=session.start_xpoint.start.to_string(),
+                end_xpoint=session.start_xpoint.end.to_string(),
             )
         elif session.start_page is not None and session.end_page is not None:
-            # Try PDF pages
-            content = self.text_extraction_service.extract_text(
-                session.book_id,
-                user_id_vo,
-                session.start_page,
-                session.end_page,
-            )
+            raise NotImplementedError("PDF text extraction not yet implemented")
         else:
             raise ValidationError("Reading session has no position data (no xpoints or pages)")
 
@@ -96,7 +113,7 @@ class ReadingSessionAISummaryUseCase:
             session_id=session_id,
             content_length=len(content),
         )
-        ai_summary = await get_ai_summary_from_text(content)
+        ai_summary = await self.ai_summary_service.generate_summary(content)
 
         session.set_ai_summary(ai_summary)
         self.session_repository.save(session)

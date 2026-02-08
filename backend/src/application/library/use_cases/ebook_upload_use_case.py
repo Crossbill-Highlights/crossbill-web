@@ -2,14 +2,10 @@
 
 import logging
 import re
-from io import BytesIO
-from pathlib import Path
-from typing import Any
-
-from ebooklib import epub
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
+from src.application.library.protocols.epub_toc_parser import EpubTocParserProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.domain.common.value_objects.ids import UserId
 from src.domain.reading.exceptions import BookNotFoundError
@@ -44,86 +40,6 @@ def _sanitize_filename(text: str) -> str:
     return sanitized
 
 
-def _validate_epub(content: bytes) -> bool:
-    """
-    Validate epub file using ebooklib.
-
-    This performs lightweight validation by attempting to read
-    the epub structure. Full validation would be too slow for upload.
-
-    Args:
-        content: The file content as bytes
-
-    Returns:
-        True if valid epub, False otherwise
-    """
-    try:
-        # Create a temporary file-like object from bytes
-        epub_file = BytesIO(content)
-
-        # Try to read the epub - ebooklib will raise exception if invalid
-        book = epub.read_epub(epub_file)
-
-        # Basic validation: epub should have some metadata
-        if not book.get_metadata("DC", "title"):
-            logger.warning("EPUB missing title metadata")
-            # Allow epubs without metadata (user explicitly uploading)
-
-        return True
-
-    except Exception as e:
-        logger.error(f"EPUB validation failed: {e!s}")
-        return False
-
-
-# TODO: should this and helper functions here be a domain service?
-def _extract_toc_hierarchy(
-    toc_items: list[Any], current_number: int = 1, parent_name: str | None = None
-) -> list[tuple[str, int, str | None]]:
-    """
-    Extract hierarchical TOC structure into a list preserving parent relationships.
-
-    EPUB TOC can be nested. This function preserves the hierarchy while
-    assigning sequential chapter numbers for reading order.
-
-    Args:
-        toc_items: List of TOC items from ebooklib (can be Link objects or tuples)
-        current_number: Starting chapter number (used for recursion)
-        parent_name: Name of the parent chapter (None for root-level chapters)
-
-    Returns:
-        List of (chapter_title, chapter_number, parent_name) tuples in reading order.
-        parent_name is None for root-level chapters.
-    """
-    chapters = []
-
-    for item in toc_items:
-        # TOC items can be Link objects or tuples (Section, [children])
-        if isinstance(item, tuple):
-            # Nested section: (Link, [children])
-            section, children = item[0], item[1] if len(item) > 1 else []
-
-            # Add the section itself
-            if hasattr(section, "title"):
-                chapters.append((section.title, current_number, parent_name))
-                section_name = section.title
-                current_number += 1
-            else:
-                section_name = parent_name
-
-            # Recursively process children with this section as parent
-            child_chapters = _extract_toc_hierarchy(children, current_number, section_name)
-            chapters.extend(child_chapters)
-            current_number += len(child_chapters)
-
-        elif hasattr(item, "title"):
-            # Simple Link object
-            chapters.append((item.title, current_number, parent_name))
-            current_number += 1
-
-    return chapters
-
-
 class EbookUploadUseCase:
     """Use case for uploading ebook files."""
 
@@ -132,6 +48,7 @@ class EbookUploadUseCase:
         book_repository: BookRepositoryProtocol,
         chapter_repository: ChapterRepositoryProtocol,
         file_repository: FileRepositoryProtocol,
+        epub_toc_parser: EpubTocParserProtocol,
     ) -> None:
         """
         Initialize use case with dependencies.
@@ -140,10 +57,12 @@ class EbookUploadUseCase:
             book_repository: Book repository protocol implementation
             chapter_repository: Chapter repository protocol implementation
             file_repository: File repository protocol implementation
+            epub_toc_parser: EPUB TOC parser service
         """
         self.book_repository = book_repository
         self.chapter_repository = chapter_repository
         self.file_repository = file_repository
+        self.epub_toc_parser = epub_toc_parser
 
     def upload_ebook(
         self,
@@ -211,7 +130,7 @@ class EbookUploadUseCase:
         if not book:
             raise BookNotFoundError(f"client_book_id={client_book_id}")
 
-        if not _validate_epub(content):
+        if not self.epub_toc_parser.validate_epub(content):
             raise InvalidEbookError("EPUB structure validation failed", ebook_type="EPUB")
 
         # TODO: These likely belong to the repository level
@@ -231,47 +150,11 @@ class EbookUploadUseCase:
         # Save new epub file
         epub_path = self.file_repository.save_epub(book.id, content, epub_filename)
         book.update_file(epub_filename, "epub")
+        self.book_repository.save(book)
 
         # Parse TOC and save chapters to database
-        # TODO: this parsing logic might belong to domain level
-        toc_chapters = self._parse_toc_from_epub(epub_path)
+        toc_chapters = self.epub_toc_parser.parse_toc(epub_path)
         if toc_chapters:
-            # TODO: maybe we could pass domain objects to the repository?
             self.chapter_repository.sync_chapters_from_toc(book.id, user_id, toc_chapters)
 
         return epub_filename, str(epub_path)
-
-    def _parse_toc_from_epub(self, epub_path: Path) -> list[tuple[str, int, str | None]]:
-        """
-        Parse table of contents from an EPUB file.
-
-        Extracts chapter titles, reading order, and hierarchy from the EPUB's TOC.
-        Handles both NCX (EPUB 2) and Navigation Document (EPUB 3) formats.
-
-        Args:
-            epub_path: Path to the EPUB file
-
-        Returns:
-            List of (chapter_title, chapter_number, parent_name) tuples in reading order.
-            parent_name is None for root-level chapters.
-            Returns empty list if EPUB has no TOC or TOC is invalid.
-        """
-        try:
-            book = epub.read_epub(str(epub_path))
-
-            # Get TOC from epub (supports both NCX and nav.xhtml)
-            toc = book.toc
-
-            if not toc:
-                logger.info(f"EPUB at {epub_path} has no table of contents")
-                return []
-
-            # Extract hierarchical TOC structure
-            chapters = _extract_toc_hierarchy(toc)
-
-            logger.info(f"Parsed {len(chapters)} chapters from EPUB TOC at {epub_path}")
-            return chapters
-
-        except Exception as e:
-            logger.error(f"Failed to parse TOC from EPUB at {epub_path}: {e!s}")
-            return []

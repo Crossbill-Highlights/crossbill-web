@@ -1,15 +1,63 @@
 import logging
+from collections.abc import Sequence
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from src.domain.common.value_objects.ids import BookId, UserId
-from src.domain.library.entities.chapter import Chapter
+from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
+from src.domain.library.entities.chapter import Chapter, TocChapter
 from src.infrastructure.library.mappers.chapter_mapper import ChapterMapper
 from src.models import Book as BookORM
 from src.models import Chapter as ChapterORM
 
 logger = logging.getLogger(__name__)
+
+
+class _ChapterTracker:
+    """Tracks chapters by name and (name, parent_id) key during TOC sync."""
+
+    def __init__(self, existing_chapters: Sequence[ChapterORM]) -> None:
+        self._by_name: dict[str, ChapterORM] = {}
+        self._by_key: dict[tuple[str, int | None], ChapterORM] = {}
+        self._db_keys: set[tuple[str, int | None]] = set()
+        for ch in existing_chapters:
+            self._by_name[ch.name] = ch
+            key = (ch.name, ch.parent_id)
+            self._by_key[key] = ch
+            self._db_keys.add(key)
+
+    def resolve_parent_id(self, parent_name: str | None) -> int | None:
+        """Look up the DB id for a parent chapter by name."""
+        if parent_name is None:
+            return None
+        parent = self._by_name.get(parent_name)
+        return parent.id if parent is not None else None
+
+    def find_by_key(self, key: tuple[str, int | None]) -> ChapterORM | None:
+        """Find a tracked chapter by its (name, parent_id) key."""
+        return self._by_key.get(key)
+
+    def is_from_db(self, key: tuple[str, int | None]) -> bool:
+        """Return True if this key corresponds to a chapter loaded from the DB."""
+        return key in self._db_keys
+
+    def register_new(self, chapter: ChapterORM) -> None:
+        """Register a newly created chapter for subsequent parent lookups."""
+        self._by_name[chapter.name] = chapter
+        self._by_key[(chapter.name, chapter.parent_id)] = chapter
+
+    def rekey_legacy(
+        self,
+        chapter: ChapterORM,
+        old_key: tuple[str, int | None],
+        new_key: tuple[str, int | None],
+    ) -> None:
+        """Move a legacy chapter from old_key to new_key after migration."""
+        del self._by_key[old_key]
+        self._db_keys.discard(old_key)
+        self._by_key[new_key] = chapter
+        self._db_keys.add(new_key)
+        self._by_name[chapter.name] = chapter
 
 
 class ChapterRepository:
@@ -18,6 +66,29 @@ class ChapterRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
         self.mapper = ChapterMapper()
+
+    def find_by_id(self, chapter_id: ChapterId, user_id: UserId) -> Chapter | None:
+        """Find a chapter by ID with ownership verification."""
+        stmt = (
+            select(ChapterORM)
+            .join(BookORM, BookORM.id == ChapterORM.book_id)
+            .where(ChapterORM.id == chapter_id.value)
+            .where(BookORM.user_id == user_id.value)
+        )
+        orm_model = self.db.execute(stmt).scalar_one_or_none()
+        return self.mapper.to_domain(orm_model) if orm_model else None
+
+    def find_all_by_book(self, book_id: BookId, user_id: UserId) -> list[Chapter]:
+        """Find all chapters for a book, ordered by chapter_number."""
+        stmt = (
+            select(ChapterORM)
+            .join(BookORM, BookORM.id == ChapterORM.book_id)
+            .where(BookORM.id == book_id.value)
+            .where(BookORM.user_id == user_id.value)
+            .order_by(ChapterORM.chapter_number)
+        )
+        orm_models = self.db.execute(stmt).scalars().all()
+        return [self.mapper.to_domain(m) for m in orm_models]
 
     def get_by_numbers(
         self, book_id: BookId, chapter_numbers: set[int], user_id: UserId
@@ -51,8 +122,66 @@ class ChapterRepository:
 
         return result
 
+    @staticmethod
+    def _apply_field_updates(orm: ChapterORM, toc: TocChapter, parent_id: int | None) -> bool:
+        """Apply field values from TOC entry to existing ORM. Returns True if anything changed."""
+        changed = False
+        for attr, new_val in [
+            ("chapter_number", toc.chapter_number),
+            ("parent_id", parent_id),
+            ("start_xpoint", toc.start_xpoint),
+            ("end_xpoint", toc.end_xpoint),
+        ]:
+            if getattr(orm, attr) != new_val:
+                setattr(orm, attr, new_val)
+                changed = True
+        return changed
+
+    def _match_legacy_flat_chapter(self, name: str, tracker: _ChapterTracker) -> ChapterORM | None:
+        """Match a TOC chapter to a legacy flat chapter (parent_id=None) by name.
+
+        Before hierarchical TOC support was added, chapters were stored without
+        parent associations. When an EPUB is uploaded for a book with such legacy
+        chapters, we need to match them by name alone to avoid creating duplicates
+        and to preserve existing highlight foreign key references.
+
+        This is migration-era logic that can be removed once all production books
+        have been re-uploaded with hierarchical TOC data.
+        """
+        legacy_key = (name, None)
+        chapter = tracker.find_by_key(legacy_key)
+        # If chapter does not have start point, it has to be legacy
+        # TODO: Except if it is PDF, but those are not supported yet.
+        if chapter is not None and tracker.is_from_db(legacy_key) and chapter.start_xpoint is None:
+            return chapter
+        return None
+
+    def _create_chapter_orm(
+        self,
+        book_id: BookId,
+        ch: TocChapter,
+        parent_id: int | None,
+        tracker: _ChapterTracker,
+    ) -> None:
+        """Create a new chapter ORM, persist it, and register in tracker."""
+        chapter = ChapterORM(
+            book_id=book_id.value,
+            name=ch.name,
+            chapter_number=ch.chapter_number,
+            parent_id=parent_id,
+            start_xpoint=ch.start_xpoint,
+            end_xpoint=ch.end_xpoint,
+        )
+        self.db.add(chapter)
+        self.db.commit()
+        self.db.refresh(chapter)
+        tracker.register_new(chapter)
+
     def sync_chapters_from_toc(
-        self, book_id: BookId, user_id: UserId, chapters: list[tuple[str, int, str | None]]
+        self,
+        book_id: BookId,
+        user_id: UserId,
+        chapters: list[TocChapter],
     ) -> int:
         """
         Synchronize chapters from TOC data, creating new and updating existing chapters.
@@ -63,7 +192,7 @@ class ChapterRepository:
         Args:
             book_id: ID of the book
             user_id: ID of the user (for ownership verification)
-            chapters: List of (chapter_name, chapter_number, parent_name) tuples
+            chapters: List of TocChapter objects from EPUB TOC parsing
 
         Returns:
             Number of chapters created (not including updates)
@@ -71,9 +200,8 @@ class ChapterRepository:
         if not chapters:
             return 0
 
-        # Get existing chapters for this book by names
-        chapter_names = {name for name, _, _ in chapters}
-
+        # Stage 1: Fetch existing chapters and build index
+        chapter_names = {ch.name for ch in chapters}
         stmt = (
             select(ChapterORM)
             .join(BookORM, BookORM.id == ChapterORM.book_id)
@@ -82,81 +210,50 @@ class ChapterRepository:
             .where(ChapterORM.name.in_(chapter_names))
         )
         existing_chapters_list = self.db.execute(stmt).scalars().all()
+        tracker = _ChapterTracker(list(existing_chapters_list))
 
-        # Build tracking dictionaries from existing chapters
-        # chapter_by_name: for parent lookups
-        # (last one wins if duplicate names - acceptable for parent resolution)
-        # chapter_by_name_and_parent: for duplicate detection (unique key)
-        # existing_chapter_keys: tracks which (name, parent_id) pairs came from DB
-        chapter_by_name: dict[str, ChapterORM] = {}
-        chapter_by_name_and_parent: dict[tuple[str, int | None], ChapterORM] = {}
-        existing_chapter_keys: set[tuple[str, int | None]] = set()
-
-        for ch in existing_chapters_list:
-            chapter_by_name[ch.name] = ch
-            key = (ch.name, ch.parent_id)
-            chapter_by_name_and_parent[key] = ch
-            existing_chapter_keys.add(key)
-
-        chapters_to_update = []
+        updated: list[ChapterORM] = []
         created_count = 0
 
-        # Process chapters in order (parents before children due to sequential numbering)
-        for name, chapter_number, parent_name in chapters:
-            # Determine parent_id from parent_name
-            parent_id = None
-            if parent_name and parent_name in chapter_by_name:
-                parent_id = chapter_by_name[parent_name].id
+        # Stage 2: Process each TOC entry (sequential — parents before children)
+        for ch in chapters:
+            parent_id = tracker.resolve_parent_id(ch.parent_name)
+            key = (ch.name, parent_id)
+            existing_chapter = tracker.find_by_key(key)
 
-            # Check if chapter with this (name, parent_id) combination exists
-            chapter_key = (name, parent_id)
-            if chapter_key in chapter_by_name_and_parent:
-                # This exact chapter (same name AND parent) already exists
-                existing_chapter = chapter_by_name_and_parent[chapter_key]
-
-                # Check if it needs updating (only if it came from DB)
-                if chapter_key in existing_chapter_keys:
-                    needs_update = False
-
-                    if existing_chapter.chapter_number != chapter_number:
-                        existing_chapter.chapter_number = chapter_number
-                        needs_update = True
-
-                    if existing_chapter.parent_id != parent_id:
-                        existing_chapter.parent_id = parent_id
-                        needs_update = True
-
-                    if needs_update:
-                        chapters_to_update.append(existing_chapter)
-                else:
-                    # True duplicate in ToC (same name and parent, already created in loop)
+            # Case 1: Exact match by (name, parent_id)
+            if existing_chapter is not None:
+                if not tracker.is_from_db(key):
                     logger.warning(
-                        f"Duplicate chapter '{name}' in ToC with same parent "
+                        f"Duplicate chapter '{ch.name}' in ToC with same parent "
                         f"(parent_id={parent_id}). Skipping duplicate."
                     )
-            else:
-                # New chapter - create it
-                chapter = ChapterORM(
-                    book_id=book_id.value,
-                    name=name,
-                    chapter_number=chapter_number,
-                    parent_id=parent_id,
-                )
-                self.db.add(chapter)
-                self.db.commit()
-                self.db.refresh(chapter)
+                    continue
+                if self._apply_field_updates(existing_chapter, ch, parent_id):
+                    updated.append(existing_chapter)
+                continue
 
-                # Add to tracking dictionaries for subsequent parent lookups
-                chapter_by_name[name] = chapter
-                chapter_by_name_and_parent[chapter_key] = chapter
-                created_count += 1
+            # Case 2: Legacy flat chapter migration
+            legacy = (
+                self._match_legacy_flat_chapter(ch.name, tracker) if parent_id is not None else None
+            )
+            if legacy is not None:
+                self._apply_field_updates(legacy, ch, parent_id)
+                updated.append(legacy)
+                tracker.rekey_legacy(legacy, old_key=(ch.name, None), new_key=key)
+                continue
 
-        if chapters_to_update:
+            # Case 3: Truly new chapter
+            self._create_chapter_orm(book_id, ch, parent_id, tracker)
+            created_count += 1
+
+        # Stage 3: Commit updates
+        if updated:
             self.db.commit()
-            logger.info(f"Updated {len(chapters_to_update)} existing chapters")
+            logger.info(f"Updated {len(updated)} existing chapters")
 
         logger.info(
             f"Synced TOC for book {book_id.value}: created {created_count} chapters, "
-            f"updated {len(chapters_to_update)} chapters"
+            f"updated {len(updated)} chapters"
         )
         return created_count

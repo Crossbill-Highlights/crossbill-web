@@ -29,7 +29,12 @@ from src.infrastructure.learning.routers import ai_flashcard_suggestions, flashc
 from src.infrastructure.learning.routers import book_flashcards as learning_books
 from src.infrastructure.library.routers import books as library_books
 from src.infrastructure.library.routers import ereader as library_ereader
-from src.infrastructure.reading.routers import bookmarks, highlights, reading_sessions
+from src.infrastructure.reading.routers import (
+    bookmarks,
+    chapter_prereading,
+    highlights,
+    reading_sessions,
+)
 
 settings = get_settings()
 
@@ -253,6 +258,8 @@ app.include_router(highlights.router, prefix=settings.API_V1_PREFIX)
 app.include_router(highlights.router, prefix=settings.API_V1_PREFIX)
 app.include_router(reading_sessions.router, prefix=settings.API_V1_PREFIX)
 app.include_router(bookmarks.router, prefix=settings.API_V1_PREFIX)
+app.include_router(chapter_prereading.router, prefix=settings.API_V1_PREFIX)
+app.include_router(chapter_prereading.book_prereading_router, prefix=settings.API_V1_PREFIX)
 
 # Learning
 app.include_router(learning_books.router, prefix=settings.API_V1_PREFIX)

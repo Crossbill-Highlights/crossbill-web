@@ -141,6 +141,7 @@ class ChapterWithHighlights(BaseModel):
     id: int
     name: str
     chapter_number: int | None = Field(None, description="Chapter order number from TOC")
+    parent_id: int | None = Field(None, description="Parent chapter ID for hierarchy")
     highlights: list[Highlight] = Field(..., description="List of highlights in this chapter")
     created_at: dt
     updated_at: dt
