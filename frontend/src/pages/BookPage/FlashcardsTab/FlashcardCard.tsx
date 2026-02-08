@@ -28,7 +28,7 @@ const FlashcardStyled = styled(Card, {
   },
 }));
 
-export const ActionButtonsStyled = styled(Box)(() => ({
+const ActionButtonsStyled = styled(Box)(() => ({
   position: 'absolute',
   top: 8,
   right: 8,
