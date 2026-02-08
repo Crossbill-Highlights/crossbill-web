@@ -461,6 +461,161 @@ class TestUpdatingExistingChapters:
         assert harjoitukset1.id != harjoitukset2.id
 
 
+class TestLegacyFlatChapterMigration:
+    """Test migration of legacy flat chapters (pre-hierarchy) during EPUB upload.
+
+    Books in production may have chapters created before hierarchical TOC support
+    was added. These legacy chapters have parent_id=None and no xpoints. When an
+    EPUB is uploaded, the TOC produces chapters with parent_id set and xpoints,
+    which would fail to match legacy chapters by (name, parent_id) key, causing
+    duplicates and orphaning highlights attached to the old chapters.
+    """
+
+    def test_legacy_flat_chapters_updated_in_place(
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    ) -> None:
+        """Legacy flat chapters are updated in-place when EPUB TOC provides hierarchy.
+
+        Ensures chapter IDs are preserved (so highlight foreign keys remain valid),
+        parent_id and xpoints are populated, and no duplicates are created.
+        """
+        # Create legacy flat chapters (as they existed before hierarchy was added)
+        legacy_part = models.Chapter(
+            book_id=test_book_for_toc.id,
+            name="Part I",
+            chapter_number=1,
+            parent_id=None,
+        )
+        legacy_ch1 = models.Chapter(
+            book_id=test_book_for_toc.id,
+            name="Chapter 1",
+            chapter_number=2,
+            parent_id=None,  # Legacy: no parent
+            start_xpoint=None,  # Legacy: no xpoints
+            end_xpoint=None,
+        )
+        legacy_ch2 = models.Chapter(
+            book_id=test_book_for_toc.id,
+            name="Chapter 2",
+            chapter_number=3,
+            parent_id=None,
+            start_xpoint=None,
+            end_xpoint=None,
+        )
+        db_session.add_all([legacy_part, legacy_ch1, legacy_ch2])
+        db_session.commit()
+
+        # Record original IDs to verify in-place updates
+        part_id = legacy_part.id
+        ch1_id = legacy_ch1.id
+        ch2_id = legacy_ch2.id
+
+        # Upload EPUB with hierarchical TOC referencing same chapter names
+        toc_chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
+            ("Part I", 1, None, "/body/DocFragment[2]/body", "/body/DocFragment[3]/body"),
+            ("Chapter 1", 2, "Part I", "/body/DocFragment[3]/body", "/body/DocFragment[4]/body"),
+            ("Chapter 2", 3, "Part I", "/body/DocFragment[4]/body", "/body/DocFragment[5]/body"),
+        ]
+
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=toc_chapters
+        )
+
+        # No new chapters should be created — all matched to legacy chapters
+        assert created_count == 0
+
+        db_chapters = (
+            db_session.query(models.Chapter)
+            .filter_by(book_id=test_book_for_toc.id)
+            .order_by(models.Chapter.chapter_number)
+            .all()
+        )
+
+        # Total count should equal TOC size (no duplicates)
+        assert len(db_chapters) == 3
+
+        part, ch1, ch2 = db_chapters
+
+        # IDs preserved (highlight foreign keys still valid)
+        assert part.id == part_id
+        assert ch1.id == ch1_id
+        assert ch2.id == ch2_id
+
+        # Part I remains root (parent_id=None in both legacy and TOC)
+        assert part.parent_id is None
+        assert part.start_xpoint == "/body/DocFragment[2]/body"
+
+        # Children now have parent_id set
+        assert ch1.parent_id == part_id
+        assert ch1.start_xpoint == "/body/DocFragment[3]/body"
+        assert ch1.end_xpoint == "/body/DocFragment[4]/body"
+
+        assert ch2.parent_id == part_id
+        assert ch2.start_xpoint == "/body/DocFragment[4]/body"
+        assert ch2.end_xpoint == "/body/DocFragment[5]/body"
+
+    def test_legacy_migration_with_duplicate_names_under_different_parents(
+        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    ) -> None:
+        """Legacy flat chapters with duplicate names are matched correctly.
+
+        When multiple legacy chapters share a name (e.g., "Exercises" under different
+        parts), only the first one should match via legacy fallback. The second one
+        would need a new chapter since the legacy key is consumed after the first match.
+        """
+        # Create legacy flat chapters with duplicate name
+        legacy_part1 = models.Chapter(
+            book_id=test_book_for_toc.id, name="Part I", chapter_number=1, parent_id=None
+        )
+        legacy_exercises = models.Chapter(
+            book_id=test_book_for_toc.id,
+            name="Exercises",
+            chapter_number=2,
+            parent_id=None,
+        )
+        legacy_part2 = models.Chapter(
+            book_id=test_book_for_toc.id, name="Part II", chapter_number=3, parent_id=None
+        )
+        db_session.add_all([legacy_part1, legacy_exercises, legacy_part2])
+        db_session.commit()
+
+        exercises_id = legacy_exercises.id
+
+        # TOC has "Exercises" under two different parents
+        toc_chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
+            ("Part I", 1, None, None, None),
+            ("Exercises", 2, "Part I", None, None),
+            ("Part II", 3, None, None, None),
+            ("Exercises", 4, "Part II", None, None),
+        ]
+
+        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+            book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=toc_chapters
+        )
+
+        # First "Exercises" matched legacy, second one is new
+        assert created_count == 1
+
+        db_chapters = (
+            db_session.query(models.Chapter)
+            .filter_by(book_id=test_book_for_toc.id)
+            .order_by(models.Chapter.chapter_number)
+            .all()
+        )
+
+        assert len(db_chapters) == 4
+
+        part1, exercises1, part2, exercises2 = db_chapters
+
+        # First "Exercises" should be the legacy chapter updated in-place
+        assert exercises1.id == exercises_id
+        assert exercises1.parent_id == part1.id
+
+        # Second "Exercises" is a new chapter
+        assert exercises2.id != exercises_id
+        assert exercises2.parent_id == part2.id
+
+
 class TestEdgeCases:
     """Test edge cases and potential issues in the ToC logic."""
 

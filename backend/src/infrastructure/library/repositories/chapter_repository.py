@@ -74,6 +74,33 @@ class ChapterRepository:
 
         return result
 
+    def _match_legacy_flat_chapter(
+        self,
+        name: str,
+        chapter_by_name_and_parent: dict[tuple[str, int | None], ChapterORM],
+        existing_chapter_keys: set[tuple[str, int | None]],
+    ) -> ChapterORM | None:
+        """Match a TOC chapter to a legacy flat chapter (parent_id=None) by name.
+
+        Before hierarchical TOC support was added, chapters were stored without
+        parent associations. When an EPUB is uploaded for a book with such legacy
+        chapters, we need to match them by name alone to avoid creating duplicates
+        and to preserve existing highlight foreign key references.
+
+        This is migration-era logic that can be removed once all production books
+        have been re-uploaded with hierarchical TOC data.
+        """
+        legacy_key = (name, None)
+        if legacy_key in chapter_by_name_and_parent and legacy_key in existing_chapter_keys:
+            chapter = chapter_by_name_and_parent[legacy_key]
+
+            # If chapter does not have start point, it has to be legacy
+            # TODO: Except if it is PDF, but those are not supported yet.
+            if chapter.start_xpoint is None:
+                return chapter
+
+        return None
+
     def sync_chapters_from_toc(  # noqa: PLR0912
         self,
         book_id: BookId,
@@ -169,23 +196,49 @@ class ChapterRepository:
                         f"(parent_id={parent_id}). Skipping duplicate."
                     )
             else:
-                # New chapter - create it
-                chapter = ChapterORM(
-                    book_id=book_id.value,
-                    name=name,
-                    chapter_number=chapter_number,
-                    parent_id=parent_id,
-                    start_xpoint=start_xpoint,
-                    end_xpoint=end_xpoint,
+                # Check for legacy flat chapter to update instead of creating duplicate
+                legacy_chapter = (
+                    self._match_legacy_flat_chapter(
+                        name,
+                        chapter_by_name_and_parent,
+                        existing_chapter_keys,
+                    )
+                    if parent_id is not None
+                    else None
                 )
-                self.db.add(chapter)
-                self.db.commit()
-                self.db.refresh(chapter)
 
-                # Add to tracking dictionaries for subsequent parent lookups
-                chapter_by_name[name] = chapter
-                chapter_by_name_and_parent[chapter_key] = chapter
-                created_count += 1
+                if legacy_chapter is not None:
+                    legacy_key = (name, None)
+                    legacy_chapter.parent_id = parent_id
+                    legacy_chapter.chapter_number = chapter_number
+                    legacy_chapter.start_xpoint = start_xpoint
+                    legacy_chapter.end_xpoint = end_xpoint
+                    chapters_to_update.append(legacy_chapter)
+
+                    # Move tracking from old key to new key
+                    del chapter_by_name_and_parent[legacy_key]
+                    existing_chapter_keys.discard(legacy_key)
+                    chapter_by_name_and_parent[chapter_key] = legacy_chapter
+                    existing_chapter_keys.add(chapter_key)
+                    chapter_by_name[name] = legacy_chapter
+                else:
+                    # Truly new chapter — create it
+                    chapter = ChapterORM(
+                        book_id=book_id.value,
+                        name=name,
+                        chapter_number=chapter_number,
+                        parent_id=parent_id,
+                        start_xpoint=start_xpoint,
+                        end_xpoint=end_xpoint,
+                    )
+                    self.db.add(chapter)
+                    self.db.commit()
+                    self.db.refresh(chapter)
+
+                    # Add to tracking dictionaries for subsequent parent lookups
+                    chapter_by_name[name] = chapter
+                    chapter_by_name_and_parent[chapter_key] = chapter
+                    created_count += 1
 
         if chapters_to_update:
             self.db.commit()
