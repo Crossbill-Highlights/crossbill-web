@@ -18,6 +18,7 @@ from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
 )
+from src.exceptions import NotFoundError
 from src.infrastructure.ai.ai_service import get_ai_prereading_from_text
 
 logger = structlog.get_logger(__name__)
@@ -43,7 +44,7 @@ class ChapterPrereadingUseCase:
         # Verify book ownership by checking chapters exist for this user
         chapters = self.chapter_repo.find_all_by_book(book_id, user_id)
         if not chapters:
-            raise DomainError(f"Book {book_id.value} not found or has no chapters")
+            raise NotFoundError(f"Book {book_id.value} not found or has no chapters")
 
         return self.prereading_repo.find_all_by_book_id(book_id)
 
@@ -53,7 +54,7 @@ class ChapterPrereadingUseCase:
         """Get existing prereading content for a chapter."""
         chapter = self.chapter_repo.find_by_id(chapter_id, user_id)
         if not chapter:
-            raise DomainError(f"Chapter {chapter_id.value} not found")
+            raise NotFoundError(f"Chapter {chapter_id.value} not found")
 
         return self.prereading_repo.find_by_chapter_id(chapter_id)
 
@@ -64,7 +65,7 @@ class ChapterPrereadingUseCase:
         # 1. Verify chapter exists and user owns it
         chapter = self.chapter_repo.find_by_id(chapter_id, user_id)
         if not chapter:
-            raise DomainError(f"Chapter {chapter_id.value} not found")
+            raise NotFoundError(f"Chapter {chapter_id.value} not found")
 
         # 2. Check if chapter has XPoint data
         if not chapter.start_xpoint:
