@@ -59,6 +59,9 @@ from src.application.library.use_cases.book_queries.get_recently_viewed_books_us
 from src.application.library.use_cases.book_tag_associations.add_tags_to_book_use_case import (
     AddTagsToBookUseCase,
 )
+from src.application.reading.use_cases.chapter_content_use_case import (
+    ChapterContentUseCase,
+)
 from src.application.library.use_cases.book_tag_associations.get_book_tags_use_case import (
     GetBookTagsUseCase,
 )
@@ -330,6 +333,13 @@ class Container(containers.DeclarativeContainer):
         book_repo=book_repository,
         file_repo=file_repository,
         ai_prereading_service=ai_service,
+    )
+    chapter_content_use_case = providers.Factory(
+        ChapterContentUseCase,
+        chapter_repo=chapter_repository,
+        book_repo=book_repository,
+        file_repo=file_repository,
+        text_extraction_service=ebook_text_extraction_service,
     )
 
     # Library module, application use cases
