@@ -2,12 +2,12 @@
 
 import json
 
-from mcp.server import Server
+from mcp.server.fastmcp import FastMCP
 
 from crossbill_mcp.client import CrossbillClient
 
 
-def register_book_tools(server: Server, client: CrossbillClient) -> None:
+def register_book_tools(server: FastMCP, client: CrossbillClient) -> None:
     """Register book-related tools with the MCP server."""
 
     @server.tool()

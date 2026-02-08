@@ -4,8 +4,7 @@ import logging
 import os
 import sys
 
-from mcp.server import Server
-from mcp.server.stdio import stdio_server
+from mcp.server.fastmcp import FastMCP
 
 from crossbill_mcp.client import CrossbillClient
 from crossbill_mcp.tools.bookmarks import register_bookmark_tools
@@ -17,7 +16,7 @@ from crossbill_mcp.tools.reading import register_reading_tools
 logger = logging.getLogger(__name__)
 
 
-def create_server() -> tuple[Server, CrossbillClient]:
+def create_server() -> tuple[FastMCP, CrossbillClient]:
     """Create and configure the MCP server."""
     url = os.environ.get("CROSSBILL_URL")
     email = os.environ.get("CROSSBILL_EMAIL")
@@ -32,7 +31,7 @@ def create_server() -> tuple[Server, CrossbillClient]:
         sys.exit(1)
 
     client = CrossbillClient(url, email, password)
-    server = Server("crossbill")
+    server = FastMCP("crossbill")
 
     # Register all tools
     register_book_tools(server, client)
@@ -44,23 +43,10 @@ def create_server() -> tuple[Server, CrossbillClient]:
     return server, client
 
 
-async def run() -> None:
-    """Run the MCP server."""
-    server, client = create_server()
-    try:
-        async with stdio_server() as (read_stream, write_stream):
-            await server.run(
-                read_stream, write_stream, server.create_initialization_options()
-            )
-    finally:
-        await client.close()
-
-
 def main() -> None:
     """Entry point for the crossbill-mcp command."""
-    import asyncio
-
-    asyncio.run(run())
+    server, _client = create_server()
+    server.run(transport="stdio")
 
 
 if __name__ == "__main__":
