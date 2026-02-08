@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { AppBar } from '@/components/layout/AppBar';
 import { Box, CircularProgress } from '@mui/material';
 import { Navigate, Outlet, createRootRoute, useLocation } from '@tanstack/react-router';
