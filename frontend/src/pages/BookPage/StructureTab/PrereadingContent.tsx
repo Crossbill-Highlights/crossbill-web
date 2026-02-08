@@ -11,18 +11,22 @@ interface PrereadingContentProps {
 const MarkdownList = styled('ul')(({ theme }) => ({
   ...markdownStyles(theme),
   margin: 0,
-  paddingLeft: '1.5em',
+  paddingLeft: theme.spacing(3),
   '& li': {
-    marginBottom: '0.5em',
+    marginBottom: theme.spacing(1),
   },
 }));
 
 export const PrereadingContent = ({ content, isGenerating }: PrereadingContentProps) => {
   if (isGenerating) {
     return (
-      <Box sx={{ p: 2, textAlign: 'center' }}>
+      <Box sx={(theme) => ({ p: theme.spacing(2), textAlign: 'center' })}>
         <CircularProgress size={24} />
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={(theme) => ({ mt: theme.spacing(1) })}
+        >
           Generating pre-reading overview...
         </Typography>
       </Box>
@@ -34,12 +38,12 @@ export const PrereadingContent = ({ content, isGenerating }: PrereadingContentPr
   }
 
   return (
-    <Box sx={{ mb: 2 }}>
-      <Typography variant="body1" sx={{ mb: 2.5 }}>
+    <Box sx={(theme) => ({ mb: theme.spacing(2) })}>
+      <Typography variant="body1" sx={(theme) => ({ mb: theme.spacing(2.5) })}>
         {content.summary}
       </Typography>
 
-      <Typography variant="body1" sx={{ mb: 1.5, fontWeight: 600 }}>
+      <Typography variant="body1" sx={(theme) => ({ mb: theme.spacing(1.5), fontWeight: 600 })}>
         Key Points:
       </Typography>
       <MarkdownList>
@@ -50,7 +54,11 @@ export const PrereadingContent = ({ content, isGenerating }: PrereadingContentPr
         ))}
       </MarkdownList>
 
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 3 }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={(theme) => ({ display: 'block', mt: theme.spacing(3) })}
+      >
         Generated on {new Date(content.generated_at).toLocaleDateString()}
       </Typography>
     </Box>

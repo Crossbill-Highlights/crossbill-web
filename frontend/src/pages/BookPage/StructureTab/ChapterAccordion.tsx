@@ -19,11 +19,11 @@ interface ChapterAccordionProps {
   depth?: number;
 }
 
-const accordionSx = (depth: number) => ({
+const accordionSx = (depth: number) => (theme: { spacing: (n: number) => string }) => ({
   boxShadow: 'none',
   '&:before': { display: 'none' },
   bgcolor: 'transparent',
-  ml: depth * 2,
+  ml: theme.spacing(depth * 2),
   borderBottom: '1px solid',
   borderColor: 'divider',
   '&:last-of-type': {
@@ -121,21 +121,21 @@ export const ChapterAccordion = ({
   // Mode C — Leaf without content (and not generating): flat row
   return (
     <Box
-      sx={{
-        ml: depth * 2,
+      sx={(theme) => ({
+        ml: theme.spacing(depth * 2),
         borderBottom: '1px solid',
         borderColor: 'divider',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        py: 1,
-        px: 2,
+        py: theme.spacing(1),
+        px: theme.spacing(2),
         minHeight: 48,
         '&:last-of-type': {
           borderBottom: depth > 0 ? 'none' : '1px solid',
           borderColor: 'divider',
         },
-      }}
+      })}
     >
       <Typography variant="body1" sx={{ fontWeight: 600 }}>
         {chapter.name}
