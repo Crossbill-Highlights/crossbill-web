@@ -13,6 +13,7 @@ from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.identity import User
+from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.reading.schemas.chapter_prereading_schemas import (
@@ -63,6 +64,7 @@ def get_chapter_prereading(
     response_model=ChapterPrereadingResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@require_ai_enabled
 async def generate_chapter_prereading(
     chapter_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
