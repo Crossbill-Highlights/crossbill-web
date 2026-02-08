@@ -2,12 +2,12 @@
 
 import json
 
-from mcp.server import Server
+from mcp.server.fastmcp import FastMCP
 
 from crossbill_mcp.client import CrossbillClient
 
 
-def register_highlight_tools(server: Server, client: CrossbillClient) -> None:
+def register_highlight_tools(server: FastMCP, client: CrossbillClient) -> None:
     """Register highlight-related tools with the MCP server."""
 
     @server.tool()

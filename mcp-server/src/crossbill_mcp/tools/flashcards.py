@@ -2,12 +2,12 @@
 
 import json
 
-from mcp.server import Server
+from mcp.server.fastmcp import FastMCP
 
 from crossbill_mcp.client import CrossbillClient
 
 
-def register_flashcard_tools(server: Server, client: CrossbillClient) -> None:
+def register_flashcard_tools(server: FastMCP, client: CrossbillClient) -> None:
     """Register flashcard-related tools with the MCP server."""
 
     @server.tool()
