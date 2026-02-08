@@ -8,6 +8,7 @@ import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { AIIcon, ExpandMoreIcon } from '@/theme/Icons.tsx';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { PrereadingContent } from './PrereadingContent';
 
@@ -31,6 +32,69 @@ const accordionSx = (depth: number) => (theme: { spacing: (n: number) => string 
     borderColor: 'divider',
   },
 });
+
+const ExpandableChapter = ({
+  name,
+  depth,
+  expanded,
+  onToggle,
+  children,
+}: {
+  name: string;
+  depth: number;
+  expanded: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) => (
+  <Accordion expanded={expanded} onChange={onToggle} sx={accordionSx(depth)}>
+    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+        {name}
+      </Typography>
+    </AccordionSummary>
+    <AccordionDetails sx={{ pt: 0 }}>{children}</AccordionDetails>
+  </Accordion>
+);
+
+const LeafChapterRow = ({
+  name,
+  depth,
+  onGenerate,
+}: {
+  name: string;
+  depth: number;
+  onGenerate: (e: React.MouseEvent) => void;
+}) => (
+  <Box
+    sx={(theme) => ({
+      ml: theme.spacing(depth * 2),
+      borderBottom: '1px solid',
+      borderColor: 'divider',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      py: theme.spacing(1),
+      px: theme.spacing(2),
+      minHeight: 48,
+      '&:last-of-type': {
+        borderBottom: depth > 0 ? 'none' : '1px solid',
+        borderColor: 'divider',
+      },
+    })}
+  >
+    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+      {name}
+    </Typography>
+    <AIFeature>
+      <IconButtonWithTooltip
+        title="Generate Pre-reading Overview"
+        onClick={onGenerate}
+        icon={<AIIcon />}
+        ariaLabel="Generate pre-reading overview"
+      />
+    </AIFeature>
+  </Box>
+);
 
 export const ChapterAccordion = ({
   chapter,
@@ -64,90 +128,42 @@ export const ChapterAccordion = ({
     generate({ chapterId: chapter.id });
   };
 
-  // Mode A — Parent chapter (has children)
   if (!isLeaf) {
     return (
-      <Accordion
+      <ExpandableChapter
+        name={chapter.name}
+        depth={depth}
         expanded={expanded}
-        onChange={() => setExpanded(!expanded)}
-        sx={accordionSx(depth)}
+        onToggle={() => setExpanded(!expanded)}
       >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="body1" sx={{ fontWeight: 600 }}>
-            {chapter.name}
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ pt: 0 }}>
-          <Box>
-            {childChapters.map((child) => (
-              <ChapterAccordion
-                key={child.id}
-                chapter={child}
-                allChapters={allChapters}
-                bookId={bookId}
-                prereadingByChapterId={prereadingByChapterId}
-                depth={depth + 1}
-              />
-            ))}
-          </Box>
-        </AccordionDetails>
-      </Accordion>
+        <Box>
+          {childChapters.map((child) => (
+            <ChapterAccordion
+              key={child.id}
+              chapter={child}
+              allChapters={allChapters}
+              bookId={bookId}
+              prereadingByChapterId={prereadingByChapterId}
+              depth={depth + 1}
+            />
+          ))}
+        </Box>
+      </ExpandableChapter>
     );
   }
 
-  // Leaf: determine if expandable (has content or currently generating)
-  const isExpandableLeaf = !!prereading || isPending;
-
-  // Mode B — Leaf with content or currently generating
-  if (isExpandableLeaf) {
+  if (prereading || isPending) {
     return (
-      <Accordion
+      <ExpandableChapter
+        name={chapter.name}
+        depth={depth}
         expanded={expanded}
-        onChange={() => setExpanded(!expanded)}
-        sx={accordionSx(depth)}
+        onToggle={() => setExpanded(!expanded)}
       >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="body1" sx={{ fontWeight: 600 }}>
-            {chapter.name}
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ pt: 0 }}>
-          <PrereadingContent content={prereading} isGenerating={isPending} />
-        </AccordionDetails>
-      </Accordion>
+        <PrereadingContent content={prereading} isGenerating={isPending} />
+      </ExpandableChapter>
     );
   }
 
-  // Mode C — Leaf without content (and not generating): flat row
-  return (
-    <Box
-      sx={(theme) => ({
-        ml: theme.spacing(depth * 2),
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        py: theme.spacing(1),
-        px: theme.spacing(2),
-        minHeight: 48,
-        '&:last-of-type': {
-          borderBottom: depth > 0 ? 'none' : '1px solid',
-          borderColor: 'divider',
-        },
-      })}
-    >
-      <Typography variant="body1" sx={{ fontWeight: 600 }}>
-        {chapter.name}
-      </Typography>
-      <AIFeature>
-        <IconButtonWithTooltip
-          title="Generate Pre-reading Overview"
-          onClick={handleGenerate}
-          icon={<AIIcon />}
-          ariaLabel="Generate pre-reading overview"
-        />
-      </AIFeature>
-    </Box>
-  );
+  return <LeafChapterRow name={chapter.name} depth={depth} onGenerate={handleGenerate} />;
 };
