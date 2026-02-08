@@ -37,7 +37,7 @@ def get_prereading_agent() -> Agent[None, PrereadingContent]:
 
         Generate:
         1. A brief summary (2-3 sentences) of what this chapter covers
-        2. 3-5 key points or concepts the reader should watch for in markdown format. Bold the key point name.
+        2. 3-5 key points or concepts the reader should watch for in markdown format. Bold the key point name. Do not use bullet points or list markers.
 
         Focus on helping the reader understand what to expect from the chapter.
         Be concise and specific.
