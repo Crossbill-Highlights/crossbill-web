@@ -256,7 +256,6 @@ app.include_router(library_ereader.router, prefix=settings.API_V1_PREFIX)
 
 # Reading
 app.include_router(highlights.router, prefix=settings.API_V1_PREFIX)
-app.include_router(highlights.router, prefix=settings.API_V1_PREFIX)
 app.include_router(reading_sessions.router, prefix=settings.API_V1_PREFIX)
 app.include_router(bookmarks.router, prefix=settings.API_V1_PREFIX)
 app.include_router(chapter_prereading.router, prefix=settings.API_V1_PREFIX)
