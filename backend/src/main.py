@@ -44,7 +44,7 @@ configure_logging(settings.ENVIRONMENT)
 logger = structlog.get_logger(__name__)
 
 # Directory for frontend static files
-STATIC_DIR = Path(__file__).parent.parent / "static"
+STATIC_DIR = (Path(__file__).parent.parent / "static").resolve()
 
 
 def _initialize_admin_password() -> None:
