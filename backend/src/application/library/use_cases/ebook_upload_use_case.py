@@ -13,6 +13,7 @@ from src.application.library.protocols.book_repository import BookRepositoryProt
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.domain.common.value_objects.ids import UserId
+from src.domain.library.entities.chapter import TocChapter
 from src.domain.reading.exceptions import BookNotFoundError
 from src.exceptions import InvalidEbookError
 
@@ -240,7 +241,6 @@ class EbookUploadUseCase:
         # TODO: this parsing logic might belong to domain level
         toc_chapters = self._parse_toc_from_epub(epub_path)
         if toc_chapters:
-            # TODO: maybe we could pass domain objects to the repository?
             self.chapter_repository.sync_chapters_from_toc(book.id, user_id, toc_chapters)
 
         return epub_filename, str(epub_path)
@@ -371,9 +371,7 @@ class EbookUploadUseCase:
 
         return f"/body/DocFragment[{spine_idx}]{element_xpath}"
 
-    def _parse_toc_from_epub(
-        self, epub_path: Path
-    ) -> list[tuple[str, int, str | None, str | None, str | None]]:
+    def _parse_toc_from_epub(self, epub_path: Path) -> list[TocChapter]:
         """
         Parse table of contents from an EPUB file.
 
@@ -385,8 +383,7 @@ class EbookUploadUseCase:
             epub_path: Path to the EPUB file
 
         Returns:
-            List of (chapter_title, chapter_number, parent_name, start_xpoint, end_xpoint)
-            tuples in reading order. parent_name is None for root-level chapters.
+            List of TocChapter objects in reading order.
             Returns empty list if EPUB has no TOC or TOC is invalid.
         """
         try:
@@ -404,7 +401,7 @@ class EbookUploadUseCase:
 
             # Build spine mapping and compute XPoints
             spine_mapping = self._build_href_to_spine_index(book)
-            result: list[tuple[str, int, str | None, str | None, str | None]] = []
+            result: list[TocChapter] = []
             html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
             # First pass: compute start_xpoints (with precise fragment resolution)
@@ -425,7 +422,15 @@ class EbookUploadUseCase:
                     if start_xpoints[j] is not None:
                         end_xpoint = start_xpoints[j]
                         break
-                result.append((title, number, parent, start_xpoint, end_xpoint))
+                result.append(
+                    TocChapter(
+                        name=title,
+                        chapter_number=number,
+                        parent_name=parent,
+                        start_xpoint=start_xpoint,
+                        end_xpoint=end_xpoint,
+                    )
+                )
 
             logger.info(f"Parsed {len(result)} chapters from EPUB TOC at {epub_path}")
             return result

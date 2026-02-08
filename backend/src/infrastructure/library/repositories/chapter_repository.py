@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
-from src.domain.library.entities.chapter import Chapter
+from src.domain.library.entities.chapter import Chapter, TocChapter
 from src.infrastructure.library.mappers.chapter_mapper import ChapterMapper
 from src.models import Book as BookORM
 from src.models import Chapter as ChapterORM
@@ -105,7 +105,7 @@ class ChapterRepository:
         self,
         book_id: BookId,
         user_id: UserId,
-        chapters: list[tuple[str, int, str | None, str | None, str | None]],
+        chapters: list[TocChapter],
     ) -> int:
         """
         Synchronize chapters from TOC data, creating new and updating existing chapters.
@@ -116,7 +116,7 @@ class ChapterRepository:
         Args:
             book_id: ID of the book
             user_id: ID of the user (for ownership verification)
-            chapters: List of (chapter_name, chapter_number, parent_name, start_xpoint, end_xpoint) tuples
+            chapters: List of TocChapter objects from EPUB TOC parsing
 
         Returns:
             Number of chapters created (not including updates)
@@ -125,7 +125,7 @@ class ChapterRepository:
             return 0
 
         # Get existing chapters for this book by names
-        chapter_names = {name for name, _, _, _, _ in chapters}
+        chapter_names = {ch.name for ch in chapters}
 
         stmt = (
             select(ChapterORM)
@@ -145,24 +145,24 @@ class ChapterRepository:
         chapter_by_name_and_parent: dict[tuple[str, int | None], ChapterORM] = {}
         existing_chapter_keys: set[tuple[str, int | None]] = set()
 
-        for ch in existing_chapters_list:
-            chapter_by_name[ch.name] = ch
-            key = (ch.name, ch.parent_id)
-            chapter_by_name_and_parent[key] = ch
+        for existing in existing_chapters_list:
+            chapter_by_name[existing.name] = existing
+            key = (existing.name, existing.parent_id)
+            chapter_by_name_and_parent[key] = existing
             existing_chapter_keys.add(key)
 
         chapters_to_update = []
         created_count = 0
 
         # Process chapters in order (parents before children due to sequential numbering)
-        for name, chapter_number, parent_name, start_xpoint, end_xpoint in chapters:
+        for ch in chapters:
             # Determine parent_id from parent_name
             parent_id = None
-            if parent_name and parent_name in chapter_by_name:
-                parent_id = chapter_by_name[parent_name].id
+            if ch.parent_name and ch.parent_name in chapter_by_name:
+                parent_id = chapter_by_name[ch.parent_name].id
 
             # Check if chapter with this (name, parent_id) combination exists
-            chapter_key = (name, parent_id)
+            chapter_key = (ch.name, parent_id)
             if chapter_key in chapter_by_name_and_parent:
                 # This exact chapter (same name AND parent) already exists
                 existing_chapter = chapter_by_name_and_parent[chapter_key]
@@ -171,20 +171,20 @@ class ChapterRepository:
                 if chapter_key in existing_chapter_keys:
                     needs_update = False
 
-                    if existing_chapter.chapter_number != chapter_number:
-                        existing_chapter.chapter_number = chapter_number
+                    if existing_chapter.chapter_number != ch.chapter_number:
+                        existing_chapter.chapter_number = ch.chapter_number
                         needs_update = True
 
                     if existing_chapter.parent_id != parent_id:
                         existing_chapter.parent_id = parent_id
                         needs_update = True
 
-                    if existing_chapter.start_xpoint != start_xpoint:
-                        existing_chapter.start_xpoint = start_xpoint
+                    if existing_chapter.start_xpoint != ch.start_xpoint:
+                        existing_chapter.start_xpoint = ch.start_xpoint
                         needs_update = True
 
-                    if existing_chapter.end_xpoint != end_xpoint:
-                        existing_chapter.end_xpoint = end_xpoint
+                    if existing_chapter.end_xpoint != ch.end_xpoint:
+                        existing_chapter.end_xpoint = ch.end_xpoint
                         needs_update = True
 
                     if needs_update:
@@ -192,14 +192,14 @@ class ChapterRepository:
                 else:
                     # True duplicate in ToC (same name and parent, already created in loop)
                     logger.warning(
-                        f"Duplicate chapter '{name}' in ToC with same parent "
+                        f"Duplicate chapter '{ch.name}' in ToC with same parent "
                         f"(parent_id={parent_id}). Skipping duplicate."
                     )
             else:
                 # Check for legacy flat chapter to update instead of creating duplicate
                 legacy_chapter = (
                     self._match_legacy_flat_chapter(
-                        name,
+                        ch.name,
                         chapter_by_name_and_parent,
                         existing_chapter_keys,
                     )
@@ -208,11 +208,11 @@ class ChapterRepository:
                 )
 
                 if legacy_chapter is not None:
-                    legacy_key = (name, None)
+                    legacy_key = (ch.name, None)
                     legacy_chapter.parent_id = parent_id
-                    legacy_chapter.chapter_number = chapter_number
-                    legacy_chapter.start_xpoint = start_xpoint
-                    legacy_chapter.end_xpoint = end_xpoint
+                    legacy_chapter.chapter_number = ch.chapter_number
+                    legacy_chapter.start_xpoint = ch.start_xpoint
+                    legacy_chapter.end_xpoint = ch.end_xpoint
                     chapters_to_update.append(legacy_chapter)
 
                     # Move tracking from old key to new key
@@ -220,23 +220,23 @@ class ChapterRepository:
                     existing_chapter_keys.discard(legacy_key)
                     chapter_by_name_and_parent[chapter_key] = legacy_chapter
                     existing_chapter_keys.add(chapter_key)
-                    chapter_by_name[name] = legacy_chapter
+                    chapter_by_name[ch.name] = legacy_chapter
                 else:
                     # Truly new chapter — create it
                     chapter = ChapterORM(
                         book_id=book_id.value,
-                        name=name,
-                        chapter_number=chapter_number,
+                        name=ch.name,
+                        chapter_number=ch.chapter_number,
                         parent_id=parent_id,
-                        start_xpoint=start_xpoint,
-                        end_xpoint=end_xpoint,
+                        start_xpoint=ch.start_xpoint,
+                        end_xpoint=ch.end_xpoint,
                     )
                     self.db.add(chapter)
                     self.db.commit()
                     self.db.refresh(chapter)
 
                     # Add to tracking dictionaries for subsequent parent lookups
-                    chapter_by_name[name] = chapter
+                    chapter_by_name[ch.name] = chapter
                     chapter_by_name_and_parent[chapter_key] = chapter
                     created_count += 1
 

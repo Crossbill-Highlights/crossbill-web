@@ -3,7 +3,7 @@
 from typing import Protocol
 
 from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
-from src.domain.library.entities.chapter import Chapter
+from src.domain.library.entities.chapter import Chapter, TocChapter
 
 
 class ChapterRepositoryProtocol(Protocol):
@@ -21,7 +21,7 @@ class ChapterRepositoryProtocol(Protocol):
         self,
         book_id: BookId,
         user_id: UserId,
-        chapters: list[tuple[str, int, str | None, str | None, str | None]],
+        chapters: list[TocChapter],
     ) -> int:
         """
         Synchronize chapters from TOC data, creating new and updating existing chapters.
@@ -32,7 +32,7 @@ class ChapterRepositoryProtocol(Protocol):
         Args:
             book_id: ID of the book
             user_id: ID of the user (for ownership verification)
-            chapters: List of (chapter_name, chapter_number, parent_name, start_xpoint, end_xpoint) tuples
+            chapters: List of TocChapter objects from EPUB TOC parsing
 
         Returns:
             Number of chapters created (not including updates)

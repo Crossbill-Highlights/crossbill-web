@@ -18,8 +18,26 @@ from sqlalchemy.orm import Session
 
 from src import models
 from src.domain.common.value_objects.ids import BookId, UserId
+from src.domain.library.entities.chapter import TocChapter
 from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
 from tests.conftest import create_test_book
+
+
+def toc_ch(
+    name: str,
+    num: int,
+    parent: str | None = None,
+    start: str | None = None,
+    end: str | None = None,
+) -> TocChapter:
+    """Shorthand for constructing TocChapter in tests."""
+    return TocChapter(
+        name=name,
+        chapter_number=num,
+        parent_name=parent,
+        start_xpoint=start,
+        end_xpoint=end,
+    )
 
 
 @pytest.fixture
@@ -46,11 +64,9 @@ class TestSimpleChapterCreation:
         self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ) -> None:
         """Test creating a single chapter from ToC."""
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Introduction", 1, None, None, None),
-        ]
+        chapters = [toc_ch("Introduction", 1)]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
@@ -65,13 +81,13 @@ class TestSimpleChapterCreation:
         self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test creating multiple chapters from ToC."""
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Chapter 1", 1, None, None, None),
-            ("Chapter 2", 2, None, None, None),
-            ("Chapter 3", 3, None, None, None),
+        chapters = [
+            toc_ch("Chapter 1", 1),
+            toc_ch("Chapter 2", 2),
+            toc_ch("Chapter 3", 3),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
@@ -90,9 +106,9 @@ class TestSimpleChapterCreation:
         self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test handling empty chapters list."""
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = []
+        chapters: list[TocChapter] = []
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
@@ -108,13 +124,13 @@ class TestHierarchicalChapters:
         self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test creating parent chapter with child chapters."""
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Part I", 1, None, None, None),
-            ("Chapter 1", 2, "Part I", None, None),
-            ("Chapter 2", 3, "Part I", None, None),
+        chapters = [
+            toc_ch("Part I", 1),
+            toc_ch("Chapter 1", 2, "Part I"),
+            toc_ch("Chapter 2", 3, "Part I"),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
@@ -144,15 +160,15 @@ class TestHierarchicalChapters:
         self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test creating multiple levels of parent-child hierarchy."""
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Part I", 1, None, None, None),
-            ("Chapter 1", 2, "Part I", None, None),
-            ("Section 1.1", 3, "Chapter 1", None, None),
-            ("Section 1.2", 4, "Chapter 1", None, None),
-            ("Chapter 2", 5, "Part I", None, None),
+        chapters = [
+            toc_ch("Part I", 1),
+            toc_ch("Chapter 1", 2, "Part I"),
+            toc_ch("Section 1.1", 3, "Chapter 1"),
+            toc_ch("Section 1.2", 4, "Chapter 1"),
+            toc_ch("Chapter 2", 5, "Part I"),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
@@ -188,14 +204,14 @@ class TestDuplicateChapterNames:
         This is the main bug fix - "Harjoitukset" under Part I and Part II should
         both be created as separate chapters.
         """
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Part I", 1, None, None, None),
-            ("Harjoitukset", 2, "Part I", None, None),
-            ("Part II", 3, None, None, None),
-            ("Harjoitukset", 4, "Part II", None, None),
+        chapters = [
+            toc_ch("Part I", 1),
+            toc_ch("Harjoitukset", 2, "Part I"),
+            toc_ch("Part II", 3),
+            toc_ch("Harjoitukset", 4, "Part II"),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
@@ -234,12 +250,12 @@ class TestDuplicateChapterNames:
         With the (book_id, parent_id, name) constraint, two root chapters with same name
         have the same (name, parent_id) key, so they're treated as duplicates.
         """
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Preface", 1, None, None, None),
-            ("Preface", 2, None, None, None),  # Duplicate at root level
+        chapters = [
+            toc_ch("Preface", 1),
+            toc_ch("Preface", 2),  # Duplicate at root level
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
@@ -265,13 +281,13 @@ class TestDuplicateChapterNames:
         This would indicate a malformed ToC where the same chapter appears twice
         under the same parent.
         """
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Part I", 1, None, None, None),
-            ("Chapter 1", 2, "Part I", None, None),
-            ("Chapter 1", 3, "Part I", None, None),  # True duplicate - same name and parent
+        chapters = [
+            toc_ch("Part I", 1),
+            toc_ch("Chapter 1", 2, "Part I"),
+            toc_ch("Chapter 1", 3, "Part I"),  # True duplicate - same name and parent
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
@@ -310,11 +326,9 @@ class TestUpdatingExistingChapters:
         chapter_id = existing_chapter.id
 
         # Re-upload with different chapter number
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Chapter 1", 5, None, None, None),
-        ]
+        chapters = [toc_ch("Chapter 1", 5)]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
@@ -351,12 +365,12 @@ class TestUpdatingExistingChapters:
         child_id = child.id
 
         # Re-upload with same parent but different chapter number
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Part I", 1, None, None, None),
-            ("Chapter 1", 5, "Part I", None, None),  # Same parent, different number
+        chapters = [
+            toc_ch("Part I", 1),
+            toc_ch("Chapter 1", 5, "Part I"),  # Same parent, different number
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
@@ -382,13 +396,13 @@ class TestUpdatingExistingChapters:
         existing_id = existing.id
 
         # Upload with existing chapter (different number) and new chapters
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Chapter 1", 5, None, None, None),  # Exists - update
-            ("Chapter 2", 6, None, None, None),  # New - create
-            ("Chapter 3", 7, None, None, None),  # New - create
+        chapters = [
+            toc_ch("Chapter 1", 5),  # Exists - update
+            toc_ch("Chapter 2", 6),  # New - create
+            toc_ch("Chapter 3", 7),  # New - create
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
@@ -416,21 +430,21 @@ class TestUpdatingExistingChapters:
         - Second upload: FAILURE (unique constraint violation trying to re-insert "missing" chapter)
         """
         # Initial upload: Create chapters with duplicate names under different parents
-        initial_chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Part I", 1, None, None, None),
-            ("Harjoitukset", 2, "Part I", None, None),
-            ("Part II", 3, None, None, None),
-            ("Harjoitukset", 4, "Part II", None, None),
+        initial_chapters = [
+            toc_ch("Part I", 1),
+            toc_ch("Harjoitukset", 2, "Part I"),
+            toc_ch("Part II", 3),
+            toc_ch("Harjoitukset", 4, "Part II"),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=initial_chapters
         )
         assert created_count == 4
 
         # Re-upload the same TOC (simulating re-uploading the EPUB file via API)
         # This should detect all existing chapters and update them, not try to create duplicates
-        created_count_2 = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count_2 = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=initial_chapters
         )
 
@@ -511,13 +525,17 @@ class TestLegacyFlatChapterMigration:
         ch2_id = legacy_ch2.id
 
         # Upload EPUB with hierarchical TOC referencing same chapter names
-        toc_chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Part I", 1, None, "/body/DocFragment[2]/body", "/body/DocFragment[3]/body"),
-            ("Chapter 1", 2, "Part I", "/body/DocFragment[3]/body", "/body/DocFragment[4]/body"),
-            ("Chapter 2", 3, "Part I", "/body/DocFragment[4]/body", "/body/DocFragment[5]/body"),
+        toc_chapters = [
+            toc_ch("Part I", 1, start="/body/DocFragment[2]/body", end="/body/DocFragment[3]/body"),
+            toc_ch(
+                "Chapter 1", 2, "Part I", "/body/DocFragment[3]/body", "/body/DocFragment[4]/body"
+            ),
+            toc_ch(
+                "Chapter 2", 3, "Part I", "/body/DocFragment[4]/body", "/body/DocFragment[5]/body"
+            ),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=toc_chapters
         )
 
@@ -582,14 +600,14 @@ class TestLegacyFlatChapterMigration:
         exercises_id = legacy_exercises.id
 
         # TOC has "Exercises" under two different parents
-        toc_chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Part I", 1, None, None, None),
-            ("Exercises", 2, "Part I", None, None),
-            ("Part II", 3, None, None, None),
-            ("Exercises", 4, "Part II", None, None),
+        toc_chapters = [
+            toc_ch("Part I", 1),
+            toc_ch("Exercises", 2, "Part I"),
+            toc_ch("Part II", 3),
+            toc_ch("Exercises", 4, "Part II"),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=toc_chapters
         )
 
@@ -640,16 +658,16 @@ class TestEdgeCases:
               Introduction (id=20)
                 Chapter 1 (should have parent_id=20) ✓
         """
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Part I", 1, None, None, None),
-            ("Introduction", 2, "Part I", None, None),
-            ("Chapter 1", 3, "Introduction", None, None),
-            ("Part II", 4, None, None, None),
-            ("Introduction", 5, "Part II", None, None),
-            ("Chapter 1", 6, "Introduction", None, None),
+        chapters = [
+            toc_ch("Part I", 1),
+            toc_ch("Introduction", 2, "Part I"),
+            toc_ch("Chapter 1", 3, "Introduction"),
+            toc_ch("Part II", 4),
+            toc_ch("Introduction", 5, "Part II"),
+            toc_ch("Chapter 1", 6, "Introduction"),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
@@ -686,12 +704,12 @@ class TestEdgeCases:
         If a child references a parent that hasn't been processed yet, parent_id
         will be None.
         """
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Chapter 1", 1, "Part I", None, None),
-            ("Part I", 2, None, None, None),
+        chapters = [
+            toc_ch("Chapter 1", 1, "Part I"),
+            toc_ch("Part I", 2),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
@@ -713,11 +731,9 @@ class TestEdgeCases:
         self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
     ):
         """Test handling of parent_name that doesn't exist in ToC."""
-        chapters: list[tuple[str, int, str | None, str | None, str | None]] = [
-            ("Chapter 1", 1, "Part I", None, None),
-        ]
+        chapters = [toc_ch("Chapter 1", 1, "Part I")]
 
-        created_count = chapter_repo.sync_chapters_from_toc(  # pyright: ignore
+        created_count = chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 

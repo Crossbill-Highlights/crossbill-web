@@ -6,6 +6,21 @@ from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import BookId, ChapterId
 
 
+@dataclass(frozen=True)
+class TocChapter:
+    """A chapter entry parsed from an EPUB Table of Contents.
+
+    Parent relationships are expressed by name since DB IDs
+    aren't assigned yet during parsing.
+    """
+
+    name: str
+    chapter_number: int
+    parent_name: str | None
+    start_xpoint: str | None
+    end_xpoint: str | None
+
+
 @dataclass
 class Chapter(Entity[ChapterId]):
     """
