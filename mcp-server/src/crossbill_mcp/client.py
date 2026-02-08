@@ -1,6 +1,7 @@
 """Crossbill REST API client with JWT authentication."""
 
 import logging
+from typing import Any
 
 import httpx
 
@@ -60,7 +61,7 @@ class CrossbillClient:
         self,
         method: str,
         path: str,
-        **kwargs: object,
+        **kwargs: Any,
     ) -> httpx.Response:
         """Make an authenticated API request with automatic token management."""
         if not self._access_token:
