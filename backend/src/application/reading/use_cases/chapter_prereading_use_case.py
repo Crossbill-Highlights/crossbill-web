@@ -13,6 +13,9 @@ from src.application.library.protocols.chapter_repository import (
 from src.application.library.protocols.file_repository import (
     FileRepositoryProtocol,
 )
+from src.application.reading.protocols.ai_prereading_service import (
+    AIPrereadingServiceProtocol,
+)
 from src.application.reading.protocols.chapter_prereading_repository import (
     ChapterPrereadingRepositoryProtocol,
 )
@@ -25,7 +28,6 @@ from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
 )
 from src.exceptions import BookNotFoundError, NotFoundError
-from src.infrastructure.ai.ai_service import get_ai_prereading_from_text
 
 logger = structlog.get_logger(__name__)
 
@@ -40,12 +42,14 @@ class ChapterPrereadingUseCase:
         text_extraction_service: EbookTextExtractionServiceProtocol,
         book_repo: BookRepositoryProtocol,
         file_repo: FileRepositoryProtocol,
+        ai_prereading_service: AIPrereadingServiceProtocol,
     ) -> None:
         self.prereading_repo = prereading_repo
         self.chapter_repo = chapter_repo
         self.text_extraction = text_extraction_service
         self.book_repo = book_repo
         self.file_repo = file_repo
+        self.ai_prereading_service = ai_prereading_service
 
     def get_all_prereading_for_book(
         self, book_id: BookId, user_id: UserId
@@ -114,7 +118,7 @@ class ChapterPrereadingUseCase:
 
         # 5. Call AI service
         try:
-            ai_result = await get_ai_prereading_from_text(chapter_text)
+            ai_result = await self.ai_prereading_service.generate_prereading(chapter_text)
         except Exception as e:
             logger.error("ai_service_failed", error=str(e))
             raise DomainError(f"Failed to generate prereading content: {e}") from e

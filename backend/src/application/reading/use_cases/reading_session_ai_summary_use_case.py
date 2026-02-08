@@ -4,6 +4,9 @@ import structlog
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
+from src.application.reading.protocols.ai_text_summary_service import (
+    AITextSummaryServiceProtocol,
+)
 from src.application.reading.protocols.ebook_text_extraction_service import (
     EbookTextExtractionServiceProtocol,
 )
@@ -12,7 +15,6 @@ from src.application.reading.protocols.reading_session_repository import (
 )
 from src.domain.common.value_objects import ReadingSessionId, UserId
 from src.exceptions import BookNotFoundError, ReadingSessionNotFoundError, ValidationError
-from src.infrastructure.ai.ai_service import get_ai_summary_from_text
 
 logger = structlog.get_logger(__name__)
 
@@ -26,12 +28,14 @@ class ReadingSessionAISummaryUseCase:
         text_extraction_service: EbookTextExtractionServiceProtocol,
         book_repo: BookRepositoryProtocol,
         file_repo: FileRepositoryProtocol,
+        ai_summary_service: AITextSummaryServiceProtocol,
     ) -> None:
         """Initialize use case with dependencies."""
         self.session_repository = session_repository
         self.text_extraction_service = text_extraction_service
         self.book_repo = book_repo
         self.file_repo = file_repo
+        self.ai_summary_service = ai_summary_service
 
     async def get_or_generate_summary(self, session_id: int, user_id: int) -> str:
         """
@@ -109,7 +113,7 @@ class ReadingSessionAISummaryUseCase:
             session_id=session_id,
             content_length=len(content),
         )
-        ai_summary = await get_ai_summary_from_text(content)
+        ai_summary = await self.ai_summary_service.generate_summary(content)
 
         session.set_ai_summary(ai_summary)
         self.session_repository.save(session)

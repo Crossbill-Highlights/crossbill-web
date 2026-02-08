@@ -47,6 +47,7 @@ from src.application.reading.use_cases.update_highlight_note_use_case import (
 )
 from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
 from src.domain.reading.services.highlight_grouping_service import HighlightGroupingService
+from src.infrastructure.ai.ai_service import AIService
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.services.password_service_adapter import PasswordServiceAdapter
 from src.infrastructure.identity.services.token_service_adapter import TokenServiceAdapter
@@ -93,6 +94,7 @@ class Container(containers.DeclarativeContainer):
     # Infrastructure services (no db dependency)
     ebook_text_extraction_service = providers.Factory(EpubTextExtractionService)
     epub_toc_parser_service = providers.Factory(EpubTocParserService)
+    ai_service = providers.Factory(AIService)
 
     # Identity repositories and services
     user_repository = providers.Factory(UserRepository, db=db)
@@ -167,6 +169,7 @@ class Container(containers.DeclarativeContainer):
         text_extraction_service=ebook_text_extraction_service,
         book_repo=book_repository,
         file_repo=file_repository,
+        ai_summary_service=ai_service,
     )
     chapter_prereading_use_case = providers.Factory(
         ChapterPrereadingUseCase,
@@ -175,6 +178,7 @@ class Container(containers.DeclarativeContainer):
         text_extraction_service=ebook_text_extraction_service,
         book_repo=book_repository,
         file_repo=file_repository,
+        ai_prereading_service=ai_service,
     )
 
     # Library module, application use cases
@@ -238,6 +242,7 @@ class Container(containers.DeclarativeContainer):
     flashcard_ai_use_case = providers.Factory(
         FlashcardAIUseCase,
         highlight_repository=highlight_repository,
+        ai_flashcard_service=ai_service,
     )
 
     # Identity use cases
