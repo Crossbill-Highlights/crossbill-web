@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import structlog
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.application.reading.protocols.ebook_text_extraction_service import (
     EbookTextExtractionServiceProtocol,
 )
@@ -50,11 +51,13 @@ class ReadingSessionQueryUseCase:
         book_repository: BookRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
         text_extraction_service: EbookTextExtractionServiceProtocol,
+        file_repo: FileRepositoryProtocol,
     ) -> None:
         self.session_repository = session_repository
         self.book_repository = book_repository
         self.highlight_repository = highlight_repository
         self.text_extraction_service = text_extraction_service
+        self.file_repo = file_repo
 
     def get_sessions_for_book(
         self,
@@ -87,6 +90,11 @@ class ReadingSessionQueryUseCase:
         if not book:
             raise BookNotFoundError(book_id)
 
+        # Resolve epub path once for the book
+        epub_path = None
+        if include_content and book.file_path and book.file_type == "epub":
+            epub_path = self.file_repo.find_epub(book.id)
+
         sessions = self.session_repository.find_by_book_id(book_id_vo, user_id_vo, limit, offset)
         total = self.session_repository.count_by_book_id(book_id_vo, user_id_vo)
 
@@ -101,13 +109,12 @@ class ReadingSessionQueryUseCase:
 
             # Optionally extract content
             extracted_content = None
-            if include_content and session.start_xpoint:
+            if include_content and session.start_xpoint and epub_path and epub_path.exists():
                 try:
                     extracted_content = self.text_extraction_service.extract_text(
-                        book_id_vo,
-                        user_id_vo,
-                        session.start_xpoint.start.to_string(),
-                        session.start_xpoint.end.to_string(),
+                        epub_path=epub_path,
+                        start_xpoint=session.start_xpoint.start.to_string(),
+                        end_xpoint=session.start_xpoint.end.to_string(),
                     )
                 except Exception as e:
                     logger.warning(

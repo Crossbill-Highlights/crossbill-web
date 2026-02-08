@@ -8,14 +8,13 @@ from ebooklib import epub
 from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
 from sqlalchemy.orm import Session
 
-from src.application.library.services.ebook_text_extraction_service import (
-    EbookTextExtractionService,
-)
-from src.application.library.use_cases.ebook_upload_use_case import EbookUploadUseCase
 from src.config import EPUBS_DIR
-from src.domain.common.value_objects import BookId, UserId
-from src.exceptions import BookNotFoundError, XPointNavigationError, XPointParseError
-from src.models import Book, User
+from src.exceptions import XPointNavigationError, XPointParseError
+from src.infrastructure.library.services.epub_text_extraction_service import (
+    EpubTextExtractionService,
+)
+from src.infrastructure.library.services.epub_toc_parser_service import EpubTocParserService
+from src.models import User
 from tests.conftest import create_test_book
 
 
@@ -64,8 +63,8 @@ def create_test_epub(epub_path: Path, chapters: list[dict[str, str]]) -> None:
 
 
 @pytest.fixture
-def test_epub_book(db_session: Session, test_user: User) -> Generator[Book, None, None]:
-    """Create a test book with an EPUB file containing known content."""
+def test_epub_path(db_session: Session, test_user: User) -> Generator[Path, None, None]:
+    """Create a test EPUB file with known content and return its path."""
     book = create_test_book(
         db_session=db_session,
         user_id=test_user.id,
@@ -102,7 +101,7 @@ def test_epub_book(db_session: Session, test_user: User) -> Generator[Book, None
         ],
     )
 
-    yield book
+    yield epub_path
 
     # Cleanup
     if epub_path.exists():
@@ -112,136 +111,91 @@ def test_epub_book(db_session: Session, test_user: User) -> Generator[Book, None
 class TestEpubTextExtraction:
     """Test suite for EPUB text extraction."""
 
-    def test_extract_within_single_paragraph(
-        self, db_session: Session, test_epub_book: Book, test_user: User
-    ) -> None:
+    def test_extract_within_single_paragraph(self, test_epub_path: Path) -> None:
         """Extract text within a single paragraph."""
-        service = EbookTextExtractionService(db_session)
+        service = EpubTextExtractionService()
 
         # Extract "the first paragraph" from first paragraph
         # DocFragment[2] = first chapter (spine[1], after nav)
-        # The text "This is the first paragraph of chapter one." starts at position 0
         result = service.extract_text(
-            book_id=BookId(test_epub_book.id),
-            user_id=UserId(test_user.id),
-            start="/body/DocFragment[2]/body/div/p[1]/text().8",  # "the"
-            end="/body/DocFragment[2]/body/div/p[1]/text().27",  # end of "first paragraph"
+            epub_path=test_epub_path,
+            start_xpoint="/body/DocFragment[2]/body/div/p[1]/text().8",
+            end_xpoint="/body/DocFragment[2]/body/div/p[1]/text().27",
         )
 
         assert result == "the first paragraph"
 
-    def test_extract_entire_paragraph(
-        self, db_session: Session, test_epub_book: Book, test_user: User
-    ) -> None:
+    def test_extract_entire_paragraph(self, test_epub_path: Path) -> None:
         """Extract an entire paragraph's text."""
-        service = EbookTextExtractionService(db_session)
+        service = EpubTextExtractionService()
 
-        # DocFragment[2] = first chapter (spine[1], after nav)
         result = service.extract_text(
-            book_id=BookId(test_epub_book.id),
-            user_id=UserId(test_user.id),
-            start="/body/DocFragment[2]/body/div/p[1]/text().0",
-            end="/body/DocFragment[2]/body/div/p[1]/text().44",
+            epub_path=test_epub_path,
+            start_xpoint="/body/DocFragment[2]/body/div/p[1]/text().0",
+            end_xpoint="/body/DocFragment[2]/body/div/p[1]/text().44",
         )
 
         assert result == "This is the first paragraph of chapter one."
 
-    def test_extract_with_doc_fragment(
-        self, db_session: Session, test_epub_book: Book, test_user: User
-    ) -> None:
+    def test_extract_with_doc_fragment(self, test_epub_path: Path) -> None:
         """Extract text using explicit DocFragment index."""
-        service = EbookTextExtractionService(db_session)
+        service = EpubTextExtractionService()
 
-        # DocFragment[2] is the first chapter (spine[0] is nav, spine[1] is chapter 1)
         result = service.extract_text(
-            book_id=BookId(test_epub_book.id),
-            user_id=UserId(test_user.id),
-            start="/body/DocFragment[2]/body/div/p[1]/text().0",
-            end="/body/DocFragment[2]/body/div/p[1]/text().7",
+            epub_path=test_epub_path,
+            start_xpoint="/body/DocFragment[2]/body/div/p[1]/text().0",
+            end_xpoint="/body/DocFragment[2]/body/div/p[1]/text().7",
         )
 
         assert result == "This is"
 
-    def test_invalid_xpoint_raises_error(
-        self, db_session: Session, test_epub_book: Book, test_user: User
-    ) -> None:
+    def test_invalid_xpoint_raises_error(self, test_epub_path: Path) -> None:
         """Invalid xpoint format raises XPointParseError."""
-        service = EbookTextExtractionService(db_session)
+        service = EpubTextExtractionService()
 
         with pytest.raises(XPointParseError):
             service.extract_text(
-                book_id=BookId(test_epub_book.id),
-                user_id=UserId(test_user.id),
-                start="invalid",
-                end="/body/div/p[1]/text().10",
+                epub_path=test_epub_path,
+                start_xpoint="invalid",
+                end_xpoint="/body/div/p[1]/text().10",
             )
 
-    def test_xpath_not_found_raises_error(
-        self, db_session: Session, test_epub_book: Book, test_user: User
-    ) -> None:
+    def test_xpath_not_found_raises_error(self, test_epub_path: Path) -> None:
         """XPath that doesn't match any element raises XPointNavigationError."""
-        service = EbookTextExtractionService(db_session)
+        service = EpubTextExtractionService()
 
         with pytest.raises(XPointNavigationError) as exc_info:
             service.extract_text(
-                book_id=BookId(test_epub_book.id),
-                user_id=UserId(test_user.id),
-                start="/body/div/p[999]/text().0",
-                end="/body/div/p[999]/text().10",
+                epub_path=test_epub_path,
+                start_xpoint="/body/div/p[999]/text().0",
+                end_xpoint="/body/div/p[999]/text().10",
             )
 
         assert "matched no elements" in str(exc_info.value)
 
-    def test_doc_fragment_out_of_range(
-        self, db_session: Session, test_epub_book: Book, test_user: User
-    ) -> None:
+    def test_doc_fragment_out_of_range(self, test_epub_path: Path) -> None:
         """DocFragment index out of range raises XPointNavigationError."""
-        service = EbookTextExtractionService(db_session)
+        service = EpubTextExtractionService()
 
         with pytest.raises(XPointNavigationError) as exc_info:
             service.extract_text(
-                book_id=BookId(test_epub_book.id),
-                user_id=UserId(test_user.id),
-                start="/body/DocFragment[999]/body/div/p[1]/text().0",
-                end="/body/DocFragment[999]/body/div/p[1]/text().10",
+                epub_path=test_epub_path,
+                start_xpoint="/body/DocFragment[999]/body/div/p[1]/text().0",
+                end_xpoint="/body/DocFragment[999]/body/div/p[1]/text().10",
             )
 
         assert "index out of range" in str(exc_info.value)
-
-    def test_book_without_epub_raises_error(self, db_session: Session, test_user: User) -> None:
-        """Book without file_path raises BookNotFoundError."""
-        book = create_test_book(
-            db_session=db_session,
-            user_id=test_user.id,
-            title="Book Without EPUB",
-        )
-
-        service = EbookTextExtractionService(db_session)
-
-        with pytest.raises(BookNotFoundError) as exc_info:
-            service.extract_text(
-                book_id=BookId(book.id),
-                user_id=UserId(test_user.id),
-                start="/body/div/p[1]/text().0",
-                end="/body/div/p[1]/text().10",
-            )
-
-        assert exc_info.value.status_code == 404
 
 
 class TestExtractChapterText:
     """Test suite for chapter-level text extraction by fragment range."""
 
-    def test_single_fragment_chapter(
-        self, db_session: Session, test_epub_book: Book, test_user: User
-    ) -> None:
+    def test_single_fragment_chapter(self, test_epub_path: Path) -> None:
         """Extract text for a chapter spanning a single spine item."""
-        service = EbookTextExtractionService(db_session)
+        service = EpubTextExtractionService()
 
-        # DocFragment[2] = chapter 1, DocFragment[3] = chapter 2 (next chapter start)
         result = service.extract_chapter_text(
-            book_id=BookId(test_epub_book.id),
-            user_id=UserId(test_user.id),
+            epub_path=test_epub_path,
             start_xpoint="/body/DocFragment[2]/body",
             end_xpoint="/body/DocFragment[3]/body",
         )
@@ -252,16 +206,12 @@ class TestExtractChapterText:
         # Should NOT contain chapter 2 content
         assert "Chapter two begins here" not in result
 
-    def test_last_chapter_no_end_xpoint(
-        self, db_session: Session, test_epub_book: Book, test_user: User
-    ) -> None:
+    def test_last_chapter_no_end_xpoint(self, test_epub_path: Path) -> None:
         """Extract text for the last chapter (end_xpoint is None)."""
-        service = EbookTextExtractionService(db_session)
+        service = EpubTextExtractionService()
 
-        # DocFragment[3] = chapter 2, no end_xpoint = last chapter
         result = service.extract_chapter_text(
-            book_id=BookId(test_epub_book.id),
-            user_id=UserId(test_user.id),
+            epub_path=test_epub_path,
             start_xpoint="/body/DocFragment[3]/body",
             end_xpoint=None,
         )
@@ -294,13 +244,10 @@ class TestExtractChapterText:
         )
 
         try:
-            service = EbookTextExtractionService(db_session)
+            service = EpubTextExtractionService()
 
-            # Chapter spans fragments 2, 3, 4 (spine indices after nav)
-            # Next chapter starts at fragment 5
             result = service.extract_chapter_text(
-                book_id=BookId(book.id),
-                user_id=UserId(test_user.id),
+                epub_path=epub_path,
                 start_xpoint="/body/DocFragment[2]/body",
                 end_xpoint="/body/DocFragment[5]/body",
             )
@@ -330,19 +277,16 @@ class TestExtractChapterText:
         _create_shared_spine_epub(epub_path)
 
         try:
-            service = EbookTextExtractionService(db_session)
+            service = EpubTextExtractionService()
 
-            # Chapter 1 starts at section1, chapter 2 starts at section2 — same fragment
             result = service.extract_chapter_text(
-                book_id=BookId(book.id),
-                user_id=UserId(test_user.id),
+                epub_path=epub_path,
                 start_xpoint="/body/DocFragment[2]/body/section[1]",
                 end_xpoint="/body/DocFragment[2]/body/section[2]",
             )
 
             assert "First chapter content in section one." in result
             assert "More text in chapter one." in result
-            # Should NOT contain chapter 2 content
             assert "Second chapter content in section two." not in result
         finally:
             if epub_path.exists():
@@ -365,18 +309,14 @@ class TestExtractChapterText:
         _create_shared_spine_epub(epub_path)
 
         try:
-            service = EbookTextExtractionService(db_session)
+            service = EpubTextExtractionService()
 
-            # Both XPoints at body level in same fragment — start_elem is end_elem
-            # Returns all text from that body element (best effort)
             result = service.extract_chapter_text(
-                book_id=BookId(book.id),
-                user_id=UserId(test_user.id),
+                epub_path=epub_path,
                 start_xpoint="/body/DocFragment[2]/body",
                 end_xpoint="/body/DocFragment[2]/body",
             )
 
-            # Should return all text in the fragment (both sections)
             assert "First chapter content in section one." in result
             assert "Second chapter content in section two." in result
         finally:
@@ -398,7 +338,6 @@ class TestExtractChapterText:
 
         epub_path = EPUBS_DIR / epub_filename
 
-        # Create EPUB: file 1 has two sections, file 2 has two sections
         epub_book = epub.EpubBook()
         epub_book.set_identifier("test-cross-precise")
         epub_book.set_title("Cross Fragment Precise")
@@ -433,19 +372,16 @@ class TestExtractChapterText:
         epub.write_epub(str(epub_path), epub_book)
 
         try:
-            service = EbookTextExtractionService(db_session)
+            service = EpubTextExtractionService()
 
-            # Chapter 2: starts at file_1 section[2], ends at file_2 section[2]
             result = service.extract_chapter_text(
-                book_id=BookId(book.id),
-                user_id=UserId(test_user.id),
+                epub_path=epub_path,
                 start_xpoint="/body/DocFragment[2]/body/section[2]",
                 end_xpoint="/body/DocFragment[3]/body/section[2]",
             )
 
             assert "Chapter two starts here." in result
             assert "Chapter two continues." in result
-            # Should NOT contain chapter 1 or chapter 3 content
             assert "Chapter one text." not in result
             assert "Chapter three text." not in result
         finally:
@@ -469,18 +405,15 @@ class TestExtractChapterText:
         _create_shared_spine_epub(epub_path)
 
         try:
-            service = EbookTextExtractionService(db_session)
+            service = EpubTextExtractionService()
 
-            # Last chapter starts at section[2] in fragment 2, no end
             result = service.extract_chapter_text(
-                book_id=BookId(book.id),
-                user_id=UserId(test_user.id),
+                epub_path=epub_path,
                 start_xpoint="/body/DocFragment[2]/body/section[2]",
                 end_xpoint=None,
             )
 
             assert "Second chapter content in section two." in result
-            # Should NOT contain section 1 content
             assert "First chapter content in section one." not in result
         finally:
             if epub_path.exists():
@@ -488,11 +421,7 @@ class TestExtractChapterText:
 
 
 def _create_shared_spine_epub(epub_path: Path) -> None:
-    """Create an EPUB with multiple chapters sharing a single spine item.
-
-    The EPUB has one content file with two sections (simulating chapters
-    that share the same HTML file, distinguished by fragment IDs).
-    """
+    """Create an EPUB with multiple chapters sharing a single spine item."""
     epub_book = epub.EpubBook()
     epub_book.set_identifier("test-shared-spine")
     epub_book.set_title("Shared Spine Test")
@@ -532,11 +461,7 @@ class TestResolveHrefToXpoint:
     """Test suite for _resolve_href_to_xpoint XPoint resolution."""
 
     def _make_epub_with_fragments(self, tmp_path: Path) -> epub.EpubBook:
-        """Create an ebooklib EpubBook with known fragment IDs for testing.
-
-        Writes and reads back the EPUB so spine items have proper
-        (item_id, linear) tuple format as expected by _build_href_to_spine_index.
-        """
+        """Create an ebooklib EpubBook with known fragment IDs for testing."""
         epub_book = epub.EpubBook()
         epub_book.set_identifier("test-resolve-xpoint")
         epub_book.set_title("Resolve XPoint Test")
@@ -556,7 +481,6 @@ class TestResolveHrefToXpoint:
         epub_book.add_item(epub.EpubNcx())
         epub_book.add_item(epub.EpubNav())
 
-        # Write and read back to get proper spine format
         epub_file = tmp_path / "test_resolve.epub"
         epub.write_epub(str(epub_file), epub_book)
         return epub.read_epub(str(epub_file))
@@ -564,10 +488,10 @@ class TestResolveHrefToXpoint:
     def test_href_with_fragment_resolves_to_precise_xpoint(self, tmp_path: Path) -> None:
         """Href with #fragment produces precise XPoint with element path."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        spine_mapping = EpubTocParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
         html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        result = EbookUploadUseCase._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
+        result = EpubTocParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml#main", spine_mapping, html_cache
         )
 
@@ -578,10 +502,10 @@ class TestResolveHrefToXpoint:
     def test_href_without_fragment_returns_body_level(self, tmp_path: Path) -> None:
         """Href without #fragment produces body-level XPoint."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        spine_mapping = EpubTocParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
         html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        result = EbookUploadUseCase._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
+        result = EpubTocParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml", spine_mapping, html_cache
         )
 
@@ -590,10 +514,10 @@ class TestResolveHrefToXpoint:
     def test_href_with_nonexistent_fragment_falls_back(self, tmp_path: Path) -> None:
         """Href with unknown #fragment falls back to body-level XPoint."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        spine_mapping = EpubTocParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
         html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        result = EbookUploadUseCase._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
+        result = EpubTocParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml#nonexistent", spine_mapping, html_cache
         )
 
@@ -602,10 +526,10 @@ class TestResolveHrefToXpoint:
     def test_href_with_unknown_file_returns_none(self, tmp_path: Path) -> None:
         """Href pointing to unknown file returns None."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        spine_mapping = EpubTocParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
         html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        result = EbookUploadUseCase._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
+        result = EpubTocParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "unknown.xhtml#intro", spine_mapping, html_cache
         )
 
@@ -614,17 +538,16 @@ class TestResolveHrefToXpoint:
     def test_html_cache_is_reused(self, tmp_path: Path) -> None:
         """Multiple calls for same spine item reuse cached HTML tree."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EbookUploadUseCase._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        spine_mapping = EpubTocParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
         html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        EbookUploadUseCase._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
+        EpubTocParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml#intro", spine_mapping, html_cache
         )
         assert 2 in html_cache
         cached_tree = html_cache[2]
 
-        EbookUploadUseCase._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
+        EpubTocParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml#main", spine_mapping, html_cache
         )
-        # Same object in cache — not re-parsed
         assert html_cache[2] is cached_tree

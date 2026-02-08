@@ -4,8 +4,14 @@ from datetime import UTC, datetime
 
 import structlog
 
+from src.application.library.protocols.book_repository import (
+    BookRepositoryProtocol,
+)
 from src.application.library.protocols.chapter_repository import (
     ChapterRepositoryProtocol,
+)
+from src.application.library.protocols.file_repository import (
+    FileRepositoryProtocol,
 )
 from src.application.reading.protocols.chapter_prereading_repository import (
     ChapterPrereadingRepositoryProtocol,
@@ -18,7 +24,7 @@ from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
 )
-from src.exceptions import NotFoundError
+from src.exceptions import BookNotFoundError, NotFoundError
 from src.infrastructure.ai.ai_service import get_ai_prereading_from_text
 
 logger = structlog.get_logger(__name__)
@@ -32,10 +38,14 @@ class ChapterPrereadingUseCase:
         prereading_repo: ChapterPrereadingRepositoryProtocol,
         chapter_repo: ChapterRepositoryProtocol,
         text_extraction_service: EbookTextExtractionServiceProtocol,
+        book_repo: BookRepositoryProtocol,
+        file_repo: FileRepositoryProtocol,
     ) -> None:
         self.prereading_repo = prereading_repo
         self.chapter_repo = chapter_repo
         self.text_extraction = text_extraction_service
+        self.book_repo = book_repo
+        self.file_repo = file_repo
 
     def get_all_prereading_for_book(
         self, book_id: BookId, user_id: UserId
@@ -74,11 +84,21 @@ class ChapterPrereadingUseCase:
                 "EPUB must be re-uploaded to extract chapter positions."
             )
 
-        # 3. Extract chapter text
+        # 3. Resolve epub path
+        book = self.book_repo.find_by_id(chapter.book_id, user_id)
+        if not book or not book.file_path or book.file_type != "epub":
+            raise BookNotFoundError(
+                chapter.book_id.value, message="EPUB file not found for this book"
+            )
+
+        epub_path = self.file_repo.find_epub(book.id)
+        if not epub_path or not epub_path.exists():
+            raise BookNotFoundError(chapter.book_id.value, message="EPUB file not found on disk")
+
+        # 4. Extract chapter text
         try:
             chapter_text = self.text_extraction.extract_chapter_text(
-                book_id=chapter.book_id,
-                user_id=user_id,
+                epub_path=epub_path,
                 start_xpoint=chapter.start_xpoint,
                 end_xpoint=chapter.end_xpoint,
             )
@@ -92,14 +112,14 @@ class ChapterPrereadingUseCase:
                 "Chapter content is too short to generate meaningful prereading content"
             )
 
-        # 4. Call AI service
+        # 5. Call AI service
         try:
             ai_result = await get_ai_prereading_from_text(chapter_text)
         except Exception as e:
             logger.error("ai_service_failed", error=str(e))
             raise DomainError(f"Failed to generate prereading content: {e}") from e
 
-        # 5. Create entity
+        # 6. Create entity
         entity = ChapterPrereadingContent.create(
             chapter_id=chapter_id,
             summary=ai_result.summary,
@@ -108,7 +128,7 @@ class ChapterPrereadingUseCase:
             ai_model="ai-configured-model",
         )
 
-        # 6. Save and return
+        # 7. Save and return
         logger.info(
             "prereading_content_generated",
             chapter_id=chapter_id.value,
