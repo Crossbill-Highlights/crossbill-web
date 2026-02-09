@@ -20,11 +20,26 @@ from src.application.reading.use_cases.highlights.highlight_delete_use_case impo
 from src.application.reading.use_cases.highlights.highlight_search_use_case import (
     HighlightSearchUseCase,
 )
-from src.application.reading.use_cases.highlights.highlight_tag_association_use_case import (
-    HighlightTagAssociationUseCase,
+from src.application.reading.use_cases.highlight_tag_associations.add_tag_to_highlight_by_id_use_case import (
+    AddTagToHighlightByIdUseCase,
 )
-from src.application.reading.use_cases.highlights.highlight_tag_group_use_case import (
-    HighlightTagGroupUseCase,
+from src.application.reading.use_cases.highlight_tag_associations.add_tag_to_highlight_by_name_use_case import (
+    AddTagToHighlightByNameUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_associations.remove_tag_from_highlight_use_case import (
+    RemoveTagFromHighlightUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_groups.create_highlight_tag_group_use_case import (
+    CreateHighlightTagGroupUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_groups.delete_highlight_tag_group_use_case import (
+    DeleteHighlightTagGroupUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_groups.update_highlight_tag_group_use_case import (
+    UpdateHighlightTagGroupUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_groups.update_tag_group_association_use_case import (
+    UpdateTagGroupAssociationUseCase,
 )
 from src.application.reading.use_cases.highlight_tags.create_highlight_tag_use_case import (
     CreateHighlightTagUseCase,
@@ -66,8 +81,13 @@ __all__ = [
     "GetBookmarksUseCase",
     "HighlightDeleteUseCase",
     "HighlightSearchUseCase",
-    "HighlightTagAssociationUseCase",
-    "HighlightTagGroupUseCase",
+    "AddTagToHighlightByIdUseCase",
+    "AddTagToHighlightByNameUseCase",
+    "RemoveTagFromHighlightUseCase",
+    "CreateHighlightTagGroupUseCase",
+    "UpdateHighlightTagGroupUseCase",
+    "DeleteHighlightTagGroupUseCase",
+    "UpdateTagGroupAssociationUseCase",
     "CreateHighlightTagUseCase",
     "DeleteHighlightTagUseCase",
     "GetHighlightTagsForBookUseCase",
