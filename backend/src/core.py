@@ -27,7 +27,7 @@ from src.application.learning.use_cases.flashcards.get_flashcards_by_book_use_ca
 from src.application.learning.use_cases.flashcards.update_flashcard_use_case import (
     UpdateFlashcardUseCase,
 )
-from src.application.learning.use_cases.flashcards_ai.get_flashcard_suggestions_use_case import (
+from src.application.learning.use_cases.flashcards.get_flashcard_suggestions_use_case import (
     GetFlashcardSuggestionsUseCase,
 )
 from src.application.library.use_cases.book_files.book_cover_use_case import BookCoverUseCase
