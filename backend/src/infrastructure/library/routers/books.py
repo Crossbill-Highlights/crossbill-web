@@ -302,9 +302,7 @@ def get_recently_viewed_books(
 def get_book_details(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: GetBookDetailsUseCase = Depends(
-        inject_use_case(container.get_book_details_use_case)
-    ),
+    use_case: GetBookDetailsUseCase = Depends(inject_use_case(container.get_book_details_use_case)),
 ) -> BookDetails:
     """
     Get detailed information about a book including its chapters and highlights.

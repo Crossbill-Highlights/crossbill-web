@@ -39,9 +39,7 @@ router = APIRouter(prefix="/ereader", tags=["ereader"])
 def create_book(
     book_data: BookCreate,
     current_user: Annotated[User, Depends(get_current_user)],
-    create_use_case: CreateBookUseCase = Depends(
-        inject_use_case(container.create_book_use_case)
-    ),
+    create_use_case: CreateBookUseCase = Depends(inject_use_case(container.create_book_use_case)),
     metadata_use_case: GetEreaderMetadataUseCase = Depends(
         inject_use_case(container.get_ereader_metadata_use_case)
     ),
