@@ -12,7 +12,7 @@ from src.application.reading.protocols.highlight_repository import HighlightRepo
 from src.application.reading.protocols.highlight_tag_repository import (
     HighlightTagRepositoryProtocol,
 )
-from src.application.reading.use_cases.highlight_tag_use_case import HighlightTagUseCase
+from src.application.reading.use_cases.highlights.highlight_tag_use_case import HighlightTagUseCase
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
 from src.domain.reading.services.highlight_grouping_service import (

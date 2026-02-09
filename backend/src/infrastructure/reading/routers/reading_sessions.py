@@ -5,13 +5,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from src.application.reading.use_cases.reading_session_ai_summary_use_case import (
+from src.application.reading.use_cases.reading_sessions.reading_session_ai_summary_use_case import (
     ReadingSessionAISummaryUseCase,
 )
-from src.application.reading.use_cases.reading_session_query_use_case import (
+from src.application.reading.use_cases.reading_sessions.reading_session_query_use_case import (
     ReadingSessionQueryUseCase,
 )
-from src.application.reading.use_cases.reading_session_upload_use_case import (
+from src.application.reading.use_cases.reading_sessions.reading_session_upload_use_case import (
     ReadingSessionUploadData,
     ReadingSessionUploadUseCase,
 )

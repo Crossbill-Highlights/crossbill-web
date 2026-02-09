@@ -6,7 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from src.application.reading.use_cases.chapter_prereading_use_case import (
+from src.application.reading.use_cases.chapter_prereading.chapter_prereading_use_case import (
     ChapterPrereadingUseCase,
 )
 from src.core import container

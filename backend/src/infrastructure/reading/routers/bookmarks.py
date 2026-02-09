@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from src.application.reading.use_cases.bookmark_use_case import BookmarkUseCase
+from src.application.reading.use_cases.bookmarks.bookmark_use_case import BookmarkUseCase
 from src.core import container
 from src.domain.identity import User
 from src.exceptions import CrossbillError

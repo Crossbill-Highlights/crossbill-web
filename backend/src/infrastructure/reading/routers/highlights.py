@@ -7,22 +7,24 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.application.learning.use_cases.flashcard_use_case import FlashcardUseCase
-from src.application.reading.use_cases.highlight_delete_use_case import (
+from src.application.reading.use_cases.highlights.highlight_delete_use_case import (
     HighlightDeleteUseCase,
 )
-from src.application.reading.use_cases.highlight_search_use_case import HighlightSearchUseCase
-from src.application.reading.use_cases.highlight_tag_association_use_case import (
+from src.application.reading.use_cases.highlights.highlight_search_use_case import (
+    HighlightSearchUseCase,
+)
+from src.application.reading.use_cases.highlights.highlight_tag_association_use_case import (
     HighlightTagAssociationUseCase,
 )
-from src.application.reading.use_cases.highlight_tag_group_use_case import (
+from src.application.reading.use_cases.highlights.highlight_tag_group_use_case import (
     HighlightTagGroupUseCase,
 )
-from src.application.reading.use_cases.highlight_tag_use_case import HighlightTagUseCase
-from src.application.reading.use_cases.highlight_upload_use_case import (
+from src.application.reading.use_cases.highlights.highlight_tag_use_case import HighlightTagUseCase
+from src.application.reading.use_cases.highlights.highlight_upload_use_case import (
     HighlightUploadData,
     HighlightUploadUseCase,
 )
-from src.application.reading.use_cases.update_highlight_note_use_case import (
+from src.application.reading.use_cases.highlights.update_highlight_note_use_case import (
     HighlightUpdateNoteUseCase,
 )
 from src.core import container
