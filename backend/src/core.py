@@ -74,6 +74,9 @@ from src.application.reading.use_cases.bookmarks.delete_bookmark_use_case import
 from src.application.reading.use_cases.bookmarks.get_bookmarks_use_case import (
     GetBookmarksUseCase,
 )
+from src.application.reading.use_cases.chapter_content_use_case import (
+    ChapterContentUseCase,
+)
 from src.application.reading.use_cases.chapter_prereading.generate_chapter_prereading_use_case import (
     GenerateChapterPrereadingUseCase,
 )
@@ -330,6 +333,13 @@ class Container(containers.DeclarativeContainer):
         book_repo=book_repository,
         file_repo=file_repository,
         ai_prereading_service=ai_service,
+    )
+    chapter_content_use_case = providers.Factory(
+        ChapterContentUseCase,
+        chapter_repo=chapter_repository,
+        book_repo=book_repository,
+        file_repo=file_repository,
+        text_extraction_service=ebook_text_extraction_service,
     )
 
     # Library module, application use cases
