@@ -4,8 +4,8 @@ import logging
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
-from src.application.library.use_cases.book_management.book_tag_association_use_case import (
-    BookTagAssociationUseCase,
+from src.application.library.use_cases.book_tag_associations.get_book_tags_use_case import (
+    GetBookTagsUseCase,
 )
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
@@ -36,7 +36,7 @@ class GetBookDetailsUseCase:
         bookmark_repository: BookmarkRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
         highlight_tag_repository: HighlightTagRepositoryProtocol,
-        book_tag_association_use_case: BookTagAssociationUseCase,
+        get_book_tags_use_case: GetBookTagsUseCase,
         highlight_tag_use_case: GetHighlightTagsForBookUseCase,
         highlight_grouping_service: HighlightGroupingService,
     ) -> None:
@@ -45,7 +45,7 @@ class GetBookDetailsUseCase:
         self.bookmark_repository = bookmark_repository
         self.highlight_repository = highlight_repository
         self.highlight_tag_repository = highlight_tag_repository
-        self.book_tag_association_use_case = book_tag_association_use_case
+        self.get_book_tags_use_case = get_book_tags_use_case
         self.highlight_tag_use_case = highlight_tag_use_case
         self.highlight_grouping_service = highlight_grouping_service
 
@@ -123,7 +123,7 @@ class GetBookDetailsUseCase:
         bookmarks = self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)
 
         # Get tags using use case
-        tags = self.book_tag_association_use_case.get_tags_for_book(book_id, user_id)
+        tags = self.get_book_tags_use_case.get_tags(book_id, user_id)
 
         # Get highlight tag groups
         highlight_tag_groups = self.highlight_tag_repository.find_groups_by_book(book_id_vo)

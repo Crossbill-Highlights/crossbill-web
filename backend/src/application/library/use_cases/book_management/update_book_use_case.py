@@ -4,8 +4,8 @@ import logging
 
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
-from src.application.library.use_cases.book_management.book_tag_association_use_case import (
-    BookTagAssociationUseCase,
+from src.application.library.use_cases.book_tag_associations.replace_book_tags_use_case import (
+    ReplaceBookTagsUseCase,
 )
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.domain.common.value_objects import BookId, UserId
@@ -25,12 +25,12 @@ class UpdateBookUseCase:
         book_repository: BookRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
         flashcard_repository: FlashcardRepositoryProtocol,
-        book_tag_association_use_case: BookTagAssociationUseCase,
+        replace_book_tags_use_case: ReplaceBookTagsUseCase,
     ) -> None:
         self.book_repository = book_repository
         self.highlight_repository = highlight_repository
         self.flashcard_repository = flashcard_repository
-        self.book_tag_association_use_case = book_tag_association_use_case
+        self.replace_book_tags_use_case = replace_book_tags_use_case
 
     def update_book(
         self, book_id: int, update_data: BookUpdateRequest, user_id: int
@@ -61,9 +61,7 @@ class UpdateBookUseCase:
             raise BookNotFoundError(book_id)
 
         # Update tags using use case
-        tags = self.book_tag_association_use_case.replace_book_tags(
-            book_id, update_data.tags, user_id
-        )
+        tags = self.replace_book_tags_use_case.replace_tags(book_id, update_data.tags, user_id)
 
         # Get counts
         highlight_count = self.highlight_repository.count_by_book(book_id_vo, user_id_vo)

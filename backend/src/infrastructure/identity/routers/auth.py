@@ -8,7 +8,12 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from starlette import status
 
-from src.application.identity.use_cases.authentication_use_case import AuthenticationUseCase
+from src.application.identity.use_cases.authentication.authenticate_user_use_case import (
+    AuthenticateUserUseCase,
+)
+from src.application.identity.use_cases.authentication.refresh_access_token_use_case import (
+    RefreshAccessTokenUseCase,
+)
 from src.config import get_settings
 from src.core import container
 from src.domain.identity.exceptions import InvalidCredentialsError
@@ -60,11 +65,13 @@ async def login(
     request: Request,
     response: Response,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    use_case: AuthenticationUseCase = Depends(inject_use_case(container.authentication_use_case)),
+    use_case: AuthenticateUserUseCase = Depends(
+        inject_use_case(container.authenticate_user_use_case)
+    ),
 ) -> TokenWithRefresh:
     # OAuth2PasswordRequestForm uses 'username' field, but we use it for email
     try:
-        _, token_pair = use_case.authenticate_user(form_data.username, form_data.password)
+        _, token_pair = use_case.authenticate(form_data.username, form_data.password)
         set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
     except InvalidCredentialsError:
@@ -82,7 +89,9 @@ async def refresh(
     response: Response,
     body: RefreshTokenRequest | None = None,
     refresh_token: Annotated[str | None, Cookie()] = None,
-    use_case: AuthenticationUseCase = Depends(inject_use_case(container.authentication_use_case)),
+    use_case: RefreshAccessTokenUseCase = Depends(
+        inject_use_case(container.refresh_access_token_use_case)
+    ),
 ) -> TokenWithRefresh:
     """
     Refresh the access token using a refresh token.
@@ -103,7 +112,7 @@ async def refresh(
         )
 
     try:
-        _, token_pair = use_case.refresh_access_token(token)
+        _, token_pair = use_case.refresh_token(token)
         set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
     except InvalidCredentialsError:
