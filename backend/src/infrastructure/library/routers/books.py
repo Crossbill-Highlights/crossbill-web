@@ -6,12 +6,20 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette import status
 from starlette.responses import FileResponse
 
-from src.application.library.use_cases.book_cover_use_case import BookCoverUseCase
-from src.application.library.use_cases.book_management_use_case import BookManagementUseCase
-from src.application.library.use_cases.get_books_with_counts_use_case import (
+from src.application.library.use_cases.book_files.book_cover_use_case import BookCoverUseCase
+from src.application.library.use_cases.book_management.delete_book_use_case import (
+    DeleteBookUseCase,
+)
+from src.application.library.use_cases.book_management.get_book_details_use_case import (
+    GetBookDetailsUseCase,
+)
+from src.application.library.use_cases.book_management.update_book_use_case import (
+    UpdateBookUseCase,
+)
+from src.application.library.use_cases.book_queries.get_books_with_counts_use_case import (
     GetBooksWithCountsUseCase,
 )
-from src.application.library.use_cases.get_recently_viewed_books_use_case import (
+from src.application.library.use_cases.book_queries.get_recently_viewed_books_use_case import (
     GetRecentlyViewedBooksUseCase,
 )
 from src.core import container
@@ -294,7 +302,7 @@ def get_recently_viewed_books(
 def get_book_details(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookManagementUseCase = Depends(inject_use_case(container.book_management_use_case)),
+    use_case: GetBookDetailsUseCase = Depends(inject_use_case(container.get_book_details_use_case)),
 ) -> BookDetails:
     """
     Get detailed information about a book including its chapters and highlights.
@@ -335,7 +343,7 @@ def update_book(
     book_id: int,
     request: BookUpdateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookManagementUseCase = Depends(inject_use_case(container.book_management_use_case)),
+    use_case: UpdateBookUseCase = Depends(inject_use_case(container.update_book_use_case)),
 ) -> BookWithHighlightCount:
     """
     Update book information.
@@ -392,7 +400,7 @@ def update_book(
 def delete_book(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookManagementUseCase = Depends(inject_use_case(container.book_management_use_case)),
+    use_case: DeleteBookUseCase = Depends(inject_use_case(container.delete_book_use_case)),
 ) -> None:
     """
     Delete a book and all its contents (hard delete).

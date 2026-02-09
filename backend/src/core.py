@@ -1,49 +1,141 @@
 from dependency_injector import containers, providers
 from sqlalchemy.orm import Session
 
-from src.application.identity.use_cases.authentication_use_case import AuthenticationUseCase
+from src.application.identity.use_cases.authentication.authenticate_user_use_case import (
+    AuthenticateUserUseCase,
+)
+from src.application.identity.use_cases.authentication.get_user_by_id_use_case import (
+    GetUserByIdUseCase,
+)
+from src.application.identity.use_cases.authentication.refresh_access_token_use_case import (
+    RefreshAccessTokenUseCase,
+)
 from src.application.identity.use_cases.register_user_use_case import RegisterUserUseCase
 from src.application.identity.use_cases.update_user_use_case import UpdateUserUseCase
-from src.application.learning.use_cases.flashcard_ai_use_case import FlashcardAIUseCase
-from src.application.learning.use_cases.flashcard_use_case import FlashcardUseCase
-from src.application.library.use_cases.book_cover_use_case import BookCoverUseCase
-from src.application.library.use_cases.book_management_use_case import BookManagementUseCase
-from src.application.library.use_cases.book_tag_association_use_case import (
-    BookTagAssociationUseCase,
+from src.application.learning.use_cases.flashcards.create_flashcard_for_book_use_case import (
+    CreateFlashcardForBookUseCase,
 )
-from src.application.library.use_cases.ebook_deletion_use_case import EbookDeletionUseCase
-from src.application.library.use_cases.ebook_upload_use_case import EbookUploadUseCase
-from src.application.library.use_cases.get_books_with_counts_use_case import (
+from src.application.learning.use_cases.flashcards.create_flashcard_for_highlight_use_case import (
+    CreateFlashcardForHighlightUseCase,
+)
+from src.application.learning.use_cases.flashcards.delete_flashcard_use_case import (
+    DeleteFlashcardUseCase,
+)
+from src.application.learning.use_cases.flashcards.get_flashcard_suggestions_use_case import (
+    GetFlashcardSuggestionsUseCase,
+)
+from src.application.learning.use_cases.flashcards.get_flashcards_by_book_use_case import (
+    GetFlashcardsByBookUseCase,
+)
+from src.application.learning.use_cases.flashcards.update_flashcard_use_case import (
+    UpdateFlashcardUseCase,
+)
+from src.application.library.use_cases.book_files.book_cover_use_case import BookCoverUseCase
+from src.application.library.use_cases.book_files.ebook_deletion_use_case import (
+    EbookDeletionUseCase,
+)
+from src.application.library.use_cases.book_files.ebook_upload_use_case import EbookUploadUseCase
+from src.application.library.use_cases.book_management.create_book_use_case import (
+    CreateBookUseCase,
+)
+from src.application.library.use_cases.book_management.delete_book_use_case import (
+    DeleteBookUseCase,
+)
+from src.application.library.use_cases.book_management.get_book_details_use_case import (
+    GetBookDetailsUseCase,
+)
+from src.application.library.use_cases.book_management.update_book_use_case import (
+    UpdateBookUseCase,
+)
+from src.application.library.use_cases.book_queries.get_books_with_counts_use_case import (
     GetBooksWithCountsUseCase,
 )
-from src.application.library.use_cases.get_recently_viewed_books_use_case import (
+from src.application.library.use_cases.book_queries.get_ereader_metadata_use_case import (
+    GetEreaderMetadataUseCase,
+)
+from src.application.library.use_cases.book_queries.get_recently_viewed_books_use_case import (
     GetRecentlyViewedBooksUseCase,
 )
-from src.application.reading.use_cases.bookmark_use_case import BookmarkUseCase
-from src.application.reading.use_cases.chapter_prereading_use_case import (
-    ChapterPrereadingUseCase,
+from src.application.library.use_cases.book_tag_associations.add_tags_to_book_use_case import (
+    AddTagsToBookUseCase,
 )
-from src.application.reading.use_cases.highlight_delete_use_case import HighlightDeleteUseCase
-from src.application.reading.use_cases.highlight_search_use_case import HighlightSearchUseCase
-from src.application.reading.use_cases.highlight_tag_association_use_case import (
-    HighlightTagAssociationUseCase,
+from src.application.library.use_cases.book_tag_associations.get_book_tags_use_case import (
+    GetBookTagsUseCase,
 )
-from src.application.reading.use_cases.highlight_tag_group_use_case import (
-    HighlightTagGroupUseCase,
+from src.application.library.use_cases.book_tag_associations.replace_book_tags_use_case import (
+    ReplaceBookTagsUseCase,
 )
-from src.application.reading.use_cases.highlight_tag_use_case import HighlightTagUseCase
-from src.application.reading.use_cases.highlight_upload_use_case import HighlightUploadUseCase
-from src.application.reading.use_cases.reading_session_ai_summary_use_case import (
+from src.application.reading.use_cases.bookmarks.create_bookmark_use_case import (
+    CreateBookmarkUseCase,
+)
+from src.application.reading.use_cases.bookmarks.delete_bookmark_use_case import (
+    DeleteBookmarkUseCase,
+)
+from src.application.reading.use_cases.bookmarks.get_bookmarks_use_case import (
+    GetBookmarksUseCase,
+)
+from src.application.reading.use_cases.chapter_prereading.generate_chapter_prereading_use_case import (
+    GenerateChapterPrereadingUseCase,
+)
+from src.application.reading.use_cases.chapter_prereading.get_book_prereading_use_case import (
+    GetBookPrereadingUseCase,
+)
+from src.application.reading.use_cases.chapter_prereading.get_chapter_prereading_use_case import (
+    GetChapterPrereadingUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_associations.add_tag_to_highlight_by_id_use_case import (
+    AddTagToHighlightByIdUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_associations.add_tag_to_highlight_by_name_use_case import (
+    AddTagToHighlightByNameUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_associations.remove_tag_from_highlight_use_case import (
+    RemoveTagFromHighlightUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_groups.create_highlight_tag_group_use_case import (
+    CreateHighlightTagGroupUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_groups.delete_highlight_tag_group_use_case import (
+    DeleteHighlightTagGroupUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_groups.update_highlight_tag_group_use_case import (
+    UpdateHighlightTagGroupUseCase,
+)
+from src.application.reading.use_cases.highlight_tag_groups.update_tag_group_association_use_case import (
+    UpdateTagGroupAssociationUseCase,
+)
+from src.application.reading.use_cases.highlight_tags.create_highlight_tag_use_case import (
+    CreateHighlightTagUseCase,
+)
+from src.application.reading.use_cases.highlight_tags.delete_highlight_tag_use_case import (
+    DeleteHighlightTagUseCase,
+)
+from src.application.reading.use_cases.highlight_tags.get_highlight_tags_for_book_use_case import (
+    GetHighlightTagsForBookUseCase,
+)
+from src.application.reading.use_cases.highlight_tags.update_highlight_tag_name_use_case import (
+    UpdateHighlightTagNameUseCase,
+)
+from src.application.reading.use_cases.highlights.highlight_delete_use_case import (
+    HighlightDeleteUseCase,
+)
+from src.application.reading.use_cases.highlights.highlight_search_use_case import (
+    HighlightSearchUseCase,
+)
+from src.application.reading.use_cases.highlights.highlight_upload_use_case import (
+    HighlightUploadUseCase,
+)
+from src.application.reading.use_cases.highlights.update_highlight_note_use_case import (
+    HighlightUpdateNoteUseCase,
+)
+from src.application.reading.use_cases.reading_sessions.reading_session_ai_summary_use_case import (
     ReadingSessionAISummaryUseCase,
 )
-from src.application.reading.use_cases.reading_session_query_use_case import (
+from src.application.reading.use_cases.reading_sessions.reading_session_query_use_case import (
     ReadingSessionQueryUseCase,
 )
-from src.application.reading.use_cases.reading_session_upload_use_case import (
+from src.application.reading.use_cases.reading_sessions.reading_session_upload_use_case import (
     ReadingSessionUploadUseCase,
-)
-from src.application.reading.use_cases.update_highlight_note_use_case import (
-    HighlightUpdateNoteUseCase,
 )
 from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
 from src.domain.reading.services.highlight_grouping_service import HighlightGroupingService
@@ -106,11 +198,21 @@ class Container(containers.DeclarativeContainer):
     highlight_grouping_service = providers.Factory(HighlightGroupingService)
 
     # Reading module, application use cases
-    bookmark_use_case = providers.Factory(
-        BookmarkUseCase,
+    create_bookmark_use_case = providers.Factory(
+        CreateBookmarkUseCase,
         book_repository=book_repository,
         bookmark_repository=bookmark_repository,
         highlight_repository=highlight_repository,
+    )
+    delete_bookmark_use_case = providers.Factory(
+        DeleteBookmarkUseCase,
+        book_repository=book_repository,
+        bookmark_repository=bookmark_repository,
+    )
+    get_bookmarks_use_case = providers.Factory(
+        GetBookmarksUseCase,
+        book_repository=book_repository,
+        bookmark_repository=bookmark_repository,
     )
 
     highlight_search_use_case = providers.Factory(
@@ -127,18 +229,57 @@ class Container(containers.DeclarativeContainer):
         HighlightUpdateNoteUseCase,
         highlight_repository=highlight_repository,
     )
-    highlight_tag_use_case = providers.Factory(
-        HighlightTagUseCase,
+    create_highlight_tag_use_case = providers.Factory(
+        CreateHighlightTagUseCase,
         tag_repository=highlight_tag_repository,
         book_repository=book_repository,
     )
-    highlight_tag_group_use_case = providers.Factory(
-        HighlightTagGroupUseCase,
+
+    delete_highlight_tag_use_case = providers.Factory(
+        DeleteHighlightTagUseCase,
+        tag_repository=highlight_tag_repository,
+    )
+
+    update_highlight_tag_name_use_case = providers.Factory(
+        UpdateHighlightTagNameUseCase,
+        tag_repository=highlight_tag_repository,
+    )
+
+    get_highlight_tags_for_book_use_case = providers.Factory(
+        GetHighlightTagsForBookUseCase,
         tag_repository=highlight_tag_repository,
         book_repository=book_repository,
     )
-    highlight_tag_association_use_case = providers.Factory(
-        HighlightTagAssociationUseCase,
+    create_highlight_tag_group_use_case = providers.Factory(
+        CreateHighlightTagGroupUseCase,
+        tag_repository=highlight_tag_repository,
+        book_repository=book_repository,
+    )
+    update_highlight_tag_group_use_case = providers.Factory(
+        UpdateHighlightTagGroupUseCase,
+        tag_repository=highlight_tag_repository,
+        book_repository=book_repository,
+    )
+    delete_highlight_tag_group_use_case = providers.Factory(
+        DeleteHighlightTagGroupUseCase,
+        tag_repository=highlight_tag_repository,
+    )
+    update_tag_group_association_use_case = providers.Factory(
+        UpdateTagGroupAssociationUseCase,
+        tag_repository=highlight_tag_repository,
+    )
+    add_tag_to_highlight_by_id_use_case = providers.Factory(
+        AddTagToHighlightByIdUseCase,
+        highlight_repository=highlight_repository,
+        tag_repository=highlight_tag_repository,
+    )
+    add_tag_to_highlight_by_name_use_case = providers.Factory(
+        AddTagToHighlightByNameUseCase,
+        highlight_repository=highlight_repository,
+        tag_repository=highlight_tag_repository,
+    )
+    remove_tag_from_highlight_use_case = providers.Factory(
+        RemoveTagFromHighlightUseCase,
         highlight_repository=highlight_repository,
         tag_repository=highlight_tag_repository,
     )
@@ -171,8 +312,18 @@ class Container(containers.DeclarativeContainer):
         file_repo=file_repository,
         ai_summary_service=ai_service,
     )
-    chapter_prereading_use_case = providers.Factory(
-        ChapterPrereadingUseCase,
+    get_chapter_prereading_use_case = providers.Factory(
+        GetChapterPrereadingUseCase,
+        prereading_repo=chapter_prereading_repository,
+        chapter_repo=chapter_repository,
+    )
+    get_book_prereading_use_case = providers.Factory(
+        GetBookPrereadingUseCase,
+        prereading_repo=chapter_prereading_repository,
+        chapter_repo=chapter_repository,
+    )
+    generate_chapter_prereading_use_case = providers.Factory(
+        GenerateChapterPrereadingUseCase,
         prereading_repo=chapter_prereading_repository,
         chapter_repo=chapter_repository,
         text_extraction_service=ebook_text_extraction_service,
@@ -203,8 +354,18 @@ class Container(containers.DeclarativeContainer):
         file_repository=file_repository,
     )
 
-    book_tag_association_use_case = providers.Factory(
-        BookTagAssociationUseCase,
+    add_tags_to_book_use_case = providers.Factory(
+        AddTagsToBookUseCase,
+        tag_repository=tag_repository,
+        book_repository=book_repository,
+    )
+    replace_book_tags_use_case = providers.Factory(
+        ReplaceBookTagsUseCase,
+        tag_repository=tag_repository,
+        book_repository=book_repository,
+    )
+    get_book_tags_use_case = providers.Factory(
+        GetBookTagsUseCase,
         tag_repository=tag_repository,
         book_repository=book_repository,
     )
@@ -217,30 +378,75 @@ class Container(containers.DeclarativeContainer):
         epub_toc_parser=epub_toc_parser_service,
     )
 
-    book_management_use_case = providers.Factory(
-        BookManagementUseCase,
+    create_book_use_case = providers.Factory(
+        CreateBookUseCase,
+        book_repository=book_repository,
+        add_tags_to_book_use_case=add_tags_to_book_use_case,
+    )
+
+    get_book_details_use_case = providers.Factory(
+        GetBookDetailsUseCase,
         book_repository=book_repository,
         chapter_repository=chapter_repository,
         bookmark_repository=bookmark_repository,
         highlight_repository=highlight_repository,
         highlight_tag_repository=highlight_tag_repository,
-        flashcard_repository=flashcard_repository,
-        book_tag_association_use_case=book_tag_association_use_case,
-        ebook_deletion_use_case=ebook_deletion_use_case,
-        highlight_tag_use_case=highlight_tag_use_case,
+        get_book_tags_use_case=get_book_tags_use_case,
+        highlight_tag_use_case=get_highlight_tags_for_book_use_case,
         highlight_grouping_service=highlight_grouping_service,
     )
 
+    update_book_use_case = providers.Factory(
+        UpdateBookUseCase,
+        book_repository=book_repository,
+        highlight_repository=highlight_repository,
+        flashcard_repository=flashcard_repository,
+        replace_book_tags_use_case=replace_book_tags_use_case,
+    )
+
+    delete_book_use_case = providers.Factory(
+        DeleteBookUseCase,
+        book_repository=book_repository,
+        ebook_deletion_use_case=ebook_deletion_use_case,
+    )
+
+    get_ereader_metadata_use_case = providers.Factory(
+        GetEreaderMetadataUseCase,
+        book_repository=book_repository,
+    )
+
     # Learning module use cases
-    flashcard_use_case = providers.Factory(
-        FlashcardUseCase,
+    create_flashcard_for_highlight_use_case = providers.Factory(
+        CreateFlashcardForHighlightUseCase,
+        flashcard_repository=flashcard_repository,
+        highlight_repository=highlight_repository,
+    )
+
+    create_flashcard_for_book_use_case = providers.Factory(
+        CreateFlashcardForBookUseCase,
+        flashcard_repository=flashcard_repository,
+        book_repository=book_repository,
+    )
+
+    get_flashcards_by_book_use_case = providers.Factory(
+        GetFlashcardsByBookUseCase,
         flashcard_repository=flashcard_repository,
         book_repository=book_repository,
         highlight_repository=highlight_repository,
     )
 
-    flashcard_ai_use_case = providers.Factory(
-        FlashcardAIUseCase,
+    update_flashcard_use_case = providers.Factory(
+        UpdateFlashcardUseCase,
+        flashcard_repository=flashcard_repository,
+    )
+
+    delete_flashcard_use_case = providers.Factory(
+        DeleteFlashcardUseCase,
+        flashcard_repository=flashcard_repository,
+    )
+
+    get_flashcard_suggestions_use_case = providers.Factory(
+        GetFlashcardSuggestionsUseCase,
         highlight_repository=highlight_repository,
         ai_flashcard_service=ai_service,
     )
@@ -252,11 +458,20 @@ class Container(containers.DeclarativeContainer):
         password_service=password_service,
     )
 
-    authentication_use_case = providers.Factory(
-        AuthenticationUseCase,
+    authenticate_user_use_case = providers.Factory(
+        AuthenticateUserUseCase,
         user_repository=user_repository,
         password_service=password_service,
         token_service=token_service,
+    )
+    refresh_access_token_use_case = providers.Factory(
+        RefreshAccessTokenUseCase,
+        user_repository=user_repository,
+        token_service=token_service,
+    )
+    get_user_by_id_use_case = providers.Factory(
+        GetUserByIdUseCase,
+        user_repository=user_repository,
     )
 
     register_user_use_case = providers.Factory(

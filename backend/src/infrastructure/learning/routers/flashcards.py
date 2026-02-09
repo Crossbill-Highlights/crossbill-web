@@ -5,7 +5,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.application.learning.use_cases.flashcard_use_case import FlashcardUseCase
+from src.application.learning.use_cases.flashcards.delete_flashcard_use_case import (
+    DeleteFlashcardUseCase,
+)
+from src.application.learning.use_cases.flashcards.update_flashcard_use_case import (
+    UpdateFlashcardUseCase,
+)
 from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
@@ -33,7 +38,9 @@ def update_flashcard(
     flashcard_id: int,
     request: FlashcardUpdateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: FlashcardUseCase = Depends(inject_use_case(container.flashcard_use_case)),
+    use_case: UpdateFlashcardUseCase = Depends(
+        inject_use_case(container.update_flashcard_use_case)
+    ),
 ) -> FlashcardUpdateResponse:
     """
     Update a flashcard's question and/or answer.
@@ -90,7 +97,9 @@ def update_flashcard(
 def delete_flashcard(
     flashcard_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: FlashcardUseCase = Depends(inject_use_case(container.flashcard_use_case)),
+    use_case: DeleteFlashcardUseCase = Depends(
+        inject_use_case(container.delete_flashcard_use_case)
+    ),
 ) -> FlashcardDeleteResponse:
     """
     Delete a flashcard.

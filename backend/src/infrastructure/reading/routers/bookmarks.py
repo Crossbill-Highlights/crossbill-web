@@ -4,7 +4,15 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from src.application.reading.use_cases.bookmark_use_case import BookmarkUseCase
+from src.application.reading.use_cases.bookmarks.create_bookmark_use_case import (
+    CreateBookmarkUseCase,
+)
+from src.application.reading.use_cases.bookmarks.delete_bookmark_use_case import (
+    DeleteBookmarkUseCase,
+)
+from src.application.reading.use_cases.bookmarks.get_bookmarks_use_case import (
+    GetBookmarksUseCase,
+)
 from src.core import container
 from src.domain.identity import User
 from src.exceptions import CrossbillError
@@ -26,7 +34,7 @@ def create_bookmark(
     book_id: int,
     request: BookmarkCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookmarkUseCase = Depends(inject_use_case(container.bookmark_use_case)),
+    use_case: CreateBookmarkUseCase = Depends(inject_use_case(container.create_bookmark_use_case)),
 ) -> Bookmark:
     """
     Create a bookmark for a highlight in a book.
@@ -76,7 +84,7 @@ def delete_bookmark(
     book_id: int,
     bookmark_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookmarkUseCase = Depends(inject_use_case(container.bookmark_use_case)),
+    use_case: DeleteBookmarkUseCase = Depends(inject_use_case(container.delete_bookmark_use_case)),
 ) -> None:
     """
     Delete a bookmark from a book.
@@ -116,7 +124,7 @@ def delete_bookmark(
 def get_bookmarks(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookmarkUseCase = Depends(inject_use_case(container.bookmark_use_case)),
+    use_case: GetBookmarksUseCase = Depends(inject_use_case(container.get_bookmarks_use_case)),
 ) -> BookmarksResponse:
     """
     Get all bookmarks for a book.

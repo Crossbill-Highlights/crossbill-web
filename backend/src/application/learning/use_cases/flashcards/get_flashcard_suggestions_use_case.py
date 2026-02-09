@@ -1,12 +1,11 @@
-"""Use case for flashcard AI operations."""
-
-from dataclasses import dataclass
+"""Use case for AI-generated flashcard suggestions."""
 
 import structlog
 
 from src.application.learning.protocols.ai_flashcard_service import (
     AIFlashcardServiceProtocol,
 )
+from src.application.learning.use_cases.dtos import FlashcardSuggestion
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.domain.common.value_objects.ids import HighlightId, UserId
 from src.exceptions import NotFoundError
@@ -14,16 +13,8 @@ from src.exceptions import NotFoundError
 logger = structlog.get_logger(__name__)
 
 
-@dataclass
-class FlashcardSuggestion:
-    """Simple data class for AI suggestions."""
-
-    question: str
-    answer: str
-
-
-class FlashcardAIUseCase:
-    """Use case for flashcard AI operations."""
+class GetFlashcardSuggestionsUseCase:
+    """Use case for AI-generated flashcard suggestions."""
 
     def __init__(
         self,
@@ -34,9 +25,7 @@ class FlashcardAIUseCase:
         self.highlight_repository = highlight_repository
         self.ai_flashcard_service = ai_flashcard_service
 
-    async def get_flashcard_suggestions(
-        self, highlight_id: int, user_id: int
-    ) -> list[FlashcardSuggestion]:
+    async def get_suggestions(self, highlight_id: int, user_id: int) -> list[FlashcardSuggestion]:
         """
         Get AI-generated flashcard suggestions for a highlight.
 
@@ -48,7 +37,7 @@ class FlashcardAIUseCase:
             List of flashcard suggestions
 
         Raises:
-            ValidationError: If highlight not found or user doesn't own it
+            NotFoundError: If highlight not found or user doesn't own it
         """
         highlight_id_vo = HighlightId(highlight_id)
         user_id_vo = UserId(user_id)
