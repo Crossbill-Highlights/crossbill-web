@@ -6,8 +6,14 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from src.application.reading.use_cases.chapter_prereading.chapter_prereading_use_case import (
-    ChapterPrereadingUseCase,
+from src.application.reading.use_cases.chapter_prereading.generate_chapter_prereading_use_case import (
+    GenerateChapterPrereadingUseCase,
+)
+from src.application.reading.use_cases.chapter_prereading.get_book_prereading_use_case import (
+    GetBookPrereadingUseCase,
+)
+from src.application.reading.use_cases.chapter_prereading.get_chapter_prereading_use_case import (
+    GetChapterPrereadingUseCase,
 )
 from src.core import container
 from src.domain.common.exceptions import DomainError
@@ -34,8 +40,8 @@ router = APIRouter(prefix="/chapters", tags=["prereading"])
 def get_chapter_prereading(
     chapter_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: ChapterPrereadingUseCase = Depends(
-        inject_use_case(container.chapter_prereading_use_case)
+    use_case: GetChapterPrereadingUseCase = Depends(
+        inject_use_case(container.get_chapter_prereading_use_case)
     ),
 ) -> ChapterPrereadingResponse | None:
     """Get existing prereading content for a chapter."""
@@ -68,8 +74,8 @@ def get_chapter_prereading(
 async def generate_chapter_prereading(
     chapter_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: ChapterPrereadingUseCase = Depends(
-        inject_use_case(container.chapter_prereading_use_case)
+    use_case: GenerateChapterPrereadingUseCase = Depends(
+        inject_use_case(container.generate_chapter_prereading_use_case)
     ),
 ) -> ChapterPrereadingResponse:
     """Generate prereading content for a chapter."""
@@ -108,8 +114,8 @@ book_prereading_router = APIRouter(prefix="/books", tags=["prereading"])
 def get_book_prereading(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: ChapterPrereadingUseCase = Depends(
-        inject_use_case(container.chapter_prereading_use_case)
+    use_case: GetBookPrereadingUseCase = Depends(
+        inject_use_case(container.get_book_prereading_use_case)
     ),
 ) -> BookPrereadingResponse:
     """Get all prereading content for chapters in a book."""

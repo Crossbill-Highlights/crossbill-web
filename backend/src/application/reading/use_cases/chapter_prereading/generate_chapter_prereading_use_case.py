@@ -1,4 +1,4 @@
-"""Use case for generating and retrieving chapter prereading content."""
+"""Use case for generating chapter prereading content."""
 
 from datetime import UTC, datetime
 
@@ -23,7 +23,7 @@ from src.application.reading.protocols.ebook_text_extraction_service import (
     EbookTextExtractionServiceProtocol,
 )
 from src.domain.common.exceptions import DomainError
-from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
+from src.domain.common.value_objects.ids import ChapterId, UserId
 from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
 )
@@ -32,8 +32,8 @@ from src.exceptions import BookNotFoundError, NotFoundError
 logger = structlog.get_logger(__name__)
 
 
-class ChapterPrereadingUseCase:
-    """Use case for managing chapter prereading content."""
+class GenerateChapterPrereadingUseCase:
+    """Use case for generating chapter prereading content."""
 
     def __init__(
         self,
@@ -50,27 +50,6 @@ class ChapterPrereadingUseCase:
         self.book_repo = book_repo
         self.file_repo = file_repo
         self.ai_prereading_service = ai_prereading_service
-
-    def get_all_prereading_for_book(
-        self, book_id: BookId, user_id: UserId
-    ) -> list[ChapterPrereadingContent]:
-        """Get all prereading content for chapters in a book."""
-        # Verify book ownership by checking chapters exist for this user
-        chapters = self.chapter_repo.find_all_by_book(book_id, user_id)
-        if not chapters:
-            raise NotFoundError(f"Book {book_id.value} not found or has no chapters")
-
-        return self.prereading_repo.find_all_by_book_id(book_id)
-
-    def get_prereading_content(
-        self, chapter_id: ChapterId, user_id: UserId
-    ) -> ChapterPrereadingContent | None:
-        """Get existing prereading content for a chapter."""
-        chapter = self.chapter_repo.find_by_id(chapter_id, user_id)
-        if not chapter:
-            raise NotFoundError(f"Chapter {chapter_id.value} not found")
-
-        return self.prereading_repo.find_by_chapter_id(chapter_id)
 
     async def generate_prereading_content(
         self, chapter_id: ChapterId, user_id: UserId

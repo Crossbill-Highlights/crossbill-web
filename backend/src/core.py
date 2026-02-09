@@ -44,8 +44,14 @@ from src.application.reading.use_cases.bookmarks.delete_bookmark_use_case import
 from src.application.reading.use_cases.bookmarks.get_bookmarks_use_case import (
     GetBookmarksUseCase,
 )
-from src.application.reading.use_cases.chapter_prereading.chapter_prereading_use_case import (
-    ChapterPrereadingUseCase,
+from src.application.reading.use_cases.chapter_prereading.generate_chapter_prereading_use_case import (
+    GenerateChapterPrereadingUseCase,
+)
+from src.application.reading.use_cases.chapter_prereading.get_book_prereading_use_case import (
+    GetBookPrereadingUseCase,
+)
+from src.application.reading.use_cases.chapter_prereading.get_chapter_prereading_use_case import (
+    GetChapterPrereadingUseCase,
 )
 from src.application.reading.use_cases.highlights.highlight_delete_use_case import (
     HighlightDeleteUseCase,
@@ -213,8 +219,18 @@ class Container(containers.DeclarativeContainer):
         file_repo=file_repository,
         ai_summary_service=ai_service,
     )
-    chapter_prereading_use_case = providers.Factory(
-        ChapterPrereadingUseCase,
+    get_chapter_prereading_use_case = providers.Factory(
+        GetChapterPrereadingUseCase,
+        prereading_repo=chapter_prereading_repository,
+        chapter_repo=chapter_repository,
+    )
+    get_book_prereading_use_case = providers.Factory(
+        GetBookPrereadingUseCase,
+        prereading_repo=chapter_prereading_repository,
+        chapter_repo=chapter_repository,
+    )
+    generate_chapter_prereading_use_case = providers.Factory(
+        GenerateChapterPrereadingUseCase,
         prereading_repo=chapter_prereading_repository,
         chapter_repo=chapter_repository,
         text_extraction_service=ebook_text_extraction_service,
