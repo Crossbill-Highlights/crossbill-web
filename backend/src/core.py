@@ -21,29 +21,20 @@ from src.application.learning.use_cases.flashcards.create_flashcard_for_highligh
 from src.application.learning.use_cases.flashcards.delete_flashcard_use_case import (
     DeleteFlashcardUseCase,
 )
+from src.application.learning.use_cases.flashcards.get_flashcard_suggestions_use_case import (
+    GetFlashcardSuggestionsUseCase,
+)
 from src.application.learning.use_cases.flashcards.get_flashcards_by_book_use_case import (
     GetFlashcardsByBookUseCase,
 )
 from src.application.learning.use_cases.flashcards.update_flashcard_use_case import (
     UpdateFlashcardUseCase,
 )
-from src.application.learning.use_cases.flashcards.get_flashcard_suggestions_use_case import (
-    GetFlashcardSuggestionsUseCase,
-)
 from src.application.library.use_cases.book_files.book_cover_use_case import BookCoverUseCase
 from src.application.library.use_cases.book_files.ebook_deletion_use_case import (
     EbookDeletionUseCase,
 )
 from src.application.library.use_cases.book_files.ebook_upload_use_case import EbookUploadUseCase
-from src.application.library.use_cases.book_tag_associations.add_tags_to_book_use_case import (
-    AddTagsToBookUseCase,
-)
-from src.application.library.use_cases.book_tag_associations.get_book_tags_use_case import (
-    GetBookTagsUseCase,
-)
-from src.application.library.use_cases.book_tag_associations.replace_book_tags_use_case import (
-    ReplaceBookTagsUseCase,
-)
 from src.application.library.use_cases.book_management.create_book_use_case import (
     CreateBookUseCase,
 )
@@ -65,6 +56,15 @@ from src.application.library.use_cases.book_queries.get_ereader_metadata_use_cas
 from src.application.library.use_cases.book_queries.get_recently_viewed_books_use_case import (
     GetRecentlyViewedBooksUseCase,
 )
+from src.application.library.use_cases.book_tag_associations.add_tags_to_book_use_case import (
+    AddTagsToBookUseCase,
+)
+from src.application.library.use_cases.book_tag_associations.get_book_tags_use_case import (
+    GetBookTagsUseCase,
+)
+from src.application.library.use_cases.book_tag_associations.replace_book_tags_use_case import (
+    ReplaceBookTagsUseCase,
+)
 from src.application.reading.use_cases.bookmarks.create_bookmark_use_case import (
     CreateBookmarkUseCase,
 )
@@ -82,12 +82,6 @@ from src.application.reading.use_cases.chapter_prereading.get_book_prereading_us
 )
 from src.application.reading.use_cases.chapter_prereading.get_chapter_prereading_use_case import (
     GetChapterPrereadingUseCase,
-)
-from src.application.reading.use_cases.highlights.highlight_delete_use_case import (
-    HighlightDeleteUseCase,
-)
-from src.application.reading.use_cases.highlights.highlight_search_use_case import (
-    HighlightSearchUseCase,
 )
 from src.application.reading.use_cases.highlight_tag_associations.add_tag_to_highlight_by_id_use_case import (
     AddTagToHighlightByIdUseCase,
@@ -121,6 +115,12 @@ from src.application.reading.use_cases.highlight_tags.get_highlight_tags_for_boo
 )
 from src.application.reading.use_cases.highlight_tags.update_highlight_tag_name_use_case import (
     UpdateHighlightTagNameUseCase,
+)
+from src.application.reading.use_cases.highlights.highlight_delete_use_case import (
+    HighlightDeleteUseCase,
+)
+from src.application.reading.use_cases.highlights.highlight_search_use_case import (
+    HighlightSearchUseCase,
 )
 from src.application.reading.use_cases.highlights.highlight_upload_use_case import (
     HighlightUploadUseCase,

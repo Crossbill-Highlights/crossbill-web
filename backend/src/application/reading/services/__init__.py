@@ -14,12 +14,6 @@ from src.application.reading.use_cases.bookmarks.delete_bookmark_use_case import
 from src.application.reading.use_cases.bookmarks.get_bookmarks_use_case import (
     GetBookmarksUseCase,
 )
-from src.application.reading.use_cases.highlights.highlight_delete_use_case import (
-    HighlightDeleteUseCase,
-)
-from src.application.reading.use_cases.highlights.highlight_search_use_case import (
-    HighlightSearchUseCase,
-)
 from src.application.reading.use_cases.highlight_tag_associations.add_tag_to_highlight_by_id_use_case import (
     AddTagToHighlightByIdUseCase,
 )
@@ -53,6 +47,12 @@ from src.application.reading.use_cases.highlight_tags.get_highlight_tags_for_boo
 from src.application.reading.use_cases.highlight_tags.update_highlight_tag_name_use_case import (
     UpdateHighlightTagNameUseCase,
 )
+from src.application.reading.use_cases.highlights.highlight_delete_use_case import (
+    HighlightDeleteUseCase,
+)
+from src.application.reading.use_cases.highlights.highlight_search_use_case import (
+    HighlightSearchUseCase,
+)
 from src.application.reading.use_cases.highlights.highlight_upload_use_case import (
     HighlightUploadData,
     HighlightUploadUseCase,
@@ -75,23 +75,19 @@ from src.application.reading.use_cases.reading_sessions.reading_session_upload_u
 )
 
 __all__ = [
-    # Use cases
-    "CreateBookmarkUseCase",
-    "DeleteBookmarkUseCase",
-    "GetBookmarksUseCase",
-    "HighlightDeleteUseCase",
-    "HighlightSearchUseCase",
     "AddTagToHighlightByIdUseCase",
     "AddTagToHighlightByNameUseCase",
-    "RemoveTagFromHighlightUseCase",
+    # Use cases
+    "CreateBookmarkUseCase",
     "CreateHighlightTagGroupUseCase",
-    "UpdateHighlightTagGroupUseCase",
-    "DeleteHighlightTagGroupUseCase",
-    "UpdateTagGroupAssociationUseCase",
     "CreateHighlightTagUseCase",
+    "DeleteBookmarkUseCase",
+    "DeleteHighlightTagGroupUseCase",
     "DeleteHighlightTagUseCase",
+    "GetBookmarksUseCase",
     "GetHighlightTagsForBookUseCase",
-    "UpdateHighlightTagNameUseCase",
+    "HighlightDeleteUseCase",
+    "HighlightSearchUseCase",
     "HighlightUpdateNoteUseCase",
     # DTOs
     "HighlightUploadData",
@@ -103,4 +99,8 @@ __all__ = [
     "ReadingSessionUploadResult",
     "ReadingSessionUploadUseCase",
     "ReadingSessionWithHighlights",
+    "RemoveTagFromHighlightUseCase",
+    "UpdateHighlightTagGroupUseCase",
+    "UpdateHighlightTagNameUseCase",
+    "UpdateTagGroupAssociationUseCase",
 ]
