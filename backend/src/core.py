@@ -59,9 +59,6 @@ from src.application.library.use_cases.book_queries.get_recently_viewed_books_us
 from src.application.library.use_cases.book_tag_associations.add_tags_to_book_use_case import (
     AddTagsToBookUseCase,
 )
-from src.application.reading.use_cases.chapter_content_use_case import (
-    ChapterContentUseCase,
-)
 from src.application.library.use_cases.book_tag_associations.get_book_tags_use_case import (
     GetBookTagsUseCase,
 )
@@ -76,6 +73,9 @@ from src.application.reading.use_cases.bookmarks.delete_bookmark_use_case import
 )
 from src.application.reading.use_cases.bookmarks.get_bookmarks_use_case import (
     GetBookmarksUseCase,
+)
+from src.application.reading.use_cases.chapter_content_use_case import (
+    ChapterContentUseCase,
 )
 from src.application.reading.use_cases.chapter_prereading.generate_chapter_prereading_use_case import (
     GenerateChapterPrereadingUseCase,
