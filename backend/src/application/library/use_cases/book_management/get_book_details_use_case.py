@@ -12,7 +12,9 @@ from src.application.reading.protocols.highlight_repository import HighlightRepo
 from src.application.reading.protocols.highlight_tag_repository import (
     HighlightTagRepositoryProtocol,
 )
-from src.application.reading.use_cases.highlights.highlight_tag_use_case import HighlightTagUseCase
+from src.application.reading.use_cases.highlight_tags.get_highlight_tags_for_book_use_case import (
+    GetHighlightTagsForBookUseCase,
+)
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
 from src.domain.reading.services.highlight_grouping_service import (
@@ -35,7 +37,7 @@ class GetBookDetailsUseCase:
         highlight_repository: HighlightRepositoryProtocol,
         highlight_tag_repository: HighlightTagRepositoryProtocol,
         book_tag_association_use_case: BookTagAssociationUseCase,
-        highlight_tag_use_case: HighlightTagUseCase,
+        highlight_tag_use_case: GetHighlightTagsForBookUseCase,
         highlight_grouping_service: HighlightGroupingService,
     ) -> None:
         self.book_repository = book_repository
@@ -76,7 +78,7 @@ class GetBookDetailsUseCase:
         book = self.book_repository.save(book)
 
         # Get highlight tags using use case (from reading context)
-        highlight_tags = self.highlight_tag_use_case.get_tags_for_book(book_id, user_id)
+        highlight_tags = self.highlight_tag_use_case.get_tags(book_id, user_id)
 
         # Get all highlights for book (returns domain entities)
         highlights_with_context = self.highlight_repository.search(
