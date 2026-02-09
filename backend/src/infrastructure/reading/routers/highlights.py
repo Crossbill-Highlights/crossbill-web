@@ -9,12 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from src.application.learning.use_cases.flashcards.create_flashcard_for_highlight_use_case import (
     CreateFlashcardForHighlightUseCase,
 )
-from src.application.reading.use_cases.highlights.highlight_delete_use_case import (
-    HighlightDeleteUseCase,
-)
-from src.application.reading.use_cases.highlights.highlight_search_use_case import (
-    HighlightSearchUseCase,
-)
 from src.application.reading.use_cases.highlight_tag_associations.add_tag_to_highlight_by_id_use_case import (
     AddTagToHighlightByIdUseCase,
 )
@@ -47,6 +41,12 @@ from src.application.reading.use_cases.highlight_tags.get_highlight_tags_for_boo
 )
 from src.application.reading.use_cases.highlight_tags.update_highlight_tag_name_use_case import (
     UpdateHighlightTagNameUseCase,
+)
+from src.application.reading.use_cases.highlights.highlight_delete_use_case import (
+    HighlightDeleteUseCase,
+)
+from src.application.reading.use_cases.highlights.highlight_search_use_case import (
+    HighlightSearchUseCase,
 )
 from src.application.reading.use_cases.highlights.highlight_upload_use_case import (
     HighlightUploadData,

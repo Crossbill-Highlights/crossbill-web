@@ -6,8 +6,8 @@ from .update_user_use_case import UpdateUserUseCase
 
 __all__ = [
     "AuthenticateUserUseCase",
-    "RefreshAccessTokenUseCase",
     "GetUserByIdUseCase",
+    "RefreshAccessTokenUseCase",
     "RegisterUserUseCase",
     "UpdateUserUseCase",
 ]
