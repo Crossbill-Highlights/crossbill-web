@@ -5,7 +5,7 @@ from typing import Annotated
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.application.learning.use_cases.flashcards_ai.get_flashcard_suggestions_use_case import (
+from src.application.learning.use_cases.flashcards.get_flashcard_suggestions_use_case import (
     GetFlashcardSuggestionsUseCase,
 )
 from src.core import container
