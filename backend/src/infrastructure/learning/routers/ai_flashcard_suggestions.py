@@ -5,7 +5,9 @@ from typing import Annotated
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.application.learning.use_cases.flashcard_ai_use_case import FlashcardAIUseCase
+from src.application.learning.use_cases.flashcards_ai.get_flashcard_suggestions_use_case import (
+    GetFlashcardSuggestionsUseCase,
+)
 from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
@@ -32,7 +34,9 @@ router = APIRouter(prefix="/highlights", tags=["flashcards"])
 async def get_highlight_flashcard_suggestions(
     highlight_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: FlashcardAIUseCase = Depends(inject_use_case(container.flashcard_ai_use_case)),
+    use_case: GetFlashcardSuggestionsUseCase = Depends(
+        inject_use_case(container.get_flashcard_suggestions_use_case)
+    ),
 ) -> HighlightFlashcardSuggestionsResponse:
     """
     Get AI-generated flashcard suggestions for a highlight.
@@ -50,9 +54,7 @@ async def get_highlight_flashcard_suggestions(
         HTTPException 500: For unexpected errors
     """
     try:
-        suggestions_data = await use_case.get_flashcard_suggestions(
-            highlight_id, current_user.id.value
-        )
+        suggestions_data = await use_case.get_suggestions(highlight_id, current_user.id.value)
 
         # Convert data classes to Pydantic schemas
         suggestions = [

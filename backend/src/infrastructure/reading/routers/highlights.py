@@ -6,7 +6,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from src.application.learning.use_cases.flashcard_use_case import FlashcardUseCase
+from src.application.learning.use_cases.flashcards.create_flashcard_for_highlight_use_case import (
+    CreateFlashcardForHighlightUseCase,
+)
 from src.application.reading.use_cases.highlights.highlight_delete_use_case import (
     HighlightDeleteUseCase,
 )
@@ -350,7 +352,9 @@ def create_flashcard_for_highlight(
     highlight_id: int,
     request: FlashcardCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: FlashcardUseCase = Depends(inject_use_case(container.flashcard_use_case)),
+    use_case: CreateFlashcardForHighlightUseCase = Depends(
+        inject_use_case(container.create_flashcard_for_highlight_use_case)
+    ),
 ) -> FlashcardCreateResponse:
     """
     Create a flashcard for a highlight.
@@ -370,7 +374,7 @@ def create_flashcard_for_highlight(
         HTTPException: If highlight not found or creation fails
     """
     try:
-        flashcard_entity = use_case.create_flashcard_for_highlight(
+        flashcard_entity = use_case.create_flashcard(
             highlight_id=highlight_id,
             user_id=current_user.id.value,
             question=request.question,
