@@ -21,7 +21,18 @@ from src.application.reading.use_cases.highlights.highlight_tag_association_use_
 from src.application.reading.use_cases.highlights.highlight_tag_group_use_case import (
     HighlightTagGroupUseCase,
 )
-from src.application.reading.use_cases.highlights.highlight_tag_use_case import HighlightTagUseCase
+from src.application.reading.use_cases.highlight_tags.create_highlight_tag_use_case import (
+    CreateHighlightTagUseCase,
+)
+from src.application.reading.use_cases.highlight_tags.delete_highlight_tag_use_case import (
+    DeleteHighlightTagUseCase,
+)
+from src.application.reading.use_cases.highlight_tags.get_highlight_tags_for_book_use_case import (
+    GetHighlightTagsForBookUseCase,
+)
+from src.application.reading.use_cases.highlight_tags.update_highlight_tag_name_use_case import (
+    UpdateHighlightTagNameUseCase,
+)
 from src.application.reading.use_cases.highlights.highlight_upload_use_case import (
     HighlightUploadData,
     HighlightUploadUseCase,
@@ -592,7 +603,9 @@ def delete_highlights(
 def get_highlight_tags(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: HighlightTagUseCase = Depends(inject_use_case(container.highlight_tag_use_case)),
+    use_case: GetHighlightTagsForBookUseCase = Depends(
+        inject_use_case(container.get_highlight_tags_for_book_use_case)
+    ),
 ) -> HighlightTagsResponse:
     """
     Get all highlight tags for a book.
@@ -607,7 +620,7 @@ def get_highlight_tags(
         HTTPException: If book is not found
     """
     try:
-        tags = use_case.get_tags_for_book(book_id, current_user.id.value)
+        tags = use_case.get_tags(book_id, current_user.id.value)
         return HighlightTagsResponse(
             tags=[
                 HighlightTag(
@@ -638,7 +651,9 @@ def create_highlight_tag(
     book_id: int,
     request: HighlightTagCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: HighlightTagUseCase = Depends(inject_use_case(container.highlight_tag_use_case)),
+    use_case: CreateHighlightTagUseCase = Depends(
+        inject_use_case(container.create_highlight_tag_use_case)
+    ),
 ) -> HighlightTag:
     """
     Create a new highlight tag for a book.
@@ -685,7 +700,9 @@ def delete_highlight_tag(
     book_id: int,
     tag_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: HighlightTagUseCase = Depends(inject_use_case(container.highlight_tag_use_case)),
+    use_case: DeleteHighlightTagUseCase = Depends(
+        inject_use_case(container.delete_highlight_tag_use_case)
+    ),
 ) -> None:
     """
     Delete a highlight tag from a book.
@@ -739,7 +756,9 @@ def update_highlight_tag(
     request: HighlightTagUpdateRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-    tag_use_case: HighlightTagUseCase = Depends(inject_use_case(container.highlight_tag_use_case)),
+    tag_use_case: UpdateHighlightTagNameUseCase = Depends(
+        inject_use_case(container.update_highlight_tag_name_use_case)
+    ),
     group_use_case: HighlightTagGroupUseCase = Depends(
         inject_use_case(container.highlight_tag_group_use_case)
     ),

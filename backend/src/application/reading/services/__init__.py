@@ -26,7 +26,18 @@ from src.application.reading.use_cases.highlights.highlight_tag_association_use_
 from src.application.reading.use_cases.highlights.highlight_tag_group_use_case import (
     HighlightTagGroupUseCase,
 )
-from src.application.reading.use_cases.highlights.highlight_tag_use_case import HighlightTagUseCase
+from src.application.reading.use_cases.highlight_tags.create_highlight_tag_use_case import (
+    CreateHighlightTagUseCase,
+)
+from src.application.reading.use_cases.highlight_tags.delete_highlight_tag_use_case import (
+    DeleteHighlightTagUseCase,
+)
+from src.application.reading.use_cases.highlight_tags.get_highlight_tags_for_book_use_case import (
+    GetHighlightTagsForBookUseCase,
+)
+from src.application.reading.use_cases.highlight_tags.update_highlight_tag_name_use_case import (
+    UpdateHighlightTagNameUseCase,
+)
 from src.application.reading.use_cases.highlights.highlight_upload_use_case import (
     HighlightUploadData,
     HighlightUploadUseCase,
@@ -57,7 +68,10 @@ __all__ = [
     "HighlightSearchUseCase",
     "HighlightTagAssociationUseCase",
     "HighlightTagGroupUseCase",
-    "HighlightTagUseCase",
+    "CreateHighlightTagUseCase",
+    "DeleteHighlightTagUseCase",
+    "GetHighlightTagsForBookUseCase",
+    "UpdateHighlightTagNameUseCase",
     "HighlightUpdateNoteUseCase",
     # DTOs
     "HighlightUploadData",

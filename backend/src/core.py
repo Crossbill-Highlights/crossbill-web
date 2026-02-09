@@ -81,8 +81,17 @@ from src.application.reading.use_cases.highlights.highlight_tag_association_use_
 from src.application.reading.use_cases.highlights.highlight_tag_group_use_case import (
     HighlightTagGroupUseCase,
 )
-from src.application.reading.use_cases.highlights.highlight_tag_use_case import (
-    HighlightTagUseCase,
+from src.application.reading.use_cases.highlight_tags.create_highlight_tag_use_case import (
+    CreateHighlightTagUseCase,
+)
+from src.application.reading.use_cases.highlight_tags.delete_highlight_tag_use_case import (
+    DeleteHighlightTagUseCase,
+)
+from src.application.reading.use_cases.highlight_tags.get_highlight_tags_for_book_use_case import (
+    GetHighlightTagsForBookUseCase,
+)
+from src.application.reading.use_cases.highlight_tags.update_highlight_tag_name_use_case import (
+    UpdateHighlightTagNameUseCase,
 )
 from src.application.reading.use_cases.highlights.highlight_upload_use_case import (
     HighlightUploadUseCase,
@@ -191,8 +200,24 @@ class Container(containers.DeclarativeContainer):
         HighlightUpdateNoteUseCase,
         highlight_repository=highlight_repository,
     )
-    highlight_tag_use_case = providers.Factory(
-        HighlightTagUseCase,
+    create_highlight_tag_use_case = providers.Factory(
+        CreateHighlightTagUseCase,
+        tag_repository=highlight_tag_repository,
+        book_repository=book_repository,
+    )
+
+    delete_highlight_tag_use_case = providers.Factory(
+        DeleteHighlightTagUseCase,
+        tag_repository=highlight_tag_repository,
+    )
+
+    update_highlight_tag_name_use_case = providers.Factory(
+        UpdateHighlightTagNameUseCase,
+        tag_repository=highlight_tag_repository,
+    )
+
+    get_highlight_tags_for_book_use_case = providers.Factory(
+        GetHighlightTagsForBookUseCase,
         tag_repository=highlight_tag_repository,
         book_repository=book_repository,
     )
@@ -305,7 +330,7 @@ class Container(containers.DeclarativeContainer):
         highlight_repository=highlight_repository,
         highlight_tag_repository=highlight_tag_repository,
         book_tag_association_use_case=book_tag_association_use_case,
-        highlight_tag_use_case=highlight_tag_use_case,
+        highlight_tag_use_case=get_highlight_tags_for_book_use_case,
         highlight_grouping_service=highlight_grouping_service,
     )
 
