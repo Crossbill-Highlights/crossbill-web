@@ -35,7 +35,15 @@ from src.application.library.use_cases.book_queries.get_ereader_metadata_use_cas
 from src.application.library.use_cases.book_queries.get_recently_viewed_books_use_case import (
     GetRecentlyViewedBooksUseCase,
 )
-from src.application.reading.use_cases.bookmarks.bookmark_use_case import BookmarkUseCase
+from src.application.reading.use_cases.bookmarks.create_bookmark_use_case import (
+    CreateBookmarkUseCase,
+)
+from src.application.reading.use_cases.bookmarks.delete_bookmark_use_case import (
+    DeleteBookmarkUseCase,
+)
+from src.application.reading.use_cases.bookmarks.get_bookmarks_use_case import (
+    GetBookmarksUseCase,
+)
 from src.application.reading.use_cases.chapter_prereading.chapter_prereading_use_case import (
     ChapterPrereadingUseCase,
 )
@@ -130,11 +138,21 @@ class Container(containers.DeclarativeContainer):
     highlight_grouping_service = providers.Factory(HighlightGroupingService)
 
     # Reading module, application use cases
-    bookmark_use_case = providers.Factory(
-        BookmarkUseCase,
+    create_bookmark_use_case = providers.Factory(
+        CreateBookmarkUseCase,
         book_repository=book_repository,
         bookmark_repository=bookmark_repository,
         highlight_repository=highlight_repository,
+    )
+    delete_bookmark_use_case = providers.Factory(
+        DeleteBookmarkUseCase,
+        book_repository=book_repository,
+        bookmark_repository=bookmark_repository,
+    )
+    get_bookmarks_use_case = providers.Factory(
+        GetBookmarksUseCase,
+        book_repository=book_repository,
+        bookmark_repository=bookmark_repository,
     )
 
     highlight_search_use_case = providers.Factory(

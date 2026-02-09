@@ -5,7 +5,15 @@ All services have been migrated to use cases following DDD hexagonal architectur
 """
 
 # Re-export use cases (these are in use_cases/ subdirectories now)
-from src.application.reading.use_cases.bookmarks.bookmark_use_case import BookmarkUseCase
+from src.application.reading.use_cases.bookmarks.create_bookmark_use_case import (
+    CreateBookmarkUseCase,
+)
+from src.application.reading.use_cases.bookmarks.delete_bookmark_use_case import (
+    DeleteBookmarkUseCase,
+)
+from src.application.reading.use_cases.bookmarks.get_bookmarks_use_case import (
+    GetBookmarksUseCase,
+)
 from src.application.reading.use_cases.highlights.highlight_delete_use_case import (
     HighlightDeleteUseCase,
 )
@@ -42,7 +50,9 @@ from src.application.reading.use_cases.reading_sessions.reading_session_upload_u
 
 __all__ = [
     # Use cases
-    "BookmarkUseCase",
+    "CreateBookmarkUseCase",
+    "DeleteBookmarkUseCase",
+    "GetBookmarksUseCase",
     "HighlightDeleteUseCase",
     "HighlightSearchUseCase",
     "HighlightTagAssociationUseCase",

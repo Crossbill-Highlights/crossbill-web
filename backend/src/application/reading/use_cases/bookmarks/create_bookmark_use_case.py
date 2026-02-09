@@ -1,18 +1,18 @@
-"""Application service for bookmark operations."""
+"""Use case for creating bookmarks."""
 
 import structlog
 
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
-from src.domain.common.value_objects.ids import BookId, BookmarkId, HighlightId, UserId
+from src.domain.common.value_objects.ids import BookId, HighlightId, UserId
 from src.domain.reading.entities.bookmark import Bookmark
 from src.exceptions import BookNotFoundError, ValidationError
 
 logger = structlog.get_logger(__name__)
 
 
-class BookmarkUseCase:
+class CreateBookmarkUseCase:
     def __init__(
         self,
         book_repository: BookRepositoryProtocol,
@@ -83,63 +83,3 @@ class BookmarkUseCase:
             highlight_id=highlight_id,
         )
         return bookmark
-
-    def delete_bookmark(self, book_id: int, bookmark_id: int, user_id: int) -> None:
-        """
-        Delete a bookmark (idempotent operation).
-
-        Args:
-            book_id: ID of the book (for validation)
-            bookmark_id: ID of the bookmark to delete
-            user_id: ID of the user
-
-        Raises:
-            BookNotFoundError: If book is not found
-        """
-        # Convert to value objects
-        book_id_vo = BookId(book_id)
-        bookmark_id_vo = BookmarkId(bookmark_id)
-        user_id_vo = UserId(user_id)
-
-        # Validate book exists and belongs to user
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
-
-        # Delete bookmark (idempotent)
-        deleted = self.bookmark_repository.delete(bookmark_id_vo, user_id_vo)
-
-        if deleted:
-            logger.info("deleted_bookmark", bookmark_id=bookmark_id, book_id=book_id)
-        else:
-            logger.info(
-                "bookmark_not_found_for_deletion",
-                bookmark_id=bookmark_id,
-                book_id=book_id,
-            )
-
-    def get_bookmarks_by_book(self, book_id: int, user_id: int) -> list[Bookmark]:
-        """
-        Get all bookmarks for a book.
-
-        Args:
-            book_id: ID of the book
-            user_id: ID of the user
-
-        Returns:
-            List of bookmark entities
-
-        Raises:
-            BookNotFoundError: If book is not found
-        """
-        # Convert to value objects
-        book_id_vo = BookId(book_id)
-        user_id_vo = UserId(user_id)
-
-        # Validate book exists and belongs to user
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
-
-        # Get bookmarks
-        return self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)
