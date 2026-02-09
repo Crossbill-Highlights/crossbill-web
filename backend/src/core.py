@@ -6,17 +6,33 @@ from src.application.identity.use_cases.register_user_use_case import RegisterUs
 from src.application.identity.use_cases.update_user_use_case import UpdateUserUseCase
 from src.application.learning.use_cases.flashcard_ai_use_case import FlashcardAIUseCase
 from src.application.learning.use_cases.flashcard_use_case import FlashcardUseCase
-from src.application.library.use_cases.book_cover_use_case import BookCoverUseCase
-from src.application.library.use_cases.book_management_use_case import BookManagementUseCase
-from src.application.library.use_cases.book_tag_association_use_case import (
+from src.application.library.use_cases.book_files.book_cover_use_case import BookCoverUseCase
+from src.application.library.use_cases.book_files.ebook_deletion_use_case import (
+    EbookDeletionUseCase,
+)
+from src.application.library.use_cases.book_files.ebook_upload_use_case import EbookUploadUseCase
+from src.application.library.use_cases.book_management.book_tag_association_use_case import (
     BookTagAssociationUseCase,
 )
-from src.application.library.use_cases.ebook_deletion_use_case import EbookDeletionUseCase
-from src.application.library.use_cases.ebook_upload_use_case import EbookUploadUseCase
-from src.application.library.use_cases.get_books_with_counts_use_case import (
+from src.application.library.use_cases.book_management.create_book_use_case import (
+    CreateBookUseCase,
+)
+from src.application.library.use_cases.book_management.delete_book_use_case import (
+    DeleteBookUseCase,
+)
+from src.application.library.use_cases.book_management.get_book_details_use_case import (
+    GetBookDetailsUseCase,
+)
+from src.application.library.use_cases.book_management.update_book_use_case import (
+    UpdateBookUseCase,
+)
+from src.application.library.use_cases.book_queries.get_books_with_counts_use_case import (
     GetBooksWithCountsUseCase,
 )
-from src.application.library.use_cases.get_recently_viewed_books_use_case import (
+from src.application.library.use_cases.book_queries.get_ereader_metadata_use_case import (
+    GetEreaderMetadataUseCase,
+)
+from src.application.library.use_cases.book_queries.get_recently_viewed_books_use_case import (
     GetRecentlyViewedBooksUseCase,
 )
 from src.application.reading.use_cases.bookmark_use_case import BookmarkUseCase
@@ -217,18 +233,41 @@ class Container(containers.DeclarativeContainer):
         epub_toc_parser=epub_toc_parser_service,
     )
 
-    book_management_use_case = providers.Factory(
-        BookManagementUseCase,
+    create_book_use_case = providers.Factory(
+        CreateBookUseCase,
+        book_repository=book_repository,
+        book_tag_association_use_case=book_tag_association_use_case,
+    )
+
+    get_book_details_use_case = providers.Factory(
+        GetBookDetailsUseCase,
         book_repository=book_repository,
         chapter_repository=chapter_repository,
         bookmark_repository=bookmark_repository,
         highlight_repository=highlight_repository,
         highlight_tag_repository=highlight_tag_repository,
-        flashcard_repository=flashcard_repository,
         book_tag_association_use_case=book_tag_association_use_case,
-        ebook_deletion_use_case=ebook_deletion_use_case,
         highlight_tag_use_case=highlight_tag_use_case,
         highlight_grouping_service=highlight_grouping_service,
+    )
+
+    update_book_use_case = providers.Factory(
+        UpdateBookUseCase,
+        book_repository=book_repository,
+        highlight_repository=highlight_repository,
+        flashcard_repository=flashcard_repository,
+        book_tag_association_use_case=book_tag_association_use_case,
+    )
+
+    delete_book_use_case = providers.Factory(
+        DeleteBookUseCase,
+        book_repository=book_repository,
+        ebook_deletion_use_case=ebook_deletion_use_case,
+    )
+
+    get_ereader_metadata_use_case = providers.Factory(
+        GetEreaderMetadataUseCase,
+        book_repository=book_repository,
     )
 
     # Learning module use cases

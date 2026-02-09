@@ -5,9 +5,14 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from src.application.library.use_cases.book_cover_use_case import BookCoverUseCase
-from src.application.library.use_cases.book_management_use_case import BookManagementUseCase
-from src.application.library.use_cases.ebook_upload_use_case import EbookUploadUseCase
+from src.application.library.use_cases.book_files.book_cover_use_case import BookCoverUseCase
+from src.application.library.use_cases.book_files.ebook_upload_use_case import EbookUploadUseCase
+from src.application.library.use_cases.book_management.create_book_use_case import (
+    CreateBookUseCase,
+)
+from src.application.library.use_cases.book_queries.get_ereader_metadata_use_case import (
+    GetEreaderMetadataUseCase,
+)
 from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
@@ -34,7 +39,12 @@ router = APIRouter(prefix="/ereader", tags=["ereader"])
 def create_book(
     book_data: BookCreate,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookManagementUseCase = Depends(inject_use_case(container.book_management_use_case)),
+    create_use_case: CreateBookUseCase = Depends(
+        inject_use_case(container.create_book_use_case)
+    ),
+    metadata_use_case: GetEreaderMetadataUseCase = Depends(
+        inject_use_case(container.get_ereader_metadata_use_case)
+    ),
 ) -> EreaderBookMetadata:
     """
     Create or get a book by client_book_id.
@@ -51,9 +61,9 @@ def create_book(
         EreaderBookMetadata with book_id, bookname, author, has_cover, has_epub
     """
     try:
-        use_case.create_book(book_data, current_user.id.value)
+        create_use_case.create_book(book_data, current_user.id.value)
 
-        metadata = use_case.get_metadata_for_ereader(
+        metadata = metadata_use_case.get_metadata_for_ereader(
             book_data.client_book_id, current_user.id.value
         )
         return EreaderBookMetadata(
@@ -89,7 +99,9 @@ def create_book(
 def get_book_metadata(
     client_book_id: str,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookManagementUseCase = Depends(inject_use_case(container.book_management_use_case)),
+    use_case: GetEreaderMetadataUseCase = Depends(
+        inject_use_case(container.get_ereader_metadata_use_case)
+    ),
 ) -> EreaderBookMetadata:
     """
     Get basic book metadata by client_book_id for ereader operations.
