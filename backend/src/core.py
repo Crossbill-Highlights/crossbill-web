@@ -4,8 +4,24 @@ from sqlalchemy.orm import Session
 from src.application.identity.use_cases.authentication_use_case import AuthenticationUseCase
 from src.application.identity.use_cases.register_user_use_case import RegisterUserUseCase
 from src.application.identity.use_cases.update_user_use_case import UpdateUserUseCase
-from src.application.learning.use_cases.flashcard_ai_use_case import FlashcardAIUseCase
-from src.application.learning.use_cases.flashcard_use_case import FlashcardUseCase
+from src.application.learning.use_cases.flashcards.create_flashcard_for_book_use_case import (
+    CreateFlashcardForBookUseCase,
+)
+from src.application.learning.use_cases.flashcards.create_flashcard_for_highlight_use_case import (
+    CreateFlashcardForHighlightUseCase,
+)
+from src.application.learning.use_cases.flashcards.delete_flashcard_use_case import (
+    DeleteFlashcardUseCase,
+)
+from src.application.learning.use_cases.flashcards.get_flashcards_by_book_use_case import (
+    GetFlashcardsByBookUseCase,
+)
+from src.application.learning.use_cases.flashcards.update_flashcard_use_case import (
+    UpdateFlashcardUseCase,
+)
+from src.application.learning.use_cases.flashcards_ai.get_flashcard_suggestions_use_case import (
+    GetFlashcardSuggestionsUseCase,
+)
 from src.application.library.use_cases.book_files.book_cover_use_case import BookCoverUseCase
 from src.application.library.use_cases.book_files.ebook_deletion_use_case import (
     EbookDeletionUseCase,
@@ -313,15 +329,37 @@ class Container(containers.DeclarativeContainer):
     )
 
     # Learning module use cases
-    flashcard_use_case = providers.Factory(
-        FlashcardUseCase,
+    create_flashcard_for_highlight_use_case = providers.Factory(
+        CreateFlashcardForHighlightUseCase,
+        flashcard_repository=flashcard_repository,
+        highlight_repository=highlight_repository,
+    )
+
+    create_flashcard_for_book_use_case = providers.Factory(
+        CreateFlashcardForBookUseCase,
+        flashcard_repository=flashcard_repository,
+        book_repository=book_repository,
+    )
+
+    get_flashcards_by_book_use_case = providers.Factory(
+        GetFlashcardsByBookUseCase,
         flashcard_repository=flashcard_repository,
         book_repository=book_repository,
         highlight_repository=highlight_repository,
     )
 
-    flashcard_ai_use_case = providers.Factory(
-        FlashcardAIUseCase,
+    update_flashcard_use_case = providers.Factory(
+        UpdateFlashcardUseCase,
+        flashcard_repository=flashcard_repository,
+    )
+
+    delete_flashcard_use_case = providers.Factory(
+        DeleteFlashcardUseCase,
+        flashcard_repository=flashcard_repository,
+    )
+
+    get_flashcard_suggestions_use_case = providers.Factory(
+        GetFlashcardSuggestionsUseCase,
         highlight_repository=highlight_repository,
         ai_flashcard_service=ai_service,
     )

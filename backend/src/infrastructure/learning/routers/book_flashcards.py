@@ -4,7 +4,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from src.application.learning.use_cases.flashcard_use_case import FlashcardUseCase
+from src.application.learning.use_cases.flashcards.create_flashcard_for_book_use_case import (
+    CreateFlashcardForBookUseCase,
+)
+from src.application.learning.use_cases.flashcards.get_flashcards_by_book_use_case import (
+    GetFlashcardsByBookUseCase,
+)
 from src.core import container
 from src.domain.common import DomainError
 from src.domain.identity import User
@@ -34,7 +39,9 @@ def create_flashcard_for_book(
     book_id: int,
     request: FlashcardCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: FlashcardUseCase = Depends(inject_use_case(container.flashcard_use_case)),
+    use_case: CreateFlashcardForBookUseCase = Depends(
+        inject_use_case(container.create_flashcard_for_book_use_case)
+    ),
 ) -> FlashcardCreateResponse:
     """
     Create a standalone flashcard for a book (without a highlight).
@@ -54,7 +61,7 @@ def create_flashcard_for_book(
         HTTPException: If book not found or creation fails
     """
     try:
-        flashcard_entity = use_case.create_flashcard_for_book(
+        flashcard_entity = use_case.create_flashcard(
             book_id=book_id,
             user_id=current_user.id.value,
             question=request.question,
@@ -94,7 +101,9 @@ def create_flashcard_for_book(
 def get_flashcards_for_book(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: FlashcardUseCase = Depends(inject_use_case(container.flashcard_use_case)),
+    use_case: GetFlashcardsByBookUseCase = Depends(
+        inject_use_case(container.get_flashcards_by_book_use_case)
+    ),
 ) -> FlashcardsWithHighlightsResponse:
     """
     Get all flashcards for a book with embedded highlight data.
@@ -113,7 +122,7 @@ def get_flashcards_for_book(
     """
     try:
         # Get flashcards with highlights from use case (returns DTOs)
-        flashcards_with_highlights = use_case.get_flashcards_by_book(book_id, current_user.id.value)
+        flashcards_with_highlights = use_case.get_flashcards(book_id, current_user.id.value)
 
         # Convert DTOs to Pydantic schemas
         flashcards = []
