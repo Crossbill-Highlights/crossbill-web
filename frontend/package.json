@@ -39,7 +39,7 @@
     "react-swipeable": "^7.0.2"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^10.0.1",
     "@tanstack/react-query-devtools": "^5.91.1",
     "@tanstack/react-router-devtools": "^1.143.4",
     "@tanstack/router-cli": "^1.143.4",
