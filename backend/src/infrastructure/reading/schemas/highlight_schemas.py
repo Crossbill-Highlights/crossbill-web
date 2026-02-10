@@ -169,6 +169,10 @@ class BookDetails(BaseModel):
         ..., description="List of highlight tag groups for this book"
     )
     bookmarks: list[Bookmark] = Field(..., description="List of bookmarks for this book")
+    book_flashcards: list[Flashcard] = Field(
+        default_factory=list,
+        description="Book-level flashcards not associated with any highlight",
+    )
     chapters: list[ChapterWithHighlights] = Field(
         ..., description="List of chapters with highlights"
     )

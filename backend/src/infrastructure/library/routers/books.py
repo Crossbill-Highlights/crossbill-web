@@ -172,6 +172,17 @@ def _build_book_details_schema(agg: BookDetailsAggregation) -> BookDetails:
             )
             for b in agg.bookmarks
         ],
+        book_flashcards=[
+            Flashcard(
+                id=f.id.value,
+                user_id=f.user_id.value,
+                book_id=f.book_id.value,
+                highlight_id=None,
+                question=f.question,
+                answer=f.answer,
+            )
+            for f in agg.book_flashcards
+        ],
         chapters=_map_chapters_to_schemas(agg.chapters_with_highlights),
         created_at=agg.book.created_at,
         updated_at=agg.book.updated_at,
