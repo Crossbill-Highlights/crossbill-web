@@ -22,6 +22,8 @@ import {
 } from './FlashcardChapterList.tsx';
 import { FlashcardEditDialog } from './FlashcardEditDialog.tsx';
 
+const BOOK_FLASHCARDS_KEY = -1;
+
 interface FlashcardsTabProps {
   book: BookDetails;
   isDesktop: boolean;
@@ -57,7 +59,7 @@ export const FlashcardsTab = ({
 
   // Extract all flashcards with context from book chapters
   const allFlashcardsWithContext = useMemo((): FlashcardWithContext[] => {
-    return flatMap(bookChapters, (chapter: ChapterWithHighlights) =>
+    const highlightFlashcards = flatMap(bookChapters, (chapter: ChapterWithHighlights) =>
       flatMap(chapter.highlights, (highlight: Highlight) =>
         highlight.flashcards.map((flashcard: Flashcard) => ({
           ...flashcard,
@@ -68,7 +70,17 @@ export const FlashcardsTab = ({
         }))
       )
     );
-  }, [bookChapters]);
+
+    const bookLevelFlashcards: FlashcardWithContext[] = (book.book_flashcards ?? []).map((fc) => ({
+      ...fc,
+      highlight: null,
+      chapterName: 'Book Flashcards',
+      chapterId: null,
+      highlightTags: [],
+    }));
+
+    return [...highlightFlashcards, ...bookLevelFlashcards];
+  }, [bookChapters, book.book_flashcards]);
 
   // Filter flashcards by tag and search
   const filteredFlashcards = useMemo((): FlashcardWithContext[] => {
@@ -96,13 +108,18 @@ export const FlashcardsTab = ({
   const flashcardChapters = useMemo((): FlashcardChapterData[] => {
     const grouped: Partial<Record<number, FlashcardWithContext[]>> = {};
     for (const fc of filteredFlashcards) {
-      if (!grouped[fc.chapterId]) {
-        grouped[fc.chapterId] = [];
+      const key = fc.chapterId ?? BOOK_FLASHCARDS_KEY;
+      if (!grouped[key]) {
+        grouped[key] = [];
       }
-      grouped[fc.chapterId]!.push(fc);
+      grouped[key]!.push(fc);
     }
 
-    const result = Object.entries(grouped)
+    // Separate book-level flashcards from chapter flashcards
+    const bookFlashcardsGroup = grouped[BOOK_FLASHCARDS_KEY];
+    delete grouped[BOOK_FLASHCARDS_KEY];
+
+    const chapterResults = Object.entries(grouped)
       .filter((entry): entry is [string, FlashcardWithContext[]] => entry[1] !== undefined)
       .map(([chapterId, flashcards]) => ({
         id: Number(chapterId),
@@ -110,14 +127,23 @@ export const FlashcardsTab = ({
         flashcards,
       }));
 
+    // Append book-level flashcards at the end
+    if (bookFlashcardsGroup && bookFlashcardsGroup.length > 0) {
+      chapterResults.push({
+        id: BOOK_FLASHCARDS_KEY,
+        name: 'Book Flashcards',
+        flashcards: bookFlashcardsGroup,
+      });
+    }
+
     if (isReversed) {
-      return [...result].reverse().map((chapter) => ({
+      return [...chapterResults].reverse().map((chapter) => ({
         ...chapter,
         flashcards: [...chapter.flashcards].reverse(),
       }));
     }
 
-    return result;
+    return chapterResults;
   }, [filteredFlashcards, isReversed]);
 
   // Compute empty message based on state
