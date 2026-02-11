@@ -207,21 +207,20 @@ class XPoint:
             "char_offset": self.char_offset,
         }
 
-    def compare_to(self, other: XPoint) -> int:  # noqa: PLR0911
+    def compare_to(self, other: XPoint) -> int | None:  # noqa: PLR0911
         """
         Compare this XPoint to another for ordering.
 
         Comparison order:
         1. doc_fragment_index (None treated as 1)
-        2. XPath segments (element name, then index for each segment)
+        2. XPath segments (element name must match, then compare indices)
         3. text_node_index
         4. char_offset
 
-        Note: This comparison provides deterministic ordering but may not reflect
-        actual document reading order when comparing siblings with different tag names.
-        Sibling elements are compared alphabetically by tag name (e.g., "div" < "p"),
-        which may differ from their actual order in the DOM. This is acceptable for
-        most use cases where highlights are within similar structures.
+        When two XPath segments at the same depth have different element names
+        (e.g., "p" vs "table"), the relative order cannot be determined from the
+        xpoint strings alone - it depends on the actual DOM structure. In this case,
+        None is returned to indicate the comparison is inconclusive.
 
         Args:
             other: XPoint to compare to
@@ -230,6 +229,7 @@ class XPoint:
             -1 if self < other (self comes before other)
              0 if self == other (same position)
              1 if self > other (self comes after other)
+             None if ordering cannot be determined (different element names at same depth)
         """
         # Compare doc_fragment_index (None treated as 1)
         self_frag = self.doc_fragment_index if self.doc_fragment_index is not None else 1
@@ -247,11 +247,11 @@ class XPoint:
             name_self, idx_self = seg_self
             name_other, idx_other = seg_other
 
-            # First compare element names (alphabetically)
+            # Different element names at the same depth: ordering is unknown
             if name_self != name_other:
-                return -1 if name_self < name_other else 1
+                return None
 
-            # Then compare indices
+            # Same element name: compare indices
             if idx_self != idx_other:
                 return -1 if idx_self < idx_other else 1
 
@@ -342,6 +342,10 @@ class XPointRange:
         """
         Check if a point falls within this range.
 
+        Returns False when the comparison is inconclusive (different element
+        names at the same xpath depth), since we cannot reliably determine
+        document order from xpoint strings alone in that case.
+
         Args:
             point: XPoint to check
 
@@ -351,5 +355,8 @@ class XPointRange:
         # Point must be >= start and <= end
         cmp_start = point.compare_to(self.start)
         cmp_end = point.compare_to(self.end)
+
+        if cmp_start is None or cmp_end is None:
+            return False
 
         return cmp_start >= 0 and cmp_end <= 0

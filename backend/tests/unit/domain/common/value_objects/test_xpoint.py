@@ -266,6 +266,27 @@ class TestXPointComparison:
         xpoint3 = XPoint.parse("/body/DocFragment[2]/body/div[1]/section[2]/p[1]/text().0")
         assert xpoint1.compare_to(xpoint3) == -1  # section[1] < section[2]
 
+    def test_compare_different_element_names_returns_none(self) -> None:
+        """Different element names at the same depth are incomparable."""
+        xpoint1 = XPoint.parse("/body/div[1]/p[5]/text().0")
+        xpoint2 = XPoint.parse("/body/div[1]/table[1]/text().0")
+        assert xpoint1.compare_to(xpoint2) is None
+        assert xpoint2.compare_to(xpoint1) is None
+
+    def test_compare_different_names_deeper_in_path(self) -> None:
+        """Different element names deeper in the xpath are also incomparable."""
+        xpoint1 = XPoint.parse("/body/DocFragment[14]/body/div[1]/section[2]/p[1]/text().0")
+        xpoint2 = XPoint.parse(
+            "/body/DocFragment[14]/body/div[1]/section[2]/blockquote[1]/text().0"
+        )
+        assert xpoint1.compare_to(xpoint2) is None
+
+    def test_compare_same_fragment_different_body_children(self) -> None:
+        """Different element names as body children are incomparable."""
+        xpoint1 = XPoint.parse("/body/DocFragment[14]/body/h2/text().0")
+        xpoint2 = XPoint.parse("/body/DocFragment[14]/body/div[1]/text().0")
+        assert xpoint1.compare_to(xpoint2) is None
+
 
 class TestXPointRange:
     """Test suite for XPointRange operations."""
@@ -310,6 +331,34 @@ class TestXPointRange:
         xpoint_out = XPoint.parse("/body/DocFragment[1]/body/div/p[5]/text().50")
         assert xpoint_range.contains(xpoint_in) is True
         assert xpoint_range.contains(xpoint_out) is False
+
+    def test_contains_returns_false_when_comparison_inconclusive(self) -> None:
+        """Contains returns False when element names differ at the divergence point.
+
+        This prevents false positives where a highlight from a completely different
+        part of the book matches because its element name happens to fall alphabetically
+        between the range's start and end element names.
+        """
+        # Session range: starts at p[15], ends at table[1] (different element names)
+        xpoint_range = XPointRange(
+            start=XPoint.parse("/body/DocFragment[14]/body/div[1]/p[15]/text().0"),
+            end=XPoint.parse("/body/DocFragment[14]/body/div[1]/table[1]/text().50"),
+        )
+        # Highlight in a "section" element - alphabetically between "p" and "table"
+        # but could be anywhere in the actual document
+        highlight = XPoint.parse("/body/DocFragment[14]/body/div[1]/section[1]/p[3]/text().100")
+        assert xpoint_range.contains(highlight) is False
+
+    def test_contains_works_when_elements_match(self) -> None:
+        """Contains works normally when all element names match at each level."""
+        xpoint_range = XPointRange.parse(
+            "/body/DocFragment[14]/body/div[1]/p[15]/text().0",
+            "/body/DocFragment[14]/body/div[1]/p[20]/text().100",
+        )
+        highlight_in = XPoint.parse("/body/DocFragment[14]/body/div[1]/p[17]/text().50")
+        highlight_out = XPoint.parse("/body/DocFragment[14]/body/div[1]/p[5]/text().50")
+        assert xpoint_range.contains(highlight_in) is True
+        assert xpoint_range.contains(highlight_out) is False
 
     def test_xpoint_range_validation_invalid_order(self) -> None:
         """XPointRange validates that start comes before end."""
