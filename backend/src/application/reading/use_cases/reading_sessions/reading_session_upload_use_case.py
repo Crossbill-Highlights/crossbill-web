@@ -6,6 +6,8 @@ from datetime import datetime
 import structlog
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.library.protocols.file_repository import FileRepositoryProtocol
+from src.application.library.protocols.position_index_service import PositionIndexServiceProtocol
 from src.application.reading.protocols.highlight_repository import (
     HighlightRepositoryProtocol,
 )
@@ -19,6 +21,7 @@ from src.domain.common.value_objects import (
     UserId,
     XPointRange,
 )
+from src.domain.common.value_objects.position import Position
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.reading_session import ReadingSession
 from src.exceptions import BookNotFoundError
@@ -57,10 +60,14 @@ class ReadingSessionUploadUseCase:
         session_repository: ReadingSessionRepositoryProtocol,
         book_repository: BookRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
+        position_index_service: PositionIndexServiceProtocol,
+        file_repository: FileRepositoryProtocol,
     ) -> None:
         self.session_repository = session_repository
         self.book_repository = book_repository
         self.highlight_repository = highlight_repository
+        self.position_index_service = position_index_service
+        self.file_repository = file_repository
 
         settings = get_settings()
         self.min_duration = settings.MINIMUM_READING_SESSION_DURATION
@@ -111,6 +118,13 @@ class ReadingSessionUploadUseCase:
                 "Please create the book first"
             )
 
+        # Build position index if EPUB
+        position_index = None
+        if book.file_type == "epub":
+            epub_path = self.file_repository.find_epub(book.id)
+            if epub_path:
+                position_index = self.position_index_service.build_position_index(epub_path)
+
         # Filter sessions where start and end points are the same
         initial_count = len(sessions)
         sessions = [
@@ -136,6 +150,18 @@ class ReadingSessionUploadUseCase:
             if session.start_xpoint and session.end_xpoint:
                 xpoint_range = XPointRange.parse(session.start_xpoint, session.end_xpoint)
 
+            # Resolve positions
+            start_position: Position | None = None
+            end_position: Position | None = None
+            if position_index and session.start_xpoint and session.end_xpoint:
+                start_position = position_index.resolve(session.start_xpoint)
+                end_position = position_index.resolve(session.end_xpoint)
+            elif book.file_type == "pdf":
+                if session.start_page is not None:
+                    start_position = Position.from_page(session.start_page)
+                if session.end_page is not None:
+                    end_position = Position.from_page(session.end_page)
+
             # Create domain entity with our custom hash
             # Use constructor directly to provide our own content_hash
             domain_session = ReadingSession(
@@ -147,6 +173,8 @@ class ReadingSessionUploadUseCase:
                 start_xpoint=xpoint_range,
                 start_page=session.start_page,
                 end_page=session.end_page,
+                start_position=start_position,
+                end_position=end_position,
                 device_id=session.device_id,
                 ai_summary=None,
             )
@@ -244,8 +272,8 @@ class ReadingSessionUploadUseCase:
         Find highlights that fall within a reading session's range.
 
         Matching is done based on:
-        - Page-based (PDFs): highlight.page BETWEEN session.start_page AND session.end_page
-        - XPoint-based (EPUBs): highlight.start_xpoint is between session's xpoint range
+        - Position-based (preferred): highlight.position BETWEEN session positions
+        - Page-based (fallback): highlight.page BETWEEN session.start_page AND session.end_page
 
         Args:
             session: The reading session to match against
@@ -256,25 +284,28 @@ class ReadingSessionUploadUseCase:
         """
         matching = []
 
-        is_page_based = session.start_page is not None and session.end_page is not None
-        is_xpoint_based = session.start_xpoint is not None
-
         for highlight in highlights:
             try:
-                # Page-based matching (PDF) or XPoint-based matching (EPUB)
+                # Position-based matching (preferred)
                 if (
-                    is_page_based
-                    and highlight.page is not None
-                    and session.start_page <= highlight.page <= session.end_page  # type: ignore[operator]
-                ) or (
-                    is_xpoint_based
-                    and highlight.xpoints is not None
-                    and session.start_xpoint is not None  # type: ignore[union-attr]
-                    and session.start_xpoint.contains(highlight.xpoints.start)  # type: ignore[union-attr]
+                    session.start_position is not None
+                    and session.end_position is not None
+                    and highlight.position is not None
+                    and session.start_position <= highlight.position <= session.end_position
                 ):
                     matching.append(highlight)
+                    continue
+
+                # Fallback: page-based matching (when positions not available)
+                if (
+                    session.start_page is not None
+                    and session.end_page is not None
+                    and highlight.page is not None
+                    and session.start_page <= highlight.page <= session.end_page
+                ):
+                    matching.append(highlight)
+
             except Exception as e:
-                # Log but don't fail - invalid xpoints shouldn't break the whole process
                 logger.warning(
                     "highlight_matching_error",
                     highlight_id=highlight.id.value,
