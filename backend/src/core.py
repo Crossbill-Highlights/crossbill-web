@@ -390,6 +390,9 @@ class Container(containers.DeclarativeContainer):
         chapter_repository=chapter_repository,
         file_repository=file_repository,
         epub_toc_parser=epub_toc_parser_service,
+        position_index_service=epub_position_index_service,
+        highlight_repository=highlight_repository,
+        session_repository=reading_session_repository,
     )
 
     create_book_use_case = providers.Factory(

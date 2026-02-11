@@ -131,6 +131,8 @@ class ChapterRepository:
             ("parent_id", parent_id),
             ("start_xpoint", toc.start_xpoint),
             ("end_xpoint", toc.end_xpoint),
+            ("start_position", toc.start_position.to_json() if toc.start_position else None),
+            ("end_position", toc.end_position.to_json() if toc.end_position else None),
         ]:
             if getattr(orm, attr) != new_val:
                 setattr(orm, attr, new_val)
@@ -171,6 +173,8 @@ class ChapterRepository:
             parent_id=parent_id,
             start_xpoint=ch.start_xpoint,
             end_xpoint=ch.end_xpoint,
+            start_position=ch.start_position.to_json() if ch.start_position else None,
+            end_position=ch.end_position.to_json() if ch.end_position else None,
         )
         self.db.add(chapter)
         self.db.commit()
