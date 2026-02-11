@@ -2,6 +2,7 @@ from typing import Protocol
 
 from src.domain.common.value_objects import ContentHash
 from src.domain.common.value_objects.ids import BookId, HighlightId, ReadingSessionId, UserId
+from src.domain.common.value_objects.position import Position
 from src.domain.learning.entities import Flashcard
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.chapter import Chapter
@@ -44,6 +45,11 @@ class HighlightRepositoryProtocol(Protocol):
     def save(self, highlight: Highlight) -> Highlight: ...
 
     def bulk_save(self, highlights: list[Highlight]) -> list[Highlight]: ...
+
+    def bulk_update_positions(
+        self,
+        position_updates: list[tuple[HighlightId, Position]],
+    ) -> int: ...
 
     def soft_delete_by_ids(
         self,
