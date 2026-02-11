@@ -127,10 +127,9 @@ class ReadingSessionUploadUseCase:
                 position_index = self.position_index_service.build_position_index(epub_path)
 
         # Resolve positions for all sessions upfront
-        sessions_with_positions: list[tuple[ReadingSessionUploadData, Position | None, Position | None]] = [
-            (s, *self._resolve_positions(s, position_index, book.file_type))
-            for s in sessions
-        ]
+        sessions_with_positions: list[
+            tuple[ReadingSessionUploadData, Position | None, Position | None]
+        ] = [(s, *self._resolve_positions(s, position_index, book.file_type)) for s in sessions]
 
         # Filter sessions where start and end are at the same position
         initial_count = len(sessions_with_positions)
@@ -236,7 +235,9 @@ class ReadingSessionUploadUseCase:
                 position_index.resolve(session.end_xpoint),
             )
         if file_type == "pdf":
-            start = Position.from_page(session.start_page) if session.start_page is not None else None
+            start = (
+                Position.from_page(session.start_page) if session.start_page is not None else None
+            )
             end = Position.from_page(session.end_page) if session.end_page is not None else None
             return (start, end)
         return (None, None)

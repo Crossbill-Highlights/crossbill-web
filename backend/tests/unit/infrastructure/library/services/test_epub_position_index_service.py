@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 from ebooklib import epub
 
-from src.domain.common.value_objects.position import Position
 from src.infrastructure.library.services.epub_position_index_service import (
     EpubPositionIndexService,
 )
@@ -50,17 +49,23 @@ class TestEpubPositionIndexService:
     def service(self) -> EpubPositionIndexService:
         return EpubPositionIndexService()
 
-    def test_build_position_index_returns_index(self, service, epub_path):
+    def test_build_position_index_returns_index(
+        self, service: EpubPositionIndexService, epub_path: Path
+    ) -> None:
         index = service.build_position_index(epub_path)
         assert index is not None
 
-    def test_elements_in_first_spine_item_get_positions(self, service, epub_path):
+    def test_elements_in_first_spine_item_get_positions(
+        self, service: EpubPositionIndexService, epub_path: Path
+    ) -> None:
         index = service.build_position_index(epub_path)
         body_pos = index.resolve("/body/DocFragment[1]/body")
         assert body_pos is not None
         assert body_pos.index >= 1
 
-    def test_positions_increase_across_spine_items(self, service, epub_path):
+    def test_positions_increase_across_spine_items(
+        self, service: EpubPositionIndexService, epub_path: Path
+    ) -> None:
         index = service.build_position_index(epub_path)
         chap1_pos = index.resolve("/body/DocFragment[1]/body")
         chap2_pos = index.resolve("/body/DocFragment[2]/body")
@@ -68,7 +73,9 @@ class TestEpubPositionIndexService:
         assert chap2_pos is not None
         assert chap1_pos < chap2_pos
 
-    def test_sibling_elements_have_correct_order(self, service, epub_path):
+    def test_sibling_elements_have_correct_order(
+        self, service: EpubPositionIndexService, epub_path: Path
+    ) -> None:
         """This is THE critical test - heterogeneous siblings must be ordered correctly."""
         index = service.build_position_index(epub_path)
         # In chapter 2: h2, p[1], blockquote, p[2]
@@ -84,18 +91,24 @@ class TestEpubPositionIndexService:
 
         assert h2_pos < p1_pos < bq_pos < p2_pos
 
-    def test_resolve_with_char_offset(self, service, epub_path):
+    def test_resolve_with_char_offset(
+        self, service: EpubPositionIndexService, epub_path: Path
+    ) -> None:
         index = service.build_position_index(epub_path)
         pos = index.resolve("/body/DocFragment[1]/body/p/text().10")
         assert pos is not None
         assert pos.char_index == 10
 
-    def test_resolve_unknown_xpoint_returns_none(self, service, epub_path):
+    def test_resolve_unknown_xpoint_returns_none(
+        self, service: EpubPositionIndexService, epub_path: Path
+    ) -> None:
         index = service.build_position_index(epub_path)
         pos = index.resolve("/body/DocFragment[99]/body/p")
         assert pos is None
 
-    def test_resolve_invalid_xpoint_returns_none(self, service, epub_path):
+    def test_resolve_invalid_xpoint_returns_none(
+        self, service: EpubPositionIndexService, epub_path: Path
+    ) -> None:
         index = service.build_position_index(epub_path)
         pos = index.resolve("not a valid xpoint")
         assert pos is None

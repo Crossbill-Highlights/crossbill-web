@@ -5,32 +5,32 @@ from src.domain.common.value_objects.position_index import PositionIndex
 
 
 class TestPositionIndex:
-    def test_resolve_simple_xpoint(self):
+    def test_resolve_simple_xpoint(self) -> None:
         index = PositionIndex({(1, "/body/div/p"): 5})
         pos = index.resolve("/body/DocFragment[1]/body/div/p")
         assert pos == Position(index=5, char_index=0)
 
-    def test_resolve_with_char_offset(self):
+    def test_resolve_with_char_offset(self) -> None:
         index = PositionIndex({(1, "/body/div/p"): 5})
         pos = index.resolve("/body/DocFragment[1]/body/div/p/text().42")
         assert pos == Position(index=5, char_index=42)
 
-    def test_resolve_without_doc_fragment(self):
+    def test_resolve_without_doc_fragment(self) -> None:
         index = PositionIndex({(1, "/body/div/p"): 5})
         pos = index.resolve("/body/div/p")
         assert pos == Position(index=5, char_index=0)
 
-    def test_resolve_unknown_returns_none(self):
+    def test_resolve_unknown_returns_none(self) -> None:
         index = PositionIndex({(1, "/body/div/p"): 5})
         pos = index.resolve("/body/DocFragment[2]/body/div/p")
         assert pos is None
 
-    def test_resolve_invalid_xpoint_returns_none(self):
+    def test_resolve_invalid_xpoint_returns_none(self) -> None:
         index = PositionIndex({(1, "/body/div/p"): 5})
         pos = index.resolve("garbage")
         assert pos is None
 
-    def test_ordering_across_fragments(self):
+    def test_ordering_across_fragments(self) -> None:
         index = PositionIndex(
             {
                 (1, "/body/p"): 3,
