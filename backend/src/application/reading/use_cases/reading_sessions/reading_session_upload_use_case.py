@@ -22,6 +22,7 @@ from src.domain.common.value_objects import (
     XPointRange,
 )
 from src.domain.common.value_objects.position import Position
+from src.domain.common.value_objects.position_index import PositionIndex
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.reading_session import ReadingSession
 from src.exceptions import BookNotFoundError
@@ -125,12 +126,25 @@ class ReadingSessionUploadUseCase:
             if epub_path:
                 position_index = self.position_index_service.build_position_index(epub_path)
 
-        # Filter sessions where start and end points are the same
-        initial_count = len(sessions)
-        sessions = [
-            s for s in sessions if s.start_xpoint != s.end_xpoint or s.start_page != s.end_page
+        # Resolve positions for all sessions upfront
+        sessions_with_positions: list[tuple[ReadingSessionUploadData, Position | None, Position | None]] = [
+            (s, *self._resolve_positions(s, position_index, book.file_type))
+            for s in sessions
         ]
-        filtered_same_points = initial_count - len(sessions)
+
+        # Filter sessions where start and end are at the same position
+        initial_count = len(sessions_with_positions)
+        sessions_with_positions = [
+            (s, sp, ep)
+            for s, sp, ep in sessions_with_positions
+            if sp != ep  # Use positions when resolved
+            or (  # Fall back to raw comparison when positions not resolved
+                sp is None
+                and ep is None
+                and (s.start_xpoint != s.end_xpoint or s.start_page != s.end_page)
+            )
+        ]
+        filtered_same_points = initial_count - len(sessions_with_positions)
         if filtered_same_points > 0:
             logger.debug(
                 "filtered_sessions_with_same_start_end",
@@ -138,32 +152,20 @@ class ReadingSessionUploadUseCase:
             )
 
         # Filter out sessions shorter than minimum duration
-        sessions = [
-            s for s in sessions if (s.end_time - s.start_time).total_seconds() >= self.min_duration
+        sessions_with_positions = [
+            (s, sp, ep)
+            for s, sp, ep in sessions_with_positions
+            if (s.end_time - s.start_time).total_seconds() >= self.min_duration
         ]
 
-        # Create domain entities with NEW hash
+        # Create domain entities
         domain_sessions: list[ReadingSession] = []
-        for session in sessions:
+        for session, start_position, end_position in sessions_with_positions:
             # Parse XPointRange if both xpoints exist
             xpoint_range = None
             if session.start_xpoint and session.end_xpoint:
                 xpoint_range = XPointRange.parse(session.start_xpoint, session.end_xpoint)
 
-            # Resolve positions
-            start_position: Position | None = None
-            end_position: Position | None = None
-            if position_index and session.start_xpoint and session.end_xpoint:
-                start_position = position_index.resolve(session.start_xpoint)
-                end_position = position_index.resolve(session.end_xpoint)
-            elif book.file_type == "pdf":
-                if session.start_page is not None:
-                    start_position = Position.from_page(session.start_page)
-                if session.end_page is not None:
-                    end_position = Position.from_page(session.end_page)
-
-            # Create domain entity with our custom hash
-            # Use constructor directly to provide our own content_hash
             domain_session = ReadingSession(
                 id=ReadingSessionId.generate(),
                 user_id=user_id_vo,
@@ -221,6 +223,24 @@ class ReadingSessionUploadUseCase:
             linked_highlights_count=linked_count,
         )
 
+    def _resolve_positions(
+        self,
+        session: ReadingSessionUploadData,
+        position_index: PositionIndex | None,
+        file_type: str | None,
+    ) -> tuple[Position | None, Position | None]:
+        """Resolve start/end positions for a session from xpoints or pages."""
+        if position_index and session.start_xpoint and session.end_xpoint:
+            return (
+                position_index.resolve(session.start_xpoint),
+                position_index.resolve(session.end_xpoint),
+            )
+        if file_type == "pdf":
+            start = Position.from_page(session.start_page) if session.start_page is not None else None
+            end = Position.from_page(session.end_page) if session.end_page is not None else None
+            return (start, end)
+        return (None, None)
+
     def _link_highlights_to_sessions(
         self,
         book_id: BookId,
@@ -271,9 +291,8 @@ class ReadingSessionUploadUseCase:
         """
         Find highlights that fall within a reading session's range.
 
-        Matching is done based on:
-        - Position-based (preferred): highlight.position BETWEEN session positions
-        - Page-based (fallback): highlight.page BETWEEN session.start_page AND session.end_page
+        Uses position-based matching: highlight.position BETWEEN session positions.
+        Sessions without resolved positions return no matches.
 
         Args:
             session: The reading session to match against
@@ -282,29 +301,17 @@ class ReadingSessionUploadUseCase:
         Returns:
             List of highlights that fall within the session's range
         """
-        matching = []
+        if session.start_position is None or session.end_position is None:
+            return []
 
+        matching = []
         for highlight in highlights:
             try:
-                # Position-based matching (preferred)
                 if (
-                    session.start_position is not None
-                    and session.end_position is not None
-                    and highlight.position is not None
+                    highlight.position is not None
                     and session.start_position <= highlight.position <= session.end_position
                 ):
                     matching.append(highlight)
-                    continue
-
-                # Fallback: page-based matching (when positions not available)
-                if (
-                    session.start_page is not None
-                    and session.end_page is not None
-                    and highlight.page is not None
-                    and session.start_page <= highlight.page <= session.end_page
-                ):
-                    matching.append(highlight)
-
             except Exception as e:
                 logger.warning(
                     "highlight_matching_error",
