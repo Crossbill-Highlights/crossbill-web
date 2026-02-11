@@ -296,6 +296,8 @@ class Container(containers.DeclarativeContainer):
         book_repository=book_repository,
         chapter_repository=chapter_repository,
         deduplication_service=highlight_deduplication_service,
+        position_index_service=epub_position_index_service,
+        file_repository=file_repository,
     )
     reading_session_upload_use_case = providers.Factory(
         ReadingSessionUploadUseCase,
