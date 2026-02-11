@@ -5,9 +5,9 @@ import { FlashcardListCard } from '@/pages/BookPage/FlashcardsTab/FlashcardListC
 import { Box, Stack, Typography } from '@mui/material';
 
 export interface FlashcardWithContext extends Flashcard {
-  highlight: Highlight;
+  highlight: Highlight | null;
   chapterName: string;
-  chapterId: number;
+  chapterId: number | null;
   highlightTags: { id: number; name: string }[];
 }
 

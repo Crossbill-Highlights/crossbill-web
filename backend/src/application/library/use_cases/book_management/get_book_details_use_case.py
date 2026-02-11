@@ -2,6 +2,7 @@
 
 import logging
 
+from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
 from src.application.library.use_cases.book_tag_associations.get_book_tags_use_case import (
@@ -36,6 +37,7 @@ class GetBookDetailsUseCase:
         bookmark_repository: BookmarkRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
         highlight_tag_repository: HighlightTagRepositoryProtocol,
+        flashcard_repository: FlashcardRepositoryProtocol,
         get_book_tags_use_case: GetBookTagsUseCase,
         highlight_tag_use_case: GetHighlightTagsForBookUseCase,
         highlight_grouping_service: HighlightGroupingService,
@@ -45,6 +47,7 @@ class GetBookDetailsUseCase:
         self.bookmark_repository = bookmark_repository
         self.highlight_repository = highlight_repository
         self.highlight_tag_repository = highlight_tag_repository
+        self.flashcard_repository = flashcard_repository
         self.get_book_tags_use_case = get_book_tags_use_case
         self.highlight_tag_use_case = highlight_tag_use_case
         self.highlight_grouping_service = highlight_grouping_service
@@ -128,6 +131,10 @@ class GetBookDetailsUseCase:
         # Get highlight tag groups
         highlight_tag_groups = self.highlight_tag_repository.find_groups_by_book(book_id_vo)
 
+        # Get book-level flashcards (not associated with any highlight)
+        all_flashcards = self.flashcard_repository.find_by_book(book_id_vo, user_id_vo)
+        book_flashcards = [f for f in all_flashcards if f.highlight_id is None]
+
         # Return domain aggregation
         return BookDetailsAggregation(
             book=book,
@@ -136,4 +143,5 @@ class GetBookDetailsUseCase:
             highlight_tag_groups=highlight_tag_groups,
             bookmarks=bookmarks,
             chapters_with_highlights=merged,
+            book_flashcards=book_flashcards,
         )

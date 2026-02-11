@@ -62,7 +62,7 @@ export const FlashcardListCard = ({
         question={flashcard.question}
         answer={flashcard.answer}
         showSourceHighlight={showSourceHighlight}
-        sourceHighlightText={flashcard.highlight.text}
+        sourceHighlightText={flashcard.highlight?.text}
         renderActions={() => (
           <>
             <IconButtonWithTooltip

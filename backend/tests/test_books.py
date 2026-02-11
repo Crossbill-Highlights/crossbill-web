@@ -605,3 +605,62 @@ class TestGetBooksWithFlashcardFilter:
         assert len(data["books"]) == 1
         assert data["books"][0]["title"] == "Book with Flashcards"
         assert data["books"][0]["flashcard_count"] == 1
+
+    def test_get_book_details_includes_book_flashcards(
+        self,
+        client: TestClient,
+        db_session: Session,
+        book_with_chapter: BookWithChapter,
+    ) -> None:
+        """Test that book details endpoint includes book-level flashcards."""
+        book, chapter = book_with_chapter
+
+        # Create a book-level flashcard (not associated with any highlight)
+        flashcard = models.Flashcard(
+            user_id=DEFAULT_USER_ID,
+            book_id=book.id,
+            question="What is the main theme?",
+            answer="The main theme is resilience.",
+        )
+        db_session.add(flashcard)
+
+        # Also create a highlight-based flashcard to ensure it's NOT included in book_flashcards
+        highlight = create_test_highlight(
+            db_session=db_session,
+            book=book,
+            user_id=DEFAULT_USER_ID,
+            chapter_id=chapter.id,
+            text="Important passage",
+            page=5,
+            datetime_str="2024-01-01 12:00:00",
+        )
+        highlight_flashcard = models.Flashcard(
+            user_id=DEFAULT_USER_ID,
+            book_id=book.id,
+            highlight_id=highlight.id,
+            question="What does this highlight mean?",
+            answer="It means something important.",
+        )
+        db_session.add(highlight_flashcard)
+        db_session.commit()
+
+        response = client.get(f"/api/v1/books/{book.id}")
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+
+        # Verify book_flashcards field exists and contains only book-level flashcards
+        assert "book_flashcards" in data, "book_flashcards field is missing from response"
+        assert len(data["book_flashcards"]) == 1
+        book_fc = data["book_flashcards"][0]
+        assert book_fc["question"] == "What is the main theme?"
+        assert book_fc["answer"] == "The main theme is resilience."
+        assert book_fc["book_id"] == book.id
+        assert book_fc["highlight_id"] is None
+
+        # Verify the highlight flashcard is in the chapter's highlights, not in book_flashcards
+        assert len(data["chapters"]) == 1
+        assert len(data["chapters"][0]["highlights"]) == 1
+        assert len(data["chapters"][0]["highlights"][0]["flashcards"]) == 1
+        highlight_fc = data["chapters"][0]["highlights"][0]["flashcards"][0]
+        assert highlight_fc["question"] == "What does this highlight mean?"

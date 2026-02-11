@@ -401,6 +401,7 @@ class Container(containers.DeclarativeContainer):
         bookmark_repository=bookmark_repository,
         highlight_repository=highlight_repository,
         highlight_tag_repository=highlight_tag_repository,
+        flashcard_repository=flashcard_repository,
         get_book_tags_use_case=get_book_tags_use_case,
         highlight_tag_use_case=get_highlight_tags_for_book_use_case,
         highlight_grouping_service=highlight_grouping_service,

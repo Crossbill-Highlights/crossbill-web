@@ -41,10 +41,11 @@ const BookTabs = ({
   }, [book.chapters]);
 
   const totalFlashcards = useMemo(() => {
-    return flatMap(book.chapters, (chapter) =>
+    const chapterFlashcards = flatMap(book.chapters, (chapter) =>
       flatMap(chapter.highlights, (highlight) => highlight.flashcards)
     ).length;
-  }, [book.chapters]);
+    return chapterFlashcards + (book.book_flashcards?.length ?? 0);
+  }, [book.chapters, book.book_flashcards]);
 
   return (
     <Tabs

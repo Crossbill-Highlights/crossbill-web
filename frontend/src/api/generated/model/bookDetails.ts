@@ -6,6 +6,7 @@
  */
 import type { Bookmark } from './bookmark';
 import type { ChapterWithHighlights } from './chapterWithHighlights';
+import type { Flashcard } from './flashcard';
 import type { HighlightTagGroupInBook } from './highlightTagGroupInBook';
 import type { HighlightTagInBook } from './highlightTagInBook';
 import type { TagInBook } from './tagInBook';
@@ -31,6 +32,8 @@ export interface BookDetails {
   highlight_tag_groups: HighlightTagGroupInBook[];
   /** List of bookmarks for this book */
   bookmarks: Bookmark[];
+  /** Book-level flashcards not associated with any highlight */
+  book_flashcards?: Flashcard[];
   /** List of chapters with highlights */
   chapters: ChapterWithHighlights[];
   created_at: string;
