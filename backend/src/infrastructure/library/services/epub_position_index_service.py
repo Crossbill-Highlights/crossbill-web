@@ -52,7 +52,7 @@ class EpubPositionIndexService:
                 # lxml gives paths like /html/body/div[1]/p[2]
                 # We need /body/div[1]/p[2] (strip /html prefix)
                 if element_xpath.startswith("/html"):
-                    element_xpath = element_xpath[len("/html"):]
+                    element_xpath = element_xpath[len("/html") :]
 
                 key = (spine_index, element_xpath)
                 element_positions[key] = current_index

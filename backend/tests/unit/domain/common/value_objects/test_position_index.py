@@ -31,10 +31,12 @@ class TestPositionIndex:
         assert pos is None
 
     def test_ordering_across_fragments(self):
-        index = PositionIndex({
-            (1, "/body/p"): 3,
-            (2, "/body/p"): 10,
-        })
+        index = PositionIndex(
+            {
+                (1, "/body/p"): 3,
+                (2, "/body/p"): 10,
+            }
+        )
         pos1 = index.resolve("/body/DocFragment[1]/body/p")
         pos2 = index.resolve("/body/DocFragment[2]/body/p")
         assert pos1 is not None

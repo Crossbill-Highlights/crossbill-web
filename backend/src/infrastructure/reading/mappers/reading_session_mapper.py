@@ -26,8 +26,12 @@ class ReadingSessionMapper:
         if orm_model.start_xpoint and orm_model.end_xpoint:
             xpoint_range = XPointRange.parse(orm_model.start_xpoint, orm_model.end_xpoint)
 
-        start_position = Position.from_json(orm_model.start_position) if orm_model.start_position else None
-        end_position = Position.from_json(orm_model.end_position) if orm_model.end_position else None
+        start_position = (
+            Position.from_json(orm_model.start_position) if orm_model.start_position else None
+        )
+        end_position = (
+            Position.from_json(orm_model.end_position) if orm_model.end_position else None
+        )
 
         return ReadingSession(
             id=ReadingSessionId(orm_model.id),
@@ -72,8 +76,12 @@ class ReadingSessionMapper:
             orm_model.end_xpoint = end_xpoint_str
             orm_model.start_page = domain_entity.start_page
             orm_model.end_page = domain_entity.end_page
-            orm_model.start_position = domain_entity.start_position.to_json() if domain_entity.start_position else None
-            orm_model.end_position = domain_entity.end_position.to_json() if domain_entity.end_position else None
+            orm_model.start_position = (
+                domain_entity.start_position.to_json() if domain_entity.start_position else None
+            )
+            orm_model.end_position = (
+                domain_entity.end_position.to_json() if domain_entity.end_position else None
+            )
             orm_model.device_id = domain_entity.device_id
             orm_model.ai_summary = domain_entity.ai_summary
             return orm_model
@@ -90,8 +98,12 @@ class ReadingSessionMapper:
             end_xpoint=end_xpoint_str,
             start_page=domain_entity.start_page,
             end_page=domain_entity.end_page,
-            start_position=domain_entity.start_position.to_json() if domain_entity.start_position else None,
-            end_position=domain_entity.end_position.to_json() if domain_entity.end_position else None,
+            start_position=domain_entity.start_position.to_json()
+            if domain_entity.start_position
+            else None,
+            end_position=domain_entity.end_position.to_json()
+            if domain_entity.end_position
+            else None,
             device_id=domain_entity.device_id,
             ai_summary=domain_entity.ai_summary,
         )

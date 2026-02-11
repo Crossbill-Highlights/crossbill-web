@@ -61,8 +61,7 @@ class PositionIndex:
                 Xpaths are normalized (explicit [1] indices added) on construction.
         """
         self._element_positions = {
-            (frag, _normalize_xpath(xpath)): idx
-            for (frag, xpath), idx in element_positions.items()
+            (frag, _normalize_xpath(xpath)): idx for (frag, xpath), idx in element_positions.items()
         }
 
     def resolve(self, xpoint_str: str) -> Position | None:

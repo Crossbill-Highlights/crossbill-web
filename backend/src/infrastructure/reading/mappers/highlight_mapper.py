@@ -96,7 +96,9 @@ class HighlightMapper:
             orm_model.note = domain_entity.note
             orm_model.start_xpoint = start_xpoint
             orm_model.end_xpoint = end_xpoint
-            orm_model.position = domain_entity.position.to_json() if domain_entity.position else None
+            orm_model.position = (
+                domain_entity.position.to_json() if domain_entity.position else None
+            )
             orm_model.deleted_at = domain_entity.deleted_at
             return orm_model
         # Create new model
