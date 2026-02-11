@@ -12,7 +12,8 @@ from src.application.reading.protocols.highlight_repository import HighlightRepo
 from src.application.reading.protocols.reading_session_repository import (
     ReadingSessionRepositoryProtocol,
 )
-from src.domain.common.value_objects.ids import UserId
+from src.domain.common.value_objects.ids import BookId, UserId
+from src.domain.common.value_objects.position_index import PositionIndex
 from src.domain.library.entities.chapter import TocChapter
 from src.domain.reading.exceptions import BookNotFoundError
 from src.exceptions import InvalidEbookError
@@ -190,8 +191,20 @@ class EbookUploadUseCase:
                 )
             self.chapter_repository.sync_chapters_from_toc(book.id, user_id, enriched_chapters)
 
-        # Backfill positions for existing highlights
-        highlights = self.highlight_repository.find_by_book_id(book.id, user_id)
+        # Backfill positions for existing entities
+        self._backfill_positions(book.id, user_id, position_index)
+
+        return epub_filename, str(epub_path)
+
+    def _backfill_positions(
+        self,
+        book_id: BookId,
+        user_id: UserId,
+        position_index: PositionIndex,
+    ) -> None:
+        """Backfill position data for existing highlights and reading sessions."""
+        # Backfill highlights
+        highlights = self.highlight_repository.find_by_book_id(book_id, user_id)
         highlight_updates = []
         for h in highlights:
             if h.xpoints and h.xpoints.start:
@@ -201,8 +214,8 @@ class EbookUploadUseCase:
         if highlight_updates:
             self.highlight_repository.bulk_update_positions(highlight_updates)
 
-        # Backfill positions for existing reading sessions
-        sessions = self.session_repository.find_by_book_id(book.id, user_id, limit=10000, offset=0)
+        # Backfill reading sessions
+        sessions = self.session_repository.find_by_book_id(book_id, user_id, limit=10000, offset=0)
         session_updates = []
         for s in sessions:
             if s.start_xpoint:
@@ -212,5 +225,3 @@ class EbookUploadUseCase:
                     session_updates.append((s.id, start_pos, end_pos))
         if session_updates:
             self.session_repository.bulk_update_positions(session_updates)
-
-        return epub_filename, str(epub_path)
