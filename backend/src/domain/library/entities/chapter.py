@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from src.domain.common.entity import Entity
 from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import BookId, ChapterId
+from src.domain.common.value_objects.position import Position
 
 
 @dataclass(frozen=True)
@@ -19,6 +20,8 @@ class TocChapter:
     parent_name: str | None
     start_xpoint: str | None
     end_xpoint: str | None
+    start_position: Position | None = None
+    end_position: Position | None = None
 
 
 @dataclass
@@ -45,6 +48,8 @@ class Chapter(Entity[ChapterId]):
     chapter_number: int | None = None
     start_xpoint: str | None = None
     end_xpoint: str | None = None
+    start_position: Position | None = None
+    end_position: Position | None = None
 
     def __post_init__(self) -> None:
         """Validate invariants."""
@@ -73,6 +78,8 @@ class Chapter(Entity[ChapterId]):
         parent_id: ChapterId | None = None,
         start_xpoint: str | None = None,
         end_xpoint: str | None = None,
+        start_position: Position | None = None,
+        end_position: Position | None = None,
     ) -> "Chapter":
         """Factory for creating new chapter."""
         return cls(
@@ -83,6 +90,8 @@ class Chapter(Entity[ChapterId]):
             chapter_number=chapter_number,
             start_xpoint=start_xpoint,
             end_xpoint=end_xpoint,
+            start_position=start_position,
+            end_position=end_position,
             created_at=datetime.now(UTC),
         )
 
@@ -97,6 +106,8 @@ class Chapter(Entity[ChapterId]):
         parent_id: ChapterId | None = None,
         start_xpoint: str | None = None,
         end_xpoint: str | None = None,
+        start_position: Position | None = None,
+        end_position: Position | None = None,
     ) -> "Chapter":
         """Factory for reconstituting chapter from persistence."""
         return cls(
@@ -107,5 +118,7 @@ class Chapter(Entity[ChapterId]):
             chapter_number=chapter_number,
             start_xpoint=start_xpoint,
             end_xpoint=end_xpoint,
+            start_position=start_position,
+            end_position=end_position,
             created_at=created_at,
         )

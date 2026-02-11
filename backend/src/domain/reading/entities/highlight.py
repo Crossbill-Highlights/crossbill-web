@@ -21,6 +21,7 @@ from src.domain.common.value_objects import (
     UserId,
     XPointRange,
 )
+from src.domain.common.value_objects.position import Position
 
 if TYPE_CHECKING:
     from src.domain.reading.entities.highlight_tag import HighlightTag
@@ -54,6 +55,7 @@ class Highlight(AggregateRoot[HighlightId]):
     chapter_id: ChapterId | None = None
     xpoints: XPointRange | None = None
     page: int | None = None
+    position: Position | None = None
 
     # Annotation
     note: str | None = None
@@ -178,6 +180,7 @@ class Highlight(AggregateRoot[HighlightId]):
         chapter_id: ChapterId | None = None,
         xpoints: XPointRange | None = None,
         page: int | None = None,
+        position: Position | None = None,
         note: str | None = None,
     ) -> Highlight:
         """
@@ -190,6 +193,7 @@ class Highlight(AggregateRoot[HighlightId]):
             chapter_id: Optional chapter reference
             xpoints: Optional XPoint range for precise position
             page: Optional page number
+            position: Optional Position for document-order location
             note: Optional note/annotation
 
         Returns:
@@ -210,6 +214,7 @@ class Highlight(AggregateRoot[HighlightId]):
             chapter_id=chapter_id,
             xpoints=xpoints,
             page=page,
+            position=position,
             note=note.strip() if note else None,
             datetime=datetime_str,
             created_at=now,
@@ -231,6 +236,7 @@ class Highlight(AggregateRoot[HighlightId]):
         chapter_id: ChapterId | None = None,
         xpoints: XPointRange | None = None,
         page: int | None = None,
+        position: Position | None = None,
         note: str | None = None,
         deleted_at: dt_module.datetime | None = None,
     ) -> Highlight:
@@ -247,6 +253,7 @@ class Highlight(AggregateRoot[HighlightId]):
             chapter_id=chapter_id,
             xpoints=xpoints,
             page=page,
+            position=position,
             note=note,
             datetime=datetime_str,
             created_at=created_at,
