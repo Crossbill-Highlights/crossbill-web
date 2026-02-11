@@ -154,6 +154,9 @@ from src.infrastructure.library.repositories.tag_repository import TagRepository
 from src.infrastructure.library.services.epub_text_extraction_service import (
     EpubTextExtractionService,
 )
+from src.infrastructure.library.services.epub_position_index_service import (
+    EpubPositionIndexService,
+)
 from src.infrastructure.library.services.epub_toc_parser_service import EpubTocParserService
 from src.infrastructure.reading.repositories import (
     BookmarkRepository,
@@ -189,6 +192,7 @@ class Container(containers.DeclarativeContainer):
     # Infrastructure services (no db dependency)
     ebook_text_extraction_service = providers.Factory(EpubTextExtractionService)
     epub_toc_parser_service = providers.Factory(EpubTocParserService)
+    epub_position_index_service = providers.Factory(EpubPositionIndexService)
     ai_service = providers.Factory(AIService)
 
     # Identity repositories and services
