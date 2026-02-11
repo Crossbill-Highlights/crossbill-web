@@ -213,6 +213,8 @@ class Chapter(Base):
     chapter_number: Mapped[int | None] = mapped_column(nullable=True, index=True)
     start_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
     end_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
+    start_position: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    end_position: Mapped[list | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -266,6 +268,7 @@ class Highlight(Base):
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     start_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
     end_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
+    position: Mapped[list | None] = mapped_column(JSON, nullable=True)
     datetime: Mapped[str] = mapped_column(String(50), nullable=False)  # KOReader datetime string
     content_hash: Mapped[str] = mapped_column(
         String(64), nullable=False, index=True
@@ -505,6 +508,8 @@ class ReadingSession(Base):
     end_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
     start_page: Mapped[int | None] = mapped_column(nullable=True)
     end_page: Mapped[int | None] = mapped_column(nullable=True)
+    start_position: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    end_position: Mapped[list | None] = mapped_column(JSON, nullable=True)
     device_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     content_hash: Mapped[str] = mapped_column(
         String(64), nullable=False, index=True
