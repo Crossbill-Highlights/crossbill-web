@@ -458,7 +458,7 @@ class HighlightRepository:
 
         session_id_values = [sid.value for sid in session_ids]
 
-        # Query join table + highlights
+        # Query join table + highlights, ordered by position
         stmt = (
             select(reading_session_highlights.c.reading_session_id, HighlightORM)
             .join(
@@ -469,6 +469,11 @@ class HighlightRepository:
                 reading_session_highlights.c.reading_session_id.in_(session_id_values),
                 HighlightORM.user_id == user_id.value,
                 HighlightORM.deleted_at.is_(None),
+            )
+            .order_by(
+                HighlightORM.page.asc().nulls_last(),
+                HighlightORM.start_xpoint.asc().nulls_last(),
+                HighlightORM.created_at.asc(),
             )
         )
 

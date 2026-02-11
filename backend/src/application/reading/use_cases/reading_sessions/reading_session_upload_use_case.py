@@ -261,17 +261,19 @@ class ReadingSessionUploadUseCase:
 
         for highlight in highlights:
             try:
-                # Page-based matching (PDF) or XPoint-based matching (EPUB)
-                if (
-                    is_page_based
-                    and highlight.page is not None
-                    and session.start_page <= highlight.page <= session.end_page  # type: ignore[operator]
-                ) or (
+                if is_page_based and highlight.page is not None:
+                    # Page-based matching: use when both session and highlight have page data.
+                    # This is more reliable than xpoint matching because page numbers are what
+                    # the user sees, while xpoint ranges may not precisely correspond to pages.
+                    if session.start_page <= highlight.page <= session.end_page:  # type: ignore[operator]
+                        matching.append(highlight)
+                elif (
                     is_xpoint_based
                     and highlight.xpoints is not None
                     and session.start_xpoint is not None  # type: ignore[union-attr]
                     and session.start_xpoint.contains(highlight.xpoints.start)  # type: ignore[union-attr]
                 ):
+                    # XPoint-based matching: fallback when highlight has no page data
                     matching.append(highlight)
             except Exception as e:
                 # Log but don't fail - invalid xpoints shouldn't break the whole process
