@@ -102,6 +102,7 @@ class ReadingSessionRepository:
             else:
                 created_sessions = []
 
+            self.db.commit()
             return BulkCreateResult(
                 created_count=len(created_ids), created_sessions=created_sessions
             )
@@ -147,6 +148,7 @@ class ReadingSessionRepository:
         else:
             created_sessions = []
 
+        self.db.commit()
         return BulkCreateResult(created_count=created_count, created_sessions=created_sessions)
 
     def find_by_book_id(
