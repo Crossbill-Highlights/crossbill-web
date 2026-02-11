@@ -13,6 +13,7 @@ from .ids import (
     UserId,
 )
 from .position import Position
+from .position_index import PositionIndex
 from .xpoint import XPoint, XPointRange
 
 __all__ = [
@@ -23,6 +24,7 @@ __all__ = [
     "HighlightId",
     "HighlightTagId",
     "Position",
+    "PositionIndex",
     "PrereadingContentId",
     "ReadingSessionId",
     "TagId",
