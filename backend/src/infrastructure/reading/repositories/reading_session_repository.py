@@ -66,6 +66,8 @@ class ReadingSessionRepository:
                 "end_xpoint": s.start_xpoint.end.to_string() if s.start_xpoint else None,
                 "start_page": s.start_page,
                 "end_page": s.end_page,
+                "start_position": s.start_position.to_json() if s.start_position else None,
+                "end_position": s.end_position.to_json() if s.end_position else None,
                 "device_id": s.device_id,
             }
             for s in sessions

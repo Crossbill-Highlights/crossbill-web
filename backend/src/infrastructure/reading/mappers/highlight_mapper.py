@@ -13,6 +13,7 @@ from src.domain.common.value_objects import (
     UserId,
     XPointRange,
 )
+from src.domain.common.value_objects.position import Position
 from src.domain.reading.entities.highlight import Highlight
 from src.models import Highlight as HighlightORM
 
@@ -37,6 +38,8 @@ class HighlightMapper:
         if orm_model.start_xpoint and orm_model.end_xpoint:
             xpoints = XPointRange.parse(orm_model.start_xpoint, orm_model.end_xpoint)
 
+        position = Position.from_json(orm_model.position) if orm_model.position else None
+
         # Convert to domain entity using reconstitution factory
         return Highlight.create_with_id(
             id=HighlightId(orm_model.id),
@@ -49,6 +52,7 @@ class HighlightMapper:
             chapter_id=ChapterId(orm_model.chapter_id) if orm_model.chapter_id else None,
             xpoints=xpoints,
             page=orm_model.page,
+            position=position,
             note=orm_model.note,
             deleted_at=orm_model.deleted_at,
         )
@@ -92,6 +96,7 @@ class HighlightMapper:
             orm_model.note = domain_entity.note
             orm_model.start_xpoint = start_xpoint
             orm_model.end_xpoint = end_xpoint
+            orm_model.position = domain_entity.position.to_json() if domain_entity.position else None
             orm_model.deleted_at = domain_entity.deleted_at
             return orm_model
         # Create new model
@@ -103,6 +108,7 @@ class HighlightMapper:
             text=domain_entity.text,
             content_hash=domain_entity.content_hash.value,
             page=domain_entity.page,
+            position=domain_entity.position.to_json() if domain_entity.position else None,
             note=domain_entity.note,
             start_xpoint=start_xpoint,
             end_xpoint=end_xpoint,
