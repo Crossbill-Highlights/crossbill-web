@@ -148,24 +148,10 @@ async def get_book_reading_sessions(
         for session_with_highlights in result.sessions_with_highlights:
             session = session_with_highlights.session
 
-            # Convert XPointRange to strings
-            start_xpoint_str = None
-            end_xpoint_str = None
-            if session.start_xpoint:
-                start_xpoint_str = session.start_xpoint.start.to_string()
-                end_xpoint_str = session.start_xpoint.end.to_string()
-
             # Convert highlights to schemas
             # Note: We don't have chapter/tags/flashcards loaded, so use minimal schema
             highlight_schemas = []
             for highlight in session_with_highlights.highlights:
-                # Convert highlight xpoints to strings
-                highlight_start_xpoint = None
-                highlight_end_xpoint = None
-                if highlight.xpoints:
-                    highlight_start_xpoint = highlight.xpoints.start.to_string()
-                    highlight_end_xpoint = highlight.xpoints.end.to_string()
-
                 # Construct Highlight schema directly with named parameters
                 highlight_schemas.append(
                     Highlight(
@@ -173,8 +159,6 @@ async def get_book_reading_sessions(
                         book_id=highlight.book_id.value,
                         chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
                         text=highlight.text,
-                        start_xpoint=highlight_start_xpoint,
-                        end_xpoint=highlight_end_xpoint,
                         page=highlight.page,
                         note=highlight.note,
                         datetime=highlight.datetime,
@@ -199,8 +183,6 @@ async def get_book_reading_sessions(
                     content_hash=session.content_hash.value,
                     start_time=session.start_time,
                     end_time=session.end_time,
-                    start_xpoint=start_xpoint_str,
-                    end_xpoint=end_xpoint_str,
                     start_page=session.start_page,
                     end_page=session.end_page,
                     content=session_with_highlights.extracted_content,

@@ -18,24 +18,10 @@ class ReadingSessionBase(BaseModel):
     content_hash: str
     start_time: dt = Field(..., description="Session start timestamp")
     end_time: dt = Field(..., description="Session end timestamp")
-    start_xpoint: str | None = Field(None, description="EPUB XML start position")
-    end_xpoint: str | None = Field(None, description="EPUB XML end position")
     start_page: int | None = Field(None, ge=0, description="Start page number (for PDFs)")
     end_page: int | None = Field(None, ge=0, description="End page number (for PDFs)")
     content: str | None = Field(None, description="Extracted text content of the session")
     ai_summary: str | None = Field(None, description="AI generated summary of the read content")
-
-    @model_validator(mode="after")
-    def check_position_fields(self) -> Self:
-        has_xpoint = self.start_xpoint is not None and self.end_xpoint is not None
-        has_page = self.start_page is not None and self.end_page is not None
-
-        if not has_xpoint and not has_page:
-            raise ValueError(
-                "You must define at least either (start_xpoint & end_xpoint) or (start_page & end_page)."
-            )
-
-        return self
 
 
 # Import Highlight after ReadingSessionBase is defined to avoid circular import issues

@@ -213,8 +213,6 @@ def update_highlight_note(
             chapter=None,  # We don't have chapter name loaded
             chapter_number=None,
             page=highlight.page,
-            start_xpoint=highlight.xpoints.start.to_string() if highlight.xpoints else None,
-            end_xpoint=highlight.xpoints.end.to_string() if highlight.xpoints else None,
             note=highlight.note,
             datetime=highlight.datetime,
             highlight_tags=[
@@ -487,8 +485,6 @@ def _map_chapters_to_schemas(
                     )
                     for tag in hw.tags
                 ],
-                start_xpoint=h.xpoints.start.to_string() if h.xpoints else None,
-                end_xpoint=h.xpoints.end.to_string() if h.xpoints else None,
                 created_at=h.created_at,
                 updated_at=h.updated_at,
             )
@@ -929,8 +925,6 @@ def add_tag_to_highlight(
             chapter=None,
             chapter_number=None,
             page=highlight.page,
-            start_xpoint=highlight.xpoints.start.to_string() if highlight.xpoints else None,
-            end_xpoint=highlight.xpoints.end.to_string() if highlight.xpoints else None,
             note=highlight.note,
             datetime=highlight.datetime,
             highlight_tags=[
@@ -1029,8 +1023,6 @@ def remove_tag_from_highlight(
             chapter=None,
             chapter_number=None,
             page=highlight.page,
-            start_xpoint=highlight.xpoints.start.to_string() if highlight.xpoints else None,
-            end_xpoint=highlight.xpoints.end.to_string() if highlight.xpoints else None,
             note=highlight.note,
             datetime=highlight.datetime,
             highlight_tags=[

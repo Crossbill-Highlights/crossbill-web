@@ -135,10 +135,6 @@ def get_flashcards_for_book(
             # Convert highlight to Pydantic schema if present
             highlight_schema = None
             if highlight:
-                # Extract xpoint strings
-                start_xpoint = str(highlight.xpoints.start) if highlight.xpoints else None
-                end_xpoint = str(highlight.xpoints.end) if highlight.xpoints else None
-
                 # Manually construct highlight schema
                 highlight_schema = HighlightResponseBase(
                     id=highlight.id.value,
@@ -147,8 +143,6 @@ def get_flashcards_for_book(
                     text=highlight.text,
                     note=highlight.note,
                     page=highlight.page,
-                    start_xpoint=start_xpoint,
-                    end_xpoint=end_xpoint,
                     datetime=highlight.datetime,
                     chapter=chapter.name if chapter else None,
                     chapter_number=chapter.chapter_number if chapter else None,
