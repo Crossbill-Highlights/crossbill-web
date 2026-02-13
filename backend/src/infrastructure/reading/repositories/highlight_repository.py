@@ -18,6 +18,7 @@ from src.domain.common.value_objects import (
     ReadingSessionId,
     UserId,
 )
+from src.domain.common.value_objects.position import Position
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.chapter import Chapter
@@ -286,6 +287,24 @@ class HighlightRepository:
             )
             for highlight_orm in results
         ]
+
+    def bulk_update_positions(
+        self,
+        position_updates: list[tuple[HighlightId, Position]],
+    ) -> int:
+        """Bulk update positions for highlights."""
+        if not position_updates:
+            return 0
+
+        for highlight_id, position in position_updates:
+            self.db.execute(
+                update(HighlightORM)
+                .where(HighlightORM.id == highlight_id.value)
+                .values(position=position.to_json())
+            )
+
+        self.db.commit()
+        return len(position_updates)
 
     def soft_delete_by_ids(
         self,

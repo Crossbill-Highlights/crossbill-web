@@ -7,12 +7,13 @@ Uses ReadingSessionMapper internally for conversions.
 
 import logging
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from src.application.reading.protocols.reading_session_repository import BulkCreateResult
 from src.domain.common.value_objects import BookId, HighlightId, ReadingSessionId, UserId
+from src.domain.common.value_objects.position import Position
 from src.domain.reading.entities.reading_session import ReadingSession
 from src.exceptions import ServiceError
 from src.infrastructure.reading.mappers.reading_session_mapper import ReadingSessionMapper
@@ -66,6 +67,8 @@ class ReadingSessionRepository:
                 "end_xpoint": s.start_xpoint.end.to_string() if s.start_xpoint else None,
                 "start_page": s.start_page,
                 "end_page": s.end_page,
+                "start_position": s.start_position.to_json() if s.start_position else None,
+                "end_position": s.end_position.to_json() if s.end_position else None,
                 "device_id": s.device_id,
             }
             for s in sessions
@@ -99,6 +102,7 @@ class ReadingSessionRepository:
             else:
                 created_sessions = []
 
+            self.db.commit()
             return BulkCreateResult(
                 created_count=len(created_ids), created_sessions=created_sessions
             )
@@ -144,6 +148,7 @@ class ReadingSessionRepository:
         else:
             created_sessions = []
 
+        self.db.commit()
         return BulkCreateResult(created_count=created_count, created_sessions=created_sessions)
 
     def find_by_book_id(
@@ -236,6 +241,27 @@ class ReadingSessionRepository:
         self.db.commit()
 
         return self.mapper.to_domain(existing_orm)
+
+    def bulk_update_positions(
+        self,
+        position_updates: list[tuple[ReadingSessionId, Position, Position]],
+    ) -> int:
+        """Bulk update start/end positions for reading sessions."""
+        if not position_updates:
+            return 0
+
+        for session_id, start_pos, end_pos in position_updates:
+            self.db.execute(
+                update(ReadingSessionORM)
+                .where(ReadingSessionORM.id == session_id.value)
+                .values(
+                    start_position=start_pos.to_json(),
+                    end_position=end_pos.to_json(),
+                )
+            )
+
+        self.db.commit()
+        return len(position_updates)
 
     def link_highlights_to_sessions(
         self,

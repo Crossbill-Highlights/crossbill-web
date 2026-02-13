@@ -14,6 +14,7 @@ from src.domain.common.value_objects import (
     UserId,
     XPointRange,
 )
+from src.domain.common.value_objects.position import Position
 
 
 @dataclass
@@ -45,6 +46,8 @@ class ReadingSession(AggregateRoot[ReadingSessionId]):
     start_xpoint: XPointRange | None = None
     start_page: int | None = None
     end_page: int | None = None
+    start_position: Position | None = None
+    end_position: Position | None = None
 
     # Metadata
     device_id: str | None = None
@@ -95,6 +98,8 @@ class ReadingSession(AggregateRoot[ReadingSessionId]):
         start_page: int | None = None,
         end_page: int | None = None,
         start_xpoint: XPointRange | None = None,
+        start_position: Position | None = None,
+        end_position: Position | None = None,
         device_id: str | None = None,
     ) -> "ReadingSession":
         """
@@ -108,6 +113,8 @@ class ReadingSession(AggregateRoot[ReadingSessionId]):
             start_page: Optional starting page
             end_page: Optional ending page
             start_xpoint: Optional XPoint range
+            start_position: Optional start Position
+            end_position: Optional end Position
             device_id: Optional device identifier
 
         Returns:
@@ -123,6 +130,8 @@ class ReadingSession(AggregateRoot[ReadingSessionId]):
             start_page=start_page,
             end_page=end_page,
             start_xpoint=start_xpoint,
+            start_position=start_position,
+            end_position=end_position,
             device_id=device_id,
             ai_summary=None,
             _highlight_ids=[],

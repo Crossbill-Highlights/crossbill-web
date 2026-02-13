@@ -12,21 +12,23 @@ from .ids import (
     TagId,
     UserId,
 )
+from .position import Position
+from .position_index import PositionIndex
 from .xpoint import XPoint, XPointRange
 
 __all__ = [
-    # IDs
     "BookId",
     "ChapterId",
     "ContentHash",
     "FlashcardId",
     "HighlightId",
     "HighlightTagId",
+    "Position",
+    "PositionIndex",
     "PrereadingContentId",
     "ReadingSessionId",
     "TagId",
     "UserId",
-    # XPoint
     "XPoint",
     "XPointRange",
 ]

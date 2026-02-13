@@ -105,7 +105,10 @@ class ReadingSessionQueryUseCase:
 
         sessions_with_highlights = []
         for session in sessions:
-            highlights = highlights_by_session.get(session.id, [])
+            highlights = sorted(
+                highlights_by_session.get(session.id, []),
+                key=lambda h: (0, h.position) if h.position is not None else (1,),
+            )
 
             # Optionally extract content
             extracted_content = None

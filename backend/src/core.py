@@ -151,6 +151,9 @@ from src.infrastructure.library.repositories import BookRepository
 from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
 from src.infrastructure.library.repositories.file_repository import FileRepository
 from src.infrastructure.library.repositories.tag_repository import TagRepository
+from src.infrastructure.library.services.epub_position_index_service import (
+    EpubPositionIndexService,
+)
 from src.infrastructure.library.services.epub_text_extraction_service import (
     EpubTextExtractionService,
 )
@@ -189,6 +192,7 @@ class Container(containers.DeclarativeContainer):
     # Infrastructure services (no db dependency)
     ebook_text_extraction_service = providers.Factory(EpubTextExtractionService)
     epub_toc_parser_service = providers.Factory(EpubTocParserService)
+    epub_position_index_service = providers.Factory(EpubPositionIndexService)
     ai_service = providers.Factory(AIService)
 
     # Identity repositories and services
@@ -292,12 +296,16 @@ class Container(containers.DeclarativeContainer):
         book_repository=book_repository,
         chapter_repository=chapter_repository,
         deduplication_service=highlight_deduplication_service,
+        position_index_service=epub_position_index_service,
+        file_repository=file_repository,
     )
     reading_session_upload_use_case = providers.Factory(
         ReadingSessionUploadUseCase,
         session_repository=reading_session_repository,
         book_repository=book_repository,
         highlight_repository=highlight_repository,
+        position_index_service=epub_position_index_service,
+        file_repository=file_repository,
     )
     reading_session_query_use_case = providers.Factory(
         ReadingSessionQueryUseCase,
@@ -386,6 +394,9 @@ class Container(containers.DeclarativeContainer):
         chapter_repository=chapter_repository,
         file_repository=file_repository,
         epub_toc_parser=epub_toc_parser_service,
+        position_index_service=epub_position_index_service,
+        highlight_repository=highlight_repository,
+        session_repository=reading_session_repository,
     )
 
     create_book_use_case = providers.Factory(

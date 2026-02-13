@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from src.domain.common.value_objects.ids import BookId, HighlightId, ReadingSessionId, UserId
+from src.domain.common.value_objects.position import Position
 from src.domain.reading import ReadingSession
 
 
@@ -26,6 +27,11 @@ class ReadingSessionRepositoryProtocol(Protocol):
     ) -> ReadingSession | None: ...
 
     def save(self, session: ReadingSession) -> ReadingSession: ...
+
+    def bulk_update_positions(
+        self,
+        position_updates: list[tuple[ReadingSessionId, Position, Position]],
+    ) -> int: ...
 
     def link_highlights_to_sessions(
         self,

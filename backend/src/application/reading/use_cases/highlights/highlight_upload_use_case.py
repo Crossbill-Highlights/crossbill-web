@@ -10,11 +10,14 @@ from dataclasses import dataclass
 import structlog
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.library.protocols.file_repository import FileRepositoryProtocol
+from src.application.library.protocols.position_index_service import PositionIndexServiceProtocol
 from src.application.reading.protocols.chapter_repository import ChapterRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import (
     HighlightRepositoryProtocol,
 )
 from src.domain.common.value_objects import ChapterId, UserId, XPointRange
+from src.domain.common.value_objects.position import Position
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
 from src.exceptions import NotFoundError
@@ -46,6 +49,8 @@ class HighlightUploadUseCase:
         book_repository: BookRepositoryProtocol,
         chapter_repository: ChapterRepositoryProtocol,
         deduplication_service: HighlightDeduplicationService,
+        position_index_service: PositionIndexServiceProtocol,
+        file_repository: FileRepositoryProtocol,
     ) -> None:
         """
         Initialize use case with dependencies.
@@ -55,11 +60,15 @@ class HighlightUploadUseCase:
             book_repository: Repository for book lookup
             chapter_repository: Repository for chapter lookup
             deduplication_service: Domain service for deduplication logic
+            position_index_service: Service for building position indices from EPUBs
+            file_repository: Repository for file operations
         """
         self.highlight_repository = highlight_repository
         self.book_repository = book_repository
         self.chapter_repository = chapter_repository
         self.deduplication_service = deduplication_service
+        self.position_index_service = position_index_service
+        self.file_repository = file_repository
 
     def upload_highlights(
         self,
@@ -106,6 +115,13 @@ class HighlightUploadUseCase:
 
         book_id = book.id
 
+        # Build position index if EPUB
+        position_index = None
+        if book.file_type == "epub":
+            epub_path = self.file_repository.find_epub(book.id)
+            if epub_path:
+                position_index = self.position_index_service.build_position_index(epub_path)
+
         # Step 2: Batch fetch chapters by chapter_number
         chapter_numbers: set[int] = {
             data.chapter_number for data in highlight_data_list if data.chapter_number is not None
@@ -144,6 +160,12 @@ class HighlightUploadUseCase:
             if data.start_xpoint and data.end_xpoint:
                 xpoints = XPointRange.parse(data.start_xpoint, data.end_xpoint)
 
+            position: Position | None = None
+            if position_index and data.start_xpoint:
+                position = position_index.resolve(data.start_xpoint)
+            elif book.file_type == "pdf" and data.page is not None:
+                position = Position.from_page(data.page)
+
             highlight = Highlight.create(
                 user_id=user_id_vo,
                 book_id=book_id,
@@ -151,6 +173,7 @@ class HighlightUploadUseCase:
                 chapter_id=chapter_id,
                 xpoints=xpoints,
                 page=data.page,
+                position=position,
                 note=data.note,
             )
             new_highlights.append(highlight)
