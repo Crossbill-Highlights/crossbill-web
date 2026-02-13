@@ -28,6 +28,17 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
     return map;
   }, [bookPrereading]);
 
+  const childrenByParentId = useMemo(() => {
+    const map = new Map<number | null, ChapterWithHighlights[]>();
+    for (const ch of book.chapters) {
+      const key = ch.parent_id ?? null;
+      const list = map.get(key) ?? [];
+      list.push(ch);
+      map.set(key, list);
+    }
+    return map;
+  }, [book.chapters]);
+
   if (book.chapters.length === 0) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -38,7 +49,7 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
     );
   }
 
-  const topLevelChapters = book.chapters.filter((ch: ChapterWithHighlights) => !ch.parent_id);
+  const topLevelChapters = childrenByParentId.get(null) ?? [];
 
   const readingPosition = book.reading_position;
 
@@ -53,7 +64,7 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
         <ChapterAccordion
           key={chapter.id}
           chapter={chapter}
-          allChapters={book.chapters}
+          childrenByParentId={childrenByParentId}
           bookId={book.id}
           prereadingByChapterId={prereadingByChapterId}
           isRead={isChapterRead(chapter.start_position)}

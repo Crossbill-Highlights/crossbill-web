@@ -73,7 +73,26 @@ function useProgressLine(
 
     const observer = new ResizeObserver(measure);
     observer.observe(container);
-    return () => observer.disconnect();
+
+    // Re-measure when MUI Collapse class changes (e.g. MuiCollapse-entered added).
+    // transitionend fires before React commits the class update, so we use
+    // MutationObserver which fires after the DOM mutation.
+    const classObserver = new MutationObserver((mutations) => {
+      const collapseChanged = mutations.some(
+        (m) => m.target instanceof HTMLElement && m.target.classList.contains('MuiCollapse-root')
+      );
+      if (collapseChanged) measure();
+    });
+    classObserver.observe(container, {
+      attributes: true,
+      subtree: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => {
+      observer.disconnect();
+      classObserver.disconnect();
+    };
   }, [containerRef, readingPosition]);
 
   return readingPosition ? state : { lineStart: 0, lineEnd: 0, progressHeight: 0, markers: [] };
@@ -124,11 +143,11 @@ export const ReadingProgressLine = ({ readingPosition, children }: ReadingProgre
             <Box
               key={i}
               sx={{
-                display: marker.isRead ? 'block' : 'none',
                 position: 'absolute',
                 left: -5,
                 top: marker.top - 4.5,
-                transition: 'top 200ms ease-out',
+                opacity: marker.isRead ? 1 : 0,
+                transition: 'opacity 200ms ease-out',
                 width: 12,
                 height: 12,
                 borderRadius: '50%',

@@ -18,7 +18,7 @@ import { PrereadingContent } from './PrereadingContent';
 
 interface ChapterAccordionProps {
   chapter: ChapterWithHighlights;
-  allChapters: ChapterWithHighlights[];
+  childrenByParentId: Map<number | null, ChapterWithHighlights[]>;
   bookId: number;
   prereadingByChapterId: Record<number, ChapterPrereadingResponse>;
   depth?: number;
@@ -113,7 +113,7 @@ const LeafChapterRow = ({
 
 export const ChapterAccordion = ({
   chapter,
-  allChapters,
+  childrenByParentId,
   bookId,
   prereadingByChapterId,
   depth = 0,
@@ -123,7 +123,7 @@ export const ChapterAccordion = ({
   const [expanded, setExpanded] = useState(false);
   const queryClient = useQueryClient();
 
-  const childChapters = allChapters.filter((ch) => ch.parent_id === chapter.id);
+  const childChapters = childrenByParentId.get(chapter.id) ?? [];
   const isLeaf = childChapters.length === 0;
 
   const prereading = isLeaf ? prereadingByChapterId[chapter.id] : undefined;
@@ -145,56 +145,49 @@ export const ChapterAccordion = ({
     generate({ chapterId: chapter.id });
   };
 
+  let content: ReactNode;
   if (!isLeaf) {
-    return (
-      <Box data-chapter-read={isRead ? 'true' : 'false'}>
-        <ExpandableChapter
-          name={chapter.name}
-          depth={depth}
-          expanded={expanded}
-          onToggle={() => setExpanded(!expanded)}
-        >
-          <Box>
-            {childChapters.map((child) => (
-              <ChapterAccordion
-                key={child.id}
-                chapter={child}
-                allChapters={allChapters}
-                bookId={bookId}
-                prereadingByChapterId={prereadingByChapterId}
-                depth={depth + 1}
-                isRead={
-                  readingPosition != null && child.start_position != null
-                    ? readingPosition.index >= child.start_position.index
-                    : undefined
-                }
-                readingPosition={readingPosition}
-              />
-            ))}
-          </Box>
-        </ExpandableChapter>
-      </Box>
+    content = (
+      <ExpandableChapter
+        name={chapter.name}
+        depth={depth}
+        expanded={expanded}
+        onToggle={() => setExpanded(!expanded)}
+      >
+        <Box>
+          {childChapters.map((child) => (
+            <ChapterAccordion
+              key={child.id}
+              chapter={child}
+              childrenByParentId={childrenByParentId}
+              bookId={bookId}
+              prereadingByChapterId={prereadingByChapterId}
+              depth={depth + 1}
+              isRead={
+                readingPosition != null && child.start_position != null
+                  ? readingPosition.index >= child.start_position.index
+                  : undefined
+              }
+              readingPosition={readingPosition}
+            />
+          ))}
+        </Box>
+      </ExpandableChapter>
     );
+  } else if (prereading || isPending) {
+    content = (
+      <ExpandableChapter
+        name={chapter.name}
+        depth={depth}
+        expanded={expanded}
+        onToggle={() => setExpanded(!expanded)}
+      >
+        <PrereadingContent content={prereading} isGenerating={isPending} />
+      </ExpandableChapter>
+    );
+  } else {
+    content = <LeafChapterRow name={chapter.name} depth={depth} onGenerate={handleGenerate} />;
   }
 
-  if (prereading || isPending) {
-    return (
-      <Box data-chapter-read={isRead ? 'true' : 'false'}>
-        <ExpandableChapter
-          name={chapter.name}
-          depth={depth}
-          expanded={expanded}
-          onToggle={() => setExpanded(!expanded)}
-        >
-          <PrereadingContent content={prereading} isGenerating={isPending} />
-        </ExpandableChapter>
-      </Box>
-    );
-  }
-
-  return (
-    <Box data-chapter-read={isRead ? 'true' : 'false'}>
-      <LeafChapterRow name={chapter.name} depth={depth} onGenerate={handleGenerate} />
-    </Box>
-  );
+  return <Box data-chapter-read={isRead ? 'true' : 'false'}>{content}</Box>;
 };
