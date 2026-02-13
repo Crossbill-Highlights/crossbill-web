@@ -9,6 +9,7 @@ import type { ChapterWithHighlights } from './chapterWithHighlights';
 import type { Flashcard } from './flashcard';
 import type { HighlightTagGroupInBook } from './highlightTagGroupInBook';
 import type { HighlightTagInBook } from './highlightTagInBook';
+import type { PositionResponse } from './positionResponse';
 import type { TagInBook } from './tagInBook';
 
 /**
@@ -36,6 +37,8 @@ export interface BookDetails {
   book_flashcards?: Flashcard[];
   /** List of chapters with highlights */
   chapters: ChapterWithHighlights[];
+  /** User's current reading position from latest session */
+  reading_position?: PositionResponse | null;
   created_at: string;
   updated_at: string;
   last_viewed?: string | null;

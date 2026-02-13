@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Highlight } from './highlight';
+import type { PositionResponse } from './positionResponse';
 
 /**
  * Schema for Chapter with its highlights.
@@ -16,6 +17,8 @@ export interface ChapterWithHighlights {
   chapter_number?: number | null;
   /** Parent chapter ID for hierarchy */
   parent_id?: number | null;
+  /** Chapter start position */
+  start_position?: PositionResponse | null;
   /** List of highlights in this chapter */
   highlights: Highlight[];
   created_at: string;

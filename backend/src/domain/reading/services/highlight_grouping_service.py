@@ -3,6 +3,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 
+from src.domain.common.value_objects.position import Position
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.library.entities.chapter import Chapter
 from src.domain.reading.entities.highlight import Highlight
@@ -28,6 +29,7 @@ class ChapterWithHighlights:
     chapter_number: int | None
     highlights: list[HighlightWithContext]
     parent_id: int | None = None
+    start_position: Position | None = None
 
 
 class HighlightGroupingService:

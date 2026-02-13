@@ -7,6 +7,7 @@ Provides dataclass for aggregating book data for detail view.
 from dataclasses import dataclass, field
 from typing import Any
 
+from src.domain.common.value_objects.position import Position
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.library.entities.book import Book
 from src.domain.reading.services.highlight_grouping_service import ChapterWithHighlights
@@ -23,3 +24,4 @@ class BookDetailsAggregation:
     bookmarks: list[Any]  # Legacy ORM models (temporary)
     chapters_with_highlights: list[ChapterWithHighlights]
     book_flashcards: list[Flashcard] = field(default_factory=list)
+    reading_position: Position | None = None

@@ -91,6 +91,7 @@ from src.infrastructure.reading.schemas import (
     HighlightTagUpdateRequest,
     HighlightUploadRequest,
     HighlightUploadResponse,
+    PositionResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -498,6 +499,12 @@ def _map_chapters_to_schemas(
             name=chapter_group.chapter_name or "",
             chapter_number=chapter_group.chapter_number,
             parent_id=chapter_group.parent_id,
+            start_position=PositionResponse(
+                index=chapter_group.start_position.index,
+                char_index=chapter_group.start_position.char_index,
+            )
+            if chapter_group.start_position
+            else None,
             highlights=highlight_schemas,
             created_at=first_chapter.created_at if first_chapter else datetime.now(UTC),
             updated_at=first_chapter.created_at if first_chapter else datetime.now(UTC),
