@@ -103,8 +103,6 @@ def _map_chapters_to_schemas(
                     )
                     for tag in hw.tags
                 ],
-                start_xpoint=h.xpoints.start.to_string() if h.xpoints else None,
-                end_xpoint=h.xpoints.end.to_string() if h.xpoints else None,
                 created_at=h.created_at,
                 updated_at=h.updated_at,
             )
