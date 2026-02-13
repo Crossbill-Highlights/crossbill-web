@@ -8,6 +8,7 @@ import { ThreeColumnLayout } from '@/components/layout/Layouts';
 import { Box, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import { ChapterAccordion } from './ChapterAccordion';
+import { ReadingProgressLine } from './ReadingProgressLine';
 
 interface StructureTabProps {
   book: BookDetails;
@@ -39,8 +40,15 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
 
   const topLevelChapters = book.chapters.filter((ch: ChapterWithHighlights) => !ch.parent_id);
 
+  const readingPosition = book.reading_position;
+
+  const isChapterRead = (startPosition: { index: number } | null | undefined): boolean => {
+    if (!readingPosition || !startPosition) return false;
+    return readingPosition.index >= startPosition.index;
+  };
+
   const content = (
-    <Box>
+    <ReadingProgressLine readingPosition={readingPosition}>
       {topLevelChapters.map((chapter) => (
         <ChapterAccordion
           key={chapter.id}
@@ -48,9 +56,11 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
           allChapters={book.chapters}
           bookId={book.id}
           prereadingByChapterId={prereadingByChapterId}
+          isRead={isChapterRead(chapter.start_position)}
+          readingPosition={readingPosition}
         />
       ))}
-    </Box>
+    </ReadingProgressLine>
   );
 
   if (!isDesktop) {

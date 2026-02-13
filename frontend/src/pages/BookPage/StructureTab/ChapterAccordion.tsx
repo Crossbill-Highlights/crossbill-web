@@ -1,4 +1,8 @@
-import type { ChapterPrereadingResponse, ChapterWithHighlights } from '@/api/generated/model';
+import type {
+  ChapterPrereadingResponse,
+  ChapterWithHighlights,
+  PositionResponse,
+} from '@/api/generated/model';
 import {
   getGetBookPrereadingApiV1BooksBookIdPrereadingGetQueryKey,
   useGenerateChapterPrereadingApiV1ChaptersChapterIdPrereadingGeneratePost,
@@ -18,17 +22,21 @@ interface ChapterAccordionProps {
   bookId: number;
   prereadingByChapterId: Record<number, ChapterPrereadingResponse>;
   depth?: number;
+  isRead?: boolean;
+  readingPosition?: PositionResponse | null;
 }
 
 const accordionSx = (depth: number) => (theme: { spacing: (n: number) => string }) => ({
   boxShadow: 'none',
   '&:before': { display: 'none' },
+  '&.Mui-expanded': { m: 0 },
   bgcolor: 'transparent',
   ml: theme.spacing(depth * 2),
   borderBottom: '1px solid',
   borderColor: 'divider',
   '&:last-of-type': {
     borderBottom: depth > 0 ? 'none' : '1px solid',
+    borderRadius: 0,
     borderColor: 'divider',
   },
 });
@@ -47,7 +55,14 @@ const ExpandableChapter = ({
   children: ReactNode;
 }) => (
   <Accordion expanded={expanded} onChange={onToggle} sx={accordionSx(depth)}>
-    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+    <AccordionSummary
+      expandIcon={<ExpandMoreIcon />}
+      sx={{
+        borderRadius: 0,
+        '&.Mui-expanded': { minHeight: 48 },
+        '& .MuiAccordionSummary-content.Mui-expanded': { my: '12px' },
+      }}
+    >
       <Typography variant="body1" sx={{ fontWeight: 600 }}>
         {name}
       </Typography>
@@ -102,6 +117,8 @@ export const ChapterAccordion = ({
   bookId,
   prereadingByChapterId,
   depth = 0,
+  isRead,
+  readingPosition,
 }: ChapterAccordionProps) => {
   const [expanded, setExpanded] = useState(false);
   const queryClient = useQueryClient();
@@ -130,40 +147,54 @@ export const ChapterAccordion = ({
 
   if (!isLeaf) {
     return (
-      <ExpandableChapter
-        name={chapter.name}
-        depth={depth}
-        expanded={expanded}
-        onToggle={() => setExpanded(!expanded)}
-      >
-        <Box>
-          {childChapters.map((child) => (
-            <ChapterAccordion
-              key={child.id}
-              chapter={child}
-              allChapters={allChapters}
-              bookId={bookId}
-              prereadingByChapterId={prereadingByChapterId}
-              depth={depth + 1}
-            />
-          ))}
-        </Box>
-      </ExpandableChapter>
+      <Box data-chapter-read={isRead ? 'true' : 'false'}>
+        <ExpandableChapter
+          name={chapter.name}
+          depth={depth}
+          expanded={expanded}
+          onToggle={() => setExpanded(!expanded)}
+        >
+          <Box>
+            {childChapters.map((child) => (
+              <ChapterAccordion
+                key={child.id}
+                chapter={child}
+                allChapters={allChapters}
+                bookId={bookId}
+                prereadingByChapterId={prereadingByChapterId}
+                depth={depth + 1}
+                isRead={
+                  readingPosition != null && child.start_position != null
+                    ? readingPosition.index >= child.start_position.index
+                    : undefined
+                }
+                readingPosition={readingPosition}
+              />
+            ))}
+          </Box>
+        </ExpandableChapter>
+      </Box>
     );
   }
 
   if (prereading || isPending) {
     return (
-      <ExpandableChapter
-        name={chapter.name}
-        depth={depth}
-        expanded={expanded}
-        onToggle={() => setExpanded(!expanded)}
-      >
-        <PrereadingContent content={prereading} isGenerating={isPending} />
-      </ExpandableChapter>
+      <Box data-chapter-read={isRead ? 'true' : 'false'}>
+        <ExpandableChapter
+          name={chapter.name}
+          depth={depth}
+          expanded={expanded}
+          onToggle={() => setExpanded(!expanded)}
+        >
+          <PrereadingContent content={prereading} isGenerating={isPending} />
+        </ExpandableChapter>
+      </Box>
     );
   }
 
-  return <LeafChapterRow name={chapter.name} depth={depth} onGenerate={handleGenerate} />;
+  return (
+    <Box data-chapter-read={isRead ? 'true' : 'false'}>
+      <LeafChapterRow name={chapter.name} depth={depth} onGenerate={handleGenerate} />
+    </Box>
+  );
 };
