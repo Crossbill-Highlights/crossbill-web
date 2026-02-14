@@ -69,6 +69,7 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
           prereadingByChapterId={prereadingByChapterId}
           isRead={isChapterRead(chapter.start_position)}
           readingPosition={readingPosition}
+          preExpanded={true}
         />
       ))}
     </ReadingProgressLine>

@@ -24,6 +24,7 @@ interface ChapterAccordionProps {
   depth?: number;
   isRead?: boolean;
   readingPosition?: PositionResponse | null;
+  preExpanded?: boolean;
 }
 
 const accordionSx = (depth: number) => (theme: { spacing: (n: number) => string }) => ({
@@ -119,8 +120,9 @@ export const ChapterAccordion = ({
   depth = 0,
   isRead,
   readingPosition,
+  preExpanded = false,
 }: ChapterAccordionProps) => {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(preExpanded);
   const queryClient = useQueryClient();
 
   const childChapters = childrenByParentId.get(chapter.id) ?? [];
