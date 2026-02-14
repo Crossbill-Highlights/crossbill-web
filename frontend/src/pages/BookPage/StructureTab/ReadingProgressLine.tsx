@@ -131,7 +131,7 @@ export const ReadingProgressLine = ({ readingPosition, children }: ReadingProgre
               left: 0,
               top: lineStart,
               width: 8,
-              height: progressHeight - lineStart,
+              height: progressHeight - lineStart + 4,
               borderRadius: '8px',
               bgcolor: theme.palette.secondary.dark,
               transition: 'top 200ms ease-out, height 200ms ease-out',
