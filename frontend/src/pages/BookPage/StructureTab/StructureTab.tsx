@@ -8,6 +8,7 @@ import { ThreeColumnLayout } from '@/components/layout/Layouts';
 import { Box, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import { ChapterAccordion } from './ChapterAccordion';
+import { ReadingProgressLine } from './ReadingProgressLine';
 
 interface StructureTabProps {
   book: BookDetails;
@@ -27,6 +28,17 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
     return map;
   }, [bookPrereading]);
 
+  const childrenByParentId = useMemo(() => {
+    const map = new Map<number | null, ChapterWithHighlights[]>();
+    for (const ch of book.chapters) {
+      const key = ch.parent_id ?? null;
+      const list = map.get(key) ?? [];
+      list.push(ch);
+      map.set(key, list);
+    }
+    return map;
+  }, [book.chapters]);
+
   if (book.chapters.length === 0) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -37,20 +49,30 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
     );
   }
 
-  const topLevelChapters = book.chapters.filter((ch: ChapterWithHighlights) => !ch.parent_id);
+  const topLevelChapters = childrenByParentId.get(null) ?? [];
+
+  const readingPosition = book.reading_position;
+
+  const isChapterRead = (startPosition: { index: number } | null | undefined): boolean => {
+    if (!readingPosition || !startPosition) return false;
+    return readingPosition.index >= startPosition.index;
+  };
 
   const content = (
-    <Box>
+    <ReadingProgressLine readingPosition={readingPosition}>
       {topLevelChapters.map((chapter) => (
         <ChapterAccordion
           key={chapter.id}
           chapter={chapter}
-          allChapters={book.chapters}
+          childrenByParentId={childrenByParentId}
           bookId={book.id}
           prereadingByChapterId={prereadingByChapterId}
+          isRead={isChapterRead(chapter.start_position)}
+          readingPosition={readingPosition}
+          preExpanded={true}
         />
       ))}
-    </Box>
+    </ReadingProgressLine>
   );
 
   if (!isDesktop) {

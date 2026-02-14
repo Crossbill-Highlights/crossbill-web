@@ -136,6 +136,13 @@ class HighlightUploadResponse(BaseModel):
     )
 
 
+class PositionResponse(BaseModel):
+    """Position in a book document."""
+
+    index: int = Field(..., description="Document-order element number")
+    char_index: int = Field(..., description="Character offset within element")
+
+
 class ChapterWithHighlights(BaseModel):
     """Schema for Chapter with its highlights."""
 
@@ -143,6 +150,7 @@ class ChapterWithHighlights(BaseModel):
     name: str
     chapter_number: int | None = Field(None, description="Chapter order number from TOC")
     parent_id: int | None = Field(None, description="Parent chapter ID for hierarchy")
+    start_position: PositionResponse | None = Field(None, description="Chapter start position")
     highlights: list[Highlight] = Field(..., description="List of highlights in this chapter")
     created_at: dt
     updated_at: dt
@@ -176,6 +184,9 @@ class BookDetails(BaseModel):
     )
     chapters: list[ChapterWithHighlights] = Field(
         ..., description="List of chapters with highlights"
+    )
+    reading_position: PositionResponse | None = Field(
+        None, description="User's current reading position from latest session"
     )
     created_at: dt
     updated_at: dt

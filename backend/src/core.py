@@ -416,6 +416,7 @@ class Container(containers.DeclarativeContainer):
         get_book_tags_use_case=get_book_tags_use_case,
         highlight_tag_use_case=get_highlight_tags_for_book_use_case,
         highlight_grouping_service=highlight_grouping_service,
+        reading_session_repository=reading_session_repository,
     )
 
     update_book_use_case = providers.Factory(

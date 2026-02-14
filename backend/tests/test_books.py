@@ -554,6 +554,67 @@ class TestGetBookDetails:
         assert "Important" in tag_names
         assert "Review" in tag_names
 
+    def test_get_book_details_includes_reading_position(
+        self,
+        client: TestClient,
+        db_session: Session,
+        book_with_chapter: BookWithChapter,
+    ) -> None:
+        """Test that book details includes reading position from latest session."""
+        book, _chapter = book_with_chapter
+
+        session = models.ReadingSession(
+            user_id=DEFAULT_USER_ID,
+            book_id=book.id,
+            start_time=datetime(2024, 1, 15, 14, 0, 0, tzinfo=UTC),
+            end_time=datetime(2024, 1, 15, 15, 0, 0, tzinfo=UTC),
+            start_position=[10, 0],
+            end_position=[50, 100],
+            content_hash="test-hash-reading-position",
+        )
+        db_session.add(session)
+        db_session.commit()
+
+        response = client.get(f"/api/v1/books/{book.id}")
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["reading_position"] == {"index": 50, "char_index": 100}
+
+    def test_get_book_details_reading_position_null_when_no_sessions(
+        self,
+        client: TestClient,
+        db_session: Session,
+        book_with_chapter: BookWithChapter,
+    ) -> None:
+        """Test that reading_position is null when no reading sessions exist."""
+        book, _ = book_with_chapter
+
+        response = client.get(f"/api/v1/books/{book.id}")
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["reading_position"] is None
+
+    def test_get_book_details_includes_chapter_start_position(
+        self,
+        client: TestClient,
+        db_session: Session,
+        book_with_chapter: BookWithChapter,
+    ) -> None:
+        """Test that chapters include start_position."""
+        book, chapter = book_with_chapter
+
+        chapter.start_position = [25, 0]
+        db_session.commit()
+
+        response = client.get(f"/api/v1/books/{book.id}")
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert len(data["chapters"]) == 1
+        assert data["chapters"][0]["start_position"] == {"index": 25, "char_index": 0}
+
 
 class TestGetBooksWithFlashcardFilter:
     @pytest.fixture

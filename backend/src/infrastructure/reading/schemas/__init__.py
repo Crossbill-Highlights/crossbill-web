@@ -20,6 +20,7 @@ from src.infrastructure.reading.schemas.highlight_schemas import (
     HighlightResponseBase,
     HighlightUploadRequest,
     HighlightUploadResponse,
+    PositionResponse,
 )
 from src.infrastructure.reading.schemas.highlight_tag_schemas import (
     HighlightTag,
@@ -72,6 +73,7 @@ __all__ = [
     "HighlightTagsResponse",
     "HighlightUploadRequest",
     "HighlightUploadResponse",
+    "PositionResponse",
     "ReadingSession",
     "ReadingSessionAISummaryResponse",
     "ReadingSessionUploadRequest",

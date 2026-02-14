@@ -48,6 +48,7 @@ from src.infrastructure.reading.schemas import (
 from src.infrastructure.reading.schemas import (
     ChapterWithHighlights as ChapterWithHighlightsSchema,
 )
+from src.infrastructure.reading.schemas.highlight_schemas import PositionResponse
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +117,12 @@ def _map_chapters_to_schemas(
             name=chapter_group.chapter_name or "",
             chapter_number=chapter_group.chapter_number,
             parent_id=chapter_group.parent_id,
+            start_position=PositionResponse(
+                index=chapter_group.start_position.index,
+                char_index=chapter_group.start_position.char_index,
+            )
+            if chapter_group.start_position
+            else None,
             highlights=highlight_schemas,
             created_at=first_chapter.created_at if first_chapter else datetime.now(UTC),
             updated_at=first_chapter.created_at if first_chapter else datetime.now(UTC),
@@ -182,6 +189,12 @@ def _build_book_details_schema(agg: BookDetailsAggregation) -> BookDetails:
             for f in agg.book_flashcards
         ],
         chapters=_map_chapters_to_schemas(agg.chapters_with_highlights),
+        reading_position=PositionResponse(
+            index=agg.reading_position.index,
+            char_index=agg.reading_position.char_index,
+        )
+        if agg.reading_position
+        else None,
         created_at=agg.book.created_at,
         updated_at=agg.book.updated_at,
         last_viewed=agg.book.last_viewed,

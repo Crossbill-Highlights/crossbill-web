@@ -1,4 +1,8 @@
-import type { ChapterPrereadingResponse, ChapterWithHighlights } from '@/api/generated/model';
+import type {
+  ChapterPrereadingResponse,
+  ChapterWithHighlights,
+  PositionResponse,
+} from '@/api/generated/model';
 import {
   getGetBookPrereadingApiV1BooksBookIdPrereadingGetQueryKey,
   useGenerateChapterPrereadingApiV1ChaptersChapterIdPrereadingGeneratePost,
@@ -14,21 +18,26 @@ import { PrereadingContent } from './PrereadingContent';
 
 interface ChapterAccordionProps {
   chapter: ChapterWithHighlights;
-  allChapters: ChapterWithHighlights[];
+  childrenByParentId: Map<number | null, ChapterWithHighlights[]>;
   bookId: number;
   prereadingByChapterId: Record<number, ChapterPrereadingResponse>;
   depth?: number;
+  isRead?: boolean;
+  readingPosition?: PositionResponse | null;
+  preExpanded?: boolean;
 }
 
 const accordionSx = (depth: number) => (theme: { spacing: (n: number) => string }) => ({
   boxShadow: 'none',
   '&:before': { display: 'none' },
+  '&.Mui-expanded': { m: 0 },
   bgcolor: 'transparent',
   ml: theme.spacing(depth * 2),
   borderBottom: '1px solid',
   borderColor: 'divider',
   '&:last-of-type': {
     borderBottom: depth > 0 ? 'none' : '1px solid',
+    borderRadius: 0,
     borderColor: 'divider',
   },
 });
@@ -47,7 +56,14 @@ const ExpandableChapter = ({
   children: ReactNode;
 }) => (
   <Accordion expanded={expanded} onChange={onToggle} sx={accordionSx(depth)}>
-    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+    <AccordionSummary
+      expandIcon={<ExpandMoreIcon />}
+      sx={{
+        borderRadius: 0,
+        '&.Mui-expanded': { minHeight: 48 },
+        '& .MuiAccordionSummary-content.Mui-expanded': { my: '12px' },
+      }}
+    >
       <Typography variant="body1" sx={{ fontWeight: 600 }}>
         {name}
       </Typography>
@@ -98,15 +114,18 @@ const LeafChapterRow = ({
 
 export const ChapterAccordion = ({
   chapter,
-  allChapters,
+  childrenByParentId,
   bookId,
   prereadingByChapterId,
   depth = 0,
+  isRead,
+  readingPosition,
+  preExpanded = false,
 }: ChapterAccordionProps) => {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(preExpanded);
   const queryClient = useQueryClient();
 
-  const childChapters = allChapters.filter((ch) => ch.parent_id === chapter.id);
+  const childChapters = childrenByParentId.get(chapter.id) ?? [];
   const isLeaf = childChapters.length === 0;
 
   const prereading = isLeaf ? prereadingByChapterId[chapter.id] : undefined;
@@ -128,8 +147,9 @@ export const ChapterAccordion = ({
     generate({ chapterId: chapter.id });
   };
 
+  let content: ReactNode;
   if (!isLeaf) {
-    return (
+    content = (
       <ExpandableChapter
         name={chapter.name}
         depth={depth}
@@ -141,19 +161,23 @@ export const ChapterAccordion = ({
             <ChapterAccordion
               key={child.id}
               chapter={child}
-              allChapters={allChapters}
+              childrenByParentId={childrenByParentId}
               bookId={bookId}
               prereadingByChapterId={prereadingByChapterId}
               depth={depth + 1}
+              isRead={
+                readingPosition != null && child.start_position != null
+                  ? readingPosition.index >= child.start_position.index
+                  : undefined
+              }
+              readingPosition={readingPosition}
             />
           ))}
         </Box>
       </ExpandableChapter>
     );
-  }
-
-  if (prereading || isPending) {
-    return (
+  } else if (prereading || isPending) {
+    content = (
       <ExpandableChapter
         name={chapter.name}
         depth={depth}
@@ -163,7 +187,9 @@ export const ChapterAccordion = ({
         <PrereadingContent content={prereading} isGenerating={isPending} />
       </ExpandableChapter>
     );
+  } else {
+    content = <LeafChapterRow name={chapter.name} depth={depth} onGenerate={handleGenerate} />;
   }
 
-  return <LeafChapterRow name={chapter.name} depth={depth} onGenerate={handleGenerate} />;
+  return <Box data-chapter-read={isRead ? 'true' : 'false'}>{content}</Box>;
 };

@@ -13,6 +13,9 @@ from src.application.reading.protocols.highlight_repository import HighlightRepo
 from src.application.reading.protocols.highlight_tag_repository import (
     HighlightTagRepositoryProtocol,
 )
+from src.application.reading.protocols.reading_session_repository import (
+    ReadingSessionRepositoryProtocol,
+)
 from src.application.reading.use_cases.highlight_tags.get_highlight_tags_for_book_use_case import (
     GetHighlightTagsForBookUseCase,
 )
@@ -41,6 +44,7 @@ class GetBookDetailsUseCase:
         get_book_tags_use_case: GetBookTagsUseCase,
         highlight_tag_use_case: GetHighlightTagsForBookUseCase,
         highlight_grouping_service: HighlightGroupingService,
+        reading_session_repository: ReadingSessionRepositoryProtocol,
     ) -> None:
         self.book_repository = book_repository
         self.chapter_repository = chapter_repository
@@ -51,6 +55,7 @@ class GetBookDetailsUseCase:
         self.get_book_tags_use_case = get_book_tags_use_case
         self.highlight_tag_use_case = highlight_tag_use_case
         self.highlight_grouping_service = highlight_grouping_service
+        self.reading_session_repository = reading_session_repository
 
     def get_book_details(self, book_id: int, user_id: int) -> BookDetailsAggregation:
         """
@@ -105,8 +110,9 @@ class GetBookDetailsUseCase:
         for ch in all_chapters:
             if ch.id.value in grouped_by_id:
                 existing = grouped_by_id.pop(ch.id.value)
-                # Ensure parent_id is set from the chapter entity
+                # Ensure parent_id and start_position are set from the chapter entity
                 existing.parent_id = ch.parent_id.value if ch.parent_id else None
+                existing.start_position = ch.start_position
                 merged.append(existing)
             else:
                 merged.append(
@@ -116,11 +122,18 @@ class GetBookDetailsUseCase:
                         chapter_number=ch.chapter_number,
                         highlights=[],
                         parent_id=ch.parent_id.value if ch.parent_id else None,
+                        start_position=ch.start_position,
                     )
                 )
         # Append any highlight groups for chapters not in all_chapters (e.g. deleted chapters)
         for remaining in grouped_by_id.values():
             merged.append(remaining)
+
+        # Get reading position from latest reading session
+        latest_sessions = self.reading_session_repository.find_by_book_id(
+            book_id_vo, user_id_vo, limit=1, offset=0
+        )
+        reading_position = latest_sessions[0].end_position if latest_sessions else None
 
         # Get bookmarks (returns domain entities)
         bookmarks = self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)
@@ -144,4 +157,5 @@ class GetBookDetailsUseCase:
             bookmarks=bookmarks,
             chapters_with_highlights=merged,
             book_flashcards=book_flashcards,
+            reading_position=reading_position,
         )
