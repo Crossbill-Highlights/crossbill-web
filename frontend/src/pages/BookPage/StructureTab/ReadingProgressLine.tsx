@@ -105,10 +105,7 @@ interface ReadingProgressLineProps {
 
 export const ReadingProgressLine = ({ readingPosition, children }: ReadingProgressLineProps) => {
   const containerRef = useRef<HTMLElement>(null);
-  const { lineStart, lineEnd, progressHeight, markers } = useProgressLine(
-    containerRef,
-    readingPosition
-  );
+  const { lineStart, lineEnd, progressHeight } = useProgressLine(containerRef, readingPosition);
 
   return (
     <Box ref={containerRef} sx={{ position: 'relative', pl: readingPosition ? '15px' : 0 }}>
@@ -121,7 +118,8 @@ export const ReadingProgressLine = ({ readingPosition, children }: ReadingProgre
               left: 0,
               top: lineStart,
               height: lineEnd - lineStart,
-              width: 3,
+              borderRadius: '8px',
+              width: 8,
               bgcolor: 'divider',
               transition: 'top 200ms ease-out, height 200ms ease-out',
             }}
@@ -132,29 +130,13 @@ export const ReadingProgressLine = ({ readingPosition, children }: ReadingProgre
               position: 'absolute',
               left: 0,
               top: lineStart,
-              width: 3,
+              width: 8,
               height: progressHeight - lineStart,
-              bgcolor: theme.palette.secondary.main,
+              borderRadius: '8px',
+              bgcolor: theme.palette.secondary.dark,
               transition: 'top 200ms ease-out, height 200ms ease-out',
             }}
           />
-          {/* Chapter markers */}
-          {markers.map((marker, i) => (
-            <Box
-              key={i}
-              sx={{
-                position: 'absolute',
-                left: -5,
-                top: marker.top - 4.5,
-                opacity: marker.isRead ? 1 : 0,
-                transition: 'opacity 200ms ease-out',
-                width: 12,
-                height: 12,
-                borderRadius: '50%',
-                bgcolor: theme.palette.secondary.main,
-              }}
-            />
-          ))}
         </>
       )}
       {children}
