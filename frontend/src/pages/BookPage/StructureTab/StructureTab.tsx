@@ -134,7 +134,6 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
           prereadingByChapterId={prereadingByChapterId}
           bookmarksByHighlightId={bookmarksByHighlightId}
           availableTags={book.highlight_tags}
-          readingPosition={book.reading_position}
         />
       )}
     </>

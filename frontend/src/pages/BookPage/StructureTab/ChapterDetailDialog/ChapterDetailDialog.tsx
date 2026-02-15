@@ -3,7 +3,6 @@ import type {
   ChapterPrereadingResponse,
   ChapterWithHighlights,
   HighlightTagInBook,
-  PositionResponse,
 } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
@@ -27,7 +26,6 @@ interface ChapterDetailDialogProps {
   prereadingByChapterId: Record<number, ChapterPrereadingResponse>;
   bookmarksByHighlightId: Record<number, Bookmark>;
   availableTags: HighlightTagInBook[];
-  readingPosition?: PositionResponse | null;
 }
 
 export const ChapterDetailDialog = ({
@@ -41,7 +39,6 @@ export const ChapterDetailDialog = ({
   prereadingByChapterId,
   bookmarksByHighlightId,
   availableTags,
-  readingPosition,
 }: ChapterDetailDialogProps) => {
   const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext, swipeHandlers } =
     useModalHorizontalNavigation({
@@ -50,11 +47,6 @@ export const ChapterDetailDialog = ({
       totalCount: allLeafChapters.length,
       onNavigate,
     });
-
-  const isChapterRead =
-    readingPosition &&
-    chapter.start_position &&
-    readingPosition.index >= chapter.start_position.index;
 
   const prereadingSummary = prereadingByChapterId[chapter.id];
 
@@ -66,7 +58,7 @@ export const ChapterDetailDialog = ({
         chapterId={chapter.id}
         bookId={bookId}
         prereadingSummary={prereadingSummary}
-        defaultExpanded={!isChapterRead}
+        defaultExpanded={true}
       />
       <HighlightsSection
         chapter={chapter}
