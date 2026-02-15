@@ -7,9 +7,10 @@ import { useGetBookPrereadingApiV1BooksBookIdPrereadingGet } from '@/api/generat
 import { ThreeColumnLayout } from '@/components/layout/Layouts';
 import { Box, Typography } from '@mui/material';
 import { keyBy } from 'lodash';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { ChapterAccordion } from './ChapterAccordion';
 import { ChapterDetailDialog } from './ChapterDetailDialog/ChapterDetailDialog.tsx';
+import { useChapterDetailsModal } from './hooks/useChapterDetailsModal.ts';
 import { ReadingProgressLine } from './ReadingProgressLine';
 
 interface StructureTabProps {
@@ -59,29 +60,13 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
     return result;
   }, [childrenByParentId]);
 
-  // Dialog state
-  const [selectedChapterIndex, setSelectedChapterIndex] = useState<number | null>(null);
-
-  const selectedChapter = useMemo(
-    () => (selectedChapterIndex !== null ? (leafChapters[selectedChapterIndex] ?? null) : null),
-    [leafChapters, selectedChapterIndex]
-  );
-
-  const handleChapterClick = useCallback(
-    (chapterId: number) => {
-      const index = leafChapters.findIndex((ch) => ch.id === chapterId);
-      if (index !== -1) setSelectedChapterIndex(index);
-    },
-    [leafChapters]
-  );
-
-  const handleDialogClose = useCallback(() => {
-    setSelectedChapterIndex(null);
-  }, []);
-
-  const handleDialogNavigate = useCallback((newIndex: number) => {
-    setSelectedChapterIndex(newIndex);
-  }, []);
+  const {
+    selectedChapter,
+    selectedChapterIndex,
+    handleChapterClick,
+    handleDialogClose,
+    handleDialogNavigate,
+  } = useChapterDetailsModal({ leafChapters });
 
   // Compute bookmarks map
   const bookmarksByHighlightId = useMemo(
