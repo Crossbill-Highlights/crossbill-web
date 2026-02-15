@@ -13,14 +13,14 @@ import { CollapsibleSection } from './CollapsibleSection.tsx';
 interface PrereadingSectionProps {
   chapterId: number;
   bookId: number;
-  prereading?: ChapterPrereadingResponse;
+  prereadingSummary?: ChapterPrereadingResponse;
   defaultExpanded: boolean;
 }
 
 export const PrereadingSection = ({
   chapterId,
   bookId,
-  prereading,
+  prereadingSummary,
   defaultExpanded,
 }: PrereadingSectionProps) => {
   const queryClient = useQueryClient();
@@ -42,8 +42,8 @@ export const PrereadingSection = ({
 
   return (
     <CollapsibleSection title="Pre-reading" defaultExpanded={defaultExpanded}>
-      {prereading || isPending ? (
-        <PrereadingContent content={prereading} isGenerating={isPending} />
+      {prereadingSummary || isPending ? (
+        <PrereadingContent content={prereadingSummary} isGenerating={isPending} />
       ) : (
         <AIFeature>
           <Box sx={{ py: 1 }}>

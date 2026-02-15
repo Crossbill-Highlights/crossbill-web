@@ -55,7 +55,7 @@ export const ChapterDetailDialog = ({
     chapter.start_position &&
     readingPosition.index >= chapter.start_position.index;
 
-  const prereading = prereadingByChapterId[chapter.id];
+  const prereadingSummary = prereadingByChapterId[chapter.id];
 
   const title = (
     <Typography
@@ -78,7 +78,7 @@ export const ChapterDetailDialog = ({
       <PrereadingSection
         chapterId={chapter.id}
         bookId={bookId}
-        prereading={prereading}
+        prereadingSummary={prereadingSummary}
         defaultExpanded={!isChapterRead}
       />
       <HighlightsSection
