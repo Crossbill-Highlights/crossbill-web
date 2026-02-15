@@ -34,14 +34,14 @@ export const useHighlightModal = ({
   const openHighlightId = syncToUrl ? urlHighlightId : localHighlightId;
 
   const updateHighlightId = useCallback(
-    (newId: number | undefined) => {
+    (newId: number | undefined, replace: boolean) => {
       if (syncToUrl) {
         navigate({
           search: (prev) => ({
             ...prev,
             highlightId: newId,
           }),
-          replace: true,
+          replace,
         });
       } else {
         setLocalHighlightId(newId);
@@ -50,16 +50,18 @@ export const useHighlightModal = ({
     [navigate, syncToUrl]
   );
 
+  // Push to history so back button closes the modal
   const handleOpenHighlight = useCallback(
     (highlightIdToOpen: number) => {
-      updateHighlightId(highlightIdToOpen);
+      updateHighlightId(highlightIdToOpen, false);
     },
     [updateHighlightId]
   );
 
+  // Replace so back after closing doesn't reopen the modal
   const handleCloseHighlight = useCallback(
     (lastViewedHighlightId?: number) => {
-      updateHighlightId(undefined);
+      updateHighlightId(undefined, true);
 
       if (lastViewedHighlightId && isMobile && syncToUrl) {
         scrollToElementWithHighlight(`highlight-${lastViewedHighlightId}`);
@@ -68,9 +70,10 @@ export const useHighlightModal = ({
     [updateHighlightId, isMobile, syncToUrl]
   );
 
+  // Replace so back goes to pre-modal state, not previous highlight
   const handleNavigateHighlight = useCallback(
     (newHighlightId: number) => {
-      updateHighlightId(newHighlightId);
+      updateHighlightId(newHighlightId, true);
     },
     [updateHighlightId]
   );
