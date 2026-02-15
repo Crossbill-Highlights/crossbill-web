@@ -7,11 +7,11 @@ import type {
 } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
+import { CommonDialogHorizontalNavigation } from '@/components/dialogs/CommonDialogHorizontalNavigation.tsx';
 import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { ProgressBar } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/components/ProgressBar.tsx';
-import { ArrowBackIcon, ArrowForwardIcon } from '@/theme/Icons.tsx';
-import { Box, Button, IconButton } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
 import { HighlightsSection } from './HighlightsSection.tsx';
 import { PrereadingSummarySection } from './PrereadingSummarySection.tsx';
@@ -95,65 +95,16 @@ export const ChapterDetailDialog = ({
         </Box>
       }
     >
-      {/* Desktop Layout: Navigation buttons on sides */}
-      <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'flex-start', gap: 2 }}>
-        {hasNavigation && (
-          <IconButton
-            onClick={handlePrevious}
-            disabled={!hasPrevious}
-            sx={{ flexShrink: 0, visibility: hasPrevious ? 'visible' : 'hidden', mt: 1 }}
-            aria-label="Previous chapter"
-          >
-            <ArrowBackIcon />
-          </IconButton>
-        )}
-
-        <Box display="flex" flexDirection="column" gap={3} flex={1} {...swipeHandlers}>
-          <FadeInOut ekey={chapter.id}>{renderContent()}</FadeInOut>
-        </Box>
-
-        {hasNavigation && (
-          <IconButton
-            onClick={handleNext}
-            disabled={!hasNext}
-            sx={{ flexShrink: 0, visibility: hasNext ? 'visible' : 'hidden', mt: 1 }}
-            aria-label="Next chapter"
-          >
-            <ArrowForwardIcon />
-          </IconButton>
-        )}
-      </Box>
-
-      {/* Mobile Layout: Navigation buttons below */}
-      <Box
-        sx={{ display: { xs: 'flex', sm: 'none' }, flexDirection: 'column', gap: 3 }}
-        {...swipeHandlers}
+      <CommonDialogHorizontalNavigation
+        hasNavigation={hasNavigation}
+        hasPrevious={hasPrevious}
+        hasNext={hasNext}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+        swipeHandlers={swipeHandlers}
       >
         <FadeInOut ekey={chapter.id}>{renderContent()}</FadeInOut>
-
-        {hasNavigation && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, pt: 1 }}>
-            <Button
-              onClick={handlePrevious}
-              disabled={!hasPrevious}
-              startIcon={<ArrowBackIcon />}
-              variant="outlined"
-              sx={{ flex: 1, maxWidth: '200px' }}
-            >
-              Previous
-            </Button>
-            <Button
-              onClick={handleNext}
-              disabled={!hasNext}
-              endIcon={<ArrowForwardIcon />}
-              variant="outlined"
-              sx={{ flex: 1, maxWidth: '200px' }}
-            >
-              Next
-            </Button>
-          </Box>
-        )}
-      </Box>
+      </CommonDialogHorizontalNavigation>
     </CommonDialog>
   );
 };

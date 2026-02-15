@@ -6,14 +6,14 @@ import {
 import type { Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
+import { CommonDialogHorizontalNavigation } from '@/components/dialogs/CommonDialogHorizontalNavigation.tsx';
 import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { HighlightTagInput } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/components/HighlightTagInput.tsx';
 import { useImmediateTagMutation } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/hooks/useImmediateTagMutation.ts';
-import { ArrowBackIcon, ArrowForwardIcon } from '@/theme/Icons.tsx';
-import { Box, Button, IconButton, Stack } from '@mui/material';
+import { Box, Button, Stack } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { HighlightContent } from '../../common/HighlightContent.tsx';
@@ -179,75 +179,20 @@ export const HighlightViewModal = ({
         </Box>
       }
     >
-      {/* Desktop Layout: Navigation buttons on sides */}
-      <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 2 }}>
-        {hasNavigation && (
-          <IconButton
-            onClick={handlePrevious}
-            disabled={!hasPrevious || isLoading}
-            sx={{
-              flexShrink: 0,
-              visibility: hasPrevious ? 'visible' : 'hidden',
-            }}
-            aria-label="Previous highlight"
-          >
-            <ArrowBackIcon />
-          </IconButton>
-        )}
-
-        <Box display="flex" flexDirection="column" gap={3} flex={1} {...swipeHandlers}>
-          <FadeInOut ekey={highlight.id}>
-            <HighlightContent highlight={highlight} />
-          </FadeInOut>
-          {renderContent()}
-        </Box>
-
-        {hasNavigation && (
-          <IconButton
-            onClick={handleNext}
-            disabled={!hasNext || isLoading}
-            sx={{
-              flexShrink: 0,
-              visibility: hasNext ? 'visible' : 'hidden',
-            }}
-            aria-label="Next highlight"
-          >
-            <ArrowForwardIcon />
-          </IconButton>
-        )}
-      </Box>
-
-      {/* Mobile Layout: Navigation buttons below */}
-      <Box
-        sx={{ display: { xs: 'flex', sm: 'none' }, flexDirection: 'column', gap: 3 }}
-        {...swipeHandlers}
+      <CommonDialogHorizontalNavigation
+        hasNavigation={hasNavigation}
+        hasPrevious={hasPrevious}
+        hasNext={hasNext}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+        swipeHandlers={swipeHandlers}
+        disabled={isLoading}
       >
-        <HighlightContent highlight={highlight} />
+        <FadeInOut ekey={highlight.id}>
+          <HighlightContent highlight={highlight} />
+        </FadeInOut>
         {renderContent()}
-
-        {hasNavigation && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, pt: 1 }}>
-            <Button
-              onClick={handlePrevious}
-              disabled={!hasPrevious || isLoading}
-              startIcon={<ArrowBackIcon />}
-              variant="outlined"
-              sx={{ flex: 1, maxWidth: '200px' }}
-            >
-              Previous
-            </Button>
-            <Button
-              onClick={handleNext}
-              disabled={!hasNext || isLoading}
-              endIcon={<ArrowForwardIcon />}
-              variant="outlined"
-              sx={{ flex: 1, maxWidth: '200px' }}
-            >
-              Next
-            </Button>
-          </Box>
-        )}
-      </Box>
+      </CommonDialogHorizontalNavigation>
 
       <ConfirmationDialog
         open={deleteConfirmOpen}
