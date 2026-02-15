@@ -51,9 +51,9 @@ export const ChapterDetailDialog = ({
     });
 
   const isChapterRead =
-    readingPosition != null && chapter.start_position != null
-      ? readingPosition.index >= chapter.start_position.index
-      : false;
+    readingPosition &&
+    chapter.start_position &&
+    readingPosition.index >= chapter.start_position.index;
 
   const prereading = prereadingByChapterId[chapter.id];
 
