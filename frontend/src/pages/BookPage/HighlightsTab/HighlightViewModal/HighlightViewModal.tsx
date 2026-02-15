@@ -6,13 +6,14 @@ import {
 import type { Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
+import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { HighlightTagInput } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/components/HighlightTagInput.tsx';
 import { useImmediateTagMutation } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/hooks/useImmediateTagMutation.ts';
 import { ArrowBackIcon, ArrowForwardIcon } from '@/theme/Icons.tsx';
-import { Box, Button, IconButton, Stack, Typography } from '@mui/material';
+import { Box, Button, IconButton, Stack } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { HighlightContent } from '../../common/HighlightContent.tsx';
@@ -116,21 +117,7 @@ export const HighlightViewModal = ({
   const isLoading = deleteHighlightMutation.isPending;
 
   const titleText = highlight.chapter ? `${highlight.chapter}` : 'Highlight';
-  const title = (
-    <Typography
-      variant="h6"
-      component="span"
-      sx={{
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        maxWidth: { xs: 'calc(100vw - 120px)', sm: 'calc(100vw - 200px)', md: '600px' },
-        display: 'block',
-      }}
-    >
-      {titleText}
-    </Typography>
-  );
+  const title = <CommonDialogTitle>{titleText}</CommonDialogTitle>;
 
   // Shared content for both layouts
   const renderContent = () => (

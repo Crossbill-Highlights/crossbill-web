@@ -7,10 +7,11 @@ import type {
 } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
+import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { ProgressBar } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/components/ProgressBar.tsx';
 import { ArrowBackIcon, ArrowForwardIcon } from '@/theme/Icons.tsx';
-import { Box, Button, IconButton, Typography } from '@mui/material';
+import { Box, Button, IconButton } from '@mui/material';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
 import { HighlightsSection } from './HighlightsSection.tsx';
 import { PrereadingSummarySection } from './PrereadingSummarySection.tsx';
@@ -57,21 +58,7 @@ export const ChapterDetailDialog = ({
 
   const prereadingSummary = prereadingByChapterId[chapter.id];
 
-  const title = (
-    <Typography
-      variant="h6"
-      component="span"
-      sx={{
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        maxWidth: { xs: 'calc(100vw - 120px)', sm: 'calc(100vw - 200px)', md: '600px' },
-        display: 'block',
-      }}
-    >
-      {chapter.name}
-    </Typography>
-  );
+  const title = <CommonDialogTitle>{chapter.name}</CommonDialogTitle>;
 
   const renderContent = () => (
     <Box>
