@@ -6,8 +6,10 @@ import type {
 import { useGetBookPrereadingApiV1BooksBookIdPrereadingGet } from '@/api/generated/prereading/prereading';
 import { ThreeColumnLayout } from '@/components/layout/Layouts';
 import { Box, Typography } from '@mui/material';
-import { useMemo } from 'react';
+import { keyBy } from 'lodash';
+import { useCallback, useMemo, useState } from 'react';
 import { ChapterAccordion } from './ChapterAccordion';
+import { ChapterDetailDialog } from './ChapterDetailDialog/ChapterDetailDialog.tsx';
 import { ReadingProgressLine } from './ReadingProgressLine';
 
 interface StructureTabProps {
@@ -39,6 +41,54 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
     return map;
   }, [book.chapters]);
 
+  // Compute leaf chapters in document order (depth-first)
+  const leafChapters = useMemo(() => {
+    const result: ChapterWithHighlights[] = [];
+    const collectLeaves = (parentId: number | null) => {
+      const children = childrenByParentId.get(parentId) ?? [];
+      for (const ch of children) {
+        const hasChildren = (childrenByParentId.get(ch.id) ?? []).length > 0;
+        if (hasChildren) {
+          collectLeaves(ch.id);
+        } else {
+          result.push(ch);
+        }
+      }
+    };
+    collectLeaves(null);
+    return result;
+  }, [childrenByParentId]);
+
+  // Dialog state
+  const [selectedChapterIndex, setSelectedChapterIndex] = useState<number | null>(null);
+
+  const selectedChapter = useMemo(
+    () => (selectedChapterIndex !== null ? (leafChapters[selectedChapterIndex] ?? null) : null),
+    [leafChapters, selectedChapterIndex]
+  );
+
+  const handleChapterClick = useCallback(
+    (chapterId: number) => {
+      const index = leafChapters.findIndex((ch) => ch.id === chapterId);
+      if (index !== -1) setSelectedChapterIndex(index);
+    },
+    [leafChapters]
+  );
+
+  const handleDialogClose = useCallback(() => {
+    setSelectedChapterIndex(null);
+  }, []);
+
+  const handleDialogNavigate = useCallback((newIndex: number) => {
+    setSelectedChapterIndex(newIndex);
+  }, []);
+
+  // Compute bookmarks map
+  const bookmarksByHighlightId = useMemo(
+    () => keyBy(book.bookmarks, 'highlight_id'),
+    [book.bookmarks]
+  );
+
   if (book.chapters.length === 0) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -66,24 +116,42 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
           chapter={chapter}
           childrenByParentId={childrenByParentId}
           bookId={book.id}
-          prereadingByChapterId={prereadingByChapterId}
           isRead={isChapterRead(chapter.start_position)}
           readingPosition={readingPosition}
           preExpanded={true}
+          onChapterClick={handleChapterClick}
         />
       ))}
     </ReadingProgressLine>
   );
 
-  if (!isDesktop) {
-    return <Box sx={{ maxWidth: '800px', mx: 'auto' }}>{content}</Box>;
-  }
-
   return (
-    <ThreeColumnLayout>
-      <div></div>
-      {content}
-      <div></div>
-    </ThreeColumnLayout>
+    <>
+      {!isDesktop ? (
+        <Box sx={{ maxWidth: '800px', mx: 'auto' }}>{content}</Box>
+      ) : (
+        <ThreeColumnLayout>
+          <div></div>
+          {content}
+          <div></div>
+        </ThreeColumnLayout>
+      )}
+
+      {selectedChapter && (
+        <ChapterDetailDialog
+          open={true}
+          onClose={handleDialogClose}
+          chapter={selectedChapter}
+          bookId={book.id}
+          allLeafChapters={leafChapters}
+          currentIndex={selectedChapterIndex ?? 0}
+          onNavigate={handleDialogNavigate}
+          prereadingByChapterId={prereadingByChapterId}
+          bookmarksByHighlightId={bookmarksByHighlightId}
+          availableTags={book.highlight_tags}
+          readingPosition={book.reading_position}
+        />
+      )}
+    </>
   );
 };
