@@ -1,7 +1,7 @@
 import type { Highlight } from '@/api/generated/model';
 import { scrollToElementWithHighlight } from '@/components/animations/scrollUtils.ts';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 interface UseHighlightModalOptions {
   allHighlights: Highlight[];
@@ -24,61 +24,56 @@ export const useHighlightModal = ({
   isMobile,
   syncToUrl = true,
 }: UseHighlightModalOptions): UseHighlightModalReturn => {
-  const { highlightId } = useSearch({ from: '/book/$bookId' });
+  const { highlightId: urlHighlightId } = useSearch({ from: '/book/$bookId' });
   const navigate = useNavigate({ from: '/book/$bookId' });
 
-  const [openHighlightId, setOpenHighlightId] = useState<number | undefined>(
-    syncToUrl ? highlightId : undefined
-  );
+  // Local state used when syncToUrl is false
+  const [localHighlightId, setLocalHighlightId] = useState<number | undefined>();
 
-  const navigateUrl = useCallback(
-    (newHighlightId: number | undefined) => {
-      if (!syncToUrl) return;
-      navigate({
-        search: (prev) => ({
-          ...prev,
-          highlightId: newHighlightId,
-        }),
-        replace: true,
-      });
+  // URL is the source of truth when syncToUrl is true, otherwise local state
+  const openHighlightId = syncToUrl ? urlHighlightId : localHighlightId;
+
+  const updateHighlightId = useCallback(
+    (newId: number | undefined) => {
+      if (syncToUrl) {
+        navigate({
+          search: (prev) => ({
+            ...prev,
+            highlightId: newId,
+          }),
+          replace: true,
+        });
+      } else {
+        setLocalHighlightId(newId);
+      }
     },
     [navigate, syncToUrl]
   );
 
   const handleOpenHighlight = useCallback(
     (highlightIdToOpen: number) => {
-      setOpenHighlightId(highlightIdToOpen);
-      navigateUrl(highlightIdToOpen);
+      updateHighlightId(highlightIdToOpen);
     },
-    [navigateUrl]
+    [updateHighlightId]
   );
 
   const handleCloseHighlight = useCallback(
     (lastViewedHighlightId?: number) => {
-      setOpenHighlightId(undefined);
-      navigateUrl(undefined);
+      updateHighlightId(undefined);
 
       if (lastViewedHighlightId && isMobile && syncToUrl) {
         scrollToElementWithHighlight(`highlight-${lastViewedHighlightId}`);
       }
     },
-    [navigateUrl, isMobile, syncToUrl]
+    [updateHighlightId, isMobile, syncToUrl]
   );
 
   const handleNavigateHighlight = useCallback(
     (newHighlightId: number) => {
-      setOpenHighlightId(newHighlightId);
-      navigateUrl(newHighlightId);
+      updateHighlightId(newHighlightId);
     },
-    [navigateUrl]
+    [updateHighlightId]
   );
-
-  // Sync modal state when URL changes (e.g., browser back/forward)
-  useEffect(() => {
-    if (syncToUrl) {
-      setOpenHighlightId(highlightId);
-    }
-  }, [highlightId, syncToUrl]);
 
   const currentHighlightIndex = useMemo(() => {
     if (!openHighlightId) return -1;
