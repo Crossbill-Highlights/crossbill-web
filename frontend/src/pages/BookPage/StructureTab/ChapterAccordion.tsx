@@ -95,6 +95,12 @@ const LeafChapterRow = ({
         minHeight: 48,
         width: '100%',
         textAlign: 'left',
+        transition: 'background-color 0.2s ease',
+        '@media (hover: hover)': {
+          '&:hover': {
+            bgcolor: 'action.hover',
+          },
+        },
         '&:last-of-type': {
           borderBottom: depth > 0 ? 'none' : '1px solid',
           borderColor: 'divider',
