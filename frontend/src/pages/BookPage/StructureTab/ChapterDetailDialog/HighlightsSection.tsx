@@ -1,8 +1,8 @@
 import type { Bookmark, ChapterWithHighlights, HighlightTagInBook } from '@/api/generated/model';
 import { HighlightCard } from '@/pages/BookPage/HighlightsTab/HighlightCard.tsx';
 import { HighlightViewModal } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/HighlightViewModal.tsx';
+import { useHighlightModal } from '@/pages/BookPage/HighlightsTab/hooks/useHighlightModal.ts';
 import { Stack } from '@mui/material';
-import { useCallback, useMemo, useState } from 'react';
 import { CollapsibleSection } from './CollapsibleSection.tsx';
 
 interface HighlightsSectionProps {
@@ -18,31 +18,16 @@ export const HighlightsSection = ({
   bookmarksByHighlightId,
   availableTags,
 }: HighlightsSectionProps) => {
-  const [selectedHighlightIndex, setSelectedHighlightIndex] = useState<number | null>(null);
-
   const highlights = chapter.highlights;
   const count = highlights.length;
 
-  const selectedHighlight = useMemo(
-    () => (selectedHighlightIndex !== null ? (highlights[selectedHighlightIndex] ?? null) : null),
-    [highlights, selectedHighlightIndex]
-  );
-
-  const handleOpenHighlight = useCallback(
-    (highlightId: number) => {
-      const index = highlights.findIndex((h) => h.id === highlightId);
-      if (index !== -1) setSelectedHighlightIndex(index);
-    },
-    [highlights]
-  );
-
-  const handleCloseHighlight = useCallback(() => {
-    setSelectedHighlightIndex(null);
-  }, []);
-
-  const handleNavigateHighlight = useCallback((newIndex: number) => {
-    setSelectedHighlightIndex(newIndex);
-  }, []);
+  const {
+    currentHighlight,
+    currentHighlightIndex,
+    handleOpenHighlight,
+    handleCloseHighlight,
+    handleModalNavigate,
+  } = useHighlightModal({ allHighlights: highlights, isMobile: false, syncToUrl: false });
 
   return (
     <>
@@ -60,17 +45,17 @@ export const HighlightsSection = ({
         </Stack>
       </CollapsibleSection>
 
-      {selectedHighlight && (
+      {currentHighlight && (
         <HighlightViewModal
-          highlight={selectedHighlight}
+          highlight={currentHighlight}
           bookId={bookId}
           open={true}
           onClose={handleCloseHighlight}
           availableTags={availableTags}
           bookmarksByHighlightId={bookmarksByHighlightId}
           allHighlights={highlights}
-          currentIndex={selectedHighlightIndex ?? 0}
-          onNavigate={handleNavigateHighlight}
+          currentIndex={currentHighlightIndex}
+          onNavigate={handleModalNavigate}
         />
       )}
     </>

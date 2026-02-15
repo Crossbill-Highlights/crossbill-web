@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 interface UseHighlightModalOptions {
   allHighlights: Highlight[];
   isMobile: boolean;
+  syncToUrl?: boolean;
 }
 
 interface UseHighlightModalReturn {
@@ -21,52 +22,18 @@ interface UseHighlightModalReturn {
 export const useHighlightModal = ({
   allHighlights,
   isMobile,
+  syncToUrl = true,
 }: UseHighlightModalOptions): UseHighlightModalReturn => {
   const { highlightId } = useSearch({ from: '/book/$bookId' });
   const navigate = useNavigate({ from: '/book/$bookId' });
 
-  // Modal state for highlight viewing - synced with URL
-  const [openHighlightId, setOpenHighlightId] = useState<number | undefined>(highlightId);
-
-  // Handler to open a highlight modal - updates URL
-  const handleOpenHighlight = useCallback(
-    (highlightIdToOpen: number) => {
-      setOpenHighlightId(highlightIdToOpen);
-      navigate({
-        search: (prev) => ({
-          ...prev,
-          highlightId: highlightIdToOpen,
-        }),
-        replace: true,
-      });
-    },
-    [navigate]
+  const [openHighlightId, setOpenHighlightId] = useState<number | undefined>(
+    syncToUrl ? highlightId : undefined
   );
 
-  // Handler to close the highlight modal - removes highlightId from URL
-  const handleCloseHighlight = useCallback(
-    (lastViewedHighlightId?: number) => {
-      setOpenHighlightId(undefined);
-      navigate({
-        search: (prev) => ({
-          ...prev,
-          highlightId: undefined,
-        }),
-        replace: true,
-      });
-
-      // Scroll to the last viewed highlight (mobile only)
-      if (lastViewedHighlightId && isMobile) {
-        scrollToElementWithHighlight(`highlight-${lastViewedHighlightId}`);
-      }
-    },
-    [navigate, isMobile]
-  );
-
-  // Handler to navigate between highlights - updates URL
-  const handleNavigateHighlight = useCallback(
-    (newHighlightId: number) => {
-      setOpenHighlightId(newHighlightId);
+  const navigateUrl = useCallback(
+    (newHighlightId: number | undefined) => {
+      if (!syncToUrl) return;
       navigate({
         search: (prev) => ({
           ...prev,
@@ -75,15 +42,44 @@ export const useHighlightModal = ({
         replace: true,
       });
     },
-    [navigate]
+    [navigate, syncToUrl]
+  );
+
+  const handleOpenHighlight = useCallback(
+    (highlightIdToOpen: number) => {
+      setOpenHighlightId(highlightIdToOpen);
+      navigateUrl(highlightIdToOpen);
+    },
+    [navigateUrl]
+  );
+
+  const handleCloseHighlight = useCallback(
+    (lastViewedHighlightId?: number) => {
+      setOpenHighlightId(undefined);
+      navigateUrl(undefined);
+
+      if (lastViewedHighlightId && isMobile && syncToUrl) {
+        scrollToElementWithHighlight(`highlight-${lastViewedHighlightId}`);
+      }
+    },
+    [navigateUrl, isMobile, syncToUrl]
+  );
+
+  const handleNavigateHighlight = useCallback(
+    (newHighlightId: number) => {
+      setOpenHighlightId(newHighlightId);
+      navigateUrl(newHighlightId);
+    },
+    [navigateUrl]
   );
 
   // Sync modal state when URL changes (e.g., browser back/forward)
   useEffect(() => {
-    setOpenHighlightId(highlightId);
-  }, [highlightId]);
+    if (syncToUrl) {
+      setOpenHighlightId(highlightId);
+    }
+  }, [highlightId, syncToUrl]);
 
-  // Find the current highlight and its index for the modal
   const currentHighlightIndex = useMemo(() => {
     if (!openHighlightId) return -1;
     return allHighlights.findIndex((h) => h.id === openHighlightId);
@@ -94,7 +90,6 @@ export const useHighlightModal = ({
     return allHighlights[currentHighlightIndex];
   }, [allHighlights, currentHighlightIndex]);
 
-  // Handler for modal navigation - converts index to highlight ID
   const handleModalNavigate = useCallback(
     (newIndex: number) => {
       const newHighlight = allHighlights[newIndex]!;
