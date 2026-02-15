@@ -1,5 +1,9 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useSwipeable } from 'react-swipeable';
+
+// Module-level stack to track active navigation modals.
+// Only the topmost modal should handle keyboard navigation.
+let activeNavigationStack: symbol[] = [];
 
 interface UseModalHorizontalNavigationOptions {
   open: boolean;
@@ -18,6 +22,8 @@ export const useModalHorizontalNavigation = ({
   const hasPrevious = hasNavigation && currentIndex > 0;
   const hasNext = hasNavigation && currentIndex < totalCount - 1;
 
+  const idRef = useRef(Symbol());
+
   const handlePrevious = useCallback(() => {
     if (hasPrevious) {
       onNavigate!(currentIndex - 1);
@@ -30,11 +36,25 @@ export const useModalHorizontalNavigation = ({
     }
   }, [currentIndex, hasNext, onNavigate]);
 
+  // Register/unregister this modal on the navigation stack
+  useEffect(() => {
+    if (!open || !hasNavigation) return;
+
+    const id = idRef.current;
+    activeNavigationStack.push(id);
+    return () => {
+      activeNavigationStack = activeNavigationStack.filter((s) => s !== id);
+    };
+  }, [open, hasNavigation]);
+
   // Keyboard navigation
   useEffect(() => {
     if (!open || !hasNavigation) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Only respond to keyboard events if this is the topmost navigation modal
+      if (activeNavigationStack[activeNavigationStack.length - 1] !== idRef.current) return;
+
       const target = e.target as HTMLElement;
 
       // Don't navigate when user is typing in an input field
