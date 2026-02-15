@@ -7,6 +7,7 @@ import type { Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/mo
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
+import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { HighlightTagInput } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/components/HighlightTagInput.tsx';
 import { useImmediateTagMutation } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/hooks/useImmediateTagMutation.ts';
@@ -19,7 +20,6 @@ import { FlashcardSection } from './components/FlashcardSection.tsx';
 import { HighlightNote } from './components/HighlightNote.tsx';
 import { ProgressBar } from './components/ProgressBar.tsx';
 import { Toolbar } from './components/Toolbar.tsx';
-import { useHighlightNavigation } from './hooks/useHighlightNavigation.ts';
 import { useVisibilityToggle } from './hooks/useVisibilityToggle.ts';
 
 export interface HighlightViewModalProps {
@@ -59,7 +59,7 @@ export const HighlightViewModal = ({
   });
 
   const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext, swipeHandlers } =
-    useHighlightNavigation({
+    useModalHorizontalNavigation({
       open,
       currentIndex,
       totalCount: allHighlights?.length ?? 1,

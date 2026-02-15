@@ -1,19 +1,19 @@
 import { useCallback, useEffect } from 'react';
 import { useSwipeable } from 'react-swipeable';
 
-interface UseHighlightNavigationOptions {
+interface UseModalHorizontalNavigationOptions {
   open: boolean;
   currentIndex: number;
   totalCount: number;
   onNavigate?: (newIndex: number) => void;
 }
 
-export const useHighlightNavigation = ({
+export const useModalHorizontalNavigation = ({
   open,
   currentIndex,
   totalCount,
   onNavigate,
-}: UseHighlightNavigationOptions) => {
+}: UseModalHorizontalNavigationOptions) => {
   const hasNavigation = totalCount > 1 && onNavigate;
   const hasPrevious = hasNavigation && currentIndex > 0;
   const hasNext = hasNavigation && currentIndex < totalCount - 1;

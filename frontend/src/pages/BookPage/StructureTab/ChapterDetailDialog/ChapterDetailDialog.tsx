@@ -7,8 +7,8 @@ import type {
 } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
+import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { ProgressBar } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/components/ProgressBar.tsx';
-import { useHighlightNavigation } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/hooks/useHighlightNavigation.ts';
 import { ArrowBackIcon, ArrowForwardIcon } from '@/theme/Icons.tsx';
 import { Box, Button, IconButton, Typography } from '@mui/material';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
@@ -43,7 +43,7 @@ export const ChapterDetailDialog = ({
   readingPosition,
 }: ChapterDetailDialogProps) => {
   const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext, swipeHandlers } =
-    useHighlightNavigation({
+    useModalHorizontalNavigation({
       open,
       currentIndex,
       totalCount: allLeafChapters.length,
