@@ -10,19 +10,19 @@ import { Box, Button } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { CollapsibleSection } from './CollapsibleSection.tsx';
 
-interface PrereadingSectionProps {
+interface PrereadingSummarySectionProps {
   chapterId: number;
   bookId: number;
   prereadingSummary?: ChapterPrereadingResponse;
   defaultExpanded: boolean;
 }
 
-export const PrereadingSection = ({
+export const PrereadingSummarySection = ({
   chapterId,
   bookId,
   prereadingSummary,
   defaultExpanded,
-}: PrereadingSectionProps) => {
+}: PrereadingSummarySectionProps) => {
   const queryClient = useQueryClient();
 
   const { mutate: generate, isPending } =

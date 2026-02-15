@@ -13,7 +13,7 @@ import { ArrowBackIcon, ArrowForwardIcon } from '@/theme/Icons.tsx';
 import { Box, Button, IconButton, Typography } from '@mui/material';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
 import { HighlightsSection } from './HighlightsSection.tsx';
-import { PrereadingSection } from './PrereadingSection.tsx';
+import { PrereadingSummarySection } from './PrereadingSummarySection.tsx';
 
 interface ChapterDetailDialogProps {
   open: boolean;
@@ -75,7 +75,7 @@ export const ChapterDetailDialog = ({
 
   const renderContent = () => (
     <Box>
-      <PrereadingSection
+      <PrereadingSummarySection
         chapterId={chapter.id}
         bookId={bookId}
         prereadingSummary={prereadingSummary}
