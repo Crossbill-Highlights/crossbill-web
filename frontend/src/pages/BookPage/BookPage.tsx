@@ -61,24 +61,24 @@ const BookTabs = ({
       }}
     >
       <Tab
-        value="highlights"
-        label={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <HighlightsIcon sx={{ fontSize: 20 }} />
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              Highlights ({totalHighlights})
-            </Typography>
-          </Box>
-        }
-        sx={{ textTransform: 'none' }}
-      />
-      <Tab
         value="structure"
         label={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ChapterListIcon sx={{ fontSize: 20 }} />
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               Book Structure
+            </Typography>
+          </Box>
+        }
+        sx={{ textTransform: 'none' }}
+      />
+      <Tab
+        value="highlights"
+        label={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <HighlightsIcon sx={{ fontSize: 20 }} />
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Highlights ({totalHighlights})
             </Typography>
           </Box>
         }
@@ -152,7 +152,7 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
 
   const navigate = useNavigate({ from: '/book/$bookId' });
-  const activeTab: TabValue = tab || 'highlights';
+  const activeTab: TabValue = tab || 'structure';
 
   // Update recently viewed on mount
   useEffect(() => {
@@ -165,7 +165,7 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
     navigate({
       search: (prev) => ({
         ...prev,
-        tab: newValue === 'highlights' ? undefined : newValue,
+        tab: newValue === 'structure' ? undefined : newValue,
         search: undefined,
         tagId: undefined,
       }),
@@ -173,6 +173,7 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
     });
   };
 
+  // TODO: These handlers belong to the highlight tab since they are highlight specific methods.
   const handleSearch = useCallback(
     (value: string) => {
       navigate({
