@@ -1,6 +1,7 @@
 """Common value objects shared across all domain modules."""
 
 from .content_hash import ContentHash
+from .highlight_style import HighlightStyle
 from .ids import (
     BookId,
     ChapterId,
@@ -22,6 +23,7 @@ __all__ = [
     "ContentHash",
     "FlashcardId",
     "HighlightId",
+    "HighlightStyle",
     "HighlightTagId",
     "Position",
     "PositionIndex",
