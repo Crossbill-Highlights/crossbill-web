@@ -86,9 +86,7 @@ def _map_chapters_to_schemas(
                 page=h.page,
                 note=h.note,
                 datetime=h.datetime,
-                highlight_style=HighlightStyleResponse(
-                    **h.highlight_style.to_json()
-                ),
+                highlight_style=HighlightStyleResponse(**h.highlight_style.to_json()),
                 flashcards=[
                     Flashcard(
                         id=fc.id.value,

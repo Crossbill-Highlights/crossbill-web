@@ -150,9 +150,7 @@ def get_flashcards_for_book(
                     datetime=highlight.datetime,
                     chapter=chapter.name if chapter else None,
                     chapter_number=chapter.chapter_number if chapter else None,
-                    highlight_style=HighlightStyleResponse(
-                        **highlight.highlight_style.to_json()
-                    ),
+                    highlight_style=HighlightStyleResponse(**highlight.highlight_style.to_json()),
                     created_at=highlight.created_at,
                     updated_at=highlight.updated_at,
                     highlight_tags=[

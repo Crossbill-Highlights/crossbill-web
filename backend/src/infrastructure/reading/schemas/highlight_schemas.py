@@ -36,7 +36,9 @@ class HighlightCreate(HighlightBase):
 
     start_xpoint: str | None = Field(None, description="Highlight start position in XML document")
     end_xpoint: str | None = Field(None, description="Highlight end position in XML document")
-    color: str | None = Field(None, description="Highlight color from KOReader (e.g. 'gray', 'yellow')")
+    color: str | None = Field(
+        None, description="Highlight color from KOReader (e.g. 'gray', 'yellow')"
+    )
     drawer: str | None = Field(
         None, description="Highlight drawer/style from KOReader (e.g. 'lighten', 'strikethrough')"
     )

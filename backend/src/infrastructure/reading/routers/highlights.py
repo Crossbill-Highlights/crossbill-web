@@ -219,9 +219,7 @@ def update_highlight_note(
             page=highlight.page,
             note=highlight.note,
             datetime=highlight.datetime,
-            highlight_style=HighlightStyleResponse(
-                **highlight.highlight_style.to_json()
-            ),
+            highlight_style=HighlightStyleResponse(**highlight.highlight_style.to_json()),
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,
@@ -473,9 +471,7 @@ def _map_chapters_to_schemas(
                 page=h.page,
                 note=h.note,
                 datetime=h.datetime,
-                highlight_style=HighlightStyleResponse(
-                    **h.highlight_style.to_json()
-                ),
+                highlight_style=HighlightStyleResponse(**h.highlight_style.to_json()),
                 flashcards=[
                     Flashcard(
                         id=fc.id.value,
@@ -943,9 +939,7 @@ def add_tag_to_highlight(
             page=highlight.page,
             note=highlight.note,
             datetime=highlight.datetime,
-            highlight_style=HighlightStyleResponse(
-                **highlight.highlight_style.to_json()
-            ),
+            highlight_style=HighlightStyleResponse(**highlight.highlight_style.to_json()),
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,
@@ -1044,9 +1038,7 @@ def remove_tag_from_highlight(
             page=highlight.page,
             note=highlight.note,
             datetime=highlight.datetime,
-            highlight_style=HighlightStyleResponse(
-                **highlight.highlight_style.to_json()
-            ),
+            highlight_style=HighlightStyleResponse(**highlight.highlight_style.to_json()),
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,

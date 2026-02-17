@@ -23,6 +23,7 @@ from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.reading.schemas import (
     Highlight,
+    HighlightStyleResponse,
     ReadingSession,
     ReadingSessionAISummaryResponse,
     ReadingSessionsResponse,
@@ -164,6 +165,10 @@ async def get_book_reading_sessions(
                         datetime=highlight.datetime,
                         created_at=highlight.created_at,
                         updated_at=highlight.updated_at,
+                        highlight_style=HighlightStyleResponse(
+                            color=highlight.highlight_style.color,
+                            style=highlight.highlight_style.style,
+                        ),
                         chapter=None,  # Not loaded in this context
                         chapter_number=None,  # Not loaded in this context
                         highlight_tags=[],  # Not loaded in this context
