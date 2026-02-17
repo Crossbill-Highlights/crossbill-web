@@ -269,6 +269,9 @@ class Highlight(Base):
     start_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
     end_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
     position: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
+    highlight_style: Mapped[dict[str, str | None]] = mapped_column(
+        JSON, nullable=False, server_default='{"color": "gray", "style": "lighten"}'
+    )
     datetime: Mapped[str] = mapped_column(String(50), nullable=False)  # KOReader datetime string
     content_hash: Mapped[str] = mapped_column(
         String(64), nullable=False, index=True
