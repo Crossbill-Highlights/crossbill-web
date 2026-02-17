@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Flashcard } from './flashcard';
+import type { HighlightStyleResponse } from './highlightStyleResponse';
 import type { HighlightTagInBook } from './highlightTagInBook';
 
 /**
@@ -33,6 +34,8 @@ export interface Highlight {
   id: number;
   book_id: number;
   chapter_id: number | null;
+  /** Visual style of the highlight */
+  highlight_style: HighlightStyleResponse;
   /** List of highlight tags for this highlight */
   highlight_tags: HighlightTagInBook[];
   created_at: string;
