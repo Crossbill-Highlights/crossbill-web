@@ -36,6 +36,19 @@ class HighlightCreate(HighlightBase):
 
     start_xpoint: str | None = Field(None, description="Highlight start position in XML document")
     end_xpoint: str | None = Field(None, description="Highlight end position in XML document")
+    color: str | None = Field(None, description="Highlight color from KOReader (e.g. 'gray', 'yellow')")
+    drawer: str | None = Field(
+        None, description="Highlight drawer/style from KOReader (e.g. 'lighten', 'strikethrough')"
+    )
+
+
+class HighlightStyleResponse(BaseModel):
+    """Schema for highlight visual style."""
+
+    color: str | None = Field(None, description="Highlight color (e.g. 'gray', 'yellow')")
+    style: str | None = Field(
+        None, description="Highlight style/drawer (e.g. 'lighten', 'strikethrough')"
+    )
 
 
 class HighlightResponseBase(HighlightBase):
@@ -47,6 +60,9 @@ class HighlightResponseBase(HighlightBase):
     id: int
     book_id: int
     chapter_id: int | None
+    highlight_style: HighlightStyleResponse = Field(
+        ..., description="Visual style of the highlight"
+    )
     highlight_tags: list[HighlightTagInBook] = Field(
         ..., description="List of highlight tags for this highlight"
     )

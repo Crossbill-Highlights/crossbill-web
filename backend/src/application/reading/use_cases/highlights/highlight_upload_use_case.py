@@ -16,7 +16,7 @@ from src.application.reading.protocols.chapter_repository import ChapterReposito
 from src.application.reading.protocols.highlight_repository import (
     HighlightRepositoryProtocol,
 )
-from src.domain.common.value_objects import ChapterId, UserId, XPointRange
+from src.domain.common.value_objects import ChapterId, HighlightStyle, UserId, XPointRange
 from src.domain.common.value_objects.position import Position
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
@@ -38,6 +38,8 @@ class HighlightUploadData:
     end_xpoint: str | None = None
     page: int | None = None
     note: str | None = None
+    color: str | None = None
+    drawer: str | None = None
 
 
 class HighlightUploadUseCase:
@@ -166,6 +168,8 @@ class HighlightUploadUseCase:
             elif book.file_type == "pdf" and data.page is not None:
                 position = Position.from_page(data.page)
 
+            highlight_style = HighlightStyle(color=data.color, style=data.drawer)
+
             highlight = Highlight.create(
                 user_id=user_id_vo,
                 book_id=book_id,
@@ -174,6 +178,7 @@ class HighlightUploadUseCase:
                 xpoints=xpoints,
                 page=data.page,
                 position=position,
+                highlight_style=highlight_style,
                 note=data.note,
             )
             new_highlights.append(highlight)

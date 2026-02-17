@@ -81,6 +81,7 @@ from src.infrastructure.reading.schemas import (
     HighlightDeleteResponse,
     HighlightNoteUpdate,
     HighlightNoteUpdateResponse,
+    HighlightStyleResponse,
     HighlightTag,
     HighlightTagAssociationRequest,
     HighlightTagCreateRequest,
@@ -136,6 +137,8 @@ async def upload_highlights(
                 end_xpoint=h.end_xpoint,
                 page=h.page,
                 note=h.note,
+                color=h.color,
+                drawer=h.drawer,
             )
             for h in request.highlights
         ]
@@ -216,6 +219,9 @@ def update_highlight_note(
             page=highlight.page,
             note=highlight.note,
             datetime=highlight.datetime,
+            highlight_style=HighlightStyleResponse(
+                **highlight.highlight_style.to_json()
+            ),
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,
@@ -467,6 +473,9 @@ def _map_chapters_to_schemas(
                 page=h.page,
                 note=h.note,
                 datetime=h.datetime,
+                highlight_style=HighlightStyleResponse(
+                    **h.highlight_style.to_json()
+                ),
                 flashcards=[
                     Flashcard(
                         id=fc.id.value,
@@ -934,6 +943,9 @@ def add_tag_to_highlight(
             page=highlight.page,
             note=highlight.note,
             datetime=highlight.datetime,
+            highlight_style=HighlightStyleResponse(
+                **highlight.highlight_style.to_json()
+            ),
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,
@@ -1032,6 +1044,9 @@ def remove_tag_from_highlight(
             page=highlight.page,
             note=highlight.note,
             datetime=highlight.datetime,
+            highlight_style=HighlightStyleResponse(
+                **highlight.highlight_style.to_json()
+            ),
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,
