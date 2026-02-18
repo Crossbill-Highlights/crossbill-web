@@ -183,6 +183,7 @@ from src.infrastructure.reading.repositories.chapter_prereading_repository impor
 from src.infrastructure.reading.repositories.reading_session_repository import (
     ReadingSessionRepository,
 )
+from src.infrastructure.reading.services.highlight_label_resolver import HighlightLabelResolver
 
 
 class Container(containers.DeclarativeContainer):
@@ -219,6 +220,13 @@ class Container(containers.DeclarativeContainer):
     highlight_deduplication_service = providers.Factory(HighlightDeduplicationService)
     highlight_grouping_service = providers.Factory(HighlightGroupingService)
     highlight_style_resolver = providers.Factory(HighlightStyleResolver)
+
+    # Infrastructure services (with db dependency)
+    highlight_label_resolver = providers.Factory(
+        HighlightLabelResolver,
+        highlight_style_repository=highlight_style_repository,
+        resolver=highlight_style_resolver,
+    )
 
     # Reading module, application use cases
     create_bookmark_use_case = providers.Factory(

@@ -16,6 +16,7 @@ from src.application.reading.use_cases.reading_sessions.reading_session_upload_u
     ReadingSessionUploadUseCase,
 )
 from src.core import container
+from src.domain.common.value_objects import BookId, UserId
 from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError, ReadingSessionNotFoundError, ValidationError
 from src.infrastructure.common.dependencies import require_ai_enabled
@@ -29,6 +30,7 @@ from src.infrastructure.reading.schemas import (
     ReadingSessionUploadRequest,
     ReadingSessionUploadResponse,
 )
+from src.infrastructure.reading.services.highlight_label_resolver import HighlightLabelResolver
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +121,9 @@ async def get_book_reading_sessions(
     use_case: ReadingSessionQueryUseCase = Depends(
         inject_use_case(container.reading_session_query_use_case)
     ),
+    label_resolver: HighlightLabelResolver = Depends(
+        inject_use_case(container.highlight_label_resolver)
+    ),
 ) -> ReadingSessionsResponse:
     """
     Get reading sessions for a specific book.
@@ -143,6 +148,9 @@ async def get_book_reading_sessions(
             include_content=True,
         )
 
+        # Resolve labels for this book
+        labels = label_resolver.resolve_for_book(UserId(current_user.id.value), BookId(book_id))
+
         # Manually construct Pydantic schemas
         sessions_schemas = []
         for session_with_highlights in result.sessions_with_highlights:
@@ -152,6 +160,7 @@ async def get_book_reading_sessions(
             # Note: We don't have chapter/tags/flashcards loaded, so use minimal schema
             highlight_schemas = []
             for highlight in session_with_highlights.highlights:
+                resolved = labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
                 # Construct Highlight schema directly with named parameters
                 highlight_schemas.append(
                     Highlight(
@@ -165,8 +174,8 @@ async def get_book_reading_sessions(
                         created_at=highlight.created_at,
                         updated_at=highlight.updated_at,
                         highlight_style_id=highlight.highlight_style_id.value if highlight.highlight_style_id else None,
-                        label=None,
-                        ui_color=None,
+                        label=resolved.label if resolved else None,
+                        ui_color=resolved.ui_color if resolved else None,
                         chapter=None,  # Not loaded in this context
                         chapter_number=None,  # Not loaded in this context
                         highlight_tags=[],  # Not loaded in this context

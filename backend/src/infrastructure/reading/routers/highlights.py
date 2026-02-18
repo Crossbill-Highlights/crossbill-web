@@ -58,12 +58,13 @@ from src.application.reading.use_cases.highlights.update_highlight_note_use_case
 from src.core import container
 from src.database import DatabaseSession
 from src.domain.common.exceptions import DomainError
-from src.domain.common.value_objects import HighlightId, HighlightTagId, UserId
+from src.domain.common.value_objects import BookId, HighlightId, HighlightTagId, UserId
 from src.domain.identity.entities.user import User
 from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights as ChapterWithHighlightsDomain,
 )
+from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
 from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
@@ -93,6 +94,7 @@ from src.infrastructure.reading.schemas import (
     HighlightUploadResponse,
     PositionResponse,
 )
+from src.infrastructure.reading.services.highlight_label_resolver import HighlightLabelResolver
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +183,9 @@ def update_highlight_note(
     use_case: HighlightUpdateNoteUseCase = Depends(
         inject_use_case(container.highlight_update_note_use_case)
     ),
+    label_resolver: HighlightLabelResolver = Depends(
+        inject_use_case(container.highlight_label_resolver)
+    ),
 ) -> HighlightNoteUpdateResponse:
     """
     Update the note field of a highlight.
@@ -207,6 +212,10 @@ def update_highlight_note(
 
         highlight, flashcards, highlight_tags = result
 
+        # Resolve labels for this highlight's book
+        labels = label_resolver.resolve_for_book(UserId(current_user.id.value), highlight.book_id)
+        resolved = labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+
         # Build response from domain entities
         highlight_schema = Highlight(
             id=highlight.id.value,
@@ -219,8 +228,8 @@ def update_highlight_note(
             note=highlight.note,
             datetime=highlight.datetime,
             highlight_style_id=highlight.highlight_style_id.value if highlight.highlight_style_id else None,
-            label=None,
-            ui_color=None,
+            label=resolved.label if resolved else None,
+            ui_color=resolved.ui_color if resolved else None,
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,
@@ -444,12 +453,14 @@ def create_flashcard_for_highlight(
 
 def _map_chapters_to_schemas(
     chapters_grouped: list[ChapterWithHighlightsDomain],
+    labels: dict[int, ResolvedLabel] | None = None,
 ) -> list[ChapterWithHighlights]:
     """
     Map domain ChapterWithHighlights to Pydantic schemas.
 
     Args:
         chapters_grouped: List of ChapterWithHighlights domain dataclasses
+        labels: Optional dict mapping highlight_style_id -> ResolvedLabel
 
     Returns:
         List of ChapterWithHighlights Pydantic schemas
@@ -462,6 +473,7 @@ def _map_chapters_to_schemas(
             h = hw.highlight
             chapter = hw.chapter
 
+            resolved = labels.get(h.highlight_style_id.value) if labels and h.highlight_style_id else None
             highlight_schema = Highlight(
                 id=h.id.value,
                 book_id=h.book_id.value,
@@ -473,8 +485,8 @@ def _map_chapters_to_schemas(
                 note=h.note,
                 datetime=h.datetime,
                 highlight_style_id=h.highlight_style_id.value if h.highlight_style_id else None,
-                label=None,
-                ui_color=None,
+                label=resolved.label if resolved else None,
+                ui_color=resolved.ui_color if resolved else None,
                 flashcards=[
                     Flashcard(
                         id=fc.id.value,
@@ -539,6 +551,9 @@ def search_book_highlights(
     use_case: HighlightSearchUseCase = Depends(
         inject_use_case(container.highlight_search_use_case)
     ),
+    label_resolver: HighlightLabelResolver = Depends(
+        inject_use_case(container.highlight_label_resolver)
+    ),
 ) -> BookHighlightSearchResponse:
     """
     Search for highlights in book using full-text search.
@@ -550,8 +565,9 @@ def search_book_highlights(
         chapters_grouped, total = use_case.search_book_highlights(
             book_id, current_user.id.value, search_text
         )
+        labels = label_resolver.resolve_for_book(UserId(current_user.id.value), BookId(book_id))
         return BookHighlightSearchResponse(
-            chapters=_map_chapters_to_schemas(chapters_grouped),
+            chapters=_map_chapters_to_schemas(chapters_grouped, labels),
             total=total,
         )
     except CrossbillError:
@@ -887,6 +903,9 @@ def add_tag_to_highlight(
     add_by_name_use_case: AddTagToHighlightByNameUseCase = Depends(
         inject_use_case(container.add_tag_to_highlight_by_name_use_case)
     ),
+    label_resolver: HighlightLabelResolver = Depends(
+        inject_use_case(container.highlight_label_resolver)
+    ),
 ) -> Highlight:
     """
     Add a tag to a highlight.
@@ -931,6 +950,10 @@ def add_tag_to_highlight(
 
         highlight, flashcards, highlight_tags = result
 
+        # Resolve labels for this highlight's book
+        labels = label_resolver.resolve_for_book(UserId(current_user.id.value), BookId(book_id))
+        resolved = labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+
         # Manually construct schema from domain entities
         return Highlight(
             id=highlight.id.value,
@@ -943,8 +966,8 @@ def add_tag_to_highlight(
             note=highlight.note,
             datetime=highlight.datetime,
             highlight_style_id=highlight.highlight_style_id.value if highlight.highlight_style_id else None,
-            label=None,
-            ui_color=None,
+            label=resolved.label if resolved else None,
+            ui_color=resolved.ui_color if resolved else None,
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,
@@ -1000,6 +1023,9 @@ def remove_tag_from_highlight(
     use_case: RemoveTagFromHighlightUseCase = Depends(
         inject_use_case(container.remove_tag_from_highlight_use_case)
     ),
+    label_resolver: HighlightLabelResolver = Depends(
+        inject_use_case(container.highlight_label_resolver)
+    ),
 ) -> Highlight:
     """
     Remove a tag from a highlight.
@@ -1032,6 +1058,10 @@ def remove_tag_from_highlight(
 
         highlight, flashcards, highlight_tags = result
 
+        # Resolve labels for this highlight's book
+        labels = label_resolver.resolve_for_book(UserId(current_user.id.value), BookId(book_id))
+        resolved = labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+
         # Manually construct schema from domain entities
         return Highlight(
             id=highlight.id.value,
@@ -1044,8 +1074,8 @@ def remove_tag_from_highlight(
             note=highlight.note,
             datetime=highlight.datetime,
             highlight_style_id=highlight.highlight_style_id.value if highlight.highlight_style_id else None,
-            label=None,
-            ui_color=None,
+            label=resolved.label if resolved else None,
+            ui_color=resolved.ui_color if resolved else None,
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,
