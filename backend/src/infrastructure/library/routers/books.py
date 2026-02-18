@@ -42,7 +42,6 @@ from src.infrastructure.reading.schemas import (
     BookDetails,
     Bookmark,
     Highlight,
-    HighlightStyleResponse,
     HighlightTagGroupInBook,
     HighlightTagInBook,
 )
@@ -86,7 +85,9 @@ def _map_chapters_to_schemas(
                 page=h.page,
                 note=h.note,
                 datetime=h.datetime,
-                highlight_style=HighlightStyleResponse(**h.highlight_style.to_json()),
+                highlight_style_id=h.highlight_style_id.value if h.highlight_style_id else None,
+                label=None,
+                ui_color=None,
                 flashcards=[
                     Flashcard(
                         id=fc.id.value,

@@ -25,7 +25,6 @@ from src.infrastructure.learning.schemas import (
 )
 from src.infrastructure.reading.schemas import (
     HighlightResponseBase,
-    HighlightStyleResponse,
     HighlightTagInBook,
 )
 
@@ -150,7 +149,9 @@ def get_flashcards_for_book(
                     datetime=highlight.datetime,
                     chapter=chapter.name if chapter else None,
                     chapter_number=chapter.chapter_number if chapter else None,
-                    highlight_style=HighlightStyleResponse(**highlight.highlight_style.to_json()),
+                    highlight_style_id=highlight.highlight_style_id.value if highlight.highlight_style_id else None,
+                    label=None,
+                    ui_color=None,
                     created_at=highlight.created_at,
                     updated_at=highlight.updated_at,
                     highlight_tags=[
