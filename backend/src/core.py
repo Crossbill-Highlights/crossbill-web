@@ -86,6 +86,18 @@ from src.application.reading.use_cases.chapter_prereading.get_book_prereading_us
 from src.application.reading.use_cases.chapter_prereading.get_chapter_prereading_use_case import (
     GetChapterPrereadingUseCase,
 )
+from src.application.reading.use_cases.highlight_labels.create_global_highlight_label_use_case import (
+    CreateGlobalHighlightLabelUseCase,
+)
+from src.application.reading.use_cases.highlight_labels.get_book_highlight_labels_use_case import (
+    GetBookHighlightLabelsUseCase,
+)
+from src.application.reading.use_cases.highlight_labels.get_global_highlight_labels_use_case import (
+    GetGlobalHighlightLabelsUseCase,
+)
+from src.application.reading.use_cases.highlight_labels.update_highlight_label_use_case import (
+    UpdateHighlightLabelUseCase,
+)
 from src.application.reading.use_cases.highlight_tag_associations.add_tag_to_highlight_by_id_use_case import (
     AddTagToHighlightByIdUseCase,
 )
@@ -142,6 +154,7 @@ from src.application.reading.use_cases.reading_sessions.reading_session_upload_u
 )
 from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
 from src.domain.reading.services.highlight_grouping_service import HighlightGroupingService
+from src.domain.reading.services.highlight_style_resolver import HighlightStyleResolver
 from src.infrastructure.ai.ai_service import AIService
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.services.password_service_adapter import PasswordServiceAdapter
@@ -205,6 +218,7 @@ class Container(containers.DeclarativeContainer):
     # Domain services (pure domain logic, no db)
     highlight_deduplication_service = providers.Factory(HighlightDeduplicationService)
     highlight_grouping_service = providers.Factory(HighlightGroupingService)
+    highlight_style_resolver = providers.Factory(HighlightStyleResolver)
 
     # Reading module, application use cases
     create_bookmark_use_case = providers.Factory(
@@ -300,6 +314,24 @@ class Container(containers.DeclarativeContainer):
         deduplication_service=highlight_deduplication_service,
         position_index_service=epub_position_index_service,
         file_repository=file_repository,
+        highlight_style_repository=highlight_style_repository,
+    )
+    get_book_highlight_labels_use_case = providers.Factory(
+        GetBookHighlightLabelsUseCase,
+        highlight_style_repository=highlight_style_repository,
+        book_repository=book_repository,
+        highlight_style_resolver=highlight_style_resolver,
+    )
+    update_highlight_label_use_case = providers.Factory(
+        UpdateHighlightLabelUseCase,
+        highlight_style_repository=highlight_style_repository,
+    )
+    get_global_highlight_labels_use_case = providers.Factory(
+        GetGlobalHighlightLabelsUseCase,
+        highlight_style_repository=highlight_style_repository,
+    )
+    create_global_highlight_label_use_case = providers.Factory(
+        CreateGlobalHighlightLabelUseCase,
         highlight_style_repository=highlight_style_repository,
     )
     reading_session_upload_use_case = providers.Factory(
