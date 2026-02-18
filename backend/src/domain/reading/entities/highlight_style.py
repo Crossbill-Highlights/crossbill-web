@@ -38,12 +38,8 @@ class HighlightStyle(Entity[HighlightStyleId]):
     device_style: str | None
     label: str | None = None
     ui_color: str | None = None
-    created_at: dt_module.datetime = field(
-        default_factory=lambda: dt_module.datetime.now(UTC)
-    )
-    updated_at: dt_module.datetime = field(
-        default_factory=lambda: dt_module.datetime.now(UTC)
-    )
+    created_at: dt_module.datetime = field(default_factory=lambda: dt_module.datetime.now(UTC))
+    updated_at: dt_module.datetime = field(default_factory=lambda: dt_module.datetime.now(UTC))
 
     def update_label(self, label: str | None) -> None:
         """Set or clear the user-assigned label."""

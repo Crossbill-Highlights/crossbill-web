@@ -21,9 +21,7 @@ class HighlightLabelResolver:
         self.style_repo = highlight_style_repository
         self.resolver = resolver
 
-    def resolve_for_book(
-        self, user_id: UserId, book_id: BookId
-    ) -> dict[int, ResolvedLabel]:
+    def resolve_for_book(self, user_id: UserId, book_id: BookId) -> dict[int, ResolvedLabel]:
         """Resolve labels for all highlight styles in a book.
 
         Returns a dict mapping highlight_style_id -> ResolvedLabel.

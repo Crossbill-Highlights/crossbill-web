@@ -37,13 +37,10 @@ class GetBookHighlightLabelsUseCase:
         if not book:
             raise NotFoundError(f"Book {book_id} not found")
 
-        all_styles = self.highlight_style_repository.find_for_resolution(
-            user_id_vo, book_id_vo
-        )
+        all_styles = self.highlight_style_repository.find_for_resolution(user_id_vo, book_id_vo)
 
         book_combo_styles = [
-            s for s in all_styles
-            if s.is_combination_level() and not s.is_global()
+            s for s in all_styles if s.is_combination_level() and not s.is_global()
         ]
 
         results: list[tuple[HighlightStyle, ResolvedLabel, int]] = []

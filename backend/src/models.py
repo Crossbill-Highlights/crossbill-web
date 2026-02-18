@@ -341,9 +341,7 @@ class Highlight(Base):
     user: Mapped["User"] = relationship(back_populates="highlights")
     book: Mapped["Book"] = relationship(back_populates="highlights")
     chapter: Mapped["Chapter | None"] = relationship(back_populates="highlights")
-    highlight_style_rel: Mapped["HighlightStyle | None"] = relationship(
-        back_populates="highlights"
-    )
+    highlight_style_rel: Mapped["HighlightStyle | None"] = relationship(back_populates="highlights")
     highlight_tags: Mapped[list["HighlightTag"]] = relationship(
         secondary=highlight_highlight_tags, back_populates="highlights", lazy="selectin"
     )

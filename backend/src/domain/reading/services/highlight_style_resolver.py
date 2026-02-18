@@ -35,9 +35,7 @@ class HighlightStyleResolver:
         """Resolve effective label for a combination-level style."""
         # Priority 1: The style itself (combination + book)
         if style.label is not None:
-            return ResolvedLabel(
-                label=style.label, ui_color=style.ui_color, source="book"
-            )
+            return ResolvedLabel(label=style.label, ui_color=style.ui_color, source="book")
 
         book_styles = [s for s in all_styles if not s.is_global()]
         global_styles = [s for s in all_styles if s.is_global()]
@@ -49,7 +47,11 @@ class HighlightStyleResolver:
             # Priority 3: Style-only + book
             (self._find_individual(book_styles, None, style.device_style, "book"),),
             # Priority 4: Combination + global
-            (self._find_combination(global_styles, style.device_color, style.device_style, "global"),),
+            (
+                self._find_combination(
+                    global_styles, style.device_color, style.device_style, "global"
+                ),
+            ),
             # Priority 5: Color-only + global
             (self._find_individual(global_styles, style.device_color, None, "global"),),
             # Priority 6: Style-only + global
@@ -76,9 +78,7 @@ class HighlightStyleResolver:
                 and s.is_combination_level()
                 and s.label is not None
             ):
-                return ResolvedLabel(
-                    label=s.label, ui_color=s.ui_color or None, source=source
-                )
+                return ResolvedLabel(label=s.label, ui_color=s.ui_color or None, source=source)
         return None
 
     def _find_individual(
@@ -95,16 +95,12 @@ class HighlightStyleResolver:
                 and s.device_style is None
                 and s.label is not None
             ):
-                return ResolvedLabel(
-                    label=s.label, ui_color=s.ui_color or None, source=source
-                )
+                return ResolvedLabel(label=s.label, ui_color=s.ui_color or None, source=source)
             if (
                 style_name is not None
                 and s.device_style == style_name
                 and s.device_color is None
                 and s.label is not None
             ):
-                return ResolvedLabel(
-                    label=s.label, ui_color=s.ui_color or None, source=source
-                )
+                return ResolvedLabel(label=s.label, ui_color=s.ui_color or None, source=source)
         return None

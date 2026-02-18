@@ -10,11 +10,11 @@ from src.application.library.use_cases.book_tag_associations.get_book_tags_use_c
 )
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
-from src.application.reading.protocols.highlight_tag_repository import (
-    HighlightTagRepositoryProtocol,
-)
 from src.application.reading.protocols.highlight_style_repository import (
     HighlightStyleRepositoryProtocol,
+)
+from src.application.reading.protocols.highlight_tag_repository import (
+    HighlightTagRepositoryProtocol,
 )
 from src.application.reading.protocols.reading_session_repository import (
     ReadingSessionRepositoryProtocol,
