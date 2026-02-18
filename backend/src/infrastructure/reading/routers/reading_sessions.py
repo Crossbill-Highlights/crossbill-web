@@ -24,6 +24,7 @@ from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.reading.schemas import (
     Highlight,
+    HighlightLabel,
     ReadingSession,
     ReadingSessionAISummaryResponse,
     ReadingSessionsResponse,
@@ -160,7 +161,11 @@ async def get_book_reading_sessions(
             # Note: We don't have chapter/tags/flashcards loaded, so use minimal schema
             highlight_schemas = []
             for highlight in session_with_highlights.highlights:
-                resolved = labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+                resolved = (
+                    labels.get(highlight.highlight_style_id.value)
+                    if highlight.highlight_style_id
+                    else None
+                )
                 # Construct Highlight schema directly with named parameters
                 highlight_schemas.append(
                     Highlight(
@@ -173,9 +178,15 @@ async def get_book_reading_sessions(
                         datetime=highlight.datetime,
                         created_at=highlight.created_at,
                         updated_at=highlight.updated_at,
-                        highlight_style_id=highlight.highlight_style_id.value if highlight.highlight_style_id else None,
-                        label=resolved.label if resolved else None,
-                        ui_color=resolved.ui_color if resolved else None,
+                        label=HighlightLabel(
+                            highlight_style_id=highlight.highlight_style_id.value
+                            if highlight.highlight_style_id
+                            else None,
+                            text=resolved.label if resolved else None,
+                            ui_color=resolved.ui_color if resolved else None,
+                        )
+                        if highlight.highlight_style_id
+                        else None,
                         chapter=None,  # Not loaded in this context
                         chapter_number=None,  # Not loaded in this context
                         highlight_tags=[],  # Not loaded in this context

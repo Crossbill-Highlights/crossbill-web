@@ -44,6 +44,14 @@ class HighlightCreate(HighlightBase):
     )
 
 
+class HighlightLabel(BaseModel):
+    """Resolved label info for a highlight."""
+
+    highlight_style_id: int | None = Field(None, description="ID of the highlight style")
+    text: str | None = Field(None, description="Resolved label text")
+    ui_color: str | None = Field(None, description="Resolved UI color")
+
+
 class HighlightResponseBase(HighlightBase):
     """Base schema for Highlight response (without flashcards).
 
@@ -53,9 +61,7 @@ class HighlightResponseBase(HighlightBase):
     id: int
     book_id: int
     chapter_id: int | None
-    highlight_style_id: int | None = Field(None, description="ID of the highlight style")
-    label: str | None = Field(None, description="Resolved label for this highlight")
-    ui_color: str | None = Field(None, description="Resolved UI color for this highlight")
+    label: HighlightLabel | None = Field(None, description="Resolved label for this highlight")
     highlight_tags: list[HighlightTagInBook] = Field(
         ..., description="List of highlight tags for this highlight"
     )
@@ -212,7 +218,9 @@ class HighlightLabelInBook(BaseModel):
     device_style: str | None = Field(None, description="Device drawing style")
     label: str | None = Field(None, description="User-assigned label")
     ui_color: str | None = Field(None, description="User-chosen UI color")
-    label_source: str = Field(..., description="Where the label comes from: 'book', 'global', or 'none'")
+    label_source: str = Field(
+        ..., description="Where the label comes from: 'book', 'global', or 'none'"
+    )
     highlight_count: int = Field(..., description="Number of highlights using this style")
 
 

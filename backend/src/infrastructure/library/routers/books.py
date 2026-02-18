@@ -44,6 +44,7 @@ from src.infrastructure.reading.schemas import (
     BookDetails,
     Bookmark,
     Highlight,
+    HighlightLabel,
     HighlightTagGroupInBook,
     HighlightTagInBook,
 )
@@ -80,7 +81,9 @@ def _map_chapters_to_schemas(
             h = hw.highlight
             chapter = hw.chapter
 
-            resolved = labels.get(h.highlight_style_id.value) if labels and h.highlight_style_id else None
+            resolved = (
+                labels.get(h.highlight_style_id.value) if labels and h.highlight_style_id else None
+            )
             highlight_schema = Highlight(
                 id=h.id.value,
                 book_id=h.book_id.value,
@@ -91,9 +94,13 @@ def _map_chapters_to_schemas(
                 page=h.page,
                 note=h.note,
                 datetime=h.datetime,
-                highlight_style_id=h.highlight_style_id.value if h.highlight_style_id else None,
-                label=resolved.label if resolved else None,
-                ui_color=resolved.ui_color if resolved else None,
+                label=HighlightLabel(
+                    highlight_style_id=h.highlight_style_id.value if h.highlight_style_id else None,
+                    text=resolved.label if resolved else None,
+                    ui_color=resolved.ui_color if resolved else None,
+                )
+                if h.highlight_style_id
+                else None,
                 flashcards=[
                     Flashcard(
                         id=fc.id.value,

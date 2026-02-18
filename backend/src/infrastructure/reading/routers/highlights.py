@@ -80,6 +80,7 @@ from src.infrastructure.reading.schemas import (
     Highlight,
     HighlightDeleteRequest,
     HighlightDeleteResponse,
+    HighlightLabel,
     HighlightNoteUpdate,
     HighlightNoteUpdateResponse,
     HighlightTag,
@@ -214,7 +215,9 @@ def update_highlight_note(
 
         # Resolve labels for this highlight's book
         labels = label_resolver.resolve_for_book(UserId(current_user.id.value), highlight.book_id)
-        resolved = labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+        resolved = (
+            labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+        )
 
         # Build response from domain entities
         highlight_schema = Highlight(
@@ -227,9 +230,15 @@ def update_highlight_note(
             page=highlight.page,
             note=highlight.note,
             datetime=highlight.datetime,
-            highlight_style_id=highlight.highlight_style_id.value if highlight.highlight_style_id else None,
-            label=resolved.label if resolved else None,
-            ui_color=resolved.ui_color if resolved else None,
+            label=HighlightLabel(
+                highlight_style_id=highlight.highlight_style_id.value
+                if highlight.highlight_style_id
+                else None,
+                text=resolved.label if resolved else None,
+                ui_color=resolved.ui_color if resolved else None,
+            )
+            if highlight.highlight_style_id
+            else None,
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,
@@ -473,7 +482,9 @@ def _map_chapters_to_schemas(
             h = hw.highlight
             chapter = hw.chapter
 
-            resolved = labels.get(h.highlight_style_id.value) if labels and h.highlight_style_id else None
+            resolved = (
+                labels.get(h.highlight_style_id.value) if labels and h.highlight_style_id else None
+            )
             highlight_schema = Highlight(
                 id=h.id.value,
                 book_id=h.book_id.value,
@@ -484,9 +495,13 @@ def _map_chapters_to_schemas(
                 page=h.page,
                 note=h.note,
                 datetime=h.datetime,
-                highlight_style_id=h.highlight_style_id.value if h.highlight_style_id else None,
-                label=resolved.label if resolved else None,
-                ui_color=resolved.ui_color if resolved else None,
+                label=HighlightLabel(
+                    highlight_style_id=h.highlight_style_id.value if h.highlight_style_id else None,
+                    text=resolved.label if resolved else None,
+                    ui_color=resolved.ui_color if resolved else None,
+                )
+                if h.highlight_style_id
+                else None,
                 flashcards=[
                     Flashcard(
                         id=fc.id.value,
@@ -952,7 +967,9 @@ def add_tag_to_highlight(
 
         # Resolve labels for this highlight's book
         labels = label_resolver.resolve_for_book(UserId(current_user.id.value), BookId(book_id))
-        resolved = labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+        resolved = (
+            labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+        )
 
         # Manually construct schema from domain entities
         return Highlight(
@@ -965,9 +982,15 @@ def add_tag_to_highlight(
             page=highlight.page,
             note=highlight.note,
             datetime=highlight.datetime,
-            highlight_style_id=highlight.highlight_style_id.value if highlight.highlight_style_id else None,
-            label=resolved.label if resolved else None,
-            ui_color=resolved.ui_color if resolved else None,
+            label=HighlightLabel(
+                highlight_style_id=highlight.highlight_style_id.value
+                if highlight.highlight_style_id
+                else None,
+                text=resolved.label if resolved else None,
+                ui_color=resolved.ui_color if resolved else None,
+            )
+            if highlight.highlight_style_id
+            else None,
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,
@@ -1060,7 +1083,9 @@ def remove_tag_from_highlight(
 
         # Resolve labels for this highlight's book
         labels = label_resolver.resolve_for_book(UserId(current_user.id.value), BookId(book_id))
-        resolved = labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+        resolved = (
+            labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+        )
 
         # Manually construct schema from domain entities
         return Highlight(
@@ -1073,9 +1098,15 @@ def remove_tag_from_highlight(
             page=highlight.page,
             note=highlight.note,
             datetime=highlight.datetime,
-            highlight_style_id=highlight.highlight_style_id.value if highlight.highlight_style_id else None,
-            label=resolved.label if resolved else None,
-            ui_color=resolved.ui_color if resolved else None,
+            label=HighlightLabel(
+                highlight_style_id=highlight.highlight_style_id.value
+                if highlight.highlight_style_id
+                else None,
+                text=resolved.label if resolved else None,
+                ui_color=resolved.ui_color if resolved else None,
+            )
+            if highlight.highlight_style_id
+            else None,
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,

@@ -72,9 +72,7 @@ class TestHighlightUploadCreatesStyles:
         assert data["highlights_created"] == 2
 
         # Verify highlight_style rows were created
-        book = (
-            db_session.query(models.Book).filter_by(title="Labels Test Book").first()
-        )
+        book = db_session.query(models.Book).filter_by(title="Labels Test Book").first()
         assert book is not None
 
         styles = db_session.query(models.HighlightStyle).filter_by(book_id=book.id).all()
@@ -186,19 +184,16 @@ class TestHighlightUploadCreatesStyles:
         assert len(data["chapters"]) == 1
         assert len(data["chapters"][0]["highlights"]) == 1
         h_data = data["chapters"][0]["highlights"][0]
-        assert "highlight_style_id" in h_data
-        assert h_data["highlight_style_id"] is not None
-        # Also check that label and ui_color fields exist
         assert "label" in h_data
-        assert "ui_color" in h_data
+        assert h_data["label"] is not None
+        assert "highlight_style_id" in h_data["label"]
+        assert h_data["label"]["highlight_style_id"] is not None
 
 
 class TestGetBookHighlightLabels:
     """Test GET /api/v1/books/{book_id}/highlight-labels endpoint."""
 
-    def test_get_book_labels_returns_styles(
-        self, client: TestClient, db_session: Session
-    ) -> None:
+    def test_get_book_labels_returns_styles(self, client: TestClient, db_session: Session) -> None:
         """Test that book highlight labels endpoint returns styles with counts."""
         book = create_test_book(
             db_session=db_session,
@@ -247,9 +242,7 @@ class TestGetBookHighlightLabels:
         assert label_data["highlight_count"] == 2
         assert label_data["label_source"] == "book"
 
-    def test_get_book_labels_empty_book(
-        self, client: TestClient, db_session: Session
-    ) -> None:
+    def test_get_book_labels_empty_book(self, client: TestClient, db_session: Session) -> None:
         """Test getting labels for a book with no highlight styles."""
         book = create_test_book(
             db_session=db_session,
@@ -308,9 +301,7 @@ class TestGetBookHighlightLabels:
 class TestUpdateHighlightLabel:
     """Test PATCH /api/v1/highlight-labels/{id} endpoint."""
 
-    def test_update_label(
-        self, client: TestClient, db_session: Session
-    ) -> None:
+    def test_update_label(self, client: TestClient, db_session: Session) -> None:
         """Test updating a highlight label."""
         book = create_test_book(
             db_session=db_session,
@@ -441,9 +432,7 @@ class TestCreateGlobalHighlightLabel:
         assert data["device_style"] is None
         assert data["label"] == "Red Notes"
 
-    def test_create_global_label_appears_in_get(
-        self, client: TestClient
-    ) -> None:
+    def test_create_global_label_appears_in_get(self, client: TestClient) -> None:
         """Test that a created global label appears in the GET endpoint."""
         # Create a global label
         create_response = client.post(
