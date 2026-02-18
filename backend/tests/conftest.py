@@ -21,6 +21,7 @@ from src.models import (
     Book,
     Flashcard,
     Highlight,
+    HighlightStyle as HighlightStyleModel,
     HighlightTag,
     HighlightTagGroup,
     User,
@@ -72,6 +73,7 @@ def create_test_highlight(
     deleted_at: dt | None = None,
     start_xpoint: str | None = None,
     end_xpoint: str | None = None,
+    highlight_style_id: int | None = None,
 ) -> Highlight:
     """Create a test highlight with properly computed content_hash.
 
@@ -93,11 +95,36 @@ def create_test_highlight(
         datetime=datetime_str,
         content_hash=content_hash,
         deleted_at=deleted_at,
+        highlight_style_id=highlight_style_id,
     )
     db_session.add(highlight)
     db_session.commit()
     db_session.refresh(highlight)
     return highlight
+
+
+def create_test_highlight_style(
+    db_session: Session,
+    user_id: int,
+    book_id: int,
+    device_color: str = "gray",
+    device_style: str = "lighten",
+    label: str | None = None,
+    ui_color: str | None = None,
+) -> HighlightStyleModel:
+    """Create a test highlight style."""
+    style = HighlightStyleModel(
+        user_id=user_id,
+        book_id=book_id,
+        device_color=device_color,
+        device_style=device_style,
+        label=label,
+        ui_color=ui_color,
+    )
+    db_session.add(style)
+    db_session.commit()
+    db_session.refresh(style)
+    return style
 
 
 # Set TESTING environment variable to skip database initialization in main.py
