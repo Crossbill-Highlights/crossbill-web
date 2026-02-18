@@ -116,6 +116,9 @@ class User(Base):
     highlights: Mapped[list["Highlight"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    highlight_styles: Mapped[list["HighlightStyle"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
     highlight_tags: Mapped[list["HighlightTag"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
@@ -177,6 +180,9 @@ class Book(Base):
         secondary=book_tags, back_populates="books", lazy="selectin"
     )
     highlight_tags: Mapped[list["HighlightTag"]] = relationship(
+        back_populates="book", cascade="all, delete-orphan"
+    )
+    highlight_styles: Mapped[list["HighlightStyle"]] = relationship(
         back_populates="book", cascade="all, delete-orphan"
     )
     highlight_tag_groups: Mapped[list["HighlightTagGroup"]] = relationship(
@@ -248,6 +254,45 @@ class Chapter(Base):
         return f"<Chapter(id={self.id}, name='{self.name}', book_id={self.book_id})>"
 
 
+class HighlightStyle(Base):
+    """HighlightStyle model for storing highlight style labels and colors."""
+
+    __tablename__ = "highlight_styles"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    book_id: Mapped[int | None] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=True
+    )
+    device_color: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    device_style: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    label: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    ui_color: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    created_at: Mapped[dt] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[dt] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship(back_populates="highlight_styles")
+    book: Mapped["Book | None"] = relationship(back_populates="highlight_styles")
+    highlights: Mapped[list["Highlight"]] = relationship(back_populates="highlight_style_rel")
+
+    def __repr__(self) -> str:
+        """String representation of HighlightStyle."""
+        return (
+            f"<HighlightStyle(id={self.id}, user_id={self.user_id}, "
+            f"device_color='{self.device_color}', device_style='{self.device_style}')>"
+        )
+
+
 class Highlight(Base):
     """Highlight model for storing KOReader highlights."""
 
@@ -269,8 +314,8 @@ class Highlight(Base):
     start_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
     end_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
     position: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
-    highlight_style: Mapped[dict[str, str | None]] = mapped_column(
-        JSON, nullable=False, server_default='{"color": "gray", "style": "lighten"}'
+    highlight_style_id: Mapped[int | None] = mapped_column(
+        ForeignKey("highlight_styles.id", ondelete="SET NULL"), index=True, nullable=True
     )
     datetime: Mapped[str] = mapped_column(String(50), nullable=False)  # KOReader datetime string
     content_hash: Mapped[str] = mapped_column(
@@ -296,6 +341,9 @@ class Highlight(Base):
     user: Mapped["User"] = relationship(back_populates="highlights")
     book: Mapped["Book"] = relationship(back_populates="highlights")
     chapter: Mapped["Chapter | None"] = relationship(back_populates="highlights")
+    highlight_style_rel: Mapped["HighlightStyle | None"] = relationship(
+        back_populates="highlights"
+    )
     highlight_tags: Mapped[list["HighlightTag"]] = relationship(
         secondary=highlight_highlight_tags, back_populates="highlights", lazy="selectin"
     )
