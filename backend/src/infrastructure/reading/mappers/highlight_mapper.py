@@ -10,7 +10,7 @@ from src.domain.common.value_objects import (
     BookId,
     ChapterId,
     HighlightId,
-    HighlightStyle,
+    HighlightStyleId,
     UserId,
     XPointRange,
 )
@@ -54,7 +54,7 @@ class HighlightMapper:
             xpoints=xpoints,
             page=orm_model.page,
             position=position,
-            highlight_style=HighlightStyle.from_json(orm_model.highlight_style),
+            highlight_style_id=HighlightStyleId(orm_model.highlight_style_id) if orm_model.highlight_style_id else None,
             note=orm_model.note,
             deleted_at=orm_model.deleted_at,
         )
@@ -101,7 +101,7 @@ class HighlightMapper:
             orm_model.position = (
                 domain_entity.position.to_json() if domain_entity.position else None
             )
-            orm_model.highlight_style = domain_entity.highlight_style.to_json()
+            orm_model.highlight_style_id = domain_entity.highlight_style_id.value if domain_entity.highlight_style_id else None
             orm_model.deleted_at = domain_entity.deleted_at
             return orm_model
         # Create new model
@@ -114,7 +114,7 @@ class HighlightMapper:
             content_hash=domain_entity.content_hash.value,
             page=domain_entity.page,
             position=domain_entity.position.to_json() if domain_entity.position else None,
-            highlight_style=domain_entity.highlight_style.to_json(),
+            highlight_style_id=domain_entity.highlight_style_id.value if domain_entity.highlight_style_id else None,
             note=domain_entity.note,
             start_xpoint=start_xpoint,
             end_xpoint=end_xpoint,
