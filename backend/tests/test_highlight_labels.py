@@ -523,12 +523,12 @@ class TestHighlightUploadWithLabels:
         assert len(labels) == 2  # Two unique color+style combos
 
         # Find the yellow/lighten label
-        yellow_labels = [l for l in labels if l["device_color"] == "yellow"]
+        yellow_labels = [lbl for lbl in labels if lbl["device_color"] == "yellow"]
         assert len(yellow_labels) == 1
         assert yellow_labels[0]["highlight_count"] == 2
 
         # Find the green/strikethrough label
-        green_labels = [l for l in labels if l["device_color"] == "green"]
+        green_labels = [lbl for lbl in labels if lbl["device_color"] == "green"]
         assert len(green_labels) == 1
         assert green_labels[0]["highlight_count"] == 1
 

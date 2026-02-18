@@ -21,10 +21,12 @@ from src.models import (
     Book,
     Flashcard,
     Highlight,
-    HighlightStyle as HighlightStyleModel,
     HighlightTag,
     HighlightTagGroup,
     User,
+)
+from src.models import (
+    HighlightStyle as HighlightStyleModel,
 )
 
 
