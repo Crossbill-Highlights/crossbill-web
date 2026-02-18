@@ -121,16 +121,15 @@ def upgrade() -> None:
         ),
     )
 
-    # 4. Migrate data from JSON column to highlight_styles table
+    # 4. Migrate existing highlights: create a default "gray/lighten" style per (user, book)
+    #    and link all highlights to it. Production does NOT have the old highlight_style JSON column.
     conn = op.get_bind()
 
     rows = conn.execute(
         sa.text("""
-            SELECT DISTINCT user_id, book_id,
-                   highlight_style->>'color' as color,
-                   highlight_style->>'style' as style
+            SELECT DISTINCT user_id, book_id
             FROM highlights
-            WHERE highlight_style IS NOT NULL
+            WHERE deleted_at IS NULL
         """)
     ).fetchall()
 
@@ -138,10 +137,10 @@ def upgrade() -> None:
         result = conn.execute(
             sa.text("""
                 INSERT INTO highlight_styles (user_id, book_id, device_color, device_style)
-                VALUES (:user_id, :book_id, :color, :style)
+                VALUES (:user_id, :book_id, 'gray', 'lighten')
                 RETURNING id
             """),
-            {"user_id": row.user_id, "book_id": row.book_id, "color": row.color, "style": row.style},
+            {"user_id": row.user_id, "book_id": row.book_id},
         )
         style_id = result.scalar_one()
 
@@ -151,45 +150,15 @@ def upgrade() -> None:
                 SET highlight_style_id = :style_id
                 WHERE user_id = :user_id
                   AND book_id = :book_id
-                  AND highlight_style->>'color' = :color
-                  AND highlight_style->>'style' = :style
             """),
             {
                 "style_id": style_id,
                 "user_id": row.user_id,
                 "book_id": row.book_id,
-                "color": row.color,
-                "style": row.style,
             },
         )
 
-    # 5. Drop the old JSON column
-    op.drop_column("highlights", "highlight_style")
-
 
 def downgrade() -> None:
-    op.add_column(
-        "highlights",
-        sa.Column(
-            "highlight_style",
-            sa.JSON(),
-            nullable=False,
-            server_default=sa.text("'{\"color\": \"gray\", \"style\": \"lighten\"}'"),
-        ),
-    )
-
-    conn = op.get_bind()
-    conn.execute(
-        sa.text("""
-            UPDATE highlights h
-            SET highlight_style = json_build_object(
-                'color', hs.device_color,
-                'style', hs.device_style
-            )
-            FROM highlight_styles hs
-            WHERE h.highlight_style_id = hs.id
-        """)
-    )
-
     op.drop_column("highlights", "highlight_style_id")
     op.drop_table("highlight_styles")
