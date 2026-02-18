@@ -16,7 +16,6 @@ from src.application.reading.use_cases.reading_sessions.reading_session_upload_u
     ReadingSessionUploadUseCase,
 )
 from src.core import container
-from src.domain.common.value_objects import BookId, UserId
 from src.domain.identity.entities.user import User
 from src.exceptions import CrossbillError, ReadingSessionNotFoundError, ValidationError
 from src.infrastructure.common.dependencies import require_ai_enabled
@@ -31,7 +30,6 @@ from src.infrastructure.reading.schemas import (
     ReadingSessionUploadRequest,
     ReadingSessionUploadResponse,
 )
-from src.infrastructure.reading.services.highlight_label_resolver import HighlightLabelResolver
 
 logger = logging.getLogger(__name__)
 
@@ -122,9 +120,6 @@ async def get_book_reading_sessions(
     use_case: ReadingSessionQueryUseCase = Depends(
         inject_use_case(container.reading_session_query_use_case)
     ),
-    label_resolver: HighlightLabelResolver = Depends(
-        inject_use_case(container.highlight_label_resolver)
-    ),
 ) -> ReadingSessionsResponse:
     """
     Get reading sessions for a specific book.
@@ -149,8 +144,7 @@ async def get_book_reading_sessions(
             include_content=True,
         )
 
-        # Resolve labels for this book
-        labels = label_resolver.resolve_for_book(UserId(current_user.id.value), BookId(book_id))
+        labels = result.labels
 
         # Manually construct Pydantic schemas
         sessions_schemas = []

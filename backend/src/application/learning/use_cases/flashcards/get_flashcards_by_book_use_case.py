@@ -4,10 +4,17 @@ from src.application.learning.protocols.flashcard_repository import FlashcardRep
 from src.application.learning.use_cases.dtos import FlashcardWithHighlight
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
+from src.application.reading.protocols.highlight_style_repository import (
+    HighlightStyleRepositoryProtocol,
+)
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.library.entities.chapter import Chapter
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.domain.reading.services.highlight_style_resolver import (
+    HighlightStyleResolver,
+    ResolvedLabel,
+)
 from src.exceptions import BookNotFoundError
 
 
@@ -19,13 +26,19 @@ class GetFlashcardsByBookUseCase:
         flashcard_repository: FlashcardRepositoryProtocol,
         book_repository: BookRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
+        highlight_style_repository: HighlightStyleRepositoryProtocol | None = None,
+        highlight_style_resolver: HighlightStyleResolver | None = None,
     ) -> None:
         """Initialize use case with repository protocols."""
         self.flashcard_repository = flashcard_repository
         self.book_repository = book_repository
         self.highlight_repository = highlight_repository
+        self.highlight_style_repository = highlight_style_repository
+        self.highlight_style_resolver = highlight_style_resolver
 
-    def get_flashcards(self, book_id: int, user_id: int) -> list[FlashcardWithHighlight]:
+    def get_flashcards(
+        self, book_id: int, user_id: int
+    ) -> tuple[list[FlashcardWithHighlight], dict[int, ResolvedLabel]]:
         """
         Get all flashcards for a book with their associated highlights.
 
@@ -34,7 +47,7 @@ class GetFlashcardsByBookUseCase:
             user_id: ID of the user
 
         Returns:
-            List of FlashcardWithHighlight DTOs
+            Tuple of (FlashcardWithHighlight DTOs, resolved labels)
 
         Raises:
             BookNotFoundError: If book is not found
@@ -57,7 +70,6 @@ class GetFlashcardsByBookUseCase:
             )
             highlight_map = {h.id.value: (h, chapter, tags) for h, chapter, tags in highlights_data}
 
-        # TODO: should we just return tuple of domain objects and then join them to Pydantic schema in router?
         # Combine flashcards with their highlights
         result = []
         for fc in flashcards:
@@ -75,4 +87,13 @@ class GetFlashcardsByBookUseCase:
                 )
             )
 
-        return result
+        # Resolve labels
+        labels: dict[int, ResolvedLabel] = {}
+        if self.highlight_style_repository and self.highlight_style_resolver:
+            all_styles = self.highlight_style_repository.find_for_resolution(user_id_vo, book_id_vo)
+            for style in all_styles:
+                if style.is_combination_level() and not style.is_global():
+                    resolved = self.highlight_style_resolver.resolve(style, all_styles)
+                    labels[style.id.value] = resolved
+
+        return result, labels

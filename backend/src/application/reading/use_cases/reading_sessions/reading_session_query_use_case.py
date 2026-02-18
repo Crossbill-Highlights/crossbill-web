@@ -1,6 +1,6 @@
 """Use case for querying reading sessions with highlights and content."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import structlog
 
@@ -12,12 +12,19 @@ from src.application.reading.protocols.ebook_text_extraction_service import (
 from src.application.reading.protocols.highlight_repository import (
     HighlightRepositoryProtocol,
 )
+from src.application.reading.protocols.highlight_style_repository import (
+    HighlightStyleRepositoryProtocol,
+)
 from src.application.reading.protocols.reading_session_repository import (
     ReadingSessionRepositoryProtocol,
 )
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.reading_session import ReadingSession
+from src.domain.reading.services.highlight_style_resolver import (
+    HighlightStyleResolver,
+    ResolvedLabel,
+)
 from src.exceptions import BookNotFoundError
 
 logger = structlog.get_logger(__name__)
@@ -40,6 +47,7 @@ class ReadingSessionQueryResult:
     total: int
     offset: int
     limit: int
+    labels: dict[int, ResolvedLabel] = field(default_factory=dict)
 
 
 class ReadingSessionQueryUseCase:
@@ -52,12 +60,16 @@ class ReadingSessionQueryUseCase:
         highlight_repository: HighlightRepositoryProtocol,
         text_extraction_service: EbookTextExtractionServiceProtocol,
         file_repo: FileRepositoryProtocol,
+        highlight_style_repository: HighlightStyleRepositoryProtocol | None = None,
+        highlight_style_resolver: HighlightStyleResolver | None = None,
     ) -> None:
         self.session_repository = session_repository
         self.book_repository = book_repository
         self.highlight_repository = highlight_repository
         self.text_extraction_service = text_extraction_service
         self.file_repo = file_repo
+        self.highlight_style_repository = highlight_style_repository
+        self.highlight_style_resolver = highlight_style_resolver
 
     def get_sessions_for_book(
         self,
@@ -134,9 +146,19 @@ class ReadingSessionQueryUseCase:
                 )
             )
 
+        # Resolve labels
+        labels: dict[int, ResolvedLabel] = {}
+        if self.highlight_style_repository and self.highlight_style_resolver:
+            all_styles = self.highlight_style_repository.find_for_resolution(user_id_vo, book_id_vo)
+            for style in all_styles:
+                if style.is_combination_level() and not style.is_global():
+                    resolved = self.highlight_style_resolver.resolve(style, all_styles)
+                    labels[style.id.value] = resolved
+
         return ReadingSessionQueryResult(
             sessions_with_highlights=sessions_with_highlights,
             total=total,
             offset=offset,
             limit=limit,
+            labels=labels,
         )

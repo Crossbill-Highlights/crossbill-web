@@ -24,7 +24,6 @@ from src.application.library.use_cases.book_queries.get_recently_viewed_books_us
 )
 from src.core import container
 from src.domain.common import DomainError
-from src.domain.common.value_objects import BookId, UserId
 from src.domain.identity import User
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
 from src.domain.reading.services import ChapterWithHighlights as DomainChapterWithHighlights
@@ -52,7 +51,6 @@ from src.infrastructure.reading.schemas import (
     ChapterWithHighlights as ChapterWithHighlightsSchema,
 )
 from src.infrastructure.reading.schemas.highlight_schemas import PositionResponse
-from src.infrastructure.reading.services.highlight_label_resolver import HighlightLabelResolver
 
 logger = logging.getLogger(__name__)
 
@@ -345,9 +343,6 @@ def get_book_details(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetBookDetailsUseCase = Depends(inject_use_case(container.get_book_details_use_case)),
-    label_resolver: HighlightLabelResolver = Depends(
-        inject_use_case(container.highlight_label_resolver)
-    ),
 ) -> BookDetails:
     """
     Get detailed information about a book including its chapters and highlights.
@@ -363,8 +358,7 @@ def get_book_details(
     """
     try:
         agg = use_case.get_book_details(book_id, current_user.id.value)
-        labels = label_resolver.resolve_for_book(UserId(current_user.id.value), BookId(book_id))
-        return _build_book_details_schema(agg, labels)
+        return _build_book_details_schema(agg, agg.labels)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise

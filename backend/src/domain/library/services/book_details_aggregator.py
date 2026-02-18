@@ -11,6 +11,7 @@ from src.domain.common.value_objects.position import Position
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.library.entities.book import Book
 from src.domain.reading.services.highlight_grouping_service import ChapterWithHighlights
+from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
 
 
 @dataclass
@@ -25,3 +26,4 @@ class BookDetailsAggregation:
     chapters_with_highlights: list[ChapterWithHighlights]
     book_flashcards: list[Flashcard] = field(default_factory=list)
     reading_position: Position | None = None
+    labels: dict[int, ResolvedLabel] = field(default_factory=dict)

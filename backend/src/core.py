@@ -250,6 +250,8 @@ class Container(containers.DeclarativeContainer):
         HighlightSearchUseCase,
         book_repository=book_repository,
         highlight_repository=highlight_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
     highlight_delete_use_case = providers.Factory(
         HighlightDeleteUseCase,
@@ -259,6 +261,8 @@ class Container(containers.DeclarativeContainer):
     highlight_update_note_use_case = providers.Factory(
         HighlightUpdateNoteUseCase,
         highlight_repository=highlight_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
     create_highlight_tag_use_case = providers.Factory(
         CreateHighlightTagUseCase,
@@ -303,16 +307,22 @@ class Container(containers.DeclarativeContainer):
         AddTagToHighlightByIdUseCase,
         highlight_repository=highlight_repository,
         tag_repository=highlight_tag_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
     add_tag_to_highlight_by_name_use_case = providers.Factory(
         AddTagToHighlightByNameUseCase,
         highlight_repository=highlight_repository,
         tag_repository=highlight_tag_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
     remove_tag_from_highlight_use_case = providers.Factory(
         RemoveTagFromHighlightUseCase,
         highlight_repository=highlight_repository,
         tag_repository=highlight_tag_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
     highlight_upload_use_case = providers.Factory(
         HighlightUploadUseCase,
@@ -357,6 +367,8 @@ class Container(containers.DeclarativeContainer):
         highlight_repository=highlight_repository,
         text_extraction_service=ebook_text_extraction_service,
         file_repo=file_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
     reading_session_ai_summary_use_case = providers.Factory(
         ReadingSessionAISummaryUseCase,
@@ -460,6 +472,8 @@ class Container(containers.DeclarativeContainer):
         highlight_tag_use_case=get_highlight_tags_for_book_use_case,
         highlight_grouping_service=highlight_grouping_service,
         reading_session_repository=reading_session_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
 
     update_book_use_case = providers.Factory(
@@ -499,6 +513,8 @@ class Container(containers.DeclarativeContainer):
         flashcard_repository=flashcard_repository,
         book_repository=book_repository,
         highlight_repository=highlight_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
 
     update_flashcard_use_case = providers.Factory(

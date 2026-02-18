@@ -12,7 +12,6 @@ from src.application.learning.use_cases.flashcards.get_flashcards_by_book_use_ca
 )
 from src.core import container
 from src.domain.common import DomainError
-from src.domain.common.value_objects import BookId, UserId
 from src.domain.identity import User
 from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.common.di import inject_use_case
@@ -29,7 +28,6 @@ from src.infrastructure.reading.schemas import (
     HighlightResponseBase,
     HighlightTagInBook,
 )
-from src.infrastructure.reading.services.highlight_label_resolver import HighlightLabelResolver
 
 logger = logging.getLogger(__name__)
 
@@ -110,9 +108,6 @@ def get_flashcards_for_book(
     use_case: GetFlashcardsByBookUseCase = Depends(
         inject_use_case(container.get_flashcards_by_book_use_case)
     ),
-    label_resolver: HighlightLabelResolver = Depends(
-        inject_use_case(container.highlight_label_resolver)
-    ),
 ) -> FlashcardsWithHighlightsResponse:
     """
     Get all flashcards for a book with embedded highlight data.
@@ -130,11 +125,8 @@ def get_flashcards_for_book(
         HTTPException: If book not found or fetching fails
     """
     try:
-        # Get flashcards with highlights from use case (returns DTOs)
-        flashcards_with_highlights = use_case.get_flashcards(book_id, current_user.id.value)
-
-        # Resolve labels for this book
-        labels = label_resolver.resolve_for_book(UserId(current_user.id.value), BookId(book_id))
+        # Get flashcards with highlights from use case (returns DTOs + labels)
+        flashcards_with_highlights, labels = use_case.get_flashcards(book_id, current_user.id.value)
 
         # Convert DTOs to Pydantic schemas
         flashcards = []
