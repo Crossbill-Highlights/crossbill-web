@@ -16,7 +16,10 @@ from src.application.reading.protocols.chapter_repository import ChapterReposito
 from src.application.reading.protocols.highlight_repository import (
     HighlightRepositoryProtocol,
 )
-from src.domain.common.value_objects import ChapterId, HighlightStyle, UserId, XPointRange
+from src.application.reading.protocols.highlight_style_repository import (
+    HighlightStyleRepositoryProtocol,
+)
+from src.domain.common.value_objects import ChapterId, UserId, XPointRange
 from src.domain.common.value_objects.position import Position
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
@@ -53,6 +56,7 @@ class HighlightUploadUseCase:
         deduplication_service: HighlightDeduplicationService,
         position_index_service: PositionIndexServiceProtocol,
         file_repository: FileRepositoryProtocol,
+        highlight_style_repository: HighlightStyleRepositoryProtocol,
     ) -> None:
         """
         Initialize use case with dependencies.
@@ -64,6 +68,7 @@ class HighlightUploadUseCase:
             deduplication_service: Domain service for deduplication logic
             position_index_service: Service for building position indices from EPUBs
             file_repository: Repository for file operations
+            highlight_style_repository: Repository for highlight style persistence
         """
         self.highlight_repository = highlight_repository
         self.book_repository = book_repository
@@ -71,6 +76,7 @@ class HighlightUploadUseCase:
         self.deduplication_service = deduplication_service
         self.position_index_service = position_index_service
         self.file_repository = file_repository
+        self.highlight_style_repository = highlight_style_repository
 
     def upload_highlights(
         self,
@@ -168,7 +174,12 @@ class HighlightUploadUseCase:
             elif book.file_type == "pdf" and data.page is not None:
                 position = Position.from_page(data.page)
 
-            highlight_style = HighlightStyle(color=data.color, style=data.drawer)
+            highlight_style = self.highlight_style_repository.find_or_create(
+                user_id=user_id_vo,
+                book_id=book_id,
+                device_color=data.color,
+                device_style=data.drawer,
+            )
 
             highlight = Highlight.create(
                 user_id=user_id_vo,
@@ -178,7 +189,7 @@ class HighlightUploadUseCase:
                 xpoints=xpoints,
                 page=data.page,
                 position=position,
-                highlight_style=highlight_style,
+                highlight_style_id=highlight_style.id,
                 note=data.note,
             )
             new_highlights.append(highlight)
