@@ -161,6 +161,7 @@ from src.infrastructure.library.services.epub_toc_parser_service import EpubTocP
 from src.infrastructure.reading.repositories import (
     BookmarkRepository,
     HighlightRepository,
+    HighlightStyleRepository,
     HighlightTagRepository,
 )
 from src.infrastructure.reading.repositories.chapter_prereading_repository import (
@@ -187,6 +188,7 @@ class Container(containers.DeclarativeContainer):
     tag_repository = providers.Factory(TagRepository, db=db)
     flashcard_repository = providers.Factory(FlashcardRepository, db=db)
     chapter_prereading_repository = providers.Factory(ChapterPrereadingRepository, db=db)
+    highlight_style_repository = providers.Factory(HighlightStyleRepository, db=db)
     file_repository = providers.Factory(FileRepository)
 
     # Infrastructure services (no db dependency)
@@ -298,6 +300,7 @@ class Container(containers.DeclarativeContainer):
         deduplication_service=highlight_deduplication_service,
         position_index_service=epub_position_index_service,
         file_repository=file_repository,
+        highlight_style_repository=highlight_style_repository,
     )
     reading_session_upload_use_case = providers.Factory(
         ReadingSessionUploadUseCase,
