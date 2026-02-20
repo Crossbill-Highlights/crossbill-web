@@ -41,7 +41,6 @@ const Footer = ({ highlight, bookmark }: FooterProps) => {
           alignItems: 'center',
           gap: 1,
           pl: 4.5,
-          opacity: 0.6,
         }}
       >
         <LabelIndicator label={highlight.label} size="small" />
