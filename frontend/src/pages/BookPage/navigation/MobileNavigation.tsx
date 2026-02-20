@@ -76,13 +76,15 @@ const TagsDrawerContent = ({
         hideTitle={true}
         hideEmptyGroups={currentTab === 'flashcards'}
       />
-      <Box sx={{ mt: 3 }}>
-        <HighlightLabelsList
-          bookId={book.id}
-          selectedLabelId={selectedLabelId}
-          onLabelClick={onLabelClick}
-        />
-      </Box>
+      {currentTab === 'highlights' && (
+        <Box sx={{ mt: 3 }}>
+          <HighlightLabelsList
+            bookId={book.id}
+            selectedLabelId={selectedLabelId}
+            onLabelClick={onLabelClick}
+          />
+        </Box>
+      )}
     </Box>
   );
 };

@@ -16,7 +16,7 @@ const getLabelDisplayName = (label: HighlightLabelInBook): string => {
     return label.label;
   }
   const parts = [label.device_color, label.device_style].filter(Boolean);
-  return parts.length > 0 ? parts.join(' / ') : 'Unknown';
+  return parts.length > 0 ? parts.join(' / ') : 'Unlabeled';
 };
 
 const getLabelColor = (label: HighlightLabelInBook): string => {
@@ -104,7 +104,6 @@ export const HighlightLabelsList = ({
             alignItems: 'center',
             gap: 1,
             mb: 2,
-            pb: 1.5,
           }}
         >
           <PaletteIcon sx={{ fontSize: 18, color: 'primary.main' }} />
