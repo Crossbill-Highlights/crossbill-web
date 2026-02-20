@@ -24,6 +24,7 @@ export {
   StyleOutlined as FlashcardsIcon,
   MenuBook as HighlightsIcon,
   Notes as NotesIcon,
+  PaletteOutlined as PaletteIcon,
   FormatQuote as QuoteIcon,
   AutoStories as ReadingSessionIcon,
   LocalOffer as TagIcon,
