@@ -16,6 +16,7 @@ interface LabelEditorContentProps {
   currentColor?: string | null;
   bookId: number;
   submitRef: MutableRefObject<(() => void) | null>;
+  onClose: () => void;
 }
 
 /**
@@ -30,6 +31,7 @@ const LabelEditorContent = ({
   currentColor,
   bookId,
   submitRef,
+  onClose,
 }: LabelEditorContentProps) => {
   const queryClient = useQueryClient();
   const { showSnackbar } = useSnackbar();
@@ -87,6 +89,7 @@ const LabelEditorContent = ({
           if (e.key === 'Enter') {
             e.preventDefault();
             handleLabelSubmit();
+            onClose();
           }
         }}
         placeholder="Label name..."
@@ -149,6 +152,7 @@ export const LabelEditorPopover = ({
           currentColor={currentColor}
           bookId={bookId}
           submitRef={submitRef}
+          onClose={onClose}
         />
       )}
     </Popover>
