@@ -1,8 +1,21 @@
 """Domain service for resolving effective highlight labels via priority chain."""
 
 from dataclasses import dataclass
+from typing import Final
 
 from src.domain.reading.entities.highlight_style import HighlightStyle
+
+KOREADER_DEFAULT_UI_COLORS: Final[dict[str, str]] = {
+    "yellow": "#F59E0B",
+    "green": "#10B981",
+    "blue": "#3B82F6",
+    "red": "#EF4444",
+    "orange": "#F97316",
+    "olive": "#84CC16",
+    "cyan": "#06B6D4",
+    "purple": "#8B5CF6",
+    "gray": "#6B7280",
+}
 
 
 @dataclass(frozen=True)
@@ -35,7 +48,10 @@ class HighlightStyleResolver:
         """Resolve effective label for a combination-level style."""
         # Priority 1: The style itself (combination + book)
         if style.label is not None:
-            return ResolvedLabel(label=style.label, ui_color=style.ui_color, source="book")
+            return self._apply_default_ui_color(
+                ResolvedLabel(label=style.label, ui_color=style.ui_color, source="book"),
+                style.device_color,
+            )
 
         book_styles = [s for s in all_styles if not s.is_global()]
         global_styles = [s for s in all_styles if s.is_global()]
@@ -59,10 +75,22 @@ class HighlightStyleResolver:
         ]
         for (resolved,) in candidates:
             if resolved:
-                return resolved
+                return self._apply_default_ui_color(resolved, style.device_color)
 
         # Priority 7: No label
-        return ResolvedLabel(label=None, ui_color=style.ui_color, source="none")
+        return self._apply_default_ui_color(
+            ResolvedLabel(label=None, ui_color=style.ui_color, source="none"),
+            style.device_color,
+        )
+
+    def _apply_default_ui_color(
+        self, resolved: ResolvedLabel, device_color: str | None
+    ) -> ResolvedLabel:
+        """Fill in default ui_color from device_color map when not explicitly set."""
+        if resolved.ui_color is not None:
+            return resolved
+        default = KOREADER_DEFAULT_UI_COLORS.get(device_color or "")
+        return ResolvedLabel(label=resolved.label, ui_color=default, source=resolved.source)
 
     def _find_combination(
         self,
