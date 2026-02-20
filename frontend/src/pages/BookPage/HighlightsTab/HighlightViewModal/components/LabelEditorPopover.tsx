@@ -58,7 +58,7 @@ const LabelEditorContent = ({
     if (trimmed !== (currentLabel || '')) {
       updateMutation.mutate({
         styleId,
-        data: { label: trimmed || null },
+        data: { label: trimmed },
       });
     }
   };
