@@ -1,4 +1,5 @@
 import type { HighlightLabel } from '@/api/generated/model';
+import { getContrastColor } from '@/utils/colorUtils.ts';
 import { Box, Chip } from '@mui/material';
 
 interface LabelIndicatorProps {
@@ -6,15 +7,6 @@ interface LabelIndicatorProps {
   onClick?: (event: React.MouseEvent<HTMLElement>) => void;
   size?: 'small' | 'medium';
 }
-
-const getContrastColor = (hexColor: string): string => {
-  const hex = hexColor.replace('#', '');
-  const r = parseInt(hex.substring(0, 2), 16);
-  const g = parseInt(hex.substring(2, 4), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? '#000000' : '#FFFFFF';
-};
 
 export const LabelIndicator = ({ label, onClick, size = 'small' }: LabelIndicatorProps) => {
   if (!label?.ui_color) {
@@ -45,13 +37,18 @@ export const LabelIndicator = ({ label, onClick, size = 'small' }: LabelIndicato
 
   return (
     <Box
+      component={isClickable ? 'button' : 'span'}
       onClick={onClick}
+      aria-label={isClickable ? 'Edit label color' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
       sx={{
         width: dotSize,
         height: dotSize,
         borderRadius: '50%',
         backgroundColor: label.ui_color,
         flexShrink: 0,
+        border: 'none',
+        padding: 0,
         cursor: isClickable ? 'pointer' : 'default',
         transition: 'transform 0.15s',
         '&:hover': isClickable ? { transform: 'scale(1.3)' } : {},

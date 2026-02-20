@@ -3,27 +3,12 @@ import {
   getGetBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGetQueryKey,
   useUpdateHighlightLabelApiV1HighlightLabelsStyleIdPatch,
 } from '@/api/generated/highlight-labels/highlight-labels.ts';
+import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { LABEL_COLORS } from '@/utils/colorUtils.ts';
 import { Box, Popover, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { CirclePicker, type ColorResult } from 'react-color';
-
-const LABEL_COLORS = [
-  '#F59E0B',
-  '#F97316',
-  '#EF4444',
-  '#EC4899',
-  '#8B5CF6',
-  '#6366F1',
-  '#3B82F6',
-  '#06B6D4',
-  '#14B8A6',
-  '#10B981',
-  '#84CC16',
-  '#059669',
-  '#6B7280',
-  '#475569',
-];
 
 interface LabelEditorContentProps {
   styleId: number;
@@ -43,6 +28,7 @@ const LabelEditorContent = ({
   bookId,
 }: LabelEditorContentProps) => {
   const queryClient = useQueryClient();
+  const { showSnackbar } = useSnackbar();
   const [labelText, setLabelText] = useState(currentLabel || '');
 
   const updateMutation = useUpdateHighlightLabelApiV1HighlightLabelsStyleIdPatch({
@@ -57,11 +43,13 @@ const LabelEditorContent = ({
       },
       onError: (error: Error) => {
         console.error('Failed to update label:', error);
+        showSnackbar('Failed to update label. Please try again.', 'error');
       },
     },
   });
 
   const handleLabelSubmit = () => {
+    if (updateMutation.isPending) return;
     const trimmed = labelText.trim();
     if (trimmed !== (currentLabel || '')) {
       updateMutation.mutate({
