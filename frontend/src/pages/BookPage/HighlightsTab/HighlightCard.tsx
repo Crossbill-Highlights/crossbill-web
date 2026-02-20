@@ -44,6 +44,7 @@ const Footer = ({ highlight, bookmark }: FooterProps) => {
           opacity: 0.6,
         }}
       >
+        <LabelIndicator label={highlight.label} size="small" />
         <DateIcon
           sx={(theme) => ({
             fontSize: 14,
@@ -78,7 +79,6 @@ const Footer = ({ highlight, bookmark }: FooterProps) => {
             ),
           ]}
         />
-        <LabelIndicator label={highlight.label} size="small" />
       </Box>
 
       <Box>
