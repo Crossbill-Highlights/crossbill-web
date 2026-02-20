@@ -183,6 +183,7 @@ export const FlashcardsTab = ({
             book={book}
             onTagClick={handleTagClick}
             selectedTag={selectedTagId}
+            onLabelClick={() => {}}
             bookmarks={[]}
             allHighlights={[]}
             onBookmarkClick={() => {}}

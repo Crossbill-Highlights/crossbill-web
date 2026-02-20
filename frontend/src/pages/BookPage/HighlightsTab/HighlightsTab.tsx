@@ -19,6 +19,7 @@ import { keyBy } from 'lodash';
 import { useEffect, useMemo, useState } from 'react';
 import { BookmarkList } from '../navigation/BookmarkList.tsx';
 import { ChapterNav, ChapterNavigationData } from '../navigation/ChapterNav.tsx';
+import { HighlightLabelsList } from '../navigation/HighlightLabelsList.tsx';
 import { HighlightTagsList } from '../navigation/HighlightTagsList.tsx';
 import { MobileNavigation } from '../navigation/MobileNavigation.tsx';
 import { HighlightsList, type ChapterData } from './HighlightsList.tsx';
@@ -29,6 +30,7 @@ interface HighlightsTabProps {
   isDesktop: boolean;
   onSearch: (value: string) => void;
   onTagClick: (tagId: number | null) => void;
+  onLabelClick: (labelId: number | null) => void;
   onBookmarkClick: (highlightId: number) => void;
   onChapterClick: (chapterId: number) => void;
 }
@@ -38,18 +40,28 @@ export const HighlightsTab = ({
   isDesktop,
   onSearch,
   onTagClick,
+  onLabelClick,
   onBookmarkClick,
   onChapterClick,
 }: HighlightsTabProps) => {
-  const { search: urlSearch, tagId: urlTagId } = useSearch({ from: '/book/$bookId' });
+  const {
+    search: urlSearch,
+    tagId: urlTagId,
+    labelId: urlLabelId,
+  } = useSearch({ from: '/book/$bookId' });
 
   const searchText = urlSearch || '';
   const [selectedTagId, setSelectedTagId] = useState<number | undefined>(urlTagId);
+  const [selectedLabelId, setSelectedLabelId] = useState<number | undefined>(urlLabelId);
   const [isReversed, setIsReversed] = useState(false);
 
   useEffect(() => {
     setSelectedTagId(urlTagId);
   }, [urlTagId]);
+
+  useEffect(() => {
+    setSelectedLabelId(urlLabelId);
+  }, [urlLabelId]);
 
   // Fetch available tags for the highlight modal
   const { data: tagsResponse } = useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet(book.id);
@@ -57,6 +69,11 @@ export const HighlightsTab = ({
   const handleTagClick = (newTagId: number | null) => {
     setSelectedTagId(newTagId || undefined);
     onTagClick(newTagId);
+  };
+
+  const handleLabelClick = (newLabelId: number | null) => {
+    setSelectedLabelId(newLabelId || undefined);
+    onLabelClick(newLabelId);
   };
 
   const bookSearch = useBookSearch(book.id, searchText);
@@ -71,7 +88,10 @@ export const HighlightsTab = ({
       ? bookSearch.chapters
       : book.chapters.filter((chapter) => chapter.highlights.length > 0);
 
-    const result = filterChaptersByTag(selectedTagId, toFilter).map((chapter) => ({
+    const result = filterChaptersByLabel(
+      selectedLabelId,
+      filterChaptersByTag(selectedTagId, toFilter)
+    ).map((chapter) => ({
       id: chapter.id,
       name: chapter.name || 'Unknown Chapter',
       chapterNumber: chapter.chapter_number ?? undefined,
@@ -86,7 +106,14 @@ export const HighlightsTab = ({
     }
 
     return result;
-  }, [bookSearch.showSearchResults, bookSearch.chapters, isReversed, book.chapters, selectedTagId]);
+  }, [
+    bookSearch.showSearchResults,
+    bookSearch.chapters,
+    isReversed,
+    book.chapters,
+    selectedTagId,
+    selectedLabelId,
+  ]);
 
   const allHighlights = useMemo(() => {
     return chapters.flatMap((chapter) => chapter.highlights);
@@ -107,14 +134,19 @@ export const HighlightsTab = ({
 
   const emptyMessage = useMemo(() => {
     if (bookSearch.showSearchResults) {
-      return selectedTagId
-        ? 'No highlights found matching your search with the selected tag.'
-        : 'No highlights found matching your search.';
+      if (selectedTagId && selectedLabelId)
+        return 'No highlights found matching your search with the selected tag and label.';
+      if (selectedTagId) return 'No highlights found matching your search with the selected tag.';
+      if (selectedLabelId)
+        return 'No highlights found matching your search with the selected label.';
+      return 'No highlights found matching your search.';
     }
-    return selectedTagId
-      ? 'No highlights found with the selected tag.'
-      : 'No chapters found for this book.';
-  }, [bookSearch.showSearchResults, selectedTagId]);
+    if (selectedTagId && selectedLabelId)
+      return 'No highlights found with the selected tag and label.';
+    if (selectedTagId) return 'No highlights found with the selected tag.';
+    if (selectedLabelId) return 'No highlights found with the selected label.';
+    return 'No chapters found for this book.';
+  }, [bookSearch.showSearchResults, selectedTagId, selectedLabelId]);
 
   return (
     <>
@@ -135,6 +167,8 @@ export const HighlightsTab = ({
             book={book}
             onTagClick={handleTagClick}
             selectedTag={selectedTagId}
+            selectedLabelId={selectedLabelId}
+            onLabelClick={handleLabelClick}
             bookmarks={book.bookmarks}
             allHighlights={allHighlights}
             onBookmarkClick={onBookmarkClick}
@@ -152,6 +186,8 @@ export const HighlightsTab = ({
           tags={tags}
           selectedTagId={selectedTagId}
           onTagClick={handleTagClick}
+          selectedLabelId={selectedLabelId}
+          onLabelClick={handleLabelClick}
           searchText={searchText}
           onSearch={onSearch}
           isReversed={isReversed}
@@ -246,6 +282,8 @@ interface DesktopHighlightsContentProps {
   tags: HighlightTagInBook[];
   selectedTagId: number | undefined;
   onTagClick: (tagId: number | null) => void;
+  selectedLabelId: number | undefined;
+  onLabelClick: (labelId: number | null) => void;
   searchText: string;
   onSearch: (value: string) => void;
   isReversed: boolean;
@@ -266,6 +304,8 @@ const DesktopHighlightsContent = ({
   tags,
   selectedTagId,
   onTagClick,
+  selectedLabelId,
+  onLabelClick,
   searchText,
   onSearch,
   isReversed,
@@ -281,13 +321,20 @@ const DesktopHighlightsContent = ({
   onChapterClick,
 }: DesktopHighlightsContentProps) => (
   <ThreeColumnLayout>
-    <HighlightTagsList
-      tags={tags}
-      tagGroups={book.highlight_tag_groups}
-      bookId={book.id}
-      selectedTag={selectedTagId}
-      onTagClick={onTagClick}
-    />
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <HighlightTagsList
+        tags={tags}
+        tagGroups={book.highlight_tag_groups}
+        bookId={book.id}
+        selectedTag={selectedTagId}
+        onTagClick={onTagClick}
+      />
+      <HighlightLabelsList
+        bookId={book.id}
+        selectedLabelId={selectedLabelId}
+        onLabelClick={onLabelClick}
+      />
+    </Box>
 
     <Box>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
@@ -382,6 +429,24 @@ function filterChaptersByTag(
       ...chapter,
       highlights: chapter.highlights.filter((highlight) =>
         highlight.highlight_tags.some((tag) => tag.id === selectedTagId)
+      ),
+    }))
+    .filter((chapter) => chapter.highlights.length > 0);
+}
+
+function filterChaptersByLabel(
+  selectedLabelId: number | undefined,
+  chaptersWithHighlights: ChapterWithHighlights[]
+) {
+  if (!selectedLabelId) {
+    return chaptersWithHighlights;
+  }
+
+  return chaptersWithHighlights
+    .map((chapter) => ({
+      ...chapter,
+      highlights: chapter.highlights.filter(
+        (highlight) => highlight.label?.highlight_style_id === selectedLabelId
       ),
     }))
     .filter((chapter) => chapter.highlights.length > 0);

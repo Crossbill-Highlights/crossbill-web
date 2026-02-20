@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { BookmarkList } from './BookmarkList.tsx';
+import { HighlightLabelsList } from './HighlightLabelsList.tsx';
 import { HighlightTagsList } from './HighlightTagsList.tsx';
 
 const BottomDrawer = ({
@@ -49,6 +50,8 @@ interface TagsDrawerContentProps {
   book: BookDetails;
   selectedTag?: number | null;
   onTagClick: (tagId: number | null) => void;
+  selectedLabelId?: number | null;
+  onLabelClick: (labelId: number | null) => void;
   displayTags?: HighlightTagInBook[];
   currentTab: 'highlights' | 'flashcards';
 }
@@ -57,6 +60,8 @@ const TagsDrawerContent = ({
   book,
   selectedTag,
   onTagClick,
+  selectedLabelId,
+  onLabelClick,
   displayTags,
   currentTab,
 }: TagsDrawerContentProps) => {
@@ -71,6 +76,13 @@ const TagsDrawerContent = ({
         hideTitle={true}
         hideEmptyGroups={currentTab === 'flashcards'}
       />
+      <Box sx={{ mt: 3 }}>
+        <HighlightLabelsList
+          bookId={book.id}
+          selectedLabelId={selectedLabelId}
+          onLabelClick={onLabelClick}
+        />
+      </Box>
     </Box>
   );
 };
@@ -132,6 +144,8 @@ export const MobileNavigation = ({
   book,
   selectedTag,
   onTagClick,
+  selectedLabelId,
+  onLabelClick,
   bookmarks,
   allHighlights,
   onBookmarkClick,
@@ -151,6 +165,11 @@ export const MobileNavigation = ({
           selectedTag={selectedTag}
           onTagClick={(data) => {
             onTagClick(data);
+            setDrawerState(false);
+          }}
+          selectedLabelId={selectedLabelId}
+          onLabelClick={(data) => {
+            onLabelClick(data);
             setDrawerState(false);
           }}
           displayTags={displayTags}
