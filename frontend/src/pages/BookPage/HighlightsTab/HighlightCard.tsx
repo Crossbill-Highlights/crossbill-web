@@ -78,10 +78,10 @@ const Footer = ({ highlight, bookmark }: FooterProps) => {
             ),
           ]}
         />
+        <LabelIndicator label={highlight.label} size="small" />
       </Box>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pl: 4.5 }}>
-        <LabelIndicator label={highlight.label} size="small" />
+      <Box>
         <BookTagList tags={highlight.highlight_tags} />
       </Box>
     </Box>

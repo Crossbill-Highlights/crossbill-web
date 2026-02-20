@@ -7,7 +7,7 @@ import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { LABEL_COLORS } from '@/utils/colorUtils.ts';
 import { Box, Popover, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { type MutableRefObject, useEffect, useRef, useState } from 'react';
 import { CirclePicker, type ColorResult } from 'react-color';
 
 interface LabelEditorContentProps {
@@ -15,17 +15,21 @@ interface LabelEditorContentProps {
   currentLabel?: string | null;
   currentColor?: string | null;
   bookId: number;
+  submitRef: MutableRefObject<(() => void) | null>;
 }
 
 /**
  * Inner content component that remounts each time the popover opens,
  * ensuring labelText state resets from currentLabel prop.
+ * Exposes handleLabelSubmit via submitRef so the outer Popover can
+ * trigger a submit on close (before the content unmounts).
  */
 const LabelEditorContent = ({
   styleId,
   currentLabel,
   currentColor,
   bookId,
+  submitRef,
 }: LabelEditorContentProps) => {
   const queryClient = useQueryClient();
   const { showSnackbar } = useSnackbar();
@@ -59,6 +63,11 @@ const LabelEditorContent = ({
     }
   };
 
+  // Expose submit to the outer Popover so it can call it before closing
+  useEffect(() => {
+    submitRef.current = handleLabelSubmit;
+  });
+
   const handleColorChange = (color: ColorResult) => {
     updateMutation.mutate({
       styleId,
@@ -74,7 +83,6 @@ const LabelEditorContent = ({
       <TextField
         value={labelText}
         onChange={(e) => setLabelText(e.target.value)}
-        onBlur={handleLabelSubmit}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
@@ -119,11 +127,18 @@ export const LabelEditorPopover = ({
   currentColor,
   bookId,
 }: LabelEditorPopoverProps) => {
+  const submitRef = useRef<(() => void) | null>(null);
+
+  const handleClose = () => {
+    submitRef.current?.();
+    onClose();
+  };
+
   return (
     <Popover
       open={open}
       anchorEl={anchorEl}
-      onClose={onClose}
+      onClose={handleClose}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
     >
@@ -133,6 +148,7 @@ export const LabelEditorPopover = ({
           currentLabel={currentLabel}
           currentColor={currentColor}
           bookId={bookId}
+          submitRef={submitRef}
         />
       )}
     </Popover>
