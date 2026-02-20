@@ -1,12 +1,14 @@
 import type { Highlight } from '@/api/generated/model';
+import { LabelIndicator } from '@/pages/BookPage/common/LabelIndicator.tsx';
 import { DateIcon, QuoteIcon } from '@/theme/Icons.tsx';
 import { Box, Typography } from '@mui/material';
 
 interface HighlightContentProps {
   highlight: Highlight;
+  onLabelClick?: (event: React.MouseEvent<HTMLElement>) => void;
 }
 
-export const HighlightContent = ({ highlight }: HighlightContentProps) => {
+export const HighlightContent = ({ highlight, onLabelClick }: HighlightContentProps) => {
   const startsWithLowercase =
     highlight.text.length > 0 &&
     highlight.text[0] === highlight.text[0].toLowerCase() &&
@@ -71,6 +73,7 @@ export const HighlightContent = ({ highlight }: HighlightContentProps) => {
           })}
           {highlight.page && ` • Page ${highlight.page}`}
         </Typography>
+        <LabelIndicator label={highlight.label} onClick={onLabelClick} size="medium" />
       </Box>
     </Box>
   );
