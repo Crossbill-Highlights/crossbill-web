@@ -58,12 +58,13 @@ from src.application.reading.use_cases.highlights.update_highlight_note_use_case
 from src.core import container
 from src.database import DatabaseSession
 from src.domain.common.exceptions import DomainError
-from src.domain.common.value_objects import HighlightId, HighlightTagId, UserId
+from src.domain.common.value_objects import HighlightTagId, UserId
 from src.domain.identity.entities.user import User
 from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights as ChapterWithHighlightsDomain,
 )
+from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
 from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
@@ -72,13 +73,14 @@ from src.infrastructure.learning.schemas import (
     FlashcardCreateRequest,
     FlashcardCreateResponse,
 )
-from src.infrastructure.reading.repositories import HighlightRepository, HighlightTagRepository
+from src.infrastructure.reading.repositories import HighlightTagRepository
 from src.infrastructure.reading.schemas import (
     BookHighlightSearchResponse,
     ChapterWithHighlights,
     Highlight,
     HighlightDeleteRequest,
     HighlightDeleteResponse,
+    HighlightLabel,
     HighlightNoteUpdate,
     HighlightNoteUpdateResponse,
     HighlightTag,
@@ -136,6 +138,8 @@ async def upload_highlights(
                 end_xpoint=h.end_xpoint,
                 page=h.page,
                 note=h.note,
+                color=h.color,
+                drawer=h.drawer,
             )
             for h in request.highlights
         ]
@@ -192,7 +196,6 @@ def update_highlight_note(
 
     Raises:
         HTTPException: If highlight not found or update fails
-        :param use_case:
     """
     try:
         result = use_case.update_note(highlight_id, current_user.id.value, request.note)
@@ -203,7 +206,11 @@ def update_highlight_note(
                 detail=f"Highlight with id {highlight_id} not found",
             )
 
-        highlight, flashcards, highlight_tags = result
+        highlight, flashcards, highlight_tags, labels = result
+
+        resolved = (
+            labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+        )
 
         # Build response from domain entities
         highlight_schema = Highlight(
@@ -216,6 +223,15 @@ def update_highlight_note(
             page=highlight.page,
             note=highlight.note,
             datetime=highlight.datetime,
+            label=HighlightLabel(
+                highlight_style_id=highlight.highlight_style_id.value
+                if highlight.highlight_style_id
+                else None,
+                text=resolved.label if resolved else None,
+                ui_color=resolved.ui_color if resolved else None,
+            )
+            if highlight.highlight_style_id
+            else None,
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,
@@ -439,12 +455,14 @@ def create_flashcard_for_highlight(
 
 def _map_chapters_to_schemas(
     chapters_grouped: list[ChapterWithHighlightsDomain],
+    labels: dict[int, ResolvedLabel] | None = None,
 ) -> list[ChapterWithHighlights]:
     """
     Map domain ChapterWithHighlights to Pydantic schemas.
 
     Args:
         chapters_grouped: List of ChapterWithHighlights domain dataclasses
+        labels: Optional dict mapping highlight_style_id -> ResolvedLabel
 
     Returns:
         List of ChapterWithHighlights Pydantic schemas
@@ -457,6 +475,9 @@ def _map_chapters_to_schemas(
             h = hw.highlight
             chapter = hw.chapter
 
+            resolved = (
+                labels.get(h.highlight_style_id.value) if labels and h.highlight_style_id else None
+            )
             highlight_schema = Highlight(
                 id=h.id.value,
                 book_id=h.book_id.value,
@@ -467,6 +488,13 @@ def _map_chapters_to_schemas(
                 page=h.page,
                 note=h.note,
                 datetime=h.datetime,
+                label=HighlightLabel(
+                    highlight_style_id=h.highlight_style_id.value if h.highlight_style_id else None,
+                    text=resolved.label if resolved else None,
+                    ui_color=resolved.ui_color if resolved else None,
+                )
+                if h.highlight_style_id
+                else None,
                 flashcards=[
                     Flashcard(
                         id=fc.id.value,
@@ -539,11 +567,11 @@ def search_book_highlights(
     Results are ranked by relevance and excludes soft-deleted highlights.
     """
     try:
-        chapters_grouped, total = use_case.search_book_highlights(
+        chapters_grouped, total, labels = use_case.search_book_highlights(
             book_id, current_user.id.value, search_text
         )
         return BookHighlightSearchResponse(
-            chapters=_map_chapters_to_schemas(chapters_grouped),
+            chapters=_map_chapters_to_schemas(chapters_grouped, labels),
             total=total,
         )
     except CrossbillError:
@@ -871,7 +899,6 @@ def add_tag_to_highlight(
     book_id: int,
     highlight_id: int,
     request: HighlightTagAssociationRequest,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
     add_by_id_use_case: AddTagToHighlightByIdUseCase = Depends(
         inject_use_case(container.add_tag_to_highlight_by_id_use_case)
@@ -900,28 +927,22 @@ def add_tag_to_highlight(
     try:
         # Add tag by ID or by name (with get_or_create)
         if request.tag_id is not None:
-            add_by_id_use_case.add_tag(highlight_id, request.tag_id, current_user.id.value)
+            highlight, flashcards, highlight_tags, labels = add_by_id_use_case.add_tag(
+                highlight_id, request.tag_id, current_user.id.value
+            )
         elif request.name is not None:
-            add_by_name_use_case.add_tag(book_id, highlight_id, request.name, current_user.id.value)
+            highlight, flashcards, highlight_tags, labels = add_by_name_use_case.add_tag(
+                book_id, highlight_id, request.name, current_user.id.value
+            )
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Either tag_id or name must be provided",
             )
 
-        # Reload highlight with relations to get updated tags
-        highlight_repo = HighlightRepository(db)
-        result = highlight_repo.find_by_id_with_relations(
-            HighlightId(highlight_id), UserId(current_user.id.value)
+        resolved = (
+            labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
         )
-
-        if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Highlight with id {highlight_id} not found",
-            )
-
-        highlight, flashcards, highlight_tags = result
 
         # Manually construct schema from domain entities
         return Highlight(
@@ -934,6 +955,15 @@ def add_tag_to_highlight(
             page=highlight.page,
             note=highlight.note,
             datetime=highlight.datetime,
+            label=HighlightLabel(
+                highlight_style_id=highlight.highlight_style_id.value
+                if highlight.highlight_style_id
+                else None,
+                text=resolved.label if resolved else None,
+                ui_color=resolved.ui_color if resolved else None,
+            )
+            if highlight.highlight_style_id
+            else None,
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,
@@ -984,7 +1014,6 @@ def remove_tag_from_highlight(
     book_id: int,
     highlight_id: int,
     tag_id: int,
-    db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: RemoveTagFromHighlightUseCase = Depends(
         inject_use_case(container.remove_tag_from_highlight_use_case)
@@ -1005,21 +1034,13 @@ def remove_tag_from_highlight(
         HTTPException: If highlight not found or removal fails
     """
     try:
-        use_case.remove_tag(highlight_id, tag_id, current_user.id.value)
-
-        # Reload highlight with relations to get updated tags
-        highlight_repo = HighlightRepository(db)
-        result = highlight_repo.find_by_id_with_relations(
-            HighlightId(highlight_id), UserId(current_user.id.value)
+        highlight, flashcards, highlight_tags, labels = use_case.remove_tag(
+            highlight_id, tag_id, current_user.id.value
         )
 
-        if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Highlight with id {highlight_id} not found",
-            )
-
-        highlight, flashcards, highlight_tags = result
+        resolved = (
+            labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+        )
 
         # Manually construct schema from domain entities
         return Highlight(
@@ -1032,6 +1053,15 @@ def remove_tag_from_highlight(
             page=highlight.page,
             note=highlight.note,
             datetime=highlight.datetime,
+            label=HighlightLabel(
+                highlight_style_id=highlight.highlight_style_id.value
+                if highlight.highlight_style_id
+                else None,
+                text=resolved.label if resolved else None,
+                ui_color=resolved.ui_color if resolved else None,
+            )
+            if highlight.highlight_style_id
+            else None,
             highlight_tags=[
                 HighlightTagInBook(
                     id=tag.id.value,

@@ -168,6 +168,7 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
         tab: newValue === 'structure' ? undefined : newValue,
         search: undefined,
         tagId: undefined,
+        labelId: undefined,
       }),
       replace: true,
     });
@@ -193,6 +194,19 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
         search: (prev) => ({
           ...prev,
           tagId: newTagId || undefined,
+        }),
+        replace: true,
+      });
+    },
+    [navigate]
+  );
+
+  const handleLabelClick = useCallback(
+    (newLabelId: number | null) => {
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          labelId: newLabelId || undefined,
         }),
         replace: true,
       });
@@ -256,6 +270,7 @@ const BookPageContent = ({ book }: BookPageContentProps) => {
             isDesktop={isDesktop}
             onSearch={handleSearch}
             onTagClick={handleTagClick}
+            onLabelClick={handleLabelClick}
             onBookmarkClick={handleBookmarkClick}
             onChapterClick={handleChapterClick}
           />

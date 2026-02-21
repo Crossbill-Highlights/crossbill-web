@@ -33,6 +33,7 @@ from src.infrastructure.reading.routers import (
     bookmarks,
     chapter_content,
     chapter_prereading,
+    highlight_labels,
     highlights,
     reading_sessions,
 )
@@ -261,6 +262,7 @@ app.include_router(bookmarks.router, prefix=settings.API_V1_PREFIX)
 app.include_router(chapter_prereading.router, prefix=settings.API_V1_PREFIX)
 app.include_router(chapter_prereading.book_prereading_router, prefix=settings.API_V1_PREFIX)
 app.include_router(chapter_content.router, prefix=settings.API_V1_PREFIX)
+app.include_router(highlight_labels.router, prefix=settings.API_V1_PREFIX)
 
 # Learning
 app.include_router(learning_books.router, prefix=settings.API_V1_PREFIX)

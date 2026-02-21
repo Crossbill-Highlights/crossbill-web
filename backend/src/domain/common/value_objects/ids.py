@@ -37,6 +37,21 @@ class HighlightId(EntityId):
 
 
 @dataclass(frozen=True)
+class HighlightStyleId(EntityId):
+    """Strongly-typed highlight style identifier."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("HighlightStyleId must be non-negative")
+
+    @classmethod
+    def generate(cls) -> "HighlightStyleId":
+        return cls(0)  # Database assigns real ID
+
+
+@dataclass(frozen=True)
 class ChapterId(EntityId):
     """Strongly-typed chapter identifier."""
 

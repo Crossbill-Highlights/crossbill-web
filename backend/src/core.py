@@ -86,6 +86,18 @@ from src.application.reading.use_cases.chapter_prereading.get_book_prereading_us
 from src.application.reading.use_cases.chapter_prereading.get_chapter_prereading_use_case import (
     GetChapterPrereadingUseCase,
 )
+from src.application.reading.use_cases.highlight_labels.create_global_highlight_label_use_case import (
+    CreateGlobalHighlightLabelUseCase,
+)
+from src.application.reading.use_cases.highlight_labels.get_book_highlight_labels_use_case import (
+    GetBookHighlightLabelsUseCase,
+)
+from src.application.reading.use_cases.highlight_labels.get_global_highlight_labels_use_case import (
+    GetGlobalHighlightLabelsUseCase,
+)
+from src.application.reading.use_cases.highlight_labels.update_highlight_label_use_case import (
+    UpdateHighlightLabelUseCase,
+)
 from src.application.reading.use_cases.highlight_tag_associations.add_tag_to_highlight_by_id_use_case import (
     AddTagToHighlightByIdUseCase,
 )
@@ -142,6 +154,7 @@ from src.application.reading.use_cases.reading_sessions.reading_session_upload_u
 )
 from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
 from src.domain.reading.services.highlight_grouping_service import HighlightGroupingService
+from src.domain.reading.services.highlight_style_resolver import HighlightStyleResolver
 from src.infrastructure.ai.ai_service import AIService
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.services.password_service_adapter import PasswordServiceAdapter
@@ -161,6 +174,7 @@ from src.infrastructure.library.services.epub_toc_parser_service import EpubTocP
 from src.infrastructure.reading.repositories import (
     BookmarkRepository,
     HighlightRepository,
+    HighlightStyleRepository,
     HighlightTagRepository,
 )
 from src.infrastructure.reading.repositories.chapter_prereading_repository import (
@@ -169,6 +183,7 @@ from src.infrastructure.reading.repositories.chapter_prereading_repository impor
 from src.infrastructure.reading.repositories.reading_session_repository import (
     ReadingSessionRepository,
 )
+from src.infrastructure.reading.services.highlight_label_resolver import HighlightLabelResolver
 
 
 class Container(containers.DeclarativeContainer):
@@ -187,6 +202,7 @@ class Container(containers.DeclarativeContainer):
     tag_repository = providers.Factory(TagRepository, db=db)
     flashcard_repository = providers.Factory(FlashcardRepository, db=db)
     chapter_prereading_repository = providers.Factory(ChapterPrereadingRepository, db=db)
+    highlight_style_repository = providers.Factory(HighlightStyleRepository, db=db)
     file_repository = providers.Factory(FileRepository)
 
     # Infrastructure services (no db dependency)
@@ -203,6 +219,14 @@ class Container(containers.DeclarativeContainer):
     # Domain services (pure domain logic, no db)
     highlight_deduplication_service = providers.Factory(HighlightDeduplicationService)
     highlight_grouping_service = providers.Factory(HighlightGroupingService)
+    highlight_style_resolver = providers.Factory(HighlightStyleResolver)
+
+    # Infrastructure services (with db dependency)
+    highlight_label_resolver = providers.Factory(
+        HighlightLabelResolver,
+        highlight_style_repository=highlight_style_repository,
+        resolver=highlight_style_resolver,
+    )
 
     # Reading module, application use cases
     create_bookmark_use_case = providers.Factory(
@@ -226,6 +250,8 @@ class Container(containers.DeclarativeContainer):
         HighlightSearchUseCase,
         book_repository=book_repository,
         highlight_repository=highlight_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
     highlight_delete_use_case = providers.Factory(
         HighlightDeleteUseCase,
@@ -235,6 +261,8 @@ class Container(containers.DeclarativeContainer):
     highlight_update_note_use_case = providers.Factory(
         HighlightUpdateNoteUseCase,
         highlight_repository=highlight_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
     create_highlight_tag_use_case = providers.Factory(
         CreateHighlightTagUseCase,
@@ -279,16 +307,22 @@ class Container(containers.DeclarativeContainer):
         AddTagToHighlightByIdUseCase,
         highlight_repository=highlight_repository,
         tag_repository=highlight_tag_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
     add_tag_to_highlight_by_name_use_case = providers.Factory(
         AddTagToHighlightByNameUseCase,
         highlight_repository=highlight_repository,
         tag_repository=highlight_tag_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
     remove_tag_from_highlight_use_case = providers.Factory(
         RemoveTagFromHighlightUseCase,
         highlight_repository=highlight_repository,
         tag_repository=highlight_tag_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
     highlight_upload_use_case = providers.Factory(
         HighlightUploadUseCase,
@@ -298,6 +332,25 @@ class Container(containers.DeclarativeContainer):
         deduplication_service=highlight_deduplication_service,
         position_index_service=epub_position_index_service,
         file_repository=file_repository,
+        highlight_style_repository=highlight_style_repository,
+    )
+    get_book_highlight_labels_use_case = providers.Factory(
+        GetBookHighlightLabelsUseCase,
+        highlight_style_repository=highlight_style_repository,
+        book_repository=book_repository,
+        highlight_style_resolver=highlight_style_resolver,
+    )
+    update_highlight_label_use_case = providers.Factory(
+        UpdateHighlightLabelUseCase,
+        highlight_style_repository=highlight_style_repository,
+    )
+    get_global_highlight_labels_use_case = providers.Factory(
+        GetGlobalHighlightLabelsUseCase,
+        highlight_style_repository=highlight_style_repository,
+    )
+    create_global_highlight_label_use_case = providers.Factory(
+        CreateGlobalHighlightLabelUseCase,
+        highlight_style_repository=highlight_style_repository,
     )
     reading_session_upload_use_case = providers.Factory(
         ReadingSessionUploadUseCase,
@@ -314,6 +367,8 @@ class Container(containers.DeclarativeContainer):
         highlight_repository=highlight_repository,
         text_extraction_service=ebook_text_extraction_service,
         file_repo=file_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
     reading_session_ai_summary_use_case = providers.Factory(
         ReadingSessionAISummaryUseCase,
@@ -417,6 +472,8 @@ class Container(containers.DeclarativeContainer):
         highlight_tag_use_case=get_highlight_tags_for_book_use_case,
         highlight_grouping_service=highlight_grouping_service,
         reading_session_repository=reading_session_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
 
     update_book_use_case = providers.Factory(
@@ -456,6 +513,8 @@ class Container(containers.DeclarativeContainer):
         flashcard_repository=flashcard_repository,
         book_repository=book_repository,
         highlight_repository=highlight_repository,
+        highlight_style_repository=highlight_style_repository,
+        highlight_style_resolver=highlight_style_resolver,
     )
 
     update_flashcard_use_case = providers.Factory(

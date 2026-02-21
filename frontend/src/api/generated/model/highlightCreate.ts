@@ -32,4 +32,8 @@ export interface HighlightCreate {
   start_xpoint?: string | null;
   /** Highlight end position in XML document */
   end_xpoint?: string | null;
+  /** Highlight color from KOReader (e.g. 'gray', 'yellow') */
+  color?: string | null;
+  /** Highlight drawer/style from KOReader (e.g. 'lighten', 'strikethrough') */
+  drawer?: string | null;
 }

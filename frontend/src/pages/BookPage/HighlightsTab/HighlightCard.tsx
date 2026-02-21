@@ -2,6 +2,7 @@ import type { Bookmark, Highlight } from '@/api/generated/model';
 import { HoverableCardActionArea } from '@/components/cards/HoverableCardActionArea';
 import { MetadataRow } from '@/components/cards/MetadataRow.tsx';
 import { BookTagList } from '@/pages/BookPage/BookTitle/BookTagList.tsx';
+import { LabelIndicator } from '@/pages/BookPage/common/LabelIndicator.tsx';
 import {
   BookmarkFilledIcon,
   DateIcon,
@@ -40,9 +41,9 @@ const Footer = ({ highlight, bookmark }: FooterProps) => {
           alignItems: 'center',
           gap: 1,
           pl: 4.5,
-          opacity: 0.6,
         }}
       >
+        <LabelIndicator label={highlight.label} size="small" />
         <DateIcon
           sx={(theme) => ({
             fontSize: 14,

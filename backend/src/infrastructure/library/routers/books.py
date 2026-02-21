@@ -27,6 +27,7 @@ from src.domain.common import DomainError
 from src.domain.identity import User
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
 from src.domain.reading.services import ChapterWithHighlights as DomainChapterWithHighlights
+from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
 from src.exceptions import CrossbillError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
@@ -42,6 +43,7 @@ from src.infrastructure.reading.schemas import (
     BookDetails,
     Bookmark,
     Highlight,
+    HighlightLabel,
     HighlightTagGroupInBook,
     HighlightTagInBook,
 )
@@ -57,12 +59,14 @@ router = APIRouter(prefix="/books", tags=["books"])
 
 def _map_chapters_to_schemas(
     chapters_grouped: list[DomainChapterWithHighlights],
+    labels: dict[int, ResolvedLabel] | None = None,
 ) -> list[ChapterWithHighlightsSchema]:
     """
     Map domain ChapterWithHighlights to Pydantic schemas.
 
     Args:
         chapters_grouped: List of ChapterWithHighlights domain dataclasses
+        labels: Optional dict mapping highlight_style_id -> ResolvedLabel
 
     Returns:
         List of ChapterWithHighlights Pydantic schemas
@@ -75,6 +79,9 @@ def _map_chapters_to_schemas(
             h = hw.highlight
             chapter = hw.chapter
 
+            resolved = (
+                labels.get(h.highlight_style_id.value) if labels and h.highlight_style_id else None
+            )
             highlight_schema = Highlight(
                 id=h.id.value,
                 book_id=h.book_id.value,
@@ -85,6 +92,13 @@ def _map_chapters_to_schemas(
                 page=h.page,
                 note=h.note,
                 datetime=h.datetime,
+                label=HighlightLabel(
+                    highlight_style_id=h.highlight_style_id.value if h.highlight_style_id else None,
+                    text=resolved.label if resolved else None,
+                    ui_color=resolved.ui_color if resolved else None,
+                )
+                if h.highlight_style_id
+                else None,
                 flashcards=[
                     Flashcard(
                         id=fc.id.value,
@@ -132,12 +146,16 @@ def _map_chapters_to_schemas(
     return chapters_with_highlights
 
 
-def _build_book_details_schema(agg: BookDetailsAggregation) -> BookDetails:
+def _build_book_details_schema(
+    agg: BookDetailsAggregation,
+    labels: dict[int, ResolvedLabel] | None = None,
+) -> BookDetails:
     """
     Build BookDetails Pydantic schema from BookDetailsAggregation.
 
     Args:
         agg: BookDetailsAggregation domain dataclass
+        labels: Optional dict mapping highlight_style_id -> ResolvedLabel
 
     Returns:
         BookDetails Pydantic schema
@@ -188,7 +206,7 @@ def _build_book_details_schema(agg: BookDetailsAggregation) -> BookDetails:
             )
             for f in agg.book_flashcards
         ],
-        chapters=_map_chapters_to_schemas(agg.chapters_with_highlights),
+        chapters=_map_chapters_to_schemas(agg.chapters_with_highlights, labels),
         reading_position=PositionResponse(
             index=agg.reading_position.index,
             char_index=agg.reading_position.char_index,
@@ -340,7 +358,7 @@ def get_book_details(
     """
     try:
         agg = use_case.get_book_details(book_id, current_user.id.value)
-        return _build_book_details_schema(agg)
+        return _build_book_details_schema(agg, agg.labels)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise

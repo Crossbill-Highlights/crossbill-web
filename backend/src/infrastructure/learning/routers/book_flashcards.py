@@ -23,7 +23,11 @@ from src.infrastructure.learning.schemas import (
     FlashcardsWithHighlightsResponse,
     FlashcardWithHighlight,
 )
-from src.infrastructure.reading.schemas import HighlightResponseBase, HighlightTagInBook
+from src.infrastructure.reading.schemas import (
+    HighlightLabel,
+    HighlightResponseBase,
+    HighlightTagInBook,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -121,8 +125,8 @@ def get_flashcards_for_book(
         HTTPException: If book not found or fetching fails
     """
     try:
-        # Get flashcards with highlights from use case (returns DTOs)
-        flashcards_with_highlights = use_case.get_flashcards(book_id, current_user.id.value)
+        # Get flashcards with highlights from use case (returns DTOs + labels)
+        flashcards_with_highlights, labels = use_case.get_flashcards(book_id, current_user.id.value)
 
         # Convert DTOs to Pydantic schemas
         flashcards = []
@@ -135,6 +139,11 @@ def get_flashcards_for_book(
             # Convert highlight to Pydantic schema if present
             highlight_schema = None
             if highlight:
+                resolved = (
+                    labels.get(highlight.highlight_style_id.value)
+                    if highlight.highlight_style_id
+                    else None
+                )
                 # Manually construct highlight schema
                 highlight_schema = HighlightResponseBase(
                     id=highlight.id.value,
@@ -146,6 +155,15 @@ def get_flashcards_for_book(
                     datetime=highlight.datetime,
                     chapter=chapter.name if chapter else None,
                     chapter_number=chapter.chapter_number if chapter else None,
+                    label=HighlightLabel(
+                        highlight_style_id=highlight.highlight_style_id.value
+                        if highlight.highlight_style_id
+                        else None,
+                        text=resolved.label if resolved else None,
+                        ui_color=resolved.ui_color if resolved else None,
+                    )
+                    if highlight.highlight_style_id
+                    else None,
                     created_at=highlight.created_at,
                     updated_at=highlight.updated_at,
                     highlight_tags=[

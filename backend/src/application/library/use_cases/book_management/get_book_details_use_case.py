@@ -10,6 +10,9 @@ from src.application.library.use_cases.book_tag_associations.get_book_tags_use_c
 )
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
+from src.application.reading.protocols.highlight_style_repository import (
+    HighlightStyleRepositoryProtocol,
+)
 from src.application.reading.protocols.highlight_tag_repository import (
     HighlightTagRepositoryProtocol,
 )
@@ -24,6 +27,10 @@ from src.domain.library.services.book_details_aggregator import BookDetailsAggre
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights,
     HighlightGroupingService,
+)
+from src.domain.reading.services.highlight_style_resolver import (
+    HighlightStyleResolver,
+    ResolvedLabel,
 )
 from src.exceptions import BookNotFoundError
 
@@ -45,6 +52,8 @@ class GetBookDetailsUseCase:
         highlight_tag_use_case: GetHighlightTagsForBookUseCase,
         highlight_grouping_service: HighlightGroupingService,
         reading_session_repository: ReadingSessionRepositoryProtocol,
+        highlight_style_repository: HighlightStyleRepositoryProtocol | None = None,
+        highlight_style_resolver: HighlightStyleResolver | None = None,
     ) -> None:
         self.book_repository = book_repository
         self.chapter_repository = chapter_repository
@@ -56,6 +65,8 @@ class GetBookDetailsUseCase:
         self.highlight_tag_use_case = highlight_tag_use_case
         self.highlight_grouping_service = highlight_grouping_service
         self.reading_session_repository = reading_session_repository
+        self.highlight_style_repository = highlight_style_repository
+        self.highlight_style_resolver = highlight_style_resolver
 
     def get_book_details(self, book_id: int, user_id: int) -> BookDetailsAggregation:
         """
@@ -148,6 +159,15 @@ class GetBookDetailsUseCase:
         all_flashcards = self.flashcard_repository.find_by_book(book_id_vo, user_id_vo)
         book_flashcards = [f for f in all_flashcards if f.highlight_id is None]
 
+        # Resolve labels
+        labels: dict[int, ResolvedLabel] = {}
+        if self.highlight_style_repository and self.highlight_style_resolver:
+            all_styles = self.highlight_style_repository.find_for_resolution(user_id_vo, book_id_vo)
+            for style in all_styles:
+                if style.is_combination_level() and not style.is_global():
+                    resolved = self.highlight_style_resolver.resolve(style, all_styles)
+                    labels[style.id.value] = resolved
+
         # Return domain aggregation
         return BookDetailsAggregation(
             book=book,
@@ -158,4 +178,5 @@ class GetBookDetailsUseCase:
             chapters_with_highlights=merged,
             book_flashcards=book_flashcards,
             reading_position=reading_position,
+            labels=labels,
         )

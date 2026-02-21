@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { HighlightContent } from '../../common/HighlightContent.tsx';
 import { FlashcardSection } from './components/FlashcardSection.tsx';
 import { HighlightNote } from './components/HighlightNote.tsx';
+import { LabelEditorPopover } from './components/LabelEditorPopover.tsx';
 import { ProgressBar } from './components/ProgressBar.tsx';
 import { Toolbar } from './components/Toolbar.tsx';
 import { useVisibilityToggle } from './hooks/useVisibilityToggle.ts';
@@ -49,6 +50,7 @@ export const HighlightViewModal = ({
   const queryClient = useQueryClient();
   const { showSnackbar } = useSnackbar();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [labelAnchorEl, setLabelAnchorEl] = useState<HTMLElement | null>(null);
 
   const currentBookmark = bookmarksByHighlightId[highlight.id] ?? undefined;
 
@@ -112,6 +114,12 @@ export const HighlightViewModal = ({
       queryKey: getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey(bookId),
     });
     onClose(highlight.id);
+  };
+
+  const handleLabelClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (highlight.label?.highlight_style_id) {
+      setLabelAnchorEl(event.currentTarget);
+    }
   };
 
   const isLoading = deleteHighlightMutation.isPending;
@@ -189,7 +197,7 @@ export const HighlightViewModal = ({
         disabled={isLoading}
       >
         <FadeInOut ekey={highlight.id}>
-          <HighlightContent highlight={highlight} />
+          <HighlightContent highlight={highlight} onLabelClick={handleLabelClick} />
         </FadeInOut>
         {renderContent()}
       </CommonDialogHorizontalNavigation>
@@ -204,6 +212,18 @@ export const HighlightViewModal = ({
         confirmColor="error"
         isLoading={isLoading}
       />
+
+      {highlight.label?.highlight_style_id && (
+        <LabelEditorPopover
+          anchorEl={labelAnchorEl}
+          open={!!labelAnchorEl}
+          onClose={() => setLabelAnchorEl(null)}
+          styleId={highlight.label.highlight_style_id}
+          currentLabel={highlight.label.text}
+          currentColor={highlight.label.ui_color}
+          bookId={bookId}
+        />
+      )}
     </CommonDialog>
   );
 };

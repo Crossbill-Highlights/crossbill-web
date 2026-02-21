@@ -36,6 +36,20 @@ class HighlightCreate(HighlightBase):
 
     start_xpoint: str | None = Field(None, description="Highlight start position in XML document")
     end_xpoint: str | None = Field(None, description="Highlight end position in XML document")
+    color: str | None = Field(
+        None, description="Highlight color from KOReader (e.g. 'gray', 'yellow')"
+    )
+    drawer: str | None = Field(
+        None, description="Highlight drawer/style from KOReader (e.g. 'lighten', 'strikethrough')"
+    )
+
+
+class HighlightLabel(BaseModel):
+    """Resolved label info for a highlight."""
+
+    highlight_style_id: int | None = Field(None, description="ID of the highlight style")
+    text: str | None = Field(None, description="Resolved label text")
+    ui_color: str | None = Field(None, description="Resolved UI color")
 
 
 class HighlightResponseBase(HighlightBase):
@@ -47,6 +61,7 @@ class HighlightResponseBase(HighlightBase):
     id: int
     book_id: int
     chapter_id: int | None
+    label: HighlightLabel | None = Field(None, description="Resolved label for this highlight")
     highlight_tags: list[HighlightTagInBook] = Field(
         ..., description="List of highlight tags for this highlight"
     )
@@ -193,6 +208,36 @@ class BookDetails(BaseModel):
     last_viewed: dt | None = None
 
     model_config = {"from_attributes": True}
+
+
+class HighlightLabelInBook(BaseModel):
+    """Schema for a highlight label as shown in book context."""
+
+    id: int
+    device_color: str | None = Field(None, description="Device highlight color")
+    device_style: str | None = Field(None, description="Device drawing style")
+    label: str | None = Field(None, description="User-assigned label")
+    ui_color: str | None = Field(None, description="User-chosen UI color")
+    label_source: str = Field(
+        ..., description="Where the label comes from: 'book', 'global', or 'none'"
+    )
+    highlight_count: int = Field(..., description="Number of highlights using this style")
+
+
+class HighlightLabelUpdate(BaseModel):
+    """Schema for updating a highlight label."""
+
+    label: str | None = Field(None, description="New label (null to clear)")
+    ui_color: str | None = Field(None, description="New UI color (null to clear)")
+
+
+class HighlightLabelCreate(BaseModel):
+    """Schema for creating a global highlight label."""
+
+    device_color: str | None = Field(None, description="Device color to label")
+    device_style: str | None = Field(None, description="Device style to label")
+    label: str | None = Field(None, description="Label to assign")
+    ui_color: str | None = Field(None, description="UI color to assign")
 
 
 class HighlightDeleteRequest(BaseModel):

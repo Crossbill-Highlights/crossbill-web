@@ -6,10 +6,17 @@ Provides full-text search within a specific book's highlights.
 
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
+from src.application.reading.protocols.highlight_style_repository import (
+    HighlightStyleRepositoryProtocol,
+)
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights,
     HighlightGroupingService,
+)
+from src.domain.reading.services.highlight_style_resolver import (
+    HighlightStyleResolver,
+    ResolvedLabel,
 )
 from src.exceptions import BookNotFoundError
 
@@ -19,14 +26,18 @@ class HighlightSearchUseCase:
         self,
         book_repository: BookRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
+        highlight_style_repository: HighlightStyleRepositoryProtocol | None = None,
+        highlight_style_resolver: HighlightStyleResolver | None = None,
     ) -> None:
         self.book_repository = book_repository
         self.highlight_repository = highlight_repository
         self.highlight_grouping_service = HighlightGroupingService()
+        self.highlight_style_repository = highlight_style_repository
+        self.highlight_style_resolver = highlight_style_resolver
 
     def search_book_highlights(
         self, book_id: int, user_id: int, search_text: str, limit: int = 100
-    ) -> tuple[list[ChapterWithHighlights], int]:
+    ) -> tuple[list[ChapterWithHighlights], int, dict[int, ResolvedLabel]]:
         """
         Search for highlights within a specific book using full-text search.
 
@@ -40,7 +51,7 @@ class HighlightSearchUseCase:
             limit: Maximum number of results to return
 
         Returns:
-            Tuple of (chapters with highlights, total highlight count)
+            Tuple of (chapters with highlights, total highlight count, resolved labels)
 
         Raises:
             BookNotFoundError: If book is not found or doesn't belong to user
@@ -70,4 +81,13 @@ class HighlightSearchUseCase:
         # Calculate total number of highlights
         total = sum(len(chapter_group.highlights) for chapter_group in grouped)
 
-        return (grouped, total)
+        # Resolve labels
+        labels: dict[int, ResolvedLabel] = {}
+        if self.highlight_style_repository and self.highlight_style_resolver:
+            all_styles = self.highlight_style_repository.find_for_resolution(user_id_vo, book_id_vo)
+            for style in all_styles:
+                if style.is_combination_level() and not style.is_global():
+                    resolved = self.highlight_style_resolver.resolve(style, all_styles)
+                    labels[style.id.value] = resolved
+
+        return (grouped, total, labels)

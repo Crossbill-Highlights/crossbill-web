@@ -18,6 +18,7 @@ from src.domain.common.value_objects import (
     ChapterId,
     ContentHash,
     HighlightId,
+    HighlightStyleId,
     UserId,
     XPointRange,
 )
@@ -56,6 +57,9 @@ class Highlight(AggregateRoot[HighlightId]):
     xpoints: XPointRange | None = None
     page: int | None = None
     position: Position | None = None
+
+    # Style
+    highlight_style_id: HighlightStyleId | None = None
 
     # Annotation
     note: str | None = None
@@ -181,6 +185,7 @@ class Highlight(AggregateRoot[HighlightId]):
         xpoints: XPointRange | None = None,
         page: int | None = None,
         position: Position | None = None,
+        highlight_style_id: HighlightStyleId | None = None,
         note: str | None = None,
     ) -> Highlight:
         """
@@ -215,6 +220,7 @@ class Highlight(AggregateRoot[HighlightId]):
             xpoints=xpoints,
             page=page,
             position=position,
+            highlight_style_id=highlight_style_id,
             note=note.strip() if note else None,
             datetime=datetime_str,
             created_at=now,
@@ -237,6 +243,7 @@ class Highlight(AggregateRoot[HighlightId]):
         xpoints: XPointRange | None = None,
         page: int | None = None,
         position: Position | None = None,
+        highlight_style_id: HighlightStyleId | None = None,
         note: str | None = None,
         deleted_at: dt_module.datetime | None = None,
     ) -> Highlight:
@@ -254,6 +261,7 @@ class Highlight(AggregateRoot[HighlightId]):
             xpoints=xpoints,
             page=page,
             position=position,
+            highlight_style_id=highlight_style_id,
             note=note,
             datetime=datetime_str,
             created_at=created_at,

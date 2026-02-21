@@ -225,6 +225,56 @@ class CrossbillClient:
         )
         return response.json()
 
+    # --- Highlight label endpoints ---
+
+    async def get_book_highlight_labels(self, book_id: int) -> list:
+        """Get all highlight labels for a book with resolved labels and counts."""
+        response = await self._request(
+            "GET", f"/api/v1/books/{book_id}/highlight-labels"
+        )
+        return response.json()
+
+    async def get_global_highlight_labels(self) -> list:
+        """Get all global default highlight labels."""
+        response = await self._request("GET", "/api/v1/highlight-labels/global")
+        return response.json()
+
+    async def update_highlight_label(
+        self, style_id: int, label: str | None = None, ui_color: str | None = None
+    ) -> dict:
+        """Update label text and/or UI color on a highlight style."""
+        body: dict[str, str | None] = {}
+        if label is not None:
+            body["label"] = label
+        if ui_color is not None:
+            body["ui_color"] = ui_color
+        response = await self._request(
+            "PATCH", f"/api/v1/highlight-labels/{style_id}", json=body
+        )
+        return response.json()
+
+    async def create_global_highlight_label(
+        self,
+        device_color: str | None = None,
+        device_style: str | None = None,
+        label: str | None = None,
+        ui_color: str | None = None,
+    ) -> dict:
+        """Create a new global default highlight label."""
+        body: dict[str, str | None] = {}
+        if device_color is not None:
+            body["device_color"] = device_color
+        if device_style is not None:
+            body["device_style"] = device_style
+        if label is not None:
+            body["label"] = label
+        if ui_color is not None:
+            body["ui_color"] = ui_color
+        response = await self._request(
+            "POST", "/api/v1/highlight-labels/global", json=body
+        )
+        return response.json()
+
     # --- Reading session endpoints ---
 
     async def get_reading_sessions(
