@@ -12,12 +12,12 @@ import type {
 } from '@/api/generated/model';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { CreateFlashcardForm } from '@/pages/BookPage/FlashcardsTab/CreateFlashcardForm.tsx';
 import type { FlashcardWithContext } from '@/pages/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
 import { FlashcardEditDialog } from '@/pages/BookPage/FlashcardsTab/FlashcardEditDialog.tsx';
 import { FlashcardListCard } from '@/pages/BookPage/FlashcardsTab/FlashcardListCard.tsx';
-import { FlashcardSuggestionCard } from '@/pages/BookPage/FlashcardsTab/FlashcardSuggestionCard.tsx';
-import { AIIcon } from '@/theme/Icons.tsx';
-import { Box, Button, CircularProgress, Stack, TextField, Typography } from '@mui/material';
+import { FlashcardSuggestions } from '@/pages/BookPage/FlashcardsTab/FlashcardSuggestions.tsx';
+import { Stack } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { flatMap } from 'lodash';
 import { useCallback, useMemo, useState } from 'react';
@@ -29,154 +29,6 @@ interface FlashcardsSectionProps {
   prereadingSummary?: ChapterPrereadingResponse;
   bookFlashcards?: Flashcard[];
 }
-
-interface CreateFlashcardFormProps {
-  question: string;
-  answer: string;
-  onQuestionChange: (value: string) => void;
-  onAnswerChange: (value: string) => void;
-  editingFlashcardId: number | null;
-  isDisabled: boolean;
-  isProcessing: boolean;
-  onSave: () => void;
-  onCancelEdit: () => void;
-}
-
-const CreateFlashcardForm = ({
-  question,
-  answer,
-  onQuestionChange,
-  onAnswerChange,
-  editingFlashcardId,
-  isDisabled,
-  isProcessing,
-  onSave,
-  onCancelEdit,
-}: CreateFlashcardFormProps) => {
-  const canSave = question.trim() && answer.trim() && !isDisabled;
-
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        alignItems: 'flex-start',
-      }}
-    >
-      <TextField
-        fullWidth
-        size="small"
-        value={question}
-        onChange={(e) => onQuestionChange(e.target.value)}
-        placeholder="Question..."
-        disabled={isDisabled}
-      />
-      <TextField
-        fullWidth
-        size="small"
-        multiline
-        minRows={2}
-        maxRows={4}
-        value={answer}
-        onChange={(e) => onAnswerChange(e.target.value)}
-        placeholder="Answer..."
-        disabled={isDisabled}
-      />
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, width: '100%' }}>
-        {editingFlashcardId && (
-          <Button
-            variant="text"
-            size="small"
-            onClick={onCancelEdit}
-            disabled={isDisabled}
-            sx={{ flexShrink: 0, height: 'fit-content', mt: 0.5 }}
-          >
-            Cancel
-          </Button>
-        )}
-        <Button
-          variant="text"
-          size="small"
-          onClick={onSave}
-          disabled={!canSave}
-          sx={{ flexShrink: 0, height: 'fit-content', mt: 0.5 }}
-        >
-          {isProcessing ? 'Saving...' : editingFlashcardId ? 'Update Flashcard' : 'Add Flashcard'}
-        </Button>
-      </Box>
-    </Box>
-  );
-};
-
-interface FlashcardSuggestionsProps {
-  suggestions: FlashcardSuggestionItem[];
-  isLoading: boolean;
-  disabled: boolean;
-  onFetchSuggestions: () => void;
-  onAcceptSuggestion: (suggestion: FlashcardSuggestionItem, index: number) => void;
-  onRejectSuggestion: (index: number) => void;
-}
-
-const FlashcardSuggestions = ({
-  suggestions,
-  isLoading,
-  disabled,
-  onFetchSuggestions,
-  onAcceptSuggestion,
-  onRejectSuggestion,
-}: FlashcardSuggestionsProps) => {
-  return (
-    <>
-      {suggestions.length ? (
-        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          Suggested flashcards
-        </Typography>
-      ) : (
-        <Button
-          variant="text"
-          size="small"
-          startIcon={<AIIcon />}
-          onClick={onFetchSuggestions}
-          disabled={disabled || isLoading}
-          sx={{ mb: 1 }}
-        >
-          Suggest flashcards
-        </Button>
-      )}
-
-      {isLoading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-          <CircularProgress size={24} />
-        </Box>
-      )}
-
-      {!isLoading && suggestions.length > 0 && (
-        <Stack
-          component="ul"
-          sx={{
-            gap: 2,
-            listStyle: 'none',
-            p: 0,
-            m: 0,
-            mb: 2,
-          }}
-        >
-          {suggestions.map((suggestion, index) => (
-            <li key={index}>
-              <FlashcardSuggestionCard
-                question={suggestion.question}
-                answer={suggestion.answer}
-                onAccept={() => onAcceptSuggestion(suggestion, index)}
-                onReject={() => onRejectSuggestion(index)}
-              />
-            </li>
-          ))}
-        </Stack>
-      )}
-    </>
-  );
-};
 
 const useFlashcardMutations = (
   bookId: number,
