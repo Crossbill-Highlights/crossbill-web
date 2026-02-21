@@ -26,16 +26,18 @@ def register_flashcard_tools(server: FastMCP, client: CrossbillClient) -> None:
         question: str,
         answer: str,
         highlight_id: int | None = None,
+        chapter_id: int | None = None,
     ) -> str:
-        """Create a new flashcard for a book, optionally linked to a highlight.
+        """Create a new flashcard for a book, optionally linked to a highlight or chapter.
 
         Args:
             book_id: The ID of the book
             question: The flashcard question
             answer: The flashcard answer
             highlight_id: Optional highlight ID to link the flashcard to
+            chapter_id: Optional chapter ID to link the flashcard to
         """
-        result = await client.create_flashcard(book_id, question, answer, highlight_id)
+        result = await client.create_flashcard(book_id, question, answer, highlight_id, chapter_id)
         return json.dumps(result, indent=2, default=str)
 
     @server.tool()

@@ -164,6 +164,7 @@ class CrossbillClient:
         question: str,
         answer: str,
         highlight_id: int | None = None,
+        chapter_id: int | None = None,
     ) -> dict:
         """Create a flashcard for a book or linked to a highlight."""
         if highlight_id is not None:
@@ -173,10 +174,13 @@ class CrossbillClient:
                 json={"question": question, "answer": answer},
             )
         else:
+            body: dict[str, str | int] = {"question": question, "answer": answer}
+            if chapter_id is not None:
+                body["chapter_id"] = chapter_id
             response = await self._request(
                 "POST",
                 f"/api/v1/books/{book_id}/flashcards",
-                json={"question": question, "answer": answer},
+                json=body,
             )
         return response.json()
 
