@@ -506,6 +506,7 @@ class Container(containers.DeclarativeContainer):
         CreateFlashcardForBookUseCase,
         flashcard_repository=flashcard_repository,
         book_repository=book_repository,
+        chapter_repository=chapter_repository,
     )
 
     get_flashcards_by_book_use_case = providers.Factory(
