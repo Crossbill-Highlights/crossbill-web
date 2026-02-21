@@ -25,7 +25,11 @@ from src.infrastructure.common.routers import settings as settings_router
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.routers import auth, users
 from src.infrastructure.identity.services.password_service import hash_password
-from src.infrastructure.learning.routers import ai_flashcard_suggestions, flashcards
+from src.infrastructure.learning.routers import (
+    ai_chapter_flashcard_suggestions,
+    ai_flashcard_suggestions,
+    flashcards,
+)
 from src.infrastructure.learning.routers import book_flashcards as learning_books
 from src.infrastructure.library.routers import books as library_books
 from src.infrastructure.library.routers import ereader as library_ereader
@@ -268,6 +272,7 @@ app.include_router(highlight_labels.router, prefix=settings.API_V1_PREFIX)
 app.include_router(learning_books.router, prefix=settings.API_V1_PREFIX)
 app.include_router(flashcards.router, prefix=settings.API_V1_PREFIX)
 app.include_router(ai_flashcard_suggestions.router, prefix=settings.API_V1_PREFIX)
+app.include_router(ai_chapter_flashcard_suggestions.router, prefix=settings.API_V1_PREFIX)
 
 # Identity
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)

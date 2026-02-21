@@ -729,3 +729,224 @@ export function useGetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFla
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Get AI-generated flashcard suggestions from chapter prereading content.
+
+Requires the chapter to have a generated pre-reading summary.
+ * @summary Get Chapter Flashcard Suggestions
+ */
+export const getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet = (
+  chapterId: number,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<HighlightFlashcardSuggestionsResponse>({
+    url: `/api/v1/chapters/${chapterId}/flashcard_suggestions`,
+    method: 'GET',
+    signal,
+  });
+};
+
+export const getGetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGetQueryKey =
+  (chapterId: number) => {
+    return [`/api/v1/chapters/${chapterId}/flashcard_suggestions`] as const;
+  };
+
+export const getGetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGetQueryOptions =
+  <
+    TData = Awaited<
+      ReturnType<typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet>
+    >,
+    TError = HTTPValidationError,
+  >(
+    chapterId: number,
+    options?: {
+      query?: Partial<
+        UseQueryOptions<
+          Awaited<
+            ReturnType<
+              typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet
+            >
+          >,
+          TError,
+          TData
+        >
+      >;
+    }
+  ) => {
+    const { query: queryOptions } = options ?? {};
+
+    const queryKey =
+      queryOptions?.queryKey ??
+      getGetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGetQueryKey(
+        chapterId
+      );
+
+    const queryFn: QueryFunction<
+      Awaited<
+        ReturnType<
+          typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet
+        >
+      >
+    > = ({ signal }) =>
+      getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet(
+        chapterId,
+        signal
+      );
+
+    return { queryKey, queryFn, enabled: !!chapterId, ...queryOptions } as UseQueryOptions<
+      Awaited<
+        ReturnType<
+          typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet
+        >
+      >,
+      TError,
+      TData
+    > & { queryKey: DataTag<QueryKey, TData, TError> };
+  };
+
+export type GetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGetQueryResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet>
+    >
+  >;
+export type GetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGetQueryError =
+  HTTPValidationError;
+
+export function useGetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet<
+  TData = Awaited<
+    ReturnType<typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  chapterId: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet
+            >
+          >
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet<
+  TData = Awaited<
+    ReturnType<typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  chapterId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet
+          >
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<
+            ReturnType<
+              typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet
+            >
+          >,
+          TError,
+          Awaited<
+            ReturnType<
+              typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet
+            >
+          >
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet<
+  TData = Awaited<
+    ReturnType<typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  chapterId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Chapter Flashcard Suggestions
+ */
+
+export function useGetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet<
+  TData = Awaited<
+    ReturnType<typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  chapterId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<
+            typeof getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet
+          >
+        >,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions =
+    getGetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGetQueryOptions(
+      chapterId,
+      options
+    );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

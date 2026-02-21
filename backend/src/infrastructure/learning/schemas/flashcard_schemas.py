@@ -23,6 +23,7 @@ class Flashcard(FlashcardBase):
     user_id: int
     book_id: int
     highlight_id: int | None
+    chapter_id: int | None = None
 
     model_config = {"from_attributes": True}
 
@@ -32,6 +33,7 @@ class FlashcardCreateRequest(BaseModel):
 
     question: str = Field(..., min_length=1, description="Question text for the flashcard")
     answer: str = Field(..., min_length=1, description="Answer text for the flashcard")
+    chapter_id: int | None = Field(None, description="Optional chapter ID to associate with")
 
 
 class FlashcardCreateResponse(BaseModel):

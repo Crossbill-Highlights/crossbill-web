@@ -70,6 +70,7 @@ def create_flashcard_for_book(
             user_id=current_user.id.value,
             question=request.question,
             answer=request.answer,
+            chapter_id=request.chapter_id,
         )
         # Manually construct Pydantic schema from domain entity
         flashcard = Flashcard(
@@ -79,6 +80,7 @@ def create_flashcard_for_book(
             highlight_id=flashcard_entity.highlight_id.value
             if flashcard_entity.highlight_id
             else None,
+            chapter_id=flashcard_entity.chapter_id.value if flashcard_entity.chapter_id else None,
             question=flashcard_entity.question,
             answer=flashcard_entity.answer,
         )
@@ -182,6 +184,7 @@ def get_flashcards_for_book(
                 user_id=fc.user_id.value,
                 book_id=fc.book_id.value,
                 highlight_id=fc.highlight_id.value if fc.highlight_id else None,
+                chapter_id=fc.chapter_id.value if fc.chapter_id else None,
                 question=fc.question,
                 answer=fc.answer,
                 highlight=highlight_schema,

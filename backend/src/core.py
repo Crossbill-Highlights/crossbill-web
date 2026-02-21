@@ -21,6 +21,9 @@ from src.application.learning.use_cases.flashcards.create_flashcard_for_highligh
 from src.application.learning.use_cases.flashcards.delete_flashcard_use_case import (
     DeleteFlashcardUseCase,
 )
+from src.application.learning.use_cases.flashcards.get_chapter_flashcard_suggestions_use_case import (
+    GetChapterFlashcardSuggestionsUseCase,
+)
 from src.application.learning.use_cases.flashcards.get_flashcard_suggestions_use_case import (
     GetFlashcardSuggestionsUseCase,
 )
@@ -506,6 +509,7 @@ class Container(containers.DeclarativeContainer):
         CreateFlashcardForBookUseCase,
         flashcard_repository=flashcard_repository,
         book_repository=book_repository,
+        chapter_repository=chapter_repository,
     )
 
     get_flashcards_by_book_use_case = providers.Factory(
@@ -530,6 +534,12 @@ class Container(containers.DeclarativeContainer):
     get_flashcard_suggestions_use_case = providers.Factory(
         GetFlashcardSuggestionsUseCase,
         highlight_repository=highlight_repository,
+        ai_flashcard_service=ai_service,
+    )
+
+    get_chapter_flashcard_suggestions_use_case = providers.Factory(
+        GetChapterFlashcardSuggestionsUseCase,
+        chapter_prereading_repository=chapter_prereading_repository,
         ai_flashcard_service=ai_service,
     )
 

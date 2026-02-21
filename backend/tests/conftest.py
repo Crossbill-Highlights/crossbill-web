@@ -19,6 +19,7 @@ from src.infrastructure.identity.dependencies import get_current_user
 from src.main import app
 from src.models import (
     Book,
+    Chapter,
     Flashcard,
     Highlight,
     HighlightTag,
@@ -211,6 +212,19 @@ def test_book(db_session: Session, test_user: User) -> Book:
         title="Test Book",
         author="Test Author",
     )
+
+
+@pytest.fixture
+def test_chapter(db_session: Session, test_book: Book) -> Chapter:
+    """Create a standard test chapter attached to test_book."""
+    chapter = Chapter(
+        book_id=test_book.id,
+        name="Test Chapter",
+    )
+    db_session.add(chapter)
+    db_session.commit()
+    db_session.refresh(chapter)
+    return chapter
 
 
 @pytest.fixture

@@ -105,6 +105,7 @@ def _map_chapters_to_schemas(
                         user_id=fc.user_id.value,
                         book_id=fc.book_id.value,
                         highlight_id=fc.highlight_id.value if fc.highlight_id else None,
+                        chapter_id=fc.chapter_id.value if fc.chapter_id else None,
                         question=fc.question,
                         answer=fc.answer,
                     )
@@ -201,6 +202,7 @@ def _build_book_details_schema(
                 user_id=f.user_id.value,
                 book_id=f.book_id.value,
                 highlight_id=None,
+                chapter_id=f.chapter_id.value if f.chapter_id else None,
                 question=f.question,
                 answer=f.answer,
             )

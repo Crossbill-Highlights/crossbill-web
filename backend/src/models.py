@@ -515,6 +515,9 @@ class Flashcard(Base):
     highlight_id: Mapped[int | None] = mapped_column(
         ForeignKey("highlights.id", ondelete="CASCADE"), index=True, nullable=True
     )
+    chapter_id: Mapped[int | None] = mapped_column(
+        ForeignKey("chapters.id", ondelete="CASCADE"), index=True, nullable=True
+    )
     question: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[dt] = mapped_column(
@@ -531,6 +534,7 @@ class Flashcard(Base):
     user: Mapped["User"] = relationship(back_populates="flashcards")
     book: Mapped["Book"] = relationship(back_populates="flashcards")
     highlight: Mapped["Highlight | None"] = relationship(back_populates="flashcards")
+    chapter: Mapped["Chapter | None"] = relationship()
 
     def __repr__(self) -> str:
         """String representation of Flashcard."""

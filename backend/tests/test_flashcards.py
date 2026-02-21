@@ -82,6 +82,38 @@ class TestCreateFlashcardForBook:
         assert flashcard["answer"] == "The main theme is..."
         assert flashcard["book_id"] == test_book.id
         assert flashcard["highlight_id"] is None  # Standalone flashcard
+        assert flashcard["chapter_id"] is None
+
+    def test_create_flashcard_with_chapter_id(
+        self, client: TestClient, test_book: models.Book, test_chapter: models.Chapter
+    ) -> None:
+        """Test creating a flashcard linked to a specific chapter."""
+        response = client.post(
+            f"/api/v1/books/{test_book.id}/flashcards",
+            json={
+                "question": "Chapter question",
+                "answer": "Chapter answer",
+                "chapter_id": test_chapter.id,
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        data = response.json()
+        assert data["flashcard"]["chapter_id"] == test_chapter.id
+        assert data["flashcard"]["highlight_id"] is None
+
+    def test_create_flashcard_with_invalid_chapter_id(
+        self, client: TestClient, test_book: models.Book
+    ) -> None:
+        """Test creating a flashcard with a non-existent chapter_id returns 404."""
+        response = client.post(
+            f"/api/v1/books/{test_book.id}/flashcards",
+            json={
+                "question": "Q",
+                "answer": "A",
+                "chapter_id": 99999,
+            },
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_create_flashcard_book_not_found(self, client: TestClient) -> None:
         """Test creating a flashcard for non-existent book."""
