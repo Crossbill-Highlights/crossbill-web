@@ -66,7 +66,7 @@ export const ChapterDetailDialog = ({
         bookmarksByHighlightId={bookmarksByHighlightId}
         availableTags={availableTags}
       />
-      <FlashcardsSection chapter={chapter} bookId={bookId} />
+      <FlashcardsSection chapter={chapter} bookId={bookId} prereadingSummary={prereadingSummary} />
     </Box>
   );
 
