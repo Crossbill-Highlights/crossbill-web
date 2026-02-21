@@ -99,6 +99,13 @@ crossbill-mcp
 - **tag_highlight** - Add a tag to a highlight
 - **untag_highlight** - Remove a tag from a highlight
 
+### Highlight Labels
+
+- **get_book_highlight_labels** - Get all highlight labels for a book with resolved labels and counts
+- **get_global_highlight_labels** - Get all global default highlight labels
+- **update_highlight_label** - Update label text and/or UI color on a highlight style
+- **create_global_highlight_label** - Create a new global default highlight label
+
 ### Flashcards
 
 - **get_flashcards** - Get all flashcards for a book
