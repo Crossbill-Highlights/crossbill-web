@@ -80,9 +80,7 @@ def create_flashcard_for_book(
             highlight_id=flashcard_entity.highlight_id.value
             if flashcard_entity.highlight_id
             else None,
-            chapter_id=flashcard_entity.chapter_id.value
-            if flashcard_entity.chapter_id
-            else None,
+            chapter_id=flashcard_entity.chapter_id.value if flashcard_entity.chapter_id else None,
             question=flashcard_entity.question,
             answer=flashcard_entity.answer,
         )
