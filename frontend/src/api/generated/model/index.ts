@@ -81,4 +81,3 @@ export * from './userDetailsResponse';
 export * from './userRegisterRequest';
 export * from './userUpdateRequest';
 export * from './validationError';
-export * from './validationErrorCtx';

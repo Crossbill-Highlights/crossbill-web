@@ -153,7 +153,6 @@ Returns:
 
 Raises:
     HTTPException: If highlight not found or update fails
-    :param use_case:
  * @summary Update Highlight Note
  */
 export const updateHighlightNoteApiV1HighlightsHighlightIdNotePost = (

@@ -19,4 +19,6 @@ export interface FlashcardCreateRequest {
    * @minLength 1
    */
   answer: string;
+  /** Optional chapter ID to associate with */
+  chapter_id?: number | null;
 }

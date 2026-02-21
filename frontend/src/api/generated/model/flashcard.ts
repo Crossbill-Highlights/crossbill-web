@@ -23,4 +23,5 @@ export interface Flashcard {
   user_id: number;
   book_id: number;
   highlight_id: number | null;
+  chapter_id?: number | null;
 }
