@@ -7,6 +7,7 @@ import {
 import type {
   ChapterPrereadingResponse,
   ChapterWithHighlights,
+  Flashcard,
   FlashcardSuggestionItem,
 } from '@/api/generated/model';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
@@ -26,6 +27,7 @@ interface FlashcardsSectionProps {
   chapter: ChapterWithHighlights;
   bookId: number;
   prereadingSummary?: ChapterPrereadingResponse;
+  bookFlashcards?: Flashcard[];
 }
 
 interface CreateFlashcardFormProps {
@@ -287,6 +289,7 @@ export const FlashcardsSection = ({
   chapter,
   bookId,
   prereadingSummary,
+  bookFlashcards,
 }: FlashcardsSectionProps) => {
   const [editingFlashcard, setEditingFlashcard] = useState<FlashcardWithContext | null>(null);
   const [question, setQuestion] = useState('');
@@ -303,19 +306,29 @@ export const FlashcardsSection = ({
     showSnackbar
   );
 
-  const flashcardsWithContext = useMemo(
-    (): FlashcardWithContext[] =>
-      flatMap(chapter.highlights, (highlight) =>
-        highlight.flashcards.map((flashcard) => ({
-          ...flashcard,
-          highlight,
-          chapterName: chapter.name,
-          chapterId: chapter.id,
-          highlightTags: highlight.highlight_tags,
-        }))
-      ),
-    [chapter]
-  );
+  const flashcardsWithContext = useMemo((): FlashcardWithContext[] => {
+    const highlightFlashcards = flatMap(chapter.highlights, (highlight) =>
+      highlight.flashcards.map((flashcard) => ({
+        ...flashcard,
+        highlight,
+        chapterName: chapter.name,
+        chapterId: chapter.id,
+        highlightTags: highlight.highlight_tags,
+      }))
+    );
+
+    const chapterLinkedFlashcards: FlashcardWithContext[] = (bookFlashcards ?? [])
+      .filter((fc) => fc.chapter_id === chapter.id)
+      .map((fc) => ({
+        ...fc,
+        highlight: null,
+        chapterName: chapter.name,
+        chapterId: chapter.id,
+        highlightTags: [],
+      }));
+
+    return [...highlightFlashcards, ...chapterLinkedFlashcards];
+  }, [chapter, bookFlashcards]);
 
   const count = flashcardsWithContext.length;
 

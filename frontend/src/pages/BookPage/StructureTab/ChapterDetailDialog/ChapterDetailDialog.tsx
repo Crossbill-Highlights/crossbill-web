@@ -2,6 +2,7 @@ import type {
   Bookmark,
   ChapterPrereadingResponse,
   ChapterWithHighlights,
+  Flashcard,
   HighlightTagInBook,
 } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
@@ -26,6 +27,7 @@ interface ChapterDetailDialogProps {
   prereadingByChapterId: Record<number, ChapterPrereadingResponse>;
   bookmarksByHighlightId: Record<number, Bookmark>;
   availableTags: HighlightTagInBook[];
+  bookFlashcards?: Flashcard[];
 }
 
 export const ChapterDetailDialog = ({
@@ -39,6 +41,7 @@ export const ChapterDetailDialog = ({
   prereadingByChapterId,
   bookmarksByHighlightId,
   availableTags,
+  bookFlashcards,
 }: ChapterDetailDialogProps) => {
   const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext, swipeHandlers } =
     useModalHorizontalNavigation({
@@ -66,7 +69,12 @@ export const ChapterDetailDialog = ({
         bookmarksByHighlightId={bookmarksByHighlightId}
         availableTags={availableTags}
       />
-      <FlashcardsSection chapter={chapter} bookId={bookId} prereadingSummary={prereadingSummary} />
+      <FlashcardsSection
+        chapter={chapter}
+        bookId={bookId}
+        prereadingSummary={prereadingSummary}
+        bookFlashcards={bookFlashcards}
+      />
     </Box>
   );
 
