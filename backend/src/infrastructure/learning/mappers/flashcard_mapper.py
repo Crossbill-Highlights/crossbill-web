@@ -1,6 +1,6 @@
 """Mapper for Flashcard ORM ↔ Domain conversion."""
 
-from src.domain.common.value_objects import BookId, FlashcardId, HighlightId, UserId
+from src.domain.common.value_objects import BookId, ChapterId, FlashcardId, HighlightId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
 from src.models import Flashcard as FlashcardORM
 
@@ -17,6 +17,7 @@ class FlashcardMapper:
             question=orm_model.question,
             answer=orm_model.answer,
             highlight_id=HighlightId(orm_model.highlight_id) if orm_model.highlight_id else None,
+            chapter_id=ChapterId(orm_model.chapter_id) if orm_model.chapter_id else None,
             created_at=orm_model.created_at,
             updated_at=orm_model.updated_at,
         )
@@ -34,6 +35,9 @@ class FlashcardMapper:
             orm_model.highlight_id = (
                 domain_entity.highlight_id.value if domain_entity.highlight_id else None
             )
+            orm_model.chapter_id = (
+                domain_entity.chapter_id.value if domain_entity.chapter_id else None
+            )
             return orm_model
 
         # Create new
@@ -44,4 +48,5 @@ class FlashcardMapper:
             question=domain_entity.question,
             answer=domain_entity.answer,
             highlight_id=domain_entity.highlight_id.value if domain_entity.highlight_id else None,
+            chapter_id=domain_entity.chapter_id.value if domain_entity.chapter_id else None,
         )
