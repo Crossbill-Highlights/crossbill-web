@@ -155,9 +155,9 @@ class GetBookDetailsUseCase:
         # Get highlight tag groups
         highlight_tag_groups = self.highlight_tag_repository.find_groups_by_book(book_id_vo)
 
-        # Get book-level flashcards (not associated with any highlight)
+        # Get flashcards not associated with any highlight (book-level and chapter-level)
         all_flashcards = self.flashcard_repository.find_by_book(book_id_vo, user_id_vo)
-        book_flashcards = [f for f in all_flashcards if f.highlight_id is None and f.chapter_id is None]
+        book_flashcards = [f for f in all_flashcards if f.highlight_id is None]
 
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}

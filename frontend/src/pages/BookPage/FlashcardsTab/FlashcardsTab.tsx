@@ -57,6 +57,15 @@ export const FlashcardsTab = ({
 
   const bookChapters = book.chapters;
 
+  // Build a map of chapter IDs to chapter names for resolving chapter-linked flashcards
+  const chapterNameMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    for (const ch of bookChapters) {
+      map[ch.id] = ch.name || 'Unknown Chapter';
+    }
+    return map;
+  }, [bookChapters]);
+
   // Extract all flashcards with context from book chapters
   const allFlashcardsWithContext = useMemo((): FlashcardWithContext[] => {
     const highlightFlashcards = flatMap(bookChapters, (chapter: ChapterWithHighlights) =>
@@ -71,16 +80,20 @@ export const FlashcardsTab = ({
       )
     );
 
+    // book_flashcards includes both truly book-level (no chapter_id) and
+    // chapter-linked (chapter_id set, highlight_id null) flashcards
     const bookLevelFlashcards: FlashcardWithContext[] = (book.book_flashcards ?? []).map((fc) => ({
       ...fc,
       highlight: null,
-      chapterName: 'Book Flashcards',
-      chapterId: null,
+      chapterName: fc.chapter_id
+        ? (chapterNameMap[fc.chapter_id] ?? 'Unknown Chapter')
+        : 'Book Flashcards',
+      chapterId: fc.chapter_id ?? null,
       highlightTags: [],
     }));
 
     return [...highlightFlashcards, ...bookLevelFlashcards];
-  }, [bookChapters, book.book_flashcards]);
+  }, [bookChapters, book.book_flashcards, chapterNameMap]);
 
   // Filter flashcards by tag and search
   const filteredFlashcards = useMemo((): FlashcardWithContext[] => {
