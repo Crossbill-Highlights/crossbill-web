@@ -1,10 +1,6 @@
-import type {
-  BookDetails,
-  ChapterPrereadingResponse,
-  ChapterWithHighlights,
-} from '@/api/generated/model';
+import type { ChapterPrereadingResponse, ChapterWithHighlights } from '@/api/generated/model';
 import { useGetBookPrereadingApiV1BooksBookIdPrereadingGet } from '@/api/generated/prereading/prereading';
-import { ThreeColumnLayout } from '@/components/layout/Layouts';
+import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { Box, Typography } from '@mui/material';
 import { keyBy } from 'lodash';
 import { useMemo } from 'react';
@@ -13,12 +9,9 @@ import { ChapterDetailDialog } from './ChapterDetailDialog/ChapterDetailDialog.t
 import { useChapterDetailsModal } from './hooks/useChapterDetailsModal.ts';
 import { ReadingProgressLine } from './ReadingProgressLine';
 
-interface StructureTabProps {
-  book: BookDetails;
-  isDesktop: boolean;
-}
+export const StructureTab = () => {
+  const { book } = useBookPage();
 
-export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
   const { data: bookPrereading } = useGetBookPrereadingApiV1BooksBookIdPrereadingGet(book.id);
 
   const prereadingByChapterId = useMemo(() => {
@@ -112,15 +105,7 @@ export const StructureTab = ({ book, isDesktop }: StructureTabProps) => {
 
   return (
     <>
-      {!isDesktop ? (
-        <Box sx={{ maxWidth: '800px', mx: 'auto' }}>{content}</Box>
-      ) : (
-        <ThreeColumnLayout>
-          <div></div>
-          {content}
-          <div></div>
-        </ThreeColumnLayout>
-      )}
+      {content}
 
       {selectedChapter && (
         <ChapterDetailDialog

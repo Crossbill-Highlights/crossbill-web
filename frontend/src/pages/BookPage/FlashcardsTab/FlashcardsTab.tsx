@@ -1,19 +1,21 @@
 import type {
-  BookDetails,
   ChapterWithHighlights,
   Flashcard,
   Highlight,
   HighlightTagInBook,
 } from '@/api/generated/model';
+import { scrollToElementWithHighlight } from '@/components/animations/scrollUtils';
 import { SearchBar } from '@/components/inputs/SearchBar.tsx';
-import { ThreeColumnLayout } from '@/components/layout/Layouts.tsx';
+import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
+import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { ChapterNav, type ChapterNavigationData } from '@/pages/BookPage/navigation/ChapterNav.tsx';
-import { MobileNavigation } from '@/pages/BookPage/navigation/MobileNavigation.tsx';
-import { SortIcon } from '@/theme/Icons.tsx';
-import { Box, IconButton, Stack, Tooltip } from '@mui/material';
-import { useSearch } from '@tanstack/react-router';
+import { FilterListIcon, SortIcon } from '@/theme/Icons.tsx';
+import { Box, IconButton, Tooltip } from '@mui/material';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { flatMap } from 'lodash';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
 import { HighlightTagsList } from '../navigation/HighlightTagsList.tsx';
 import {
   FlashcardChapterList,
@@ -24,36 +26,59 @@ import { FlashcardEditDialog } from './FlashcardEditDialog.tsx';
 
 const BOOK_FLASHCARDS_KEY = -1;
 
-interface FlashcardsTabProps {
-  book: BookDetails;
-  isDesktop: boolean;
-  onSearch: (value: string) => void;
-  onTagClick: (tagId: number | null) => void;
-  onChapterClick: (chapterId: number) => void;
-}
+export const FlashcardsTab = () => {
+  const { book, isDesktop, leftSidebarEl } = useBookPage();
 
-export const FlashcardsTab = ({
-  book,
-  isDesktop,
-  onSearch,
-  onTagClick,
-  onChapterClick,
-}: FlashcardsTabProps) => {
-  const { search: urlSearch, tagId: urlTagId } = useSearch({ from: '/book/$bookId' });
+  const { search: urlSearch, tagId: urlTagId } = useSearch({ from: '/book/$bookId/flashcards' });
+  const navigate = useNavigate({ from: '/book/$bookId/flashcards' });
 
   const searchText = urlSearch || '';
   const [selectedTagId, setSelectedTagId] = useState<number | undefined>(urlTagId);
   const [isReversed, setIsReversed] = useState(false);
   const [editingFlashcard, setEditingFlashcard] = useState<FlashcardWithContext | null>(null);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   useEffect(() => {
     setSelectedTagId(urlTagId);
   }, [urlTagId]);
 
-  const handleTagClick = (newTagId: number | null) => {
-    setSelectedTagId(newTagId || undefined);
-    onTagClick(newTagId);
-  };
+  // Navigation callbacks
+  const handleSearch = useCallback(
+    (value: string) => {
+      navigate({
+        search: (prev) => ({ ...prev, search: value || undefined }),
+        replace: true,
+      });
+    },
+    [navigate]
+  );
+
+  const handleTagClick = useCallback(
+    (newTagId: number | null) => {
+      setSelectedTagId(newTagId || undefined);
+      navigate({
+        search: (prev) => ({ ...prev, tagId: newTagId || undefined }),
+        replace: true,
+      });
+    },
+    [navigate]
+  );
+
+  const handleChapterClick = useCallback(
+    (chapterId: number) => {
+      if (urlSearch) {
+        navigate({
+          search: (prev) => ({ ...prev, search: undefined }),
+          replace: true,
+        });
+      }
+      scrollToElementWithHighlight(`chapter-${chapterId}`, {
+        behavior: 'smooth',
+        block: 'start',
+      });
+    },
+    [navigate, urlSearch]
+  );
 
   const bookChapters = book.chapters;
 
@@ -178,53 +203,128 @@ export const FlashcardsTab = ({
     selectedTagId
   );
 
+  // Mobile filter drawer tabs
+  const filterTabs: FilterTab[] = useMemo(
+    () => [
+      {
+        label: 'Chapters',
+        content: (
+          <ChapterNav
+            chapters={navData.chapters}
+            onChapterClick={(id) => {
+              handleChapterClick(id);
+              setFilterDrawerOpen(false);
+            }}
+            hideTitle
+            countType="flashcard"
+          />
+        ),
+      },
+      {
+        label: 'Tags',
+        content: (
+          <HighlightTagsList
+            tags={navData.tags}
+            tagGroups={book.highlight_tag_groups}
+            bookId={book.id}
+            selectedTag={selectedTagId}
+            onTagClick={(id) => {
+              handleTagClick(id);
+              setFilterDrawerOpen(false);
+            }}
+            hideTitle
+            hideEmptyGroups
+          />
+        ),
+      },
+    ],
+    [
+      navData.chapters,
+      navData.tags,
+      handleChapterClick,
+      book.highlight_tag_groups,
+      book.id,
+      selectedTagId,
+      handleTagClick,
+    ]
+  );
+
   return (
     <>
-      {!isDesktop && (
-        <>
-          <MobileFlashcardsContent
-            searchText={searchText}
-            onSearch={onSearch}
-            isReversed={isReversed}
-            onToggleReverse={() => setIsReversed(!isReversed)}
+      {/* Desktop: portal Tags into left sidebar */}
+      {isDesktop &&
+        leftSidebarEl &&
+        createPortal(
+          <HighlightTagsList
+            tags={navData.tags}
+            tagGroups={book.highlight_tag_groups}
+            bookId={book.id}
+            selectedTag={selectedTagId}
+            onTagClick={handleTagClick}
+            hideEmptyGroups
+          />,
+          leftSidebarEl
+        )}
+
+      {/* Search bar + filter/sort buttons */}
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
+        <Box sx={{ flexGrow: 1 }}>
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search flashcards..."
+            initialValue={searchText}
+          />
+        </Box>
+        <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
+          <IconButton
+            onClick={() => setIsReversed(!isReversed)}
+            sx={{
+              mt: '1px',
+              color: isReversed ? 'primary.main' : 'text.secondary',
+              '&:hover': { color: 'primary.main' },
+            }}
+          >
+            <SortIcon />
+          </IconButton>
+        </Tooltip>
+        {!isDesktop && (
+          <IconButton onClick={() => setFilterDrawerOpen(true)} aria-label="Open filters">
+            <FilterListIcon />
+          </IconButton>
+        )}
+      </Box>
+
+      {/* Content */}
+      {isDesktop ? (
+        <ContentWithSidebar>
+          <FlashcardChapterList
             chapters={flashcardChapters}
             bookId={book.id}
             emptyMessage={emptyMessage}
+            animationKey="flashcards"
             onEditFlashcard={setEditingFlashcard}
           />
-          <MobileNavigation
-            book={book}
-            onTagClick={handleTagClick}
-            selectedTag={selectedTagId}
-            onLabelClick={() => {}}
-            bookmarks={[]}
-            allHighlights={[]}
-            onBookmarkClick={() => {}}
+          <ChapterNav
             chapters={navData.chapters}
-            onChapterClick={onChapterClick}
-            displayTags={navData.tags}
-            currentTab="flashcards"
+            onChapterClick={handleChapterClick}
+            countType="flashcard"
+          />
+        </ContentWithSidebar>
+      ) : (
+        <>
+          <FlashcardChapterList
+            chapters={flashcardChapters}
+            bookId={book.id}
+            emptyMessage={emptyMessage}
+            animationKey="flashcards"
+            onEditFlashcard={setEditingFlashcard}
+          />
+          <FilterDrawer
+            open={filterDrawerOpen}
+            onClose={() => setFilterDrawerOpen(false)}
+            tabs={filterTabs}
           />
         </>
-      )}
-
-      {isDesktop && (
-        <DesktopFlashcardsContent
-          book={book}
-          tags={navData.tags}
-          selectedTagId={selectedTagId}
-          onTagClick={handleTagClick}
-          searchText={searchText}
-          onSearch={onSearch}
-          isReversed={isReversed}
-          onToggleReverse={() => setIsReversed(!isReversed)}
-          chapters={flashcardChapters}
-          navChapters={navData.chapters}
-          bookId={book.id}
-          emptyMessage={emptyMessage}
-          onEditFlashcard={setEditingFlashcard}
-          onChapterClick={onChapterClick}
-        />
       )}
 
       {editingFlashcard && (
@@ -238,139 +338,6 @@ export const FlashcardsTab = ({
     </>
   );
 };
-
-interface MobileFlashcardsContentProps {
-  searchText: string;
-  onSearch: (value: string) => void;
-  isReversed: boolean;
-  onToggleReverse: () => void;
-  chapters: FlashcardChapterData[];
-  bookId: number;
-  emptyMessage: string;
-  onEditFlashcard: (flashcard: FlashcardWithContext) => void;
-}
-
-const MobileFlashcardsContent = ({
-  searchText,
-  onSearch,
-  isReversed,
-  onToggleReverse,
-  chapters,
-  bookId,
-  emptyMessage,
-  onEditFlashcard,
-}: MobileFlashcardsContentProps) => (
-  <>
-    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
-      <Box sx={{ flexGrow: 1 }}>
-        <SearchBar
-          onSearch={onSearch}
-          placeholder="Search flashcards..."
-          initialValue={searchText}
-        />
-      </Box>
-      <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
-        <IconButton
-          onClick={onToggleReverse}
-          sx={{
-            mt: '1px',
-            color: isReversed ? 'primary.main' : 'text.secondary',
-            '&:hover': { color: 'primary.main' },
-          }}
-        >
-          <SortIcon />
-        </IconButton>
-      </Tooltip>
-    </Box>
-    <FlashcardChapterList
-      chapters={chapters}
-      bookId={bookId}
-      emptyMessage={emptyMessage}
-      animationKey="flashcards"
-      onEditFlashcard={onEditFlashcard}
-    />
-  </>
-);
-
-interface DesktopFlashcardsContentProps {
-  book: BookDetails;
-  tags: HighlightTagInBook[];
-  selectedTagId: number | undefined;
-  onTagClick: (tagId: number | null) => void;
-  searchText: string;
-  onSearch: (value: string) => void;
-  isReversed: boolean;
-  onToggleReverse: () => void;
-  chapters: FlashcardChapterData[];
-  navChapters: ChapterNavigationData[];
-  bookId: number;
-  emptyMessage: string;
-  onEditFlashcard: (flashcard: FlashcardWithContext) => void;
-  onChapterClick: (chapterId: number) => void;
-}
-
-const DesktopFlashcardsContent = ({
-  book,
-  tags,
-  selectedTagId,
-  onTagClick,
-  searchText,
-  onSearch,
-  isReversed,
-  onToggleReverse,
-  chapters,
-  navChapters,
-  bookId,
-  emptyMessage,
-  onEditFlashcard,
-  onChapterClick,
-}: DesktopFlashcardsContentProps) => (
-  <ThreeColumnLayout>
-    <Box></Box>
-    <Box>
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
-        <Box sx={{ flexGrow: 1 }}>
-          <SearchBar
-            onSearch={onSearch}
-            placeholder="Search flashcards..."
-            initialValue={searchText}
-          />
-        </Box>
-        <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
-          <IconButton
-            onClick={onToggleReverse}
-            sx={{
-              mt: '1px',
-              color: isReversed ? 'primary.main' : 'text.secondary',
-              '&:hover': { color: 'primary.main' },
-            }}
-          >
-            <SortIcon />
-          </IconButton>
-        </Tooltip>
-      </Box>
-      <FlashcardChapterList
-        chapters={chapters}
-        bookId={bookId}
-        emptyMessage={emptyMessage}
-        animationKey="flashcards"
-        onEditFlashcard={onEditFlashcard}
-      />
-    </Box>
-
-    <Stack gap={2}>
-      <HighlightTagsList
-        tags={tags}
-        tagGroups={book.highlight_tag_groups}
-        bookId={book.id}
-        selectedTag={selectedTagId}
-        onTagClick={onTagClick}
-        hideEmptyGroups
-      />
-      <ChapterNav chapters={navChapters} onChapterClick={onChapterClick} countType="flashcard" />
-    </Stack>
-  </ThreeColumnLayout>
-);
 
 const useFlashcardsTabData = (
   allFlashcardsWithContext: FlashcardWithContext[],

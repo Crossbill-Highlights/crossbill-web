@@ -2,58 +2,41 @@ import {
   useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet,
   useSearchBookHighlightsApiV1BooksBookIdHighlightsGet,
 } from '@/api/generated/highlights/highlights.ts';
-import type {
-  BookDetails,
-  Bookmark,
-  ChapterWithHighlights,
-  Highlight,
-  HighlightTagInBook,
-} from '@/api/generated/model';
+import type { ChapterWithHighlights } from '@/api/generated/model';
+import { scrollToElementWithHighlight } from '@/components/animations/scrollUtils';
 import { SearchBar } from '@/components/inputs/SearchBar.tsx';
-import { ThreeColumnLayout } from '@/components/layout/Layouts.tsx';
+import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
+import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { useHighlightModal } from '@/pages/BookPage/HighlightsTab/hooks/useHighlightModal.ts';
-import { SortIcon } from '@/theme/Icons.tsx';
+import { FilterListIcon, SortIcon } from '@/theme/Icons.tsx';
 import { Box, IconButton, Tooltip } from '@mui/material';
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { BookmarkList } from '../navigation/BookmarkList.tsx';
-import { ChapterNav, ChapterNavigationData } from '../navigation/ChapterNav.tsx';
+import { ChapterNav, type ChapterNavigationData } from '../navigation/ChapterNav.tsx';
+import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
 import { HighlightLabelsList } from '../navigation/HighlightLabelsList.tsx';
 import { HighlightTagsList } from '../navigation/HighlightTagsList.tsx';
-import { MobileNavigation } from '../navigation/MobileNavigation.tsx';
 import { HighlightsList, type ChapterData } from './HighlightsList.tsx';
 import { HighlightViewModal } from './HighlightViewModal';
 
-interface HighlightsTabProps {
-  book: BookDetails;
-  isDesktop: boolean;
-  onSearch: (value: string) => void;
-  onTagClick: (tagId: number | null) => void;
-  onLabelClick: (labelId: number | null) => void;
-  onBookmarkClick: (highlightId: number) => void;
-  onChapterClick: (chapterId: number) => void;
-}
+export const HighlightsTab = () => {
+  const { book, isDesktop, leftSidebarEl } = useBookPage();
 
-export const HighlightsTab = ({
-  book,
-  isDesktop,
-  onSearch,
-  onTagClick,
-  onLabelClick,
-  onBookmarkClick,
-  onChapterClick,
-}: HighlightsTabProps) => {
   const {
     search: urlSearch,
     tagId: urlTagId,
     labelId: urlLabelId,
-  } = useSearch({ from: '/book/$bookId' });
+  } = useSearch({ from: '/book/$bookId/highlights' });
+  const navigate = useNavigate({ from: '/book/$bookId/highlights' });
 
   const searchText = urlSearch || '';
   const [selectedTagId, setSelectedTagId] = useState<number | undefined>(urlTagId);
   const [selectedLabelId, setSelectedLabelId] = useState<number | undefined>(urlLabelId);
   const [isReversed, setIsReversed] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   useEffect(() => {
     setSelectedTagId(urlTagId);
@@ -66,15 +49,67 @@ export const HighlightsTab = ({
   // Fetch available tags for the highlight modal
   const { data: tagsResponse } = useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet(book.id);
 
-  const handleTagClick = (newTagId: number | null) => {
-    setSelectedTagId(newTagId || undefined);
-    onTagClick(newTagId);
-  };
+  // Navigation callbacks
+  const handleSearch = useCallback(
+    (value: string) => {
+      navigate({
+        search: (prev) => ({ ...prev, search: value || undefined }),
+        replace: true,
+      });
+    },
+    [navigate]
+  );
 
-  const handleLabelClick = (newLabelId: number | null) => {
-    setSelectedLabelId(newLabelId || undefined);
-    onLabelClick(newLabelId);
-  };
+  const handleTagClick = useCallback(
+    (newTagId: number | null) => {
+      setSelectedTagId(newTagId || undefined);
+      navigate({
+        search: (prev) => ({ ...prev, tagId: newTagId || undefined }),
+        replace: true,
+      });
+    },
+    [navigate]
+  );
+
+  const handleLabelClick = useCallback(
+    (newLabelId: number | null) => {
+      setSelectedLabelId(newLabelId || undefined);
+      navigate({
+        search: (prev) => ({ ...prev, labelId: newLabelId || undefined }),
+        replace: true,
+      });
+    },
+    [navigate]
+  );
+
+  const handleBookmarkClick = useCallback(
+    (highlightId: number) => {
+      if (urlSearch) {
+        navigate({
+          search: (prev) => ({ ...prev, search: undefined }),
+          replace: true,
+        });
+      }
+      scrollToElementWithHighlight(`highlight-${highlightId}`, { behavior: 'smooth' });
+    },
+    [navigate, urlSearch]
+  );
+
+  const handleChapterClick = useCallback(
+    (chapterId: number) => {
+      if (urlSearch) {
+        navigate({
+          search: (prev) => ({ ...prev, search: undefined }),
+          replace: true,
+        });
+      }
+      scrollToElementWithHighlight(`chapter-${chapterId}`, {
+        behavior: 'smooth',
+        block: 'start',
+      });
+    },
+    [navigate, urlSearch]
+  );
 
   const bookSearch = useBookSearch(book.id, searchText);
 
@@ -148,62 +183,176 @@ export const HighlightsTab = ({
     return 'No chapters found for this book.';
   }, [bookSearch.showSearchResults, selectedTagId, selectedLabelId]);
 
-  return (
-    <>
-      {!isDesktop && (
-        <>
-          <MobileHighlightsContent
-            searchText={searchText}
-            onSearch={onSearch}
-            isReversed={isReversed}
-            onToggleReverse={() => setIsReversed(!isReversed)}
-            chapters={chapters}
-            bookmarksByHighlightId={bookmarksByHighlightId}
-            isSearching={bookSearch.isSearching}
-            emptyMessage={emptyMessage}
-            onOpenHighlight={handleOpenHighlight}
+  // Mobile filter drawer tabs
+  const filterTabs: FilterTab[] = useMemo(
+    () => [
+      {
+        label: 'Chapters',
+        content: (
+          <ChapterNav
+            chapters={navData.chapters}
+            onChapterClick={(id) => {
+              handleChapterClick(id);
+              setFilterDrawerOpen(false);
+            }}
+            hideTitle
+            countType="highlight"
           />
-          <MobileNavigation
-            book={book}
-            onTagClick={handleTagClick}
-            selectedTag={selectedTagId}
-            selectedLabelId={selectedLabelId}
-            onLabelClick={handleLabelClick}
+        ),
+      },
+      {
+        label: 'Tags',
+        content: (
+          <Box>
+            <HighlightTagsList
+              tags={tags}
+              tagGroups={book.highlight_tag_groups}
+              bookId={book.id}
+              selectedTag={selectedTagId}
+              onTagClick={(id) => {
+                handleTagClick(id);
+                setFilterDrawerOpen(false);
+              }}
+              hideTitle
+            />
+            <Box sx={{ mt: 3 }}>
+              <HighlightLabelsList
+                bookId={book.id}
+                selectedLabelId={selectedLabelId}
+                onLabelClick={(id) => {
+                  handleLabelClick(id);
+                  setFilterDrawerOpen(false);
+                }}
+              />
+            </Box>
+          </Box>
+        ),
+      },
+      {
+        label: 'Bookmarks',
+        content: (
+          <BookmarkList
             bookmarks={book.bookmarks}
             allHighlights={allHighlights}
-            onBookmarkClick={onBookmarkClick}
-            chapters={navData.chapters}
-            onChapterClick={onChapterClick}
-            displayTags={tags}
-            currentTab="highlights"
+            onBookmarkClick={(id) => {
+              handleBookmarkClick(id);
+              setFilterDrawerOpen(false);
+            }}
+            hideTitle
+          />
+        ),
+      },
+    ],
+    [
+      navData.chapters,
+      handleChapterClick,
+      tags,
+      book.highlight_tag_groups,
+      book.id,
+      book.bookmarks,
+      selectedTagId,
+      handleTagClick,
+      selectedLabelId,
+      handleLabelClick,
+      allHighlights,
+      handleBookmarkClick,
+    ]
+  );
+
+  return (
+    <>
+      {/* Desktop: portal left sidebar content */}
+      {isDesktop &&
+        leftSidebarEl &&
+        createPortal(
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <HighlightTagsList
+              tags={tags}
+              tagGroups={book.highlight_tag_groups}
+              bookId={book.id}
+              selectedTag={selectedTagId}
+              onTagClick={handleTagClick}
+            />
+            <HighlightLabelsList
+              bookId={book.id}
+              selectedLabelId={selectedLabelId}
+              onLabelClick={handleLabelClick}
+            />
+          </Box>,
+          leftSidebarEl
+        )}
+
+      {/* Search bar + filter/sort buttons */}
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
+        <Box sx={{ flexGrow: 1 }}>
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search highlights..."
+            initialValue={searchText}
+          />
+        </Box>
+        <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
+          <IconButton
+            onClick={() => setIsReversed(!isReversed)}
+            sx={{
+              mt: '1px',
+              color: isReversed ? 'primary.main' : 'text.secondary',
+              '&:hover': { color: 'primary.main' },
+            }}
+          >
+            <SortIcon />
+          </IconButton>
+        </Tooltip>
+        {!isDesktop && (
+          <IconButton onClick={() => setFilterDrawerOpen(true)} aria-label="Open filters">
+            <FilterListIcon />
+          </IconButton>
+        )}
+      </Box>
+
+      {/* Content */}
+      {isDesktop ? (
+        <ContentWithSidebar>
+          <HighlightsList
+            chapters={chapters}
+            bookmarksByHighlightId={bookmarksByHighlightId}
+            isLoading={bookSearch.isSearching}
+            emptyMessage={emptyMessage}
+            animationKey="chapters-highlights"
+            onOpenHighlight={handleOpenHighlight}
+          />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <BookmarkList
+              bookmarks={book.bookmarks}
+              allHighlights={allHighlights}
+              onBookmarkClick={handleBookmarkClick}
+            />
+            <ChapterNav
+              chapters={navData.chapters}
+              onChapterClick={handleChapterClick}
+              countType="highlight"
+            />
+          </Box>
+        </ContentWithSidebar>
+      ) : (
+        <>
+          <HighlightsList
+            chapters={chapters}
+            bookmarksByHighlightId={bookmarksByHighlightId}
+            isLoading={bookSearch.isSearching}
+            emptyMessage={emptyMessage}
+            animationKey="chapters-highlights"
+            onOpenHighlight={handleOpenHighlight}
+          />
+          <FilterDrawer
+            open={filterDrawerOpen}
+            onClose={() => setFilterDrawerOpen(false)}
+            tabs={filterTabs}
           />
         </>
       )}
 
-      {isDesktop && (
-        <DesktopHighlightsContent
-          book={book}
-          tags={tags}
-          selectedTagId={selectedTagId}
-          onTagClick={handleTagClick}
-          selectedLabelId={selectedLabelId}
-          onLabelClick={handleLabelClick}
-          searchText={searchText}
-          onSearch={onSearch}
-          isReversed={isReversed}
-          onToggleReverse={() => setIsReversed(!isReversed)}
-          chapters={chapters}
-          navChapters={navData.chapters}
-          bookmarksByHighlightId={bookmarksByHighlightId}
-          allHighlights={allHighlights}
-          isSearching={bookSearch.isSearching}
-          emptyMessage={emptyMessage}
-          onOpenHighlight={handleOpenHighlight}
-          onBookmarkClick={onBookmarkClick}
-          onChapterClick={onChapterClick}
-        />
-      )}
-
+      {/* Highlight modal */}
       {currentHighlight && (
         <HighlightViewModal
           highlight={currentHighlight}
@@ -220,164 +369,6 @@ export const HighlightsTab = ({
     </>
   );
 };
-
-interface MobileHighlightsContentProps {
-  searchText: string;
-  onSearch: (value: string) => void;
-  isReversed: boolean;
-  onToggleReverse: () => void;
-  chapters: ChapterData[];
-  bookmarksByHighlightId: Record<number, Bookmark>;
-  isSearching: boolean;
-  emptyMessage: string;
-  onOpenHighlight: (highlightId: number) => void;
-}
-
-const MobileHighlightsContent = ({
-  searchText,
-  onSearch,
-  isReversed,
-  onToggleReverse,
-  chapters,
-  bookmarksByHighlightId,
-  isSearching,
-  emptyMessage,
-  onOpenHighlight,
-}: MobileHighlightsContentProps) => (
-  <>
-    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
-      <Box sx={{ flexGrow: 1 }}>
-        <SearchBar
-          onSearch={onSearch}
-          placeholder="Search highlights..."
-          initialValue={searchText}
-        />
-      </Box>
-      <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
-        <IconButton
-          onClick={onToggleReverse}
-          sx={{
-            mt: '1px',
-            color: isReversed ? 'primary.main' : 'text.secondary',
-            '&:hover': { color: 'primary.main' },
-          }}
-        >
-          <SortIcon />
-        </IconButton>
-      </Tooltip>
-    </Box>
-    <HighlightsList
-      chapters={chapters}
-      bookmarksByHighlightId={bookmarksByHighlightId}
-      isLoading={isSearching}
-      emptyMessage={emptyMessage}
-      animationKey={`chapters-highlights`}
-      onOpenHighlight={onOpenHighlight}
-    />
-  </>
-);
-
-interface DesktopHighlightsContentProps {
-  book: BookDetails;
-  tags: HighlightTagInBook[];
-  selectedTagId: number | undefined;
-  onTagClick: (tagId: number | null) => void;
-  selectedLabelId: number | undefined;
-  onLabelClick: (labelId: number | null) => void;
-  searchText: string;
-  onSearch: (value: string) => void;
-  isReversed: boolean;
-  onToggleReverse: () => void;
-  chapters: ChapterData[];
-  navChapters: ChapterNavigationData[];
-  bookmarksByHighlightId: Record<number, Bookmark>;
-  allHighlights: Highlight[];
-  isSearching: boolean;
-  emptyMessage: string;
-  onOpenHighlight: (highlightId: number) => void;
-  onBookmarkClick: (highlightId: number) => void;
-  onChapterClick: (chapterId: number) => void;
-}
-
-const DesktopHighlightsContent = ({
-  book,
-  tags,
-  selectedTagId,
-  onTagClick,
-  selectedLabelId,
-  onLabelClick,
-  searchText,
-  onSearch,
-  isReversed,
-  onToggleReverse,
-  chapters,
-  navChapters,
-  bookmarksByHighlightId,
-  allHighlights,
-  isSearching,
-  emptyMessage,
-  onOpenHighlight,
-  onBookmarkClick,
-  onChapterClick,
-}: DesktopHighlightsContentProps) => (
-  <ThreeColumnLayout>
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-    </Box>
-
-    <Box>
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
-        <Box sx={{ flexGrow: 1 }}>
-          <SearchBar
-            onSearch={onSearch}
-            placeholder="Search highlights..."
-            initialValue={searchText}
-          />
-        </Box>
-        <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
-          <IconButton
-            onClick={onToggleReverse}
-            sx={{
-              mt: '1px',
-              color: isReversed ? 'primary.main' : 'text.secondary',
-              '&:hover': { color: 'primary.main' },
-            }}
-          >
-            <SortIcon />
-          </IconButton>
-        </Tooltip>
-      </Box>
-      <HighlightsList
-        chapters={chapters}
-        bookmarksByHighlightId={bookmarksByHighlightId}
-        isLoading={isSearching}
-        emptyMessage={emptyMessage}
-        animationKey={`chapters-highlights`}
-        onOpenHighlight={onOpenHighlight}
-      />
-    </Box>
-
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <HighlightTagsList
-        tags={tags}
-        tagGroups={book.highlight_tag_groups}
-        bookId={book.id}
-        selectedTag={selectedTagId}
-        onTagClick={onTagClick}
-      />
-      <HighlightLabelsList
-        bookId={book.id}
-        selectedLabelId={selectedLabelId}
-        onLabelClick={onLabelClick}
-      />
-      <BookmarkList
-        bookmarks={book.bookmarks}
-        allHighlights={allHighlights}
-        onBookmarkClick={onBookmarkClick}
-      />
-      <ChapterNav chapters={navChapters} onChapterClick={onChapterClick} countType="highlight" />
-    </Box>
-  </ThreeColumnLayout>
-);
 
 const useHighlightsTabData = (chapters: ChapterData[]) => {
   const navChapters: ChapterNavigationData[] = useMemo(() => {

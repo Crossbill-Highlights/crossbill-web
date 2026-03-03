@@ -1,8 +1,8 @@
 import { useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet } from '@/api/generated/highlights/highlights';
-import type { BookDetails, ReadingSession } from '@/api/generated/model';
+import type { ReadingSession } from '@/api/generated/model';
 import { useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet } from '@/api/generated/reading-sessions/reading-sessions';
 import { Spinner } from '@/components/animations/Spinner.tsx';
-import { ThreeColumnLayout } from '@/components/layout/Layouts';
+import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { HighlightViewModal } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/HighlightViewModal';
 import { useHighlightModal } from '@/pages/BookPage/HighlightsTab/hooks/useHighlightModal';
 import { Alert, Box, Pagination } from '@mui/material';
@@ -13,14 +13,11 @@ import { ReadingSessionList } from './ReadingSessionList';
 
 const SESSIONS_PER_PAGE = 30;
 
-interface ReadingSessionsTabProps {
-  book: BookDetails;
-  isDesktop: boolean;
-}
+export const ReadingSessionsTab = () => {
+  const { book, isDesktop } = useBookPage();
 
-export const ReadingSessionsTab = ({ book, isDesktop }: ReadingSessionsTabProps) => {
-  const { sessionPage } = useSearch({ from: '/book/$bookId' });
-  const navigate = useNavigate({ from: '/book/$bookId' });
+  const { sessionPage } = useSearch({ from: '/book/$bookId/sessions' });
+  const navigate = useNavigate({ from: '/book/$bookId/sessions' });
 
   const currentPage = sessionPage || 1;
   const offset = (currentPage - 1) * SESSIONS_PER_PAGE;
@@ -36,7 +33,10 @@ export const ReadingSessionsTab = ({ book, isDesktop }: ReadingSessionsTabProps)
 
   const { data, isLoading, isError } = useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet(
     book.id,
-    { limit: SESSIONS_PER_PAGE, offset }
+    {
+      limit: SESSIONS_PER_PAGE,
+      offset,
+    }
   );
 
   const activeSession = useMemo(
@@ -77,70 +77,42 @@ export const ReadingSessionsTab = ({ book, isDesktop }: ReadingSessionsTabProps)
 
   const totalPages = data?.total ? Math.ceil(data.total / SESSIONS_PER_PAGE) : 0;
 
-  const content = (
-    <Box>
-      {isLoading && <Spinner />}
-
-      {isError && (
-        <Box sx={{ py: 3 }}>
-          <Alert severity="error">Failed to load reading sessions. Please try again later.</Alert>
-        </Box>
-      )}
-
-      {data && (
-        <>
-          <ReadingSessionList
-            sessions={data.sessions}
-            animationKey={`reading-sessions-${currentPage}`}
-            bookmarksByHighlightId={bookmarksByHighlightId}
-            onOpenHighlight={handleOpenSessionHighlight}
-          />
-          {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-              <Pagination
-                count={totalPages}
-                page={currentPage}
-                onChange={handlePageChange}
-                color="primary"
-                size="large"
-                showFirstButton
-                showLastButton
-              />
-            </Box>
-          )}
-        </>
-      )}
-    </Box>
-  );
-
-  if (!isDesktop) {
-    return (
-      <>
-        <Box sx={{ maxWidth: '800px', mx: 'auto' }}>{content}</Box>
-        {currentHighlight && (
-          <HighlightViewModal
-            highlight={currentHighlight}
-            bookId={book.id}
-            open={!!openHighlightId}
-            onClose={handleCloseModal}
-            availableTags={tagsResponse?.tags || []}
-            bookmarksByHighlightId={bookmarksByHighlightId}
-            allHighlights={sessionHighlights}
-            currentIndex={currentHighlightIndex}
-            onNavigate={handleModalNavigate}
-          />
-        )}
-      </>
-    );
-  }
-
   return (
     <>
-      <ThreeColumnLayout>
-        <div></div>
-        {content}
-        <div></div>
-      </ThreeColumnLayout>
+      <Box>
+        {isLoading && <Spinner />}
+
+        {isError && (
+          <Box sx={{ py: 3 }}>
+            <Alert severity="error">Failed to load reading sessions. Please try again later.</Alert>
+          </Box>
+        )}
+
+        {data && (
+          <>
+            <ReadingSessionList
+              sessions={data.sessions}
+              animationKey={`reading-sessions-${currentPage}`}
+              bookmarksByHighlightId={bookmarksByHighlightId}
+              onOpenHighlight={handleOpenSessionHighlight}
+            />
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={handlePageChange}
+                  color="primary"
+                  size="large"
+                  showFirstButton
+                  showLastButton
+                />
+              </Box>
+            )}
+          </>
+        )}
+      </Box>
+
       {currentHighlight && (
         <HighlightViewModal
           highlight={currentHighlight}
