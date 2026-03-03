@@ -10,7 +10,7 @@ import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { ChapterNav, type ChapterNavigationData } from '@/pages/BookPage/navigation/ChapterNav.tsx';
 import { FilterListIcon, SortIcon } from '@/theme/Icons.tsx';
-import { Box, IconButton, Tooltip } from '@mui/material';
+import { Box, Fab, IconButton, Tooltip } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { flatMap } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -27,7 +27,7 @@ import { FlashcardEditDialog } from './FlashcardEditDialog.tsx';
 const BOOK_FLASHCARDS_KEY = -1;
 
 export const FlashcardsTab = () => {
-  const { book, isDesktop, leftSidebarEl } = useBookPage();
+  const { book, isDesktop, leftSidebarEl, setHasFloatingFilter } = useBookPage();
 
   const { search: urlSearch, tagId: urlTagId } = useSearch({ from: '/book/$bookId/flashcards' });
   const navigate = useNavigate({ from: '/book/$bookId/flashcards' });
@@ -203,6 +203,14 @@ export const FlashcardsTab = () => {
     selectedTagId
   );
 
+  // Signal to BookPage that this tab has a floating filter FAB on mobile
+  useEffect(() => {
+    if (!isDesktop) {
+      setHasFloatingFilter(true);
+      return () => setHasFloatingFilter(false);
+    }
+  }, [isDesktop, setHasFloatingFilter]);
+
   // Mobile filter drawer tabs
   const filterTabs: FilterTab[] = useMemo(
     () => [
@@ -327,9 +335,6 @@ export const FlashcardsTab = () => {
                 <SortIcon />
               </IconButton>
             </Tooltip>
-            <IconButton onClick={() => setFilterDrawerOpen(true)} aria-label="Open filters">
-              <FilterListIcon />
-            </IconButton>
           </Box>
           <FlashcardChapterList
             chapters={flashcardChapters}
@@ -338,6 +343,20 @@ export const FlashcardsTab = () => {
             animationKey="flashcards"
             onEditFlashcard={setEditingFlashcard}
           />
+          <Fab
+            size="small"
+            color="primary"
+            aria-label="Open filters"
+            onClick={() => setFilterDrawerOpen(true)}
+            sx={{
+              position: 'fixed',
+              bottom: 80,
+              right: 24,
+              zIndex: 1000,
+            }}
+          >
+            <FilterListIcon />
+          </Fab>
           <FilterDrawer
             open={filterDrawerOpen}
             onClose={() => setFilterDrawerOpen(false)}

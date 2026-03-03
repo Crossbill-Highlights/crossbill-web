@@ -5,6 +5,9 @@ interface BookPageContextValue {
   book: BookDetails;
   isDesktop: boolean;
   leftSidebarEl: HTMLDivElement | null;
+  /** Whether a floating filter FAB is shown on mobile (affects ScrollToTop position) */
+  hasFloatingFilter: boolean;
+  setHasFloatingFilter: (visible: boolean) => void;
 }
 
 const BookPageContext = createContext<BookPageContextValue | null>(null);

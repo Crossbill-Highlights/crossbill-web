@@ -13,7 +13,7 @@ import { DesktopNavLinks } from '@/pages/BookPage/navigation/DesktopNavLinks.tsx
 import { MobileBottomNav } from '@/pages/BookPage/navigation/MobileBottomNav.tsx';
 import { Alert, Box, useMediaQuery, useTheme } from '@mui/material';
 import { Outlet, useParams } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export const BookPage = () => {
   const { bookId } = useParams({ strict: false });
@@ -23,6 +23,8 @@ export const BookPage = () => {
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
 
   const [leftSidebarEl, setLeftSidebarEl] = useState<HTMLDivElement | null>(null);
+  const [hasFloatingFilter, setHasFloatingFilter] = useState(false);
+  const setHasFloatingFilterCb = useCallback((v: boolean) => setHasFloatingFilter(v), []);
 
   // Update recently viewed on mount
   useEffect(() => {
@@ -50,9 +52,17 @@ export const BookPage = () => {
   }
 
   return (
-    <BookPageProvider value={{ book, isDesktop, leftSidebarEl }}>
+    <BookPageProvider
+      value={{
+        book,
+        isDesktop,
+        leftSidebarEl,
+        hasFloatingFilter,
+        setHasFloatingFilter: setHasFloatingFilterCb,
+      }}
+    >
       <PageContainer maxWidth="xl">
-        <ScrollToTopButton />
+        <ScrollToTopButton bottomOffset={!isDesktop && hasFloatingFilter ? 56 : 0} />
         <FadeInOut ekey={`book-${bookId}`}>
           {isDesktop ? (
             <>

@@ -13,11 +13,17 @@ interface ScrollToTopButtonProps {
    * @default 'smooth'
    */
   scrollBehavior?: ScrollBehavior;
+  /**
+   * Extra pixels to add to the bottom position (e.g. to stack above a floating FAB).
+   * @default 0
+   */
+  bottomOffset?: number;
 }
 
 export const ScrollToTopButton = ({
   scrollThreshold = 300,
   scrollBehavior = 'smooth',
+  bottomOffset = 0,
 }: ScrollToTopButtonProps) => {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -50,7 +56,7 @@ export const ScrollToTopButton = ({
         onClick={handleClick}
         sx={{
           position: 'fixed',
-          bottom: { xs: 80, lg: 24 },
+          bottom: { xs: 80 + bottomOffset, lg: 24 },
           right: 24,
           zIndex: 1000,
         }}
