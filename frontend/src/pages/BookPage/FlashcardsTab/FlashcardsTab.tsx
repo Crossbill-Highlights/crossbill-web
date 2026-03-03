@@ -10,7 +10,7 @@ import { ThreeColumnLayout } from '@/components/layout/Layouts.tsx';
 import { ChapterNav, type ChapterNavigationData } from '@/pages/BookPage/navigation/ChapterNav.tsx';
 import { MobileNavigation } from '@/pages/BookPage/navigation/MobileNavigation.tsx';
 import { SortIcon } from '@/theme/Icons.tsx';
-import { Box, IconButton, Tooltip } from '@mui/material';
+import { Box, IconButton, Stack, Tooltip } from '@mui/material';
 import { useSearch } from '@tanstack/react-router';
 import { flatMap } from 'lodash';
 import { useEffect, useMemo, useState } from 'react';
@@ -326,15 +326,7 @@ const DesktopFlashcardsContent = ({
   onChapterClick,
 }: DesktopFlashcardsContentProps) => (
   <ThreeColumnLayout>
-    <HighlightTagsList
-      tags={tags}
-      tagGroups={book.highlight_tag_groups}
-      bookId={book.id}
-      selectedTag={selectedTagId}
-      onTagClick={onTagClick}
-      hideEmptyGroups
-    />
-
+    <Box></Box>
     <Box>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
         <Box sx={{ flexGrow: 1 }}>
@@ -366,7 +358,17 @@ const DesktopFlashcardsContent = ({
       />
     </Box>
 
-    <ChapterNav chapters={navChapters} onChapterClick={onChapterClick} countType="flashcard" />
+    <Stack gap={2}>
+      <HighlightTagsList
+        tags={tags}
+        tagGroups={book.highlight_tag_groups}
+        bookId={book.id}
+        selectedTag={selectedTagId}
+        onTagClick={onTagClick}
+        hideEmptyGroups
+      />
+      <ChapterNav chapters={navChapters} onChapterClick={onChapterClick} countType="flashcard" />
+    </Stack>
   </ThreeColumnLayout>
 );
 

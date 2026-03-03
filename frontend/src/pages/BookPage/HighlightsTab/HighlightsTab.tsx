@@ -322,18 +322,6 @@ const DesktopHighlightsContent = ({
 }: DesktopHighlightsContentProps) => (
   <ThreeColumnLayout>
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <HighlightTagsList
-        tags={tags}
-        tagGroups={book.highlight_tag_groups}
-        bookId={book.id}
-        selectedTag={selectedTagId}
-        onTagClick={onTagClick}
-      />
-      <HighlightLabelsList
-        bookId={book.id}
-        selectedLabelId={selectedLabelId}
-        onLabelClick={onLabelClick}
-      />
     </Box>
 
     <Box>
@@ -369,6 +357,18 @@ const DesktopHighlightsContent = ({
     </Box>
 
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <HighlightTagsList
+        tags={tags}
+        tagGroups={book.highlight_tag_groups}
+        bookId={book.id}
+        selectedTag={selectedTagId}
+        onTagClick={onTagClick}
+      />
+      <HighlightLabelsList
+        bookId={book.id}
+        selectedLabelId={selectedLabelId}
+        onLabelClick={onLabelClick}
+      />
       <BookmarkList
         bookmarks={book.bookmarks}
         allHighlights={allHighlights}
