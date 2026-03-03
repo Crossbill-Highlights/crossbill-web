@@ -22,8 +22,10 @@ export const useChapterDetailsModal = ({
   // strict: false so this hook works from any child route under /book/$bookId
   const search = useSearch({ strict: false }) as { chapterId?: number };
   const urlChapterId = search.chapterId;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const navigate: any = useNavigate();
+  const navigate = useNavigate() as (opts: {
+    search: (prev: Record<string, unknown>) => Record<string, unknown>;
+    replace?: boolean;
+  }) => Promise<void>;
 
   // Local state used when syncToUrl is false
   const [localChapterId, setLocalChapterId] = useState<number | undefined>();

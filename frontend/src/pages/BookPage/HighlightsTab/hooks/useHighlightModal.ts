@@ -26,8 +26,10 @@ export const useHighlightModal = ({
   // strict: false so this hook works from any child route under /book/$bookId
   const search = useSearch({ strict: false }) as { highlightId?: number };
   const urlHighlightId = search.highlightId;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const navigate: any = useNavigate();
+  const navigate = useNavigate() as (opts: {
+    search: (prev: Record<string, unknown>) => Record<string, unknown>;
+    replace?: boolean;
+  }) => Promise<void>;
 
   // Local state used when syncToUrl is false
   const [localHighlightId, setLocalHighlightId] = useState<number | undefined>();
