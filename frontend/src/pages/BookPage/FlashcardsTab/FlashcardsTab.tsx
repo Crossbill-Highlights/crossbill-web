@@ -266,44 +266,39 @@ export const FlashcardsTab = () => {
           leftSidebarEl
         )}
 
-      {/* Search bar + filter/sort buttons */}
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
-        <Box sx={{ flexGrow: 1 }}>
-          <SearchBar
-            onSearch={handleSearch}
-            placeholder="Search flashcards..."
-            initialValue={searchText}
-          />
-        </Box>
-        <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
-          <IconButton
-            onClick={() => setIsReversed(!isReversed)}
-            sx={{
-              mt: '1px',
-              color: isReversed ? 'primary.main' : 'text.secondary',
-              '&:hover': { color: 'primary.main' },
-            }}
-          >
-            <SortIcon />
-          </IconButton>
-        </Tooltip>
-        {!isDesktop && (
-          <IconButton onClick={() => setFilterDrawerOpen(true)} aria-label="Open filters">
-            <FilterListIcon />
-          </IconButton>
-        )}
-      </Box>
-
       {/* Content */}
       {isDesktop ? (
         <ContentWithSidebar>
-          <FlashcardChapterList
-            chapters={flashcardChapters}
-            bookId={book.id}
-            emptyMessage={emptyMessage}
-            animationKey="flashcards"
-            onEditFlashcard={setEditingFlashcard}
-          />
+          <Box>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
+              <Box sx={{ flexGrow: 1 }}>
+                <SearchBar
+                  onSearch={handleSearch}
+                  placeholder="Search flashcards..."
+                  initialValue={searchText}
+                />
+              </Box>
+              <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
+                <IconButton
+                  onClick={() => setIsReversed(!isReversed)}
+                  sx={{
+                    mt: '1px',
+                    color: isReversed ? 'primary.main' : 'text.secondary',
+                    '&:hover': { color: 'primary.main' },
+                  }}
+                >
+                  <SortIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+            <FlashcardChapterList
+              chapters={flashcardChapters}
+              bookId={book.id}
+              emptyMessage={emptyMessage}
+              animationKey="flashcards"
+              onEditFlashcard={setEditingFlashcard}
+            />
+          </Box>
           <ChapterNav
             chapters={navData.chapters}
             onChapterClick={handleChapterClick}
@@ -312,6 +307,30 @@ export const FlashcardsTab = () => {
         </ContentWithSidebar>
       ) : (
         <>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
+            <Box sx={{ flexGrow: 1 }}>
+              <SearchBar
+                onSearch={handleSearch}
+                placeholder="Search flashcards..."
+                initialValue={searchText}
+              />
+            </Box>
+            <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
+              <IconButton
+                onClick={() => setIsReversed(!isReversed)}
+                sx={{
+                  mt: '1px',
+                  color: isReversed ? 'primary.main' : 'text.secondary',
+                  '&:hover': { color: 'primary.main' },
+                }}
+              >
+                <SortIcon />
+              </IconButton>
+            </Tooltip>
+            <IconButton onClick={() => setFilterDrawerOpen(true)} aria-label="Open filters">
+              <FilterListIcon />
+            </IconButton>
+          </Box>
           <FlashcardChapterList
             chapters={flashcardChapters}
             bookId={book.id}

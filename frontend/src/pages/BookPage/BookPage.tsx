@@ -63,6 +63,7 @@ export const BookPage = () => {
                   gridTemplateColumns: '280px 1fr',
                   gap: 4,
                   alignItems: 'start',
+                  mt: 5,
                 }}
               >
                 <Box>

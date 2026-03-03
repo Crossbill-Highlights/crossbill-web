@@ -282,45 +282,40 @@ export const HighlightsTab = () => {
           leftSidebarEl
         )}
 
-      {/* Search bar + filter/sort buttons */}
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
-        <Box sx={{ flexGrow: 1 }}>
-          <SearchBar
-            onSearch={handleSearch}
-            placeholder="Search highlights..."
-            initialValue={searchText}
-          />
-        </Box>
-        <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
-          <IconButton
-            onClick={() => setIsReversed(!isReversed)}
-            sx={{
-              mt: '1px',
-              color: isReversed ? 'primary.main' : 'text.secondary',
-              '&:hover': { color: 'primary.main' },
-            }}
-          >
-            <SortIcon />
-          </IconButton>
-        </Tooltip>
-        {!isDesktop && (
-          <IconButton onClick={() => setFilterDrawerOpen(true)} aria-label="Open filters">
-            <FilterListIcon />
-          </IconButton>
-        )}
-      </Box>
-
       {/* Content */}
       {isDesktop ? (
         <ContentWithSidebar>
-          <HighlightsList
-            chapters={chapters}
-            bookmarksByHighlightId={bookmarksByHighlightId}
-            isLoading={bookSearch.isSearching}
-            emptyMessage={emptyMessage}
-            animationKey="chapters-highlights"
-            onOpenHighlight={handleOpenHighlight}
-          />
+          <Box>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
+              <Box sx={{ flexGrow: 1 }}>
+                <SearchBar
+                  onSearch={handleSearch}
+                  placeholder="Search highlights..."
+                  initialValue={searchText}
+                />
+              </Box>
+              <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
+                <IconButton
+                  onClick={() => setIsReversed(!isReversed)}
+                  sx={{
+                    mt: '1px',
+                    color: isReversed ? 'primary.main' : 'text.secondary',
+                    '&:hover': { color: 'primary.main' },
+                  }}
+                >
+                  <SortIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+            <HighlightsList
+              chapters={chapters}
+              bookmarksByHighlightId={bookmarksByHighlightId}
+              isLoading={bookSearch.isSearching}
+              emptyMessage={emptyMessage}
+              animationKey="chapters-highlights"
+              onOpenHighlight={handleOpenHighlight}
+            />
+          </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <BookmarkList
               bookmarks={book.bookmarks}
@@ -336,6 +331,30 @@ export const HighlightsTab = () => {
         </ContentWithSidebar>
       ) : (
         <>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
+            <Box sx={{ flexGrow: 1 }}>
+              <SearchBar
+                onSearch={handleSearch}
+                placeholder="Search highlights..."
+                initialValue={searchText}
+              />
+            </Box>
+            <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
+              <IconButton
+                onClick={() => setIsReversed(!isReversed)}
+                sx={{
+                  mt: '1px',
+                  color: isReversed ? 'primary.main' : 'text.secondary',
+                  '&:hover': { color: 'primary.main' },
+                }}
+              >
+                <SortIcon />
+              </IconButton>
+            </Tooltip>
+            <IconButton onClick={() => setFilterDrawerOpen(true)} aria-label="Open filters">
+              <FilterListIcon />
+            </IconButton>
+          </Box>
           <HighlightsList
             chapters={chapters}
             bookmarksByHighlightId={bookmarksByHighlightId}
