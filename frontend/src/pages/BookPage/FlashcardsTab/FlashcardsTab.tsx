@@ -2,6 +2,7 @@ import type {
   ChapterWithHighlights,
   Flashcard,
   Highlight,
+  HighlightTagGroupInBook,
   HighlightTagInBook,
 } from '@/api/generated/model';
 import { scrollToElementWithHighlight } from '@/components/animations/scrollUtils';
@@ -210,51 +211,16 @@ export const FlashcardsTab = () => {
     }
   }, [isDesktop, setHasFloatingFilter]);
 
-  // Mobile filter drawer tabs
-  const filterTabs: FilterTab[] = useMemo(
-    () => [
-      {
-        label: 'Chapters',
-        content: (
-          <ChapterNav
-            chapters={navData.chapters}
-            onChapterClick={(id) => {
-              handleChapterClick(id);
-              setFilterDrawerOpen(false);
-            }}
-            hideTitle
-            countType="flashcard"
-          />
-        ),
-      },
-      {
-        label: 'Tags',
-        content: (
-          <HighlightTagsList
-            tags={navData.tags}
-            tagGroups={book.highlight_tag_groups}
-            bookId={book.id}
-            selectedTag={selectedTagId}
-            onTagClick={(id) => {
-              handleTagClick(id);
-              setFilterDrawerOpen(false);
-            }}
-            hideTitle
-            hideEmptyGroups
-          />
-        ),
-      },
-    ],
-    [
-      navData.chapters,
-      navData.tags,
-      handleChapterClick,
-      book.highlight_tag_groups,
-      book.id,
-      selectedTagId,
-      handleTagClick,
-    ]
-  );
+  const filterTabs = useFlashcardsFilterTabs({
+    navChapters: navData.chapters,
+    tags: navData.tags,
+    tagGroups: book.highlight_tag_groups,
+    bookId: book.id,
+    selectedTagId,
+    handleChapterClick,
+    handleTagClick,
+    setFilterDrawerOpen,
+  });
 
   return (
     <>
@@ -262,13 +228,12 @@ export const FlashcardsTab = () => {
       {isDesktop &&
         leftSidebarEl &&
         createPortal(
-          <HighlightTagsList
+          <FlashcardsSidebar
             tags={navData.tags}
             tagGroups={book.highlight_tag_groups}
             bookId={book.id}
-            selectedTag={selectedTagId}
+            selectedTagId={selectedTagId}
             onTagClick={handleTagClick}
-            hideEmptyGroups
           />,
           leftSidebarEl
         )}
@@ -375,6 +340,102 @@ export const FlashcardsTab = () => {
     </>
   );
 };
+
+// --- Extracted subcomponents ---
+
+interface FlashcardsSidebarProps {
+  tags: HighlightTagInBook[];
+  tagGroups: HighlightTagGroupInBook[];
+  bookId: number;
+  selectedTagId: number | undefined;
+  onTagClick: (tagId: number | null) => void;
+}
+
+const FlashcardsSidebar = ({
+  tags,
+  tagGroups,
+  bookId,
+  selectedTagId,
+  onTagClick,
+}: FlashcardsSidebarProps) => (
+  <HighlightTagsList
+    tags={tags}
+    tagGroups={tagGroups}
+    bookId={bookId}
+    selectedTag={selectedTagId}
+    onTagClick={onTagClick}
+    hideEmptyGroups
+  />
+);
+
+interface UseFlashcardsFilterTabsParams {
+  navChapters: ChapterNavigationData[];
+  tags: HighlightTagInBook[];
+  tagGroups: HighlightTagGroupInBook[];
+  bookId: number;
+  selectedTagId: number | undefined;
+  handleChapterClick: (chapterId: number) => void;
+  handleTagClick: (tagId: number | null) => void;
+  setFilterDrawerOpen: (open: boolean) => void;
+}
+
+const useFlashcardsFilterTabs = ({
+  navChapters,
+  tags,
+  tagGroups,
+  bookId,
+  selectedTagId,
+  handleChapterClick,
+  handleTagClick,
+  setFilterDrawerOpen,
+}: UseFlashcardsFilterTabsParams): FilterTab[] =>
+  useMemo(
+    () => [
+      {
+        label: 'Chapters',
+        content: (
+          <ChapterNav
+            chapters={navChapters}
+            onChapterClick={(id) => {
+              handleChapterClick(id);
+              setFilterDrawerOpen(false);
+            }}
+            hideTitle
+            countType="flashcard"
+          />
+        ),
+      },
+      {
+        label: 'Tags',
+        content: (
+          <HighlightTagsList
+            tags={tags}
+            tagGroups={tagGroups}
+            bookId={bookId}
+            selectedTag={selectedTagId}
+            onTagClick={(id) => {
+              handleTagClick(id);
+              setFilterDrawerOpen(false);
+            }}
+            hideTitle
+            hideEmptyGroups
+          />
+        ),
+      },
+    ],
+    [
+      navChapters,
+      tags,
+      handleChapterClick,
+      tagGroups,
+      bookId,
+      selectedTagId,
+      handleTagClick,
+      setFilterDrawerOpen,
+    ]
+  );
+
+// --- Private hooks ---
 
 const useFlashcardsTabData = (
   allFlashcardsWithContext: FlashcardWithContext[],

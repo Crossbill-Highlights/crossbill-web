@@ -2,7 +2,13 @@ import {
   useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet,
   useSearchBookHighlightsApiV1BooksBookIdHighlightsGet,
 } from '@/api/generated/highlights/highlights.ts';
-import type { ChapterWithHighlights } from '@/api/generated/model';
+import type {
+  Bookmark,
+  ChapterWithHighlights,
+  Highlight,
+  HighlightTagGroupInBook,
+  HighlightTagInBook,
+} from '@/api/generated/model';
 import { scrollToElementWithHighlight } from '@/components/animations/scrollUtils';
 import { SearchBar } from '@/components/inputs/SearchBar.tsx';
 import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
@@ -191,81 +197,21 @@ export const HighlightsTab = () => {
     }
   }, [isDesktop, setHasFloatingFilter]);
 
-  // Mobile filter drawer tabs
-  const filterTabs: FilterTab[] = useMemo(
-    () => [
-      {
-        label: 'Chapters',
-        content: (
-          <ChapterNav
-            chapters={navData.chapters}
-            onChapterClick={(id) => {
-              handleChapterClick(id);
-              setFilterDrawerOpen(false);
-            }}
-            hideTitle
-            countType="highlight"
-          />
-        ),
-      },
-      {
-        label: 'Tags',
-        content: (
-          <Box>
-            <HighlightTagsList
-              tags={tags}
-              tagGroups={book.highlight_tag_groups}
-              bookId={book.id}
-              selectedTag={selectedTagId}
-              onTagClick={(id) => {
-                handleTagClick(id);
-                setFilterDrawerOpen(false);
-              }}
-              hideTitle
-            />
-            <Box sx={{ mt: 3 }}>
-              <HighlightLabelsList
-                bookId={book.id}
-                selectedLabelId={selectedLabelId}
-                onLabelClick={(id) => {
-                  handleLabelClick(id);
-                  setFilterDrawerOpen(false);
-                }}
-              />
-            </Box>
-          </Box>
-        ),
-      },
-      {
-        label: 'Bookmarks',
-        content: (
-          <BookmarkList
-            bookmarks={book.bookmarks}
-            allHighlights={allHighlights}
-            onBookmarkClick={(id) => {
-              handleBookmarkClick(id);
-              setFilterDrawerOpen(false);
-            }}
-            hideTitle
-          />
-        ),
-      },
-    ],
-    [
-      navData.chapters,
-      handleChapterClick,
-      tags,
-      book.highlight_tag_groups,
-      book.id,
-      book.bookmarks,
-      selectedTagId,
-      handleTagClick,
-      selectedLabelId,
-      handleLabelClick,
-      allHighlights,
-      handleBookmarkClick,
-    ]
-  );
+  const filterTabs = useHighlightsFilterTabs({
+    navChapters: navData.chapters,
+    tags,
+    tagGroups: book.highlight_tag_groups,
+    bookId: book.id,
+    bookmarks: book.bookmarks,
+    allHighlights,
+    selectedTagId,
+    selectedLabelId,
+    handleChapterClick,
+    handleTagClick,
+    handleLabelClick,
+    handleBookmarkClick,
+    setFilterDrawerOpen,
+  });
 
   return (
     <>
@@ -273,20 +219,15 @@ export const HighlightsTab = () => {
       {isDesktop &&
         leftSidebarEl &&
         createPortal(
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <HighlightTagsList
-              tags={tags}
-              tagGroups={book.highlight_tag_groups}
-              bookId={book.id}
-              selectedTag={selectedTagId}
-              onTagClick={handleTagClick}
-            />
-            <HighlightLabelsList
-              bookId={book.id}
-              selectedLabelId={selectedLabelId}
-              onLabelClick={handleLabelClick}
-            />
-          </Box>,
+          <HighlightsSidebar
+            tags={tags}
+            tagGroups={book.highlight_tag_groups}
+            bookId={book.id}
+            selectedTagId={selectedTagId}
+            onTagClick={handleTagClick}
+            selectedLabelId={selectedLabelId}
+            onLabelClick={handleLabelClick}
+          />,
           leftSidebarEl
         )}
 
@@ -407,6 +348,152 @@ export const HighlightsTab = () => {
     </>
   );
 };
+
+// --- Extracted subcomponents ---
+
+interface HighlightsSidebarProps {
+  tags: HighlightTagInBook[];
+  tagGroups: HighlightTagGroupInBook[];
+  bookId: number;
+  selectedTagId: number | undefined;
+  onTagClick: (tagId: number | null) => void;
+  selectedLabelId: number | undefined;
+  onLabelClick: (labelId: number | null) => void;
+}
+
+const HighlightsSidebar = ({
+  tags,
+  tagGroups,
+  bookId,
+  selectedTagId,
+  onTagClick,
+  selectedLabelId,
+  onLabelClick,
+}: HighlightsSidebarProps) => (
+  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <HighlightTagsList
+      tags={tags}
+      tagGroups={tagGroups}
+      bookId={bookId}
+      selectedTag={selectedTagId}
+      onTagClick={onTagClick}
+    />
+    <HighlightLabelsList
+      bookId={bookId}
+      selectedLabelId={selectedLabelId}
+      onLabelClick={onLabelClick}
+    />
+  </Box>
+);
+
+interface UseHighlightsFilterTabsParams {
+  navChapters: ChapterNavigationData[];
+  tags: HighlightTagInBook[];
+  tagGroups: HighlightTagGroupInBook[];
+  bookId: number;
+  bookmarks: Bookmark[];
+  allHighlights: Highlight[];
+  selectedTagId: number | undefined;
+  selectedLabelId: number | undefined;
+  handleChapterClick: (chapterId: number) => void;
+  handleTagClick: (tagId: number | null) => void;
+  handleLabelClick: (labelId: number | null) => void;
+  handleBookmarkClick: (highlightId: number) => void;
+  setFilterDrawerOpen: (open: boolean) => void;
+}
+
+const useHighlightsFilterTabs = ({
+  navChapters,
+  tags,
+  tagGroups,
+  bookId,
+  bookmarks,
+  allHighlights,
+  selectedTagId,
+  selectedLabelId,
+  handleChapterClick,
+  handleTagClick,
+  handleLabelClick,
+  handleBookmarkClick,
+  setFilterDrawerOpen,
+}: UseHighlightsFilterTabsParams): FilterTab[] =>
+  useMemo(
+    () => [
+      {
+        label: 'Chapters',
+        content: (
+          <ChapterNav
+            chapters={navChapters}
+            onChapterClick={(id) => {
+              handleChapterClick(id);
+              setFilterDrawerOpen(false);
+            }}
+            hideTitle
+            countType="highlight"
+          />
+        ),
+      },
+      {
+        label: 'Tags',
+        content: (
+          <Box>
+            <HighlightTagsList
+              tags={tags}
+              tagGroups={tagGroups}
+              bookId={bookId}
+              selectedTag={selectedTagId}
+              onTagClick={(id) => {
+                handleTagClick(id);
+                setFilterDrawerOpen(false);
+              }}
+              hideTitle
+            />
+            <Box sx={{ mt: 3 }}>
+              <HighlightLabelsList
+                bookId={bookId}
+                selectedLabelId={selectedLabelId}
+                onLabelClick={(id) => {
+                  handleLabelClick(id);
+                  setFilterDrawerOpen(false);
+                }}
+              />
+            </Box>
+          </Box>
+        ),
+      },
+      {
+        label: 'Bookmarks',
+        content: (
+          <BookmarkList
+            bookmarks={bookmarks}
+            allHighlights={allHighlights}
+            onBookmarkClick={(id) => {
+              handleBookmarkClick(id);
+              setFilterDrawerOpen(false);
+            }}
+            hideTitle
+          />
+        ),
+      },
+    ],
+    [
+      navChapters,
+      handleChapterClick,
+      tags,
+      tagGroups,
+      bookId,
+      bookmarks,
+      selectedTagId,
+      handleTagClick,
+      selectedLabelId,
+      handleLabelClick,
+      allHighlights,
+      handleBookmarkClick,
+      setFilterDrawerOpen,
+    ]
+  );
+
+// --- Private hooks and helpers ---
 
 const useHighlightsTabData = (chapters: ChapterData[]) => {
   const navChapters: ChapterNavigationData[] = useMemo(() => {
