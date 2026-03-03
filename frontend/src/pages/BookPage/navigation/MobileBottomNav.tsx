@@ -23,7 +23,17 @@ export const MobileBottomNav = () => {
   };
 
   return (
-    <Paper elevation={3} sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1100 }}>
+    <Paper
+      elevation={3}
+      sx={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1100,
+        pb: 'env(safe-area-inset-bottom)',
+      }}
+    >
       <BottomNavigation value={activePage} onChange={handleChange} showLabels>
         {BOOK_PAGE_ROUTES.map((route) => {
           const Icon = route.icon;

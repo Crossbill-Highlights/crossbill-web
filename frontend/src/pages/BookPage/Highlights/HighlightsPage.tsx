@@ -316,7 +316,7 @@ export const HighlightsPage = () => {
             onClick={() => setFilterDrawerOpen(true)}
             sx={{
               position: 'fixed',
-              bottom: 80,
+              bottom: 'calc(80px + env(safe-area-inset-bottom))',
               right: 24,
               zIndex: 1000,
             }}
