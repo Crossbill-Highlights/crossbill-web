@@ -19,8 +19,11 @@ export const useChapterDetailsModal = ({
   leafChapters,
   syncToUrl = true,
 }: UseChapterDetailsModalOptions): UseChapterDetailsModalReturn => {
-  const { chapterId: urlChapterId } = useSearch({ from: '/book/$bookId' });
-  const navigate = useNavigate({ from: '/book/$bookId' });
+  // strict: false so this hook works from any child route under /book/$bookId
+  const search = useSearch({ strict: false }) as { chapterId?: number };
+  const urlChapterId = search.chapterId;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const navigate: any = useNavigate();
 
   // Local state used when syncToUrl is false
   const [localChapterId, setLocalChapterId] = useState<number | undefined>();
@@ -31,11 +34,8 @@ export const useChapterDetailsModal = ({
   const updateChapterId = useCallback(
     (newId: number | undefined, replace: boolean) => {
       if (syncToUrl) {
-        navigate({
-          search: (prev) => ({
-            ...prev,
-            chapterId: newId,
-          }),
+        void navigate({
+          search: (prev: Record<string, unknown>) => ({ ...prev, chapterId: newId }),
           replace,
         });
       } else {

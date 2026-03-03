@@ -53,7 +53,11 @@ export const ReadingSessionsTab = () => {
     handleOpenHighlight,
     handleCloseHighlight,
     handleModalNavigate,
-  } = useHighlightModal({ allHighlights: sessionHighlights, isMobile: !isDesktop });
+  } = useHighlightModal({
+    allHighlights: sessionHighlights,
+    isMobile: !isDesktop,
+    syncToUrl: false,
+  });
 
   const handleOpenSessionHighlight = (sessionId: number, highlightId: number) => {
     setActiveSessionId(sessionId);

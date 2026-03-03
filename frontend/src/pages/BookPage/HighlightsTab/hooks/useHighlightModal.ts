@@ -24,8 +24,11 @@ export const useHighlightModal = ({
   isMobile,
   syncToUrl = true,
 }: UseHighlightModalOptions): UseHighlightModalReturn => {
-  const { highlightId: urlHighlightId } = useSearch({ from: '/book/$bookId' });
-  const navigate = useNavigate({ from: '/book/$bookId' });
+  // strict: false so this hook works from any child route under /book/$bookId
+  const search = useSearch({ strict: false }) as { highlightId?: number };
+  const urlHighlightId = search.highlightId;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const navigate: any = useNavigate();
 
   // Local state used when syncToUrl is false
   const [localHighlightId, setLocalHighlightId] = useState<number | undefined>();
@@ -36,11 +39,9 @@ export const useHighlightModal = ({
   const updateHighlightId = useCallback(
     (newId: number | undefined, replace: boolean) => {
       if (syncToUrl) {
-        navigate({
-          search: (prev) => ({
-            ...prev,
-            highlightId: newId,
-          }),
+        // Navigate on current route — search params vary by route but highlightId is supported on highlights route
+        void navigate({
+          search: (prev: Record<string, unknown>) => ({ ...prev, highlightId: newId }),
           replace,
         });
       } else {

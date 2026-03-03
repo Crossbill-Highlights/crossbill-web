@@ -8,7 +8,11 @@ import { Box, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/mate
 import { Link, useMatchRoute } from '@tanstack/react-router';
 
 interface NavItem {
-  to: string;
+  to:
+    | '/book/$bookId/structure'
+    | '/book/$bookId/highlights'
+    | '/book/$bookId/flashcards'
+    | '/book/$bookId/sessions';
   label: string;
   icon: React.ReactNode;
 }
@@ -34,38 +38,41 @@ export const DesktopNavLinks = ({ bookId }: DesktopNavLinksProps) => {
           const isActive = !!matchRoute({ to: item.to, params: { bookId } });
 
           return (
-            <ListItemButton
+            <Link
               key={item.to}
-              component={Link}
               to={item.to}
               params={{ bookId }}
-              selected={isActive}
-              sx={{
-                borderRadius: 1,
-                mb: 0.5,
-                py: 1,
-                '&.Mui-selected': {
-                  backgroundColor: 'action.selected',
-                  '&:hover': {
-                    backgroundColor: 'action.selected',
-                  },
-                },
-              }}
+              style={{ textDecoration: 'none', color: 'inherit' }}
             >
-              <ListItemIcon
-                sx={{ minWidth: 36, color: isActive ? 'primary.main' : 'text.secondary' }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.label}
-                primaryTypographyProps={{
-                  variant: 'body2',
-                  fontWeight: isActive ? 600 : 400,
-                  color: isActive ? 'primary.main' : 'text.primary',
+              <ListItemButton
+                selected={isActive}
+                sx={{
+                  borderRadius: 1,
+                  mb: 0.5,
+                  py: 1,
+                  '&.Mui-selected': {
+                    backgroundColor: 'action.selected',
+                    '&:hover': {
+                      backgroundColor: 'action.selected',
+                    },
+                  },
                 }}
-              />
-            </ListItemButton>
+              >
+                <ListItemIcon
+                  sx={{ minWidth: 36, color: isActive ? 'primary.main' : 'text.secondary' }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{
+                    variant: 'body2',
+                    fontWeight: isActive ? 600 : 400,
+                    color: isActive ? 'primary.main' : 'text.primary',
+                  }}
+                />
+              </ListItemButton>
+            </Link>
           );
         })}
       </List>
