@@ -10,6 +10,7 @@ export {
   Close as CloseIcon,
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
+  FilterList as FilterListIcon,
   Menu as MenuIcon,
   KeyboardArrowUp as ScrollToTopIcon,
 } from '@mui/icons-material';

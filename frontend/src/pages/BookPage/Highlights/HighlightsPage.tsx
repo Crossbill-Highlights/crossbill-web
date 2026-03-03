@@ -1,0 +1,569 @@
+import {
+  useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet,
+  useSearchBookHighlightsApiV1BooksBookIdHighlightsGet,
+} from '@/api/generated/highlights/highlights.ts';
+import type {
+  Bookmark,
+  ChapterWithHighlights,
+  Highlight,
+  HighlightTagGroupInBook,
+  HighlightTagInBook,
+} from '@/api/generated/model';
+import { scrollToElementWithHighlight } from '@/components/animations/scrollUtils';
+import { SearchBar } from '@/components/inputs/SearchBar.tsx';
+import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
+import { useBookPage } from '@/pages/BookPage/BookPageContext';
+import { useHighlightModal } from '@/pages/BookPage/Highlights/hooks/useHighlightModal.ts';
+import { FilterListIcon, SortIcon } from '@/theme/Icons.tsx';
+import { Box, Fab, IconButton, Tooltip } from '@mui/material';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { keyBy } from 'lodash';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { BookmarkList } from '../navigation/BookmarkList.tsx';
+import { ChapterNav, type ChapterNavigationData } from '../navigation/ChapterNav.tsx';
+import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
+import { HighlightLabelsList } from '../navigation/HighlightLabelsList.tsx';
+import { HighlightTagsList } from '../navigation/HighlightTagsList.tsx';
+import { HighlightsList, type ChapterData } from './HighlightsList.tsx';
+import { HighlightViewModal } from './HighlightViewModal';
+
+export const HighlightsPage = () => {
+  const { book, isDesktop, leftSidebarEl, setHasFloatingFilter } = useBookPage();
+
+  const {
+    search: urlSearch,
+    tagId: urlTagId,
+    labelId: urlLabelId,
+  } = useSearch({ from: '/book/$bookId/highlights' });
+  const navigate = useNavigate({ from: '/book/$bookId/highlights' });
+
+  const searchText = urlSearch || '';
+  const [selectedTagId, setSelectedTagId] = useState<number | undefined>(urlTagId);
+  const [selectedLabelId, setSelectedLabelId] = useState<number | undefined>(urlLabelId);
+  const [isReversed, setIsReversed] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    setSelectedTagId(urlTagId);
+  }, [urlTagId]);
+
+  useEffect(() => {
+    setSelectedLabelId(urlLabelId);
+  }, [urlLabelId]);
+
+  // Fetch available tags for the highlight modal
+  const { data: tagsResponse } = useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet(book.id);
+
+  // Navigation callbacks
+  const handleSearch = useCallback(
+    (value: string) => {
+      navigate({
+        search: (prev) => ({ ...prev, search: value || undefined }),
+        replace: true,
+      });
+    },
+    [navigate]
+  );
+
+  const handleTagClick = useCallback(
+    (newTagId: number | null) => {
+      setSelectedTagId(newTagId || undefined);
+      navigate({
+        search: (prev) => ({ ...prev, tagId: newTagId || undefined }),
+        replace: true,
+      });
+    },
+    [navigate]
+  );
+
+  const handleLabelClick = useCallback(
+    (newLabelId: number | null) => {
+      setSelectedLabelId(newLabelId || undefined);
+      navigate({
+        search: (prev) => ({ ...prev, labelId: newLabelId || undefined }),
+        replace: true,
+      });
+    },
+    [navigate]
+  );
+
+  const handleBookmarkClick = useCallback(
+    (highlightId: number) => {
+      if (urlSearch) {
+        navigate({
+          search: (prev) => ({ ...prev, search: undefined }),
+          replace: true,
+        });
+      }
+      scrollToElementWithHighlight(`highlight-${highlightId}`, { behavior: 'smooth' });
+    },
+    [navigate, urlSearch]
+  );
+
+  const handleChapterClick = useCallback(
+    (chapterId: number) => {
+      if (urlSearch) {
+        navigate({
+          search: (prev) => ({ ...prev, search: undefined }),
+          replace: true,
+        });
+      }
+      scrollToElementWithHighlight(`chapter-${chapterId}`, {
+        behavior: 'smooth',
+        block: 'start',
+      });
+    },
+    [navigate, urlSearch]
+  );
+
+  const bookSearch = useBookSearch(book.id, searchText);
+
+  const bookmarksByHighlightId = useMemo(
+    () => keyBy(book.bookmarks, 'highlight_id'),
+    [book.bookmarks]
+  );
+
+  const chapters: ChapterData[] = useMemo(() => {
+    const toFilter = bookSearch.showSearchResults
+      ? bookSearch.chapters
+      : book.chapters.filter((chapter) => chapter.highlights.length > 0);
+
+    const result = filterChaptersByLabel(
+      selectedLabelId,
+      filterChaptersByTag(selectedTagId, toFilter)
+    ).map((chapter) => ({
+      id: chapter.id,
+      name: chapter.name || 'Unknown Chapter',
+      chapterNumber: chapter.chapter_number ?? undefined,
+      highlights: chapter.highlights,
+    }));
+
+    if (isReversed) {
+      return [...result].reverse().map((chapter) => ({
+        ...chapter,
+        highlights: [...chapter.highlights].reverse(),
+      }));
+    }
+
+    return result;
+  }, [
+    bookSearch.showSearchResults,
+    bookSearch.chapters,
+    isReversed,
+    book.chapters,
+    selectedTagId,
+    selectedLabelId,
+  ]);
+
+  const allHighlights = useMemo(() => {
+    return chapters.flatMap((chapter) => chapter.highlights);
+  }, [chapters]);
+
+  const {
+    openHighlightId,
+    currentHighlight,
+    currentHighlightIndex,
+    handleOpenHighlight,
+    handleCloseHighlight,
+    handleModalNavigate,
+  } = useHighlightModal({ allHighlights, isMobile: !isDesktop });
+
+  const tags = book.highlight_tags;
+
+  const navData = useHighlightsPageData(chapters);
+
+  const emptyMessage = useMemo(() => {
+    if (bookSearch.showSearchResults) {
+      if (selectedTagId && selectedLabelId)
+        return 'No highlights found matching your search with the selected tag and label.';
+      if (selectedTagId) return 'No highlights found matching your search with the selected tag.';
+      if (selectedLabelId)
+        return 'No highlights found matching your search with the selected label.';
+      return 'No highlights found matching your search.';
+    }
+    if (selectedTagId && selectedLabelId)
+      return 'No highlights found with the selected tag and label.';
+    if (selectedTagId) return 'No highlights found with the selected tag.';
+    if (selectedLabelId) return 'No highlights found with the selected label.';
+    return 'No chapters found for this book.';
+  }, [bookSearch.showSearchResults, selectedTagId, selectedLabelId]);
+
+  // Signal to BookPage that this tab has a floating filter FAB on mobile
+  useEffect(() => {
+    if (!isDesktop) {
+      setHasFloatingFilter(true);
+      return () => setHasFloatingFilter(false);
+    }
+  }, [isDesktop, setHasFloatingFilter]);
+
+  const filterTabs = useHighlightsFilterTabs({
+    navChapters: navData.chapters,
+    tags,
+    tagGroups: book.highlight_tag_groups,
+    bookId: book.id,
+    bookmarks: book.bookmarks,
+    allHighlights,
+    selectedTagId,
+    selectedLabelId,
+    handleChapterClick,
+    handleTagClick,
+    handleLabelClick,
+    handleBookmarkClick,
+    setFilterDrawerOpen,
+  });
+
+  return (
+    <>
+      {/* Desktop: portal left sidebar content */}
+      {isDesktop &&
+        leftSidebarEl &&
+        createPortal(
+          <HighlightsSidebar
+            tags={tags}
+            tagGroups={book.highlight_tag_groups}
+            bookId={book.id}
+            selectedTagId={selectedTagId}
+            onTagClick={handleTagClick}
+            selectedLabelId={selectedLabelId}
+            onLabelClick={handleLabelClick}
+          />,
+          leftSidebarEl
+        )}
+
+      {/* Content */}
+      {isDesktop ? (
+        <ContentWithSidebar>
+          <Box>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
+              <Box sx={{ flexGrow: 1 }}>
+                <SearchBar
+                  onSearch={handleSearch}
+                  placeholder="Search highlights..."
+                  initialValue={searchText}
+                />
+              </Box>
+              <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
+                <IconButton
+                  onClick={() => setIsReversed(!isReversed)}
+                  sx={{
+                    mt: '1px',
+                    color: isReversed ? 'primary.main' : 'text.secondary',
+                    '&:hover': { color: 'primary.main' },
+                  }}
+                >
+                  <SortIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+            <HighlightsList
+              chapters={chapters}
+              bookmarksByHighlightId={bookmarksByHighlightId}
+              isLoading={bookSearch.isSearching}
+              emptyMessage={emptyMessage}
+              animationKey="chapters-highlights"
+              onOpenHighlight={handleOpenHighlight}
+            />
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <BookmarkList
+              bookmarks={book.bookmarks}
+              allHighlights={allHighlights}
+              onBookmarkClick={handleBookmarkClick}
+            />
+            <ChapterNav
+              chapters={navData.chapters}
+              onChapterClick={handleChapterClick}
+              countType="highlight"
+            />
+          </Box>
+        </ContentWithSidebar>
+      ) : (
+        <>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
+            <Box sx={{ flexGrow: 1 }}>
+              <SearchBar
+                onSearch={handleSearch}
+                placeholder="Search highlights..."
+                initialValue={searchText}
+              />
+            </Box>
+            <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
+              <IconButton
+                onClick={() => setIsReversed(!isReversed)}
+                sx={{
+                  mt: '1px',
+                  color: isReversed ? 'primary.main' : 'text.secondary',
+                  '&:hover': { color: 'primary.main' },
+                }}
+              >
+                <SortIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <HighlightsList
+            chapters={chapters}
+            bookmarksByHighlightId={bookmarksByHighlightId}
+            isLoading={bookSearch.isSearching}
+            emptyMessage={emptyMessage}
+            animationKey="chapters-highlights"
+            onOpenHighlight={handleOpenHighlight}
+          />
+          <Fab
+            size="small"
+            color="primary"
+            aria-label="Open filters"
+            onClick={() => setFilterDrawerOpen(true)}
+            sx={{
+              position: 'fixed',
+              bottom: 'calc(80px + env(safe-area-inset-bottom))',
+              right: 24,
+              zIndex: 1000,
+            }}
+          >
+            <FilterListIcon />
+          </Fab>
+          <FilterDrawer
+            open={filterDrawerOpen}
+            onClose={() => setFilterDrawerOpen(false)}
+            tabs={filterTabs}
+          />
+        </>
+      )}
+
+      {/* Highlight modal */}
+      {currentHighlight && (
+        <HighlightViewModal
+          highlight={currentHighlight}
+          bookId={book.id}
+          open={!!openHighlightId}
+          onClose={handleCloseHighlight}
+          availableTags={tagsResponse?.tags || []}
+          bookmarksByHighlightId={bookmarksByHighlightId}
+          allHighlights={allHighlights}
+          currentIndex={currentHighlightIndex}
+          onNavigate={handleModalNavigate}
+        />
+      )}
+    </>
+  );
+};
+
+// --- Extracted subcomponents ---
+
+interface HighlightsSidebarProps {
+  tags: HighlightTagInBook[];
+  tagGroups: HighlightTagGroupInBook[];
+  bookId: number;
+  selectedTagId: number | undefined;
+  onTagClick: (tagId: number | null) => void;
+  selectedLabelId: number | undefined;
+  onLabelClick: (labelId: number | null) => void;
+}
+
+const HighlightsSidebar = ({
+  tags,
+  tagGroups,
+  bookId,
+  selectedTagId,
+  onTagClick,
+  selectedLabelId,
+  onLabelClick,
+}: HighlightsSidebarProps) => (
+  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <HighlightTagsList
+      tags={tags}
+      tagGroups={tagGroups}
+      bookId={bookId}
+      selectedTag={selectedTagId}
+      onTagClick={onTagClick}
+    />
+    <HighlightLabelsList
+      bookId={bookId}
+      selectedLabelId={selectedLabelId}
+      onLabelClick={onLabelClick}
+    />
+  </Box>
+);
+
+interface UseHighlightsFilterTabsParams {
+  navChapters: ChapterNavigationData[];
+  tags: HighlightTagInBook[];
+  tagGroups: HighlightTagGroupInBook[];
+  bookId: number;
+  bookmarks: Bookmark[];
+  allHighlights: Highlight[];
+  selectedTagId: number | undefined;
+  selectedLabelId: number | undefined;
+  handleChapterClick: (chapterId: number) => void;
+  handleTagClick: (tagId: number | null) => void;
+  handleLabelClick: (labelId: number | null) => void;
+  handleBookmarkClick: (highlightId: number) => void;
+  setFilterDrawerOpen: (open: boolean) => void;
+}
+
+const useHighlightsFilterTabs = ({
+  navChapters,
+  tags,
+  tagGroups,
+  bookId,
+  bookmarks,
+  allHighlights,
+  selectedTagId,
+  selectedLabelId,
+  handleChapterClick,
+  handleTagClick,
+  handleLabelClick,
+  handleBookmarkClick,
+  setFilterDrawerOpen,
+}: UseHighlightsFilterTabsParams): FilterTab[] =>
+  useMemo(
+    () => [
+      {
+        label: 'Chapters',
+        content: (
+          <ChapterNav
+            chapters={navChapters}
+            onChapterClick={(id) => {
+              handleChapterClick(id);
+              setFilterDrawerOpen(false);
+            }}
+            hideTitle
+            countType="highlight"
+          />
+        ),
+      },
+      {
+        label: 'Tags',
+        content: (
+          <Box>
+            <HighlightTagsList
+              tags={tags}
+              tagGroups={tagGroups}
+              bookId={bookId}
+              selectedTag={selectedTagId}
+              onTagClick={(id) => {
+                handleTagClick(id);
+                setFilterDrawerOpen(false);
+              }}
+              hideTitle
+            />
+            <Box sx={{ mt: 3 }}>
+              <HighlightLabelsList
+                bookId={bookId}
+                selectedLabelId={selectedLabelId}
+                onLabelClick={(id) => {
+                  handleLabelClick(id);
+                  setFilterDrawerOpen(false);
+                }}
+              />
+            </Box>
+          </Box>
+        ),
+      },
+      {
+        label: 'Bookmarks',
+        content: (
+          <BookmarkList
+            bookmarks={bookmarks}
+            allHighlights={allHighlights}
+            onBookmarkClick={(id) => {
+              handleBookmarkClick(id);
+              setFilterDrawerOpen(false);
+            }}
+            hideTitle
+          />
+        ),
+      },
+    ],
+    [
+      navChapters,
+      handleChapterClick,
+      tags,
+      tagGroups,
+      bookId,
+      bookmarks,
+      selectedTagId,
+      handleTagClick,
+      selectedLabelId,
+      handleLabelClick,
+      allHighlights,
+      handleBookmarkClick,
+      setFilterDrawerOpen,
+    ]
+  );
+
+// --- Private hooks and helpers ---
+
+const useHighlightsPageData = (chapters: ChapterData[]) => {
+  const navChapters: ChapterNavigationData[] = useMemo(() => {
+    return chapters.map((chapter) => ({
+      id: chapter.id,
+      name: chapter.name,
+      itemCount: chapter.highlights.length,
+    }));
+  }, [chapters]);
+
+  return {
+    chapters: navChapters,
+  };
+};
+
+const useBookSearch = (bookId: number, searchText: string) => {
+  const { data: searchResults, isLoading: isSearching } =
+    useSearchBookHighlightsApiV1BooksBookIdHighlightsGet(
+      bookId,
+      {
+        searchText: searchText || 'placeholder',
+      },
+      {
+        query: {
+          enabled: searchText.length > 0,
+        },
+      }
+    );
+
+  const showSearchResults = searchText.length > 0;
+
+  return {
+    showSearchResults,
+    chapters: searchResults?.chapters || [],
+    isSearching: isSearching && showSearchResults,
+  };
+};
+
+function filterChaptersByTag(
+  selectedTagId: number | undefined,
+  chaptersWithHighlights: ChapterWithHighlights[]
+) {
+  if (!selectedTagId) {
+    return chaptersWithHighlights;
+  }
+
+  return chaptersWithHighlights
+    .map((chapter) => ({
+      ...chapter,
+      highlights: chapter.highlights.filter((highlight) =>
+        highlight.highlight_tags.some((tag) => tag.id === selectedTagId)
+      ),
+    }))
+    .filter((chapter) => chapter.highlights.length > 0);
+}
+
+function filterChaptersByLabel(
+  selectedLabelId: number | undefined,
+  chaptersWithHighlights: ChapterWithHighlights[]
+) {
+  if (!selectedLabelId) {
+    return chaptersWithHighlights;
+  }
+
+  return chaptersWithHighlights
+    .map((chapter) => ({
+      ...chapter,
+      highlights: chapter.highlights.filter(
+        (highlight) => highlight.label?.highlight_style_id === selectedLabelId
+      ),
+    }))
+    .filter((chapter) => chapter.highlights.length > 0);
+}

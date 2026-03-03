@@ -1,0 +1,187 @@
+import type { Bookmark, ReadingSession } from '@/api/generated/model';
+import { useGetReadingSessionAiSummaryApiV1ReadingSessionIdAiSummaryGet } from '@/api/generated/reading-sessions/reading-sessions';
+import { MetadataRow } from '@/components/cards/MetadataRow.tsx';
+import { AIFeature } from '@/components/features/AIFeature.tsx';
+import { useSettings } from '@/context/SettingsContext';
+import { useSnackbar } from '@/context/SnackbarContext';
+import { HighlightCard } from '@/pages/BookPage/Highlights/HighlightCard';
+import { formatDate, formatDuration, formatTime } from '@/utils/date';
+import { Box, Button, Typography } from '@mui/material';
+import type { AxiosError } from 'axios';
+import { useEffect } from 'react';
+import { AISummary } from './AISummary';
+
+interface SessionMetadataProps {
+  startTime: string;
+  endTime: string;
+  startPage: number | null | undefined;
+  endPage: number | null | undefined;
+}
+
+const SessionMetadata = ({ startTime, endTime, startPage, endPage }: SessionMetadataProps) => {
+  const pagesRead = startPage != null && endPage != null ? endPage - startPage : 0;
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: 1.5,
+        mb: 1.5,
+      }}
+    >
+      <MetadataRow
+        items={[
+          formatDate(startTime),
+          formatTime(startTime),
+          formatDuration(startTime, endTime),
+          startPage != null && endPage != null && (
+            <>
+              Pages {startPage}-{endPage}
+              {pagesRead > 0 && ` (${pagesRead} page${pagesRead !== 1 ? 's' : ''})`}
+            </>
+          ),
+        ]}
+      />
+    </Box>
+  );
+};
+
+interface ReadingSessionCardProps {
+  session: ReadingSession;
+  component?: React.ElementType;
+  bookmarksByHighlightId: Record<number, Bookmark>;
+  onOpenHighlight: (sessionId: number, highlightId: number) => void;
+}
+
+interface SummaryPlaceholderProps {
+  onGenerate: () => void;
+  isLoading: boolean;
+}
+
+const SummaryPlaceholder = ({ onGenerate, isLoading }: SummaryPlaceholderProps) => (
+  <Box
+    sx={{
+      padding: 1.5,
+    }}
+  >
+    <Button onClick={onGenerate} disabled={isLoading} variant="contained">
+      {isLoading ? 'Generating...' : 'Generate Summary'}
+    </Button>
+  </Box>
+);
+
+export const ReadingSessionCard = ({
+  session,
+  bookmarksByHighlightId,
+  onOpenHighlight,
+}: ReadingSessionCardProps) => {
+  const { showSnackbar } = useSnackbar();
+
+  const { data, isLoading, error, refetch } =
+    useGetReadingSessionAiSummaryApiV1ReadingSessionIdAiSummaryGet(session.id, {
+      query: {
+        enabled: false,
+        retry: false,
+      },
+    });
+
+  useEffect(() => {
+    if (error) {
+      const axiosError = error as AxiosError;
+      const errorMessage =
+        axiosError.response?.status === 400
+          ? 'Cannot generate summary - no content available for this session'
+          : 'Failed to generate summary. Please try again.';
+      showSnackbar(errorMessage, 'error');
+    }
+  }, [error, showSnackbar]);
+
+  const summary = session.ai_summary || data?.summary;
+  const hasSummary = Boolean(summary);
+  const aiEnabled = !!useSettings().featureFlags?.ai;
+
+  const handleHighlightClick = (highlightId: number) => {
+    onOpenHighlight(session.id, highlightId);
+  };
+
+  const hasHighlights = session.highlights.length > 0;
+
+  return (
+    <li key={session.id}>
+      <Box
+        sx={{
+          py: aiEnabled ? 3.5 : 1,
+          px: 2.5,
+          '@media (max-width: 768px)': {
+            px: 2,
+            py: 2,
+          },
+        }}
+      >
+        <SessionMetadata
+          startTime={session.start_time}
+          endTime={session.end_time}
+          startPage={session.start_page}
+          endPage={session.end_page}
+        />
+
+        <AIFeature>
+          {hasSummary ? (
+            <>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  mb: 1,
+                  mt: 3,
+                  color: 'text.secondary',
+                  fontWeight: 600,
+                }}
+              >
+                Summary
+              </Typography>
+              <AISummary summary={summary} />
+            </>
+          ) : (
+            <SummaryPlaceholder onGenerate={() => refetch()} isLoading={isLoading} />
+          )}
+        </AIFeature>
+
+        {hasHighlights && (
+          <Box sx={{ mt: 3 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                mb: 1,
+                color: 'text.secondary',
+                fontWeight: 600,
+              }}
+            >
+              Highlights ({session.highlights.length})
+            </Typography>
+            <Box
+              component="ul"
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                listStyle: 'none',
+                p: 0,
+                m: 0,
+              }}
+            >
+              {session.highlights.map((highlight) => (
+                <HighlightCard
+                  key={highlight.id}
+                  highlight={highlight}
+                  bookmark={bookmarksByHighlightId[highlight.id]}
+                  onOpenModal={handleHighlightClick}
+                />
+              ))}
+            </Box>
+          </Box>
+        )}
+      </Box>
+    </li>
+  );
+};

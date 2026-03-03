@@ -1,0 +1,127 @@
+import type { ChapterPrereadingResponse, ChapterWithHighlights } from '@/api/generated/model';
+import { useGetBookPrereadingApiV1BooksBookIdPrereadingGet } from '@/api/generated/prereading/prereading';
+import { useBookPage } from '@/pages/BookPage/BookPageContext';
+import { Box, Typography } from '@mui/material';
+import { keyBy } from 'lodash';
+import { useMemo } from 'react';
+import { ChapterAccordion } from './ChapterAccordion';
+import { ChapterDetailDialog } from './ChapterDetailDialog/ChapterDetailDialog.tsx';
+import { useChapterDetailsModal } from './hooks/useChapterDetailsModal.ts';
+import { ReadingProgressLine } from './ReadingProgressLine';
+
+export const StructurePage = () => {
+  const { book } = useBookPage();
+
+  const { data: bookPrereading } = useGetBookPrereadingApiV1BooksBookIdPrereadingGet(book.id);
+
+  const prereadingByChapterId = useMemo(() => {
+    const map: Record<number, ChapterPrereadingResponse> = {};
+    if (bookPrereading?.items) {
+      for (const item of bookPrereading.items) {
+        map[item.chapter_id] = item;
+      }
+    }
+    return map;
+  }, [bookPrereading]);
+
+  const childrenByParentId = useMemo(() => {
+    const map = new Map<number | null, ChapterWithHighlights[]>();
+    for (const ch of book.chapters) {
+      const key = ch.parent_id ?? null;
+      const list = map.get(key) ?? [];
+      list.push(ch);
+      map.set(key, list);
+    }
+    return map;
+  }, [book.chapters]);
+
+  // Compute leaf chapters in document order (depth-first)
+  const leafChapters = useMemo(() => {
+    const result: ChapterWithHighlights[] = [];
+    const collectLeaves = (parentId: number | null) => {
+      const children = childrenByParentId.get(parentId) ?? [];
+      for (const ch of children) {
+        const hasChildren = (childrenByParentId.get(ch.id) ?? []).length > 0;
+        if (hasChildren) {
+          collectLeaves(ch.id);
+        } else {
+          result.push(ch);
+        }
+      }
+    };
+    collectLeaves(null);
+    return result;
+  }, [childrenByParentId]);
+
+  const {
+    selectedChapter,
+    selectedChapterIndex,
+    handleChapterClick,
+    handleDialogClose,
+    handleDialogNavigate,
+  } = useChapterDetailsModal({ leafChapters });
+
+  // Compute bookmarks map
+  const bookmarksByHighlightId = useMemo(
+    () => keyBy(book.bookmarks, 'highlight_id'),
+    [book.bookmarks]
+  );
+
+  if (book.chapters.length === 0) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="body1" color="text.secondary">
+          No chapter structure available for this book.
+        </Typography>
+      </Box>
+    );
+  }
+
+  const topLevelChapters = childrenByParentId.get(null) ?? [];
+
+  const readingPosition = book.reading_position;
+
+  const isChapterRead = (startPosition: { index: number } | null | undefined): boolean => {
+    if (!readingPosition || !startPosition) return false;
+    return readingPosition.index >= startPosition.index;
+  };
+
+  const content = (
+    <ReadingProgressLine readingPosition={readingPosition}>
+      {topLevelChapters.map((chapter) => (
+        <ChapterAccordion
+          key={chapter.id}
+          chapter={chapter}
+          childrenByParentId={childrenByParentId}
+          bookId={book.id}
+          isRead={isChapterRead(chapter.start_position)}
+          readingPosition={readingPosition}
+          preExpanded={true}
+          onChapterClick={handleChapterClick}
+        />
+      ))}
+    </ReadingProgressLine>
+  );
+
+  return (
+    <>
+      {content}
+
+      {selectedChapter && (
+        <ChapterDetailDialog
+          open={true}
+          onClose={handleDialogClose}
+          chapter={selectedChapter}
+          bookId={book.id}
+          allLeafChapters={leafChapters}
+          currentIndex={selectedChapterIndex ?? 0}
+          onNavigate={handleDialogNavigate}
+          prereadingByChapterId={prereadingByChapterId}
+          bookmarksByHighlightId={bookmarksByHighlightId}
+          availableTags={book.highlight_tags}
+          bookFlashcards={book.book_flashcards}
+        />
+      )}
+    </>
+  );
+};
