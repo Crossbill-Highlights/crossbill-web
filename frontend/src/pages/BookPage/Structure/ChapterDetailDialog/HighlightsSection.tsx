@@ -1,7 +1,7 @@
 import type { Bookmark, ChapterWithHighlights, HighlightTagInBook } from '@/api/generated/model';
-import { HighlightCard } from '@/pages/BookPage/HighlightsTab/HighlightCard.tsx';
-import { HighlightViewModal } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/HighlightViewModal.tsx';
-import { useHighlightModal } from '@/pages/BookPage/HighlightsTab/hooks/useHighlightModal.ts';
+import { HighlightCard } from '@/pages/BookPage/Highlights/HighlightCard.tsx';
+import { HighlightViewModal } from '@/pages/BookPage/Highlights/HighlightViewModal/HighlightViewModal.tsx';
+import { useHighlightModal } from '@/pages/BookPage/Highlights/hooks/useHighlightModal.ts';
 import { Stack } from '@mui/material';
 import { CollapsibleSection } from './CollapsibleSection.tsx';
 

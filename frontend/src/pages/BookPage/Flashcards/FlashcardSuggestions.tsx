@@ -1,5 +1,5 @@
 import type { FlashcardSuggestionItem } from '@/api/generated/model';
-import { FlashcardSuggestionCard } from '@/pages/BookPage/FlashcardsTab/FlashcardSuggestionCard.tsx';
+import { FlashcardSuggestionCard } from '@/pages/BookPage/Flashcards/FlashcardSuggestionCard.tsx';
 import { AIIcon } from '@/theme/Icons.tsx';
 import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 

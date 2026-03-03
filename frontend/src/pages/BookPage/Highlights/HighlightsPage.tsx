@@ -13,7 +13,7 @@ import { scrollToElementWithHighlight } from '@/components/animations/scrollUtil
 import { SearchBar } from '@/components/inputs/SearchBar.tsx';
 import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
-import { useHighlightModal } from '@/pages/BookPage/HighlightsTab/hooks/useHighlightModal.ts';
+import { useHighlightModal } from '@/pages/BookPage/Highlights/hooks/useHighlightModal.ts';
 import { FilterListIcon, SortIcon } from '@/theme/Icons.tsx';
 import { Box, Fab, IconButton, Tooltip } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
@@ -28,7 +28,7 @@ import { HighlightTagsList } from '../navigation/HighlightTagsList.tsx';
 import { HighlightsList, type ChapterData } from './HighlightsList.tsx';
 import { HighlightViewModal } from './HighlightViewModal';
 
-export const HighlightsTab = () => {
+export const HighlightsPage = () => {
   const { book, isDesktop, leftSidebarEl, setHasFloatingFilter } = useBookPage();
 
   const {
@@ -171,7 +171,7 @@ export const HighlightsTab = () => {
 
   const tags = book.highlight_tags;
 
-  const navData = useHighlightsTabData(chapters);
+  const navData = useHighlightsPageData(chapters);
 
   const emptyMessage = useMemo(() => {
     if (bookSearch.showSearchResults) {
@@ -495,7 +495,7 @@ const useHighlightsFilterTabs = ({
 
 // --- Private hooks and helpers ---
 
-const useHighlightsTabData = (chapters: ChapterData[]) => {
+const useHighlightsPageData = (chapters: ChapterData[]) => {
   const navChapters: ChapterNavigationData[] = useMemo(() => {
     return chapters.map((chapter) => ({
       id: chapter.id,

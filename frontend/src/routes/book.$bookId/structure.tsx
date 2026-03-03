@@ -1,4 +1,4 @@
-import { StructureTab } from '@/pages/BookPage/StructureTab/StructureTab';
+import { StructurePage } from '@/pages/BookPage/Structure/StructurePage';
 import { createFileRoute } from '@tanstack/react-router';
 
 type StructureSearch = {
@@ -6,7 +6,7 @@ type StructureSearch = {
 };
 
 export const Route = createFileRoute('/book/$bookId/structure')({
-  component: StructureTab,
+  component: StructurePage,
   validateSearch: (search: Record<string, unknown>): StructureSearch => ({
     chapterId: (search.chapterId as number | undefined) || undefined,
   }),

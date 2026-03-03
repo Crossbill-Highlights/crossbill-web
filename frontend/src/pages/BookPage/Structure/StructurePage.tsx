@@ -9,7 +9,7 @@ import { ChapterDetailDialog } from './ChapterDetailDialog/ChapterDetailDialog.t
 import { useChapterDetailsModal } from './hooks/useChapterDetailsModal.ts';
 import { ReadingProgressLine } from './ReadingProgressLine';
 
-export const StructureTab = () => {
+export const StructurePage = () => {
   const { book } = useBookPage();
 
   const { data: bookPrereading } = useGetBookPrereadingApiV1BooksBookIdPrereadingGet(book.id);

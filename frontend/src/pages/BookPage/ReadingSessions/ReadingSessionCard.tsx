@@ -4,7 +4,7 @@ import { MetadataRow } from '@/components/cards/MetadataRow.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { useSettings } from '@/context/SettingsContext';
 import { useSnackbar } from '@/context/SnackbarContext';
-import { HighlightCard } from '@/pages/BookPage/HighlightsTab/HighlightCard';
+import { HighlightCard } from '@/pages/BookPage/Highlights/HighlightCard';
 import { formatDate, formatDuration, formatTime } from '@/utils/date';
 import { Box, Button, Typography } from '@mui/material';
 import type { AxiosError } from 'axios';

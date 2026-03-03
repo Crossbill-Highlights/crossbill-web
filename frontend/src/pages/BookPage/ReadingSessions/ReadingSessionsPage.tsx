@@ -3,8 +3,8 @@ import type { ReadingSession } from '@/api/generated/model';
 import { useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet } from '@/api/generated/reading-sessions/reading-sessions';
 import { Spinner } from '@/components/animations/Spinner.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
-import { HighlightViewModal } from '@/pages/BookPage/HighlightsTab/HighlightViewModal/HighlightViewModal';
-import { useHighlightModal } from '@/pages/BookPage/HighlightsTab/hooks/useHighlightModal';
+import { HighlightViewModal } from '@/pages/BookPage/Highlights/HighlightViewModal/HighlightViewModal';
+import { useHighlightModal } from '@/pages/BookPage/Highlights/hooks/useHighlightModal';
 import { Alert, Box, Pagination } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';
@@ -13,7 +13,7 @@ import { ReadingSessionList } from './ReadingSessionList';
 
 const SESSIONS_PER_PAGE = 30;
 
-export const ReadingSessionsTab = () => {
+export const ReadingSessionsPage = () => {
   const { book, isDesktop } = useBookPage();
 
   const { sessionPage } = useSearch({ from: '/book/$bookId/sessions' });

@@ -1,4 +1,4 @@
-import { ReadingSessionsTab } from '@/pages/BookPage/ReadingSessionsTab/ReadingSessionsTab';
+import { ReadingSessionsPage } from '@/pages/BookPage/ReadingSessions/ReadingSessionsPage';
 import { createFileRoute } from '@tanstack/react-router';
 
 type SessionsSearch = {
@@ -6,7 +6,7 @@ type SessionsSearch = {
 };
 
 export const Route = createFileRoute('/book/$bookId/sessions')({
-  component: ReadingSessionsTab,
+  component: ReadingSessionsPage,
   validateSearch: (search: Record<string, unknown>): SessionsSearch => ({
     sessionPage: search.sessionPage ? Number(search.sessionPage) : undefined,
   }),

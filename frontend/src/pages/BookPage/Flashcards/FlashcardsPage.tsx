@@ -27,7 +27,7 @@ import { FlashcardEditDialog } from './FlashcardEditDialog.tsx';
 
 const BOOK_FLASHCARDS_KEY = -1;
 
-export const FlashcardsTab = () => {
+export const FlashcardsPage = () => {
   const { book, isDesktop, leftSidebarEl, setHasFloatingFilter } = useBookPage();
 
   const { search: urlSearch, tagId: urlTagId } = useSearch({ from: '/book/$bookId/flashcards' });
@@ -197,7 +197,7 @@ export const FlashcardsTab = () => {
       : 'No flashcards yet. Create flashcards from your highlights to start studying.';
   }, [searchText, selectedTagId]);
 
-  const navData = useFlashcardsTabData(
+  const navData = useFlashcardsPageData(
     allFlashcardsWithContext,
     flashcardChapters,
     book.highlight_tags
@@ -437,7 +437,7 @@ const useFlashcardsFilterTabs = ({
 
 // --- Private hooks ---
 
-const useFlashcardsTabData = (
+const useFlashcardsPageData = (
   allFlashcardsWithContext: FlashcardWithContext[],
   chapters: FlashcardChapterData[],
   tagsInBook: HighlightTagInBook[] | undefined

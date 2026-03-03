@@ -1,4 +1,4 @@
-import { HighlightsTab } from '@/pages/BookPage/HighlightsTab/HighlightsTab';
+import { HighlightsPage } from '@/pages/BookPage/Highlights/HighlightsPage';
 import { createFileRoute } from '@tanstack/react-router';
 
 type HighlightsSearch = {
@@ -9,7 +9,7 @@ type HighlightsSearch = {
 };
 
 export const Route = createFileRoute('/book/$bookId/highlights')({
-  component: HighlightsTab,
+  component: HighlightsPage,
   validateSearch: (search: Record<string, unknown>): HighlightsSearch => ({
     search: (search.search as string | undefined) || undefined,
     tagId: (search.tagId as number | undefined) || undefined,

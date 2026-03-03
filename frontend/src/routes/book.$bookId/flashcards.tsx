@@ -1,4 +1,4 @@
-import { FlashcardsTab } from '@/pages/BookPage/FlashcardsTab/FlashcardsTab';
+import { FlashcardsPage } from '@/pages/BookPage/Flashcards/FlashcardsPage';
 import { createFileRoute } from '@tanstack/react-router';
 
 type FlashcardsSearch = {
@@ -8,7 +8,7 @@ type FlashcardsSearch = {
 };
 
 export const Route = createFileRoute('/book/$bookId/flashcards')({
-  component: FlashcardsTab,
+  component: FlashcardsPage,
   validateSearch: (search: Record<string, unknown>): FlashcardsSearch => ({
     search: (search.search as string | undefined) || undefined,
     tagId: (search.tagId as number | undefined) || undefined,

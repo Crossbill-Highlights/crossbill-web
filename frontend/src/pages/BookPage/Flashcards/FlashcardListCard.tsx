@@ -3,8 +3,8 @@ import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/genera
 import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
-import { FlashcardCard } from '@/pages/BookPage/FlashcardsTab/FlashcardCard.tsx';
-import { FlashcardWithContext } from '@/pages/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
+import { FlashcardCard } from '@/pages/BookPage/Flashcards/FlashcardCard.tsx';
+import { FlashcardWithContext } from '@/pages/BookPage/Flashcards/FlashcardChapterList.tsx';
 import { DeleteIcon, EditIcon } from '@/theme/Icons.tsx';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';

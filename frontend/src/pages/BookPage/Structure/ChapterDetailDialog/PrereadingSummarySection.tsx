@@ -4,7 +4,7 @@ import {
   useGenerateChapterPrereadingApiV1ChaptersChapterIdPrereadingGeneratePost,
 } from '@/api/generated/prereading/prereading';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
-import { PrereadingContent } from '@/pages/BookPage/StructureTab/PrereadingContent.tsx';
+import { PrereadingContent } from '@/pages/BookPage/Structure/PrereadingContent.tsx';
 import { AIIcon } from '@/theme/Icons.tsx';
 import { Box, Button } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';

@@ -12,11 +12,11 @@ import type {
 } from '@/api/generated/model';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
-import { CreateFlashcardForm } from '@/pages/BookPage/FlashcardsTab/CreateFlashcardForm.tsx';
-import type { FlashcardWithContext } from '@/pages/BookPage/FlashcardsTab/FlashcardChapterList.tsx';
-import { FlashcardEditDialog } from '@/pages/BookPage/FlashcardsTab/FlashcardEditDialog.tsx';
-import { FlashcardListCard } from '@/pages/BookPage/FlashcardsTab/FlashcardListCard.tsx';
-import { FlashcardSuggestions } from '@/pages/BookPage/FlashcardsTab/FlashcardSuggestions.tsx';
+import { CreateFlashcardForm } from '@/pages/BookPage/Flashcards/CreateFlashcardForm.tsx';
+import type { FlashcardWithContext } from '@/pages/BookPage/Flashcards/FlashcardChapterList.tsx';
+import { FlashcardEditDialog } from '@/pages/BookPage/Flashcards/FlashcardEditDialog.tsx';
+import { FlashcardListCard } from '@/pages/BookPage/Flashcards/FlashcardListCard.tsx';
+import { FlashcardSuggestions } from '@/pages/BookPage/Flashcards/FlashcardSuggestions.tsx';
 import { Stack } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { flatMap } from 'lodash';
