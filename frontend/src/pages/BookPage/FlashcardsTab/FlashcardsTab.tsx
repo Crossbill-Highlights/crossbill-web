@@ -199,8 +199,7 @@ export const FlashcardsTab = () => {
   const navData = useFlashcardsTabData(
     allFlashcardsWithContext,
     flashcardChapters,
-    book.highlight_tags,
-    selectedTagId
+    book.highlight_tags
   );
 
   // Signal to BookPage that this tab has a floating filter FAB on mobile
@@ -380,8 +379,7 @@ export const FlashcardsTab = () => {
 const useFlashcardsTabData = (
   allFlashcardsWithContext: FlashcardWithContext[],
   chapters: FlashcardChapterData[],
-  tagsInBook: HighlightTagInBook[] | undefined,
-  selectedTagId: number | undefined
+  tagsInBook: HighlightTagInBook[] | undefined
 ) => {
   const tagsWithFlashcards = useMemo(() => {
     if (!tagsInBook) return [];
@@ -405,6 +403,5 @@ const useFlashcardsTabData = (
   return {
     chapters: navChapters,
     tags: tagsWithFlashcards,
-    selectedTagId,
   };
 };

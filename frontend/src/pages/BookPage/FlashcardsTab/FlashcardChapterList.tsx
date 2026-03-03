@@ -15,7 +15,6 @@ export interface FlashcardChapterData {
   id: number;
   name: string;
   flashcards: FlashcardWithContext[];
-  chapter_number?: number;
 }
 
 interface FlashcardChapterListProps {

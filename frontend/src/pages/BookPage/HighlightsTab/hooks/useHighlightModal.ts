@@ -15,7 +15,6 @@ interface UseHighlightModalReturn {
   currentHighlightIndex: number;
   handleOpenHighlight: (highlightId: number) => void;
   handleCloseHighlight: (lastViewedHighlightId?: number) => void;
-  handleNavigateHighlight: (newHighlightId: number) => void;
   handleModalNavigate: (newIndex: number) => void;
 }
 
@@ -103,7 +102,6 @@ export const useHighlightModal = ({
     currentHighlightIndex,
     handleOpenHighlight,
     handleCloseHighlight,
-    handleNavigateHighlight,
     handleModalNavigate,
   };
 };
