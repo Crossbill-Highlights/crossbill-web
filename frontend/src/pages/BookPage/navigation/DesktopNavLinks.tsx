@@ -1,28 +1,6 @@
-import {
-  ChapterListIcon,
-  FlashcardsIcon,
-  HighlightsIcon,
-  ReadingSessionIcon,
-} from '@/theme/Icons.tsx';
 import { Box, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { Link, useMatchRoute } from '@tanstack/react-router';
-
-interface NavItem {
-  to:
-    | '/book/$bookId/structure'
-    | '/book/$bookId/highlights'
-    | '/book/$bookId/flashcards'
-    | '/book/$bookId/sessions';
-  label: string;
-  icon: React.ReactNode;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { to: '/book/$bookId/structure', label: 'Structure', icon: <ChapterListIcon /> },
-  { to: '/book/$bookId/highlights', label: 'Highlights', icon: <HighlightsIcon /> },
-  { to: '/book/$bookId/flashcards', label: 'Flashcards', icon: <FlashcardsIcon /> },
-  { to: '/book/$bookId/sessions', label: 'Sessions', icon: <ReadingSessionIcon /> },
-];
+import { BOOK_PAGE_ROUTES } from './bookPageRoutes.ts';
 
 interface DesktopNavLinksProps {
   bookId: string;
@@ -34,8 +12,9 @@ export const DesktopNavLinks = ({ bookId }: DesktopNavLinksProps) => {
   return (
     <Box sx={{ mb: 3 }}>
       <List disablePadding>
-        {NAV_ITEMS.map((item) => {
+        {BOOK_PAGE_ROUTES.map((item) => {
           const isActive = !!matchRoute({ to: item.to, params: { bookId } });
+          const Icon = item.icon;
 
           return (
             <Link
@@ -61,7 +40,7 @@ export const DesktopNavLinks = ({ bookId }: DesktopNavLinksProps) => {
                 <ListItemIcon
                   sx={{ minWidth: 36, color: isActive ? 'primary.main' : 'text.secondary' }}
                 >
-                  {item.icon}
+                  <Icon />
                 </ListItemIcon>
                 <ListItemText
                   primary={item.label}
