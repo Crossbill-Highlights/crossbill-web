@@ -67,7 +67,7 @@ export const BookStatsStrip = ({ book }: BookStatsStripProps) => {
   // Calculate progress percentage
   const progress =
     book.reading_position && book.end_position && book.end_position.index > 0
-      ? Math.round((book.reading_position.index / book.end_position.index) * 100)
+      ? Math.min(100, Math.round((book.reading_position.index / book.end_position.index) * 100))
       : 0;
 
   // Count highlights across all chapters
@@ -88,7 +88,6 @@ export const BookStatsStrip = ({ book }: BookStatsStripProps) => {
       variant="outlined"
       sx={{
         display: 'flex',
-        flexDirection: { xs: 'row', sm: 'row' },
         flexWrap: { xs: 'wrap', sm: 'nowrap' },
       }}
     >
@@ -102,6 +101,7 @@ export const BookStatsStrip = ({ book }: BookStatsStripProps) => {
       </Box>
 
       <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' } }} />
+      {/* Zero-width divider acts as a flex spacer to keep items aligned in the 2x2 mobile grid */}
       <Divider sx={{ display: { xs: 'block', sm: 'none' }, width: '0' }} />
 
       <Box sx={{ flex: { xs: '1 1 50%', sm: '1 1 0' }, minWidth: 0 }}>
@@ -126,6 +126,7 @@ export const BookStatsStrip = ({ book }: BookStatsStripProps) => {
       </Box>
 
       <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' } }} />
+      {/* Zero-width divider acts as a flex spacer to keep items aligned in the 2x2 mobile grid */}
       <Divider sx={{ display: { xs: 'block', sm: 'none' }, width: '0' }} />
 
       <Box sx={{ flex: { xs: '1 1 50%', sm: '1 1 0' }, minWidth: 0 }}>
