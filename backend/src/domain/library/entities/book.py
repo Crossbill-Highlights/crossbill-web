@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from src.domain.common.entity import Entity
 from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import BookId, UserId
+from src.domain.common.value_objects.position import Position
 
 
 @dataclass
@@ -36,6 +37,7 @@ class Book(Entity[BookId]):
     file_path: str | None = None
     file_type: str | None = None
     last_viewed: datetime | None = None
+    end_position: Position | None = None
 
     def __post_init__(self) -> None:
         """Validate invariants."""
@@ -59,6 +61,10 @@ class Book(Entity[BookId]):
         """Update book cover URL."""
         self.cover = cover_url
 
+    def update_end_position(self, position: Position) -> None:
+        """Update the book's end position (total document length)."""
+        self.end_position = position
+
     def update_file(self, file_path: str, file_type: str) -> None:
         """Update book file metadata."""
         if file_type not in ["epub", "pdf"]:
@@ -81,6 +87,7 @@ class Book(Entity[BookId]):
         cover: str | None = None,
         file_path: str | None = None,
         file_type: str | None = None,
+        end_position: Position | None = None,
     ) -> "Book":
         """Factory for creating new book."""
         now = datetime.now(UTC)
@@ -100,6 +107,7 @@ class Book(Entity[BookId]):
             created_at=now,
             updated_at=now,
             last_viewed=None,
+            end_position=end_position,
         )
 
     @classmethod
@@ -120,6 +128,7 @@ class Book(Entity[BookId]):
         file_path: str | None = None,
         file_type: str | None = None,
         last_viewed: datetime | None = None,
+        end_position: Position | None = None,
     ) -> "Book":
         """Factory for reconstituting book from persistence."""
         return cls(
@@ -138,4 +147,5 @@ class Book(Entity[BookId]):
             created_at=created_at,
             updated_at=updated_at,
             last_viewed=last_viewed,
+            end_position=end_position,
         )

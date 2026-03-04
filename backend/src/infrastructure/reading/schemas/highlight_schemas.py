@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, model_validator
 
+from src.infrastructure.common.schemas.position_schemas import PositionResponse
 from src.infrastructure.library.schemas.book_schemas import TagInBook
 from src.infrastructure.reading.schemas.bookmark_schemas import Bookmark
 from src.infrastructure.reading.schemas.highlight_tag_schemas import (
@@ -151,13 +152,6 @@ class HighlightUploadResponse(BaseModel):
     )
 
 
-class PositionResponse(BaseModel):
-    """Position in a book document."""
-
-    index: int = Field(..., description="Document-order element number")
-    char_index: int = Field(..., description="Character offset within element")
-
-
 class ChapterWithHighlights(BaseModel):
     """Schema for Chapter with its highlights."""
 
@@ -202,6 +196,9 @@ class BookDetails(BaseModel):
     )
     reading_position: PositionResponse | None = Field(
         None, description="User's current reading position from latest session"
+    )
+    end_position: PositionResponse | None = Field(
+        None, description="End position of the book (total document length)"
     )
     created_at: dt
     updated_at: dt

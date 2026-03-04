@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from src.infrastructure.common.schemas.position_schemas import PositionResponse
+
 
 class BookBase(BaseModel):
     """Base schema for Book."""
@@ -69,6 +71,9 @@ class BookWithHighlightCount(BaseModel):
     highlight_count: int = Field(..., ge=0, description="Number of highlights for this book")
     flashcard_count: int = Field(0, ge=0, description="Number of flashcards for this book")
     tags: list[TagInBook] = Field(..., description="List of tags for this book")
+    end_position: PositionResponse | None = Field(
+        None, description="End position of the book (total document length)"
+    )
     created_at: datetime
     updated_at: datetime
     last_viewed: datetime | None = None

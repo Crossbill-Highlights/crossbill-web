@@ -1,4 +1,5 @@
 from src.domain.common.value_objects.ids import BookId, UserId
+from src.domain.common.value_objects.position import Position
 from src.domain.library.entities.book import Book
 from src.models import Book as BookORM
 
@@ -24,6 +25,9 @@ class BookMapper:
             file_path=orm_model.file_path,
             file_type=orm_model.file_type,
             last_viewed=orm_model.last_viewed,
+            end_position=Position.from_json(orm_model.end_position)
+            if orm_model.end_position
+            else None,
         )
 
     def to_orm(self, domain_entity: Book, orm_model: BookORM | None = None) -> BookORM:
@@ -42,6 +46,9 @@ class BookMapper:
             orm_model.file_path = domain_entity.file_path
             orm_model.file_type = domain_entity.file_type
             orm_model.last_viewed = domain_entity.last_viewed
+            orm_model.end_position = (
+                domain_entity.end_position.to_json() if domain_entity.end_position else None
+            )
             return orm_model
 
         # Create new
@@ -60,4 +67,7 @@ class BookMapper:
             file_type=domain_entity.file_type,
             created_at=domain_entity.created_at,
             last_viewed=domain_entity.last_viewed,
+            end_position=domain_entity.end_position.to_json()
+            if domain_entity.end_position
+            else None,
         )

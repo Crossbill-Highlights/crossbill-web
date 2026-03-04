@@ -6,6 +6,7 @@ from src.infrastructure.reading.schemas.bookmark_schemas import (
     BookmarkCreateRequest,
     BookmarksResponse,
 )
+from src.infrastructure.common.schemas.position_schemas import PositionResponse
 from src.infrastructure.reading.schemas.highlight_schemas import (
     BookDetails,
     BookHighlightSearchResponse,
@@ -24,7 +25,6 @@ from src.infrastructure.reading.schemas.highlight_schemas import (
     HighlightResponseBase,
     HighlightUploadRequest,
     HighlightUploadResponse,
-    PositionResponse,
 )
 from src.infrastructure.reading.schemas.highlight_tag_schemas import (
     HighlightTag,

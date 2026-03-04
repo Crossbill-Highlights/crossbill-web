@@ -126,6 +126,13 @@ class ReadingSessionUploadUseCase:
             if epub_path:
                 position_index = self.position_index_service.build_position_index(epub_path)
 
+        # Lazy backfill: set end_position if not yet set
+        if position_index is not None and book.end_position is None:
+            total = position_index.total_elements
+            if total > 0:
+                book.update_end_position(Position(index=total, char_index=0))
+                self.book_repository.save(book)
+
         # Resolve positions for all sessions upfront
         sessions_with_positions: list[
             tuple[ReadingSessionUploadData, Position | None, Position | None]
