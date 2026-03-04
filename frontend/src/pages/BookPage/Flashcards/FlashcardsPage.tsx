@@ -11,7 +11,7 @@ import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { ChapterNav, type ChapterNavigationData } from '@/pages/BookPage/navigation/ChapterNav.tsx';
 import { FilterListIcon, SortIcon } from '@/theme/Icons.tsx';
-import { Box, Fab, IconButton, Tooltip } from '@mui/material';
+import { Box, Divider, Fab, IconButton, Tooltip } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { flatMap } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -358,14 +358,17 @@ const FlashcardsSidebar = ({
   selectedTagId,
   onTagClick,
 }: FlashcardsSidebarProps) => (
-  <HighlightTagsList
-    tags={tags}
-    tagGroups={tagGroups}
-    bookId={bookId}
-    selectedTag={selectedTagId}
-    onTagClick={onTagClick}
-    hideEmptyGroups
-  />
+  <>
+    <Divider sx={{ mb: 4 }} />
+    <HighlightTagsList
+      tags={tags}
+      tagGroups={tagGroups}
+      bookId={bookId}
+      selectedTag={selectedTagId}
+      onTagClick={onTagClick}
+      hideEmptyGroups
+    />
+  </>
 );
 
 interface UseFlashcardsFilterTabsParams {

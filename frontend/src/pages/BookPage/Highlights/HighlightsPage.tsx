@@ -15,7 +15,7 @@ import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { useHighlightModal } from '@/pages/BookPage/Highlights/hooks/useHighlightModal.ts';
 import { FilterListIcon, SortIcon } from '@/theme/Icons.tsx';
-import { Box, Fab, IconButton, Tooltip } from '@mui/material';
+import { Box, Divider, Fab, IconButton, Tooltip } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -271,6 +271,7 @@ export const HighlightsPage = () => {
               allHighlights={allHighlights}
               onBookmarkClick={handleBookmarkClick}
             />
+            <Divider />
             <ChapterNav
               chapters={navData.chapters}
               onChapterClick={handleChapterClick}
@@ -370,20 +371,23 @@ const HighlightsSidebar = ({
   selectedLabelId,
   onLabelClick,
 }: HighlightsSidebarProps) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-    <HighlightTagsList
-      tags={tags}
-      tagGroups={tagGroups}
-      bookId={bookId}
-      selectedTag={selectedTagId}
-      onTagClick={onTagClick}
-    />
-    <HighlightLabelsList
-      bookId={bookId}
-      selectedLabelId={selectedLabelId}
-      onLabelClick={onLabelClick}
-    />
-  </Box>
+  <>
+    <Divider sx={{ mb: 4 }} />
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <HighlightTagsList
+        tags={tags}
+        tagGroups={tagGroups}
+        bookId={bookId}
+        selectedTag={selectedTagId}
+        onTagClick={onTagClick}
+      />
+      <HighlightLabelsList
+        bookId={bookId}
+        selectedLabelId={selectedLabelId}
+        onLabelClick={onLabelClick}
+      />
+    </Box>
+  </>
 );
 
 interface UseHighlightsFilterTabsParams {
