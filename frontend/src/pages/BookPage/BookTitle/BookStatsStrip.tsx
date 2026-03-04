@@ -24,9 +24,9 @@ export const BookStatsStrip = ({ book }: BookStatsStripProps) => {
   const lastReadDate = latestSession ? formatDate(latestSession.start_time) : null;
 
   const items = [
+    book.page_count ? `${book.page_count} pages` : null,
     `${highlightCount} highlights`,
     `${flashcardCount} flashcards`,
-    book.page_count ? `${book.page_count} pages` : null,
     `Added ${formatDate(book.created_at)}`,
     lastReadDate ? `Last read ${lastReadDate}` : null,
   ].filter(Boolean);
@@ -38,7 +38,10 @@ export const BookStatsStrip = ({ book }: BookStatsStripProps) => {
         color: 'text.secondary',
         display: 'flex',
         flexWrap: 'wrap',
-        alignItems: 'center',
+        justifyContent: {
+          xs: 'center',
+          lg: 'left',
+        },
         gap: 0.5,
         mt: 'auto',
         mb: 2,
