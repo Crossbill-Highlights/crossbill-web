@@ -1,26 +1,11 @@
 import type { BookDetails } from '@/api/generated/model';
 import { BookCover } from '@/components/BookCover.tsx';
 import { BookTagList } from '@/pages/BookPage/BookTitle/BookTagList.tsx';
-import { EditIcon, ExpandLessIcon, ExpandMoreIcon } from '@/theme/Icons.tsx';
-import { Box, Button, Typography } from '@mui/material';
-import DOMPurify from 'dompurify';
-import { useMemo, useState } from 'react';
+import { EditIcon } from '@/theme/Icons.tsx';
+import { Box, Button, LinearProgress, Tooltip, Typography } from '@mui/material';
+import { useState } from 'react';
 import { BookEditModal } from './BookEditModal.tsx';
 import { BookStatsStrip } from './BookStatsStrip.tsx';
-
-// Strip HTML tags from description for plain text preview
-const stripHtml = (html: string): string => {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  return doc.body.textContent || '';
-};
-
-// Sanitize HTML for safe rendering
-const sanitizeHtml = (html: string): string => {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'ul', 'ol', 'li', 'div', 'span'],
-    ALLOWED_ATTR: [],
-  });
-};
 
 export interface BookTitleProps {
   book: BookDetails;
@@ -28,28 +13,15 @@ export interface BookTitleProps {
 
 export const BookTitle = ({ book }: BookTitleProps) => {
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   const handleEdit = () => {
     setEditModalOpen(true);
   };
 
-  // Process description - create plain text for preview and sanitized HTML for expanded view
-  const { plainDescription, sanitizedHtml, isLongDescription } = useMemo(() => {
-    if (!book.description) {
-      return { plainDescription: null, sanitizedHtml: null, isLongDescription: false };
-    }
-    const plain = stripHtml(book.description);
-    const sanitized = sanitizeHtml(book.description);
-    return {
-      plainDescription: plain,
-      sanitizedHtml: sanitized,
-      isLongDescription: plain.length > 300,
-    };
-  }, [book.description]);
-
-  const truncatedDescription =
-    isLongDescription && !descriptionExpanded ? plainDescription!.slice(0, 300) + '...' : null;
+  const progress =
+    book.reading_position && book.end_position && book.end_position.index > 0
+      ? Math.min(100, Math.round((book.reading_position.index / book.end_position.index) * 100))
+      : 0;
 
   return (
     <>
@@ -66,7 +38,8 @@ export const BookTitle = ({ book }: BookTitleProps) => {
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'center',
+            flexDirection: 'column',
+            alignItems: 'center',
             width: '100%',
           }}
         >
@@ -90,6 +63,13 @@ export const BookTitle = ({ book }: BookTitleProps) => {
               }}
             />
           </Box>
+          <Tooltip title={`${progress}% progress`} arrow>
+            <LinearProgress
+              variant="determinate"
+              value={progress}
+              sx={{ width: { xs: 160, md: 200 }, mt: 2, borderRadius: 1, height: 6 }}
+            />
+          </Tooltip>
         </Box>
 
         {/* Book Info */}
@@ -127,54 +107,13 @@ export const BookTitle = ({ book }: BookTitleProps) => {
             {book.author || 'Unknown Author'}
           </Typography>
 
-          {sanitizedHtml && (
-            <Box sx={{ mb: 2, width: '100%' }}>
-              {/* Show truncated plain text when collapsed, or full HTML when expanded */}
-              {truncatedDescription ? (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'text.secondary',
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {truncatedDescription}
-                </Typography>
-              ) : (
-                <Box
-                  sx={{
-                    color: 'text.secondary',
-                    lineHeight: 1.6,
-                    fontSize: '0.875rem',
-                    '& p': { my: 1 },
-                    '& p:first-of-type': { mt: 0 },
-                    '& p:last-of-type': { mb: 0 },
-                    '& ul, & ol': { pl: 2, my: 1 },
-                    '& li': { mb: 0.5 },
-                  }}
-                  dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-                />
-              )}
-              {isLongDescription && (
-                <Button
-                  size="small"
-                  onClick={() => setDescriptionExpanded(!descriptionExpanded)}
-                  endIcon={descriptionExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                  sx={{ mt: 0.5, p: 0, minWidth: 'auto' }}
-                >
-                  {descriptionExpanded ? 'Show less' : 'Show more'}
-                </Button>
-              )}
-            </Box>
-          )}
-
           <Box
             sx={{
               display: 'flex',
               justifyContent: { xs: 'center', lg: 'flex-start' },
               alignItems: 'center',
               gap: 1,
-              mb: book.tags.length > 0 ? 2 : 0,
+              mb: 2,
               width: '100%',
               flexWrap: 'wrap',
             }}
@@ -184,12 +123,11 @@ export const BookTitle = ({ book }: BookTitleProps) => {
             </Button>
           </Box>
 
+          <BookStatsStrip book={book} />
+
           <BookTagList tags={book.tags} />
         </Box>
       </Box>
-
-      {/* Stats Strip */}
-      <BookStatsStrip book={book} />
 
       {/* Edit Modal */}
       <BookEditModal book={book} open={editModalOpen} onClose={() => setEditModalOpen(false)} />
