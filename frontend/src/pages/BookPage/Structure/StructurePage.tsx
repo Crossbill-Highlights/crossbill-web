@@ -7,7 +7,6 @@ import { useMemo } from 'react';
 import { ChapterAccordion } from './ChapterAccordion';
 import { ChapterDetailDialog } from './ChapterDetailDialog/ChapterDetailDialog.tsx';
 import { useChapterDetailsModal } from './hooks/useChapterDetailsModal.ts';
-import { ReadingProgressLine } from './ReadingProgressLine';
 
 export const StructurePage = () => {
   const { book } = useBookPage();
@@ -87,20 +86,30 @@ export const StructurePage = () => {
   };
 
   const content = (
-    <ReadingProgressLine readingPosition={readingPosition}>
-      {topLevelChapters.map((chapter) => (
-        <ChapterAccordion
-          key={chapter.id}
-          chapter={chapter}
-          childrenByParentId={childrenByParentId}
-          bookId={book.id}
-          isRead={isChapterRead(chapter.start_position)}
-          readingPosition={readingPosition}
-          preExpanded={true}
-          onChapterClick={handleChapterClick}
-        />
-      ))}
-    </ReadingProgressLine>
+    <>
+      {topLevelChapters.map((chapter, index) => {
+        const chapterIsRead = isChapterRead(chapter.start_position);
+        const isLastChapter = index === topLevelChapters.length - 1;
+        const nextIsRead = isLastChapter
+          ? false
+          : isChapterRead(topLevelChapters[index + 1].start_position);
+        const chapterIsCurrent = chapterIsRead && !nextIsRead;
+
+        return (
+          <ChapterAccordion
+            key={chapter.id}
+            chapter={chapter}
+            childrenByParentId={childrenByParentId}
+            bookId={book.id}
+            isRead={chapterIsRead}
+            isCurrent={chapterIsCurrent}
+            readingPosition={readingPosition}
+            preExpanded={true}
+            onChapterClick={handleChapterClick}
+          />
+        );
+      })}
+    </>
   );
 
   return (
