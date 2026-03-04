@@ -1,12 +1,12 @@
 """Reading context schemas."""
 
+from src.infrastructure.common.schemas.position_schemas import PositionResponse
 from src.infrastructure.reading.schemas.bookmark_schemas import (
     Bookmark,
     BookmarkBase,
     BookmarkCreateRequest,
     BookmarksResponse,
 )
-from src.infrastructure.common.schemas.position_schemas import PositionResponse
 from src.infrastructure.reading.schemas.highlight_schemas import (
     BookDetails,
     BookHighlightSearchResponse,

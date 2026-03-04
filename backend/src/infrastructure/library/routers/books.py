@@ -30,6 +30,7 @@ from src.domain.reading.services import ChapterWithHighlights as DomainChapterWi
 from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
 from src.exceptions import CrossbillError
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.schemas.position_schemas import PositionResponse
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.learning.schemas import Flashcard
 from src.infrastructure.library.schemas import (
@@ -50,7 +51,6 @@ from src.infrastructure.reading.schemas import (
 from src.infrastructure.reading.schemas import (
     ChapterWithHighlights as ChapterWithHighlightsSchema,
 )
-from src.infrastructure.common.schemas.position_schemas import PositionResponse
 
 logger = logging.getLogger(__name__)
 
