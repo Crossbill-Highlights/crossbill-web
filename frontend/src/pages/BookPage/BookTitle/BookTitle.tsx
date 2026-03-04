@@ -30,7 +30,7 @@ export const BookTitle = ({ book }: BookTitleProps) => {
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', lg: '280px 1fr 280px' },
           gap: 4,
-          alignItems: 'start',
+          alignItems: 'stretch',
           mb: 2.5,
         }}
       >
@@ -40,6 +40,7 @@ export const BookTitle = ({ book }: BookTitleProps) => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            alignSelf: 'start',
             width: '100%',
           }}
         >
