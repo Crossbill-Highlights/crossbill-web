@@ -6,6 +6,7 @@ import { Box, Button, Typography } from '@mui/material';
 import DOMPurify from 'dompurify';
 import { useMemo, useState } from 'react';
 import { BookEditModal } from './BookEditModal.tsx';
+import { BookStatsStrip } from './BookStatsStrip.tsx';
 
 // Strip HTML tags from description for plain text preview
 const stripHtml = (html: string): string => {
@@ -186,6 +187,9 @@ export const BookTitle = ({ book }: BookTitleProps) => {
           <BookTagList tags={book.tags} />
         </Box>
       </Box>
+
+      {/* Stats Strip */}
+      <BookStatsStrip book={book} />
 
       {/* Edit Modal */}
       <BookEditModal book={book} open={editModalOpen} onClose={() => setEditModalOpen(false)} />
