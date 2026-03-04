@@ -56,7 +56,7 @@ export const LandingPage = () => {
           Welcome to Crossbill
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.1rem' }}>
-          Your highlights management application
+          Your reading companion
         </Typography>
       </Box>
 
