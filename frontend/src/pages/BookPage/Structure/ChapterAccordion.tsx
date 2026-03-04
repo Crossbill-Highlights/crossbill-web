@@ -153,13 +153,12 @@ export const ChapterAccordion = ({
   preExpanded = false,
   onChapterClick,
 }: ChapterAccordionProps) => {
-  const [expanded, setExpanded] = useState(preExpanded);
+  const readStatus: ReadStatus | undefined =
+    readingPosition == null ? undefined : isCurrent ? 'current' : isRead ? 'read' : 'unread';
+  const [expanded, setExpanded] = useState(readStatus !== 'read' || preExpanded);
 
   const childChapters = childrenByParentId.get(chapter.id) ?? [];
   const isLeaf = childChapters.length === 0;
-
-  const readStatus: ReadStatus | undefined =
-    readingPosition == null ? undefined : isCurrent ? 'current' : isRead ? 'read' : 'unread';
 
   let content: ReactNode;
   if (!isLeaf) {

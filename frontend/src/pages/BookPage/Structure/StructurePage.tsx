@@ -85,7 +85,7 @@ export const StructurePage = () => {
     return readingPosition.index >= startPosition.index;
   };
 
-  const content = (
+  return (
     <>
       {topLevelChapters.map((chapter, index) => {
         const chapterIsRead = isChapterRead(chapter.start_position);
@@ -104,17 +104,10 @@ export const StructurePage = () => {
             isRead={chapterIsRead}
             isCurrent={chapterIsCurrent}
             readingPosition={readingPosition}
-            preExpanded={true}
             onChapterClick={handleChapterClick}
           />
         );
       })}
-    </>
-  );
-
-  return (
-    <>
-      {content}
 
       {selectedChapter && (
         <ChapterDetailDialog
