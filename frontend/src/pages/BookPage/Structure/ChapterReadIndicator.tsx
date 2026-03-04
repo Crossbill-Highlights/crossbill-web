@@ -6,7 +6,7 @@ interface ChapterReadIndicatorProps {
   status: ReadStatus;
 }
 
-const SIZE = 16;
+const SIZE = 20;
 
 export const ChapterReadIndicator = ({ status }: ChapterReadIndicatorProps) => {
   const theme = useTheme();
@@ -20,15 +20,27 @@ export const ChapterReadIndicator = ({ status }: ChapterReadIndicatorProps) => {
       viewBox={`0 0 ${SIZE} ${SIZE}`}
       style={{ flexShrink: 0, display: 'block' }}
     >
-      {status === 'read' && <circle cx={8} cy={8} r={6} fill={brown} />}
+      {status === 'read' && (
+        <>
+          <circle cx={10} cy={10} r={8} fill={brown} />
+          <path
+            d="M6 10.5 L9 13.5 L14.5 7"
+            fill="none"
+            stroke="white"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      )}
       {status === 'current' && (
         <>
-          <circle cx={8} cy={8} r={6} fill="none" stroke={brown} strokeWidth={1.5} />
-          <circle cx={8} cy={8} r={3} fill={brown} />
+          <circle cx={10} cy={10} r={7.5} fill="none" stroke={brown} strokeWidth={1.5} />
+          <circle cx={10} cy={10} r={3.5} fill={brown} />
         </>
       )}
       {status === 'unread' && (
-        <circle cx={8} cy={8} r={6} fill="none" stroke={gray} strokeWidth={1.5} />
+        <circle cx={10} cy={10} r={7.5} fill="none" stroke={gray} strokeWidth={1.5} />
       )}
     </svg>
   );
