@@ -4,6 +4,7 @@
  * crossbill API
  * OpenAPI spec version: 0.1.0
  */
+import type { PositionResponse } from './positionResponse';
 import type { TagInBook } from './tagInBook';
 
 /**
@@ -31,6 +32,8 @@ export interface BookWithHighlightCount {
   flashcard_count?: number;
   /** List of tags for this book */
   tags: TagInBook[];
+  /** End position of the book (total document length) */
+  end_position?: PositionResponse | null;
   created_at: string;
   updated_at: string;
   last_viewed?: string | null;

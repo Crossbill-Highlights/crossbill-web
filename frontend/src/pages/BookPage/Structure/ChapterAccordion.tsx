@@ -11,6 +11,9 @@ import {
 import { sumBy } from 'lodash';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
+import { ChapterReadIndicator } from './ChapterReadIndicator';
+
+type ReadStatus = 'read' | 'current' | 'unread';
 
 interface ChapterAccordionProps {
   chapter: ChapterWithHighlights;
@@ -18,6 +21,7 @@ interface ChapterAccordionProps {
   bookId: number;
   depth?: number;
   isRead?: boolean;
+  isCurrent?: boolean;
   readingPosition?: PositionResponse | null;
   preExpanded?: boolean;
   onChapterClick?: (chapterId: number) => void;
@@ -43,12 +47,14 @@ const ExpandableChapter = ({
   depth,
   expanded,
   onToggle,
+  readStatus,
   children,
 }: {
   name: string;
   depth: number;
   expanded: boolean;
   onToggle: () => void;
+  readStatus?: ReadStatus;
   children: ReactNode;
 }) => (
   <Accordion expanded={expanded} onChange={onToggle} sx={accordionSx(depth)}>
@@ -60,9 +66,12 @@ const ExpandableChapter = ({
         '& .MuiAccordionSummary-content.Mui-expanded': { my: '12px' },
       }}
     >
-      <Typography variant="body1" sx={{ fontWeight: 600 }}>
-        {name}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {readStatus && <ChapterReadIndicator status={readStatus} />}
+        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+          {name}
+        </Typography>
+      </Box>
     </AccordionSummary>
     <AccordionDetails sx={{ pt: 0 }}>{children}</AccordionDetails>
   </Accordion>
@@ -71,10 +80,12 @@ const ExpandableChapter = ({
 const LeafChapterRow = ({
   chapter,
   depth,
+  readStatus,
   onClick,
 }: {
   chapter: ChapterWithHighlights;
   depth: number;
+  readStatus?: ReadStatus;
   onClick?: () => void;
 }) => {
   const highlightCount = chapter.highlights.length;
@@ -107,9 +118,12 @@ const LeafChapterRow = ({
         },
       })}
     >
-      <Typography variant="body1" sx={{ fontWeight: 600 }}>
-        {chapter.name}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {readStatus && <ChapterReadIndicator status={readStatus} />}
+        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+          {chapter.name}
+        </Typography>
+      </Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'text.secondary' }}>
         {highlightCount > 0 && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -134,11 +148,14 @@ export const ChapterAccordion = ({
   bookId,
   depth = 0,
   isRead,
+  isCurrent,
   readingPosition,
   preExpanded = false,
   onChapterClick,
 }: ChapterAccordionProps) => {
-  const [expanded, setExpanded] = useState(preExpanded);
+  const readStatus: ReadStatus | undefined =
+    readingPosition == null ? undefined : isCurrent ? 'current' : isRead ? 'read' : 'unread';
+  const [expanded, setExpanded] = useState(readStatus !== 'read' || preExpanded);
 
   const childChapters = childrenByParentId.get(chapter.id) ?? [];
   const isLeaf = childChapters.length === 0;
@@ -151,24 +168,37 @@ export const ChapterAccordion = ({
         depth={depth}
         expanded={expanded}
         onToggle={() => setExpanded(!expanded)}
+        readStatus={readStatus}
       >
         <Box>
-          {childChapters.map((child) => (
-            <ChapterAccordion
-              key={child.id}
-              chapter={child}
-              childrenByParentId={childrenByParentId}
-              bookId={bookId}
-              depth={depth + 1}
-              isRead={
-                readingPosition != null && child.start_position != null
-                  ? readingPosition.index >= child.start_position.index
-                  : undefined
-              }
-              readingPosition={readingPosition}
-              onChapterClick={onChapterClick}
-            />
-          ))}
+          {childChapters.map((child, index) => {
+            const childIsRead =
+              readingPosition != null && child.start_position != null
+                ? readingPosition.index >= child.start_position.index
+                : undefined;
+            // Current = this child is read but the next sibling is not
+            const isLastChild = index === childChapters.length - 1;
+            const nextIsRead = isLastChild
+              ? false
+              : readingPosition != null && childChapters[index + 1].start_position != null
+                ? readingPosition.index >= childChapters[index + 1].start_position!.index
+                : false;
+            const childIsCurrent = isCurrent === true && childIsRead === true && !nextIsRead;
+
+            return (
+              <ChapterAccordion
+                key={child.id}
+                chapter={child}
+                childrenByParentId={childrenByParentId}
+                bookId={bookId}
+                depth={depth + 1}
+                isRead={childIsRead}
+                isCurrent={childIsCurrent}
+                readingPosition={readingPosition}
+                onChapterClick={onChapterClick}
+              />
+            );
+          })}
         </Box>
       </ExpandableChapter>
     );
@@ -177,6 +207,7 @@ export const ChapterAccordion = ({
       <LeafChapterRow
         chapter={chapter}
         depth={depth}
+        readStatus={readStatus}
         onClick={() => onChapterClick?.(chapter.id)}
       />
     );

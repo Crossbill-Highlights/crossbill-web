@@ -29,7 +29,7 @@ export const FlashcardSuggestionCard = ({
     <FlashcardCard
       question={question}
       answer={answer}
-      borderStyle="dashed"
+      borderColor="grey"
       renderActions={() => (
         <>
           <IconButtonWithTooltip

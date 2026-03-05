@@ -1,6 +1,6 @@
 import type { ChapterWithHighlights } from '@/api/generated/model';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 interface UseChapterDetailsModalOptions {
   leafChapters: ChapterWithHighlights[];
@@ -26,6 +26,9 @@ export const useChapterDetailsModal = ({
     search: (prev: Record<string, unknown>) => Record<string, unknown>;
     replace?: boolean;
   }) => Promise<void>;
+
+  // Tracks whether modal was opened via user click (push) vs direct URL
+  const wasOpenedByPush = useRef(false);
 
   // Local state used when syncToUrl is false
   const [localChapterId, setLocalChapterId] = useState<number | undefined>();
@@ -61,15 +64,21 @@ export const useChapterDetailsModal = ({
   // Push to history so back button closes the dialog
   const handleChapterClick = useCallback(
     (chapterId: number) => {
+      wasOpenedByPush.current = true;
       updateChapterId(chapterId, false);
     },
     [updateChapterId]
   );
 
-  // Replace so back after closing doesn't reopen the dialog
+  // Pop history entry if opened via push, otherwise replace
   const handleDialogClose = useCallback(() => {
-    updateChapterId(undefined, true);
-  }, [updateChapterId]);
+    if (wasOpenedByPush.current && syncToUrl) {
+      wasOpenedByPush.current = false;
+      window.history.back();
+    } else {
+      updateChapterId(undefined, true);
+    }
+  }, [updateChapterId, syncToUrl]);
 
   // Replace so back goes to pre-dialog state, not previous chapter
   const handleDialogNavigate = useCallback(

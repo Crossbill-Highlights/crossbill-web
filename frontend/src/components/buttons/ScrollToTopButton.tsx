@@ -13,17 +13,11 @@ interface ScrollToTopButtonProps {
    * @default 'smooth'
    */
   scrollBehavior?: ScrollBehavior;
-  /**
-   * Extra pixels to add to the bottom position (e.g. to stack above a floating FAB).
-   * @default 0
-   */
-  bottomOffset?: number;
 }
 
 export const ScrollToTopButton = ({
   scrollThreshold = 300,
   scrollBehavior = 'smooth',
-  bottomOffset = 0,
 }: ScrollToTopButtonProps) => {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -48,19 +42,8 @@ export const ScrollToTopButton = ({
   };
 
   return (
-    <Zoom in={isVisible}>
-      <Fab
-        size="small"
-        color="primary"
-        aria-label="scroll to top"
-        onClick={handleClick}
-        sx={{
-          position: 'fixed',
-          bottom: { xs: `calc(${80 + bottomOffset}px + env(safe-area-inset-bottom))`, lg: 24 },
-          right: 24,
-          zIndex: 1000,
-        }}
-      >
+    <Zoom in={isVisible} mountOnEnter unmountOnExit>
+      <Fab size="small" color="primary" aria-label="scroll to top" onClick={handleClick}>
         <ScrollToTopIcon />
       </Fab>
     </Zoom>

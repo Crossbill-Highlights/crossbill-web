@@ -1,7 +1,7 @@
 import type { FlashcardSuggestionItem } from '@/api/generated/model';
+import { AIActionButton } from '@/components/buttons/AIActionButton';
 import { FlashcardSuggestionCard } from '@/pages/BookPage/Flashcards/FlashcardSuggestionCard.tsx';
-import { AIIcon } from '@/theme/Icons.tsx';
-import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
+import { Box, CircularProgress, Stack, Typography } from '@mui/material';
 
 interface FlashcardSuggestionsProps {
   suggestions: FlashcardSuggestionItem[];
@@ -27,16 +27,11 @@ export const FlashcardSuggestions = ({
           Suggested flashcards
         </Typography>
       ) : (
-        <Button
-          variant="text"
-          size="small"
-          startIcon={<AIIcon />}
+        <AIActionButton
+          text={'Suggest flashcards'}
           onClick={onFetchSuggestions}
           disabled={disabled || isLoading}
-          sx={{ mb: 1 }}
-        >
-          Suggest flashcards
-        </Button>
+        />
       )}
 
       {isLoading && (

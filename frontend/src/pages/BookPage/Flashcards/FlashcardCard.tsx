@@ -1,6 +1,6 @@
 import { Collapsable } from '@/components/animations/Collapsable';
 import { QuoteIcon } from '@/theme/Icons';
-import { Box, Card, CardActionArea, CardContent, styled, Typography } from '@mui/material';
+import { Box, ButtonBase, styled, Typography } from '@mui/material';
 import { ReactNode, useState } from 'react';
 
 export interface FlashcardCardProps {
@@ -10,28 +10,29 @@ export interface FlashcardCardProps {
   sourceHighlightText?: string;
   renderActions: () => ReactNode;
   borderStyle?: 'solid' | 'dashed';
+  borderColor?: 'primary' | 'grey';
 }
 
-const FlashcardStyled = styled(Card, {
-  shouldForwardProp: (prop) => prop !== 'borderStyle',
-})<{ borderStyle?: 'solid' | 'dashed' }>(({ theme, borderStyle = 'solid' }) => ({
-  height: 'fit-content',
-  display: 'flex',
-  flexDirection: 'column',
-  position: 'relative',
-  transition: 'all 0.2s ease',
-  bgcolor: 'background.paper',
-  border: `1px ${borderStyle} ${theme.palette.divider}`,
-  '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: 3,
-  },
-}));
+const FlashcardStyled = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'borderStyle' && prop !== 'borderColor',
+})<{ borderStyle?: 'solid' | 'dashed'; borderColor?: 'primary' | 'grey' }>(
+  ({ theme, borderStyle = 'solid', borderColor = 'primary' }) => ({
+    position: 'relative',
+    borderLeft: `3px ${borderStyle} ${borderColor === 'grey' ? theme.palette.divider : theme.palette.primary.main}`,
+    paddingLeft: theme.spacing(2),
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
+    transition: 'background-color 0.15s ease',
+    '&:hover': {
+      backgroundColor: theme.palette.action.hover,
+    },
+  })
+);
 
 const ActionButtonsStyled = styled(Box)(() => ({
   position: 'absolute',
   top: 8,
-  right: 8,
+  right: 0,
   display: 'flex',
   gap: 0.5,
   zIndex: 1,
@@ -49,100 +50,77 @@ export const FlashcardCard = ({
   sourceHighlightText,
   renderActions,
   borderStyle = 'solid',
+  borderColor = 'primary',
 }: FlashcardCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <FlashcardStyled borderStyle={borderStyle}>
-      <CardActionArea
+    <FlashcardStyled borderStyle={borderStyle} borderColor={borderColor}>
+      <ButtonBase
         onClick={() => setIsExpanded(!isExpanded)}
         sx={{
-          flexGrow: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'stretch',
-          justifyContent: 'flex-start',
+          display: 'block',
+          width: '100%',
+          textAlign: 'left',
+          pr: 8,
         }}
       >
-        <CardContent sx={{ width: '100%', pt: 2 }}>
-          {/* Question */}
-          <Box
+        <Typography variant="body1" sx={{ lineHeight: 1.5 }}>
+          {question}
+        </Typography>
+      </ButtonBase>
+
+      <Collapsable isExpanded={isExpanded}>
+        <Box sx={{ mt: 1.5, pr: 8 }}>
+          <Typography
+            variant="caption"
             sx={{
-              mb: isExpanded ? 2 : 1,
-              pr: 6,
+              color: 'secondary.main',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              display: 'block',
+              mb: 0.5,
             }}
           >
-            <Typography
-              variant="caption"
+            Answer
+          </Typography>
+
+          <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
+            {answer}
+          </Typography>
+
+          {/* Source highlight preview */}
+          {showSourceHighlight && sourceHighlightText && (
+            <Box
               sx={{
-                color: 'primary.main',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                display: 'block',
-                mb: 0.5,
+                mt: 2,
+                pt: 2,
+                borderTop: '1px dashed',
+                borderColor: 'divider',
               }}
             >
-              Question
-            </Typography>
-            <Typography variant="body1" sx={{ lineHeight: 1.5 }}>
-              {question}
-            </Typography>
-          </Box>
-
-          <Collapsable isExpanded={isExpanded}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: 'secondary.main',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                Answer
-              </Typography>
-            </Box>
-
-            <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
-              {answer}
-            </Typography>
-
-            {/* Source highlight preview */}
-            {showSourceHighlight && sourceHighlightText && (
-              <Box
-                sx={{
-                  mt: 2,
-                  pt: 2,
-                  borderTop: '1px dashed',
-                  borderColor: 'divider',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                  <QuoteIcon
-                    sx={{ fontSize: 14, color: 'text.disabled', mt: 0.25, flexShrink: 0 }}
-                  />
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: 'text.disabled',
-                      fontStyle: 'italic',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {sourceHighlightText}
-                  </Typography>
-                </Box>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <QuoteIcon sx={{ fontSize: 14, color: 'text.disabled', mt: 0.25, flexShrink: 0 }} />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'text.disabled',
+                    fontStyle: 'italic',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {sourceHighlightText}
+                </Typography>
               </Box>
-            )}
-          </Collapsable>
-        </CardContent>
-      </CardActionArea>
+            </Box>
+          )}
+        </Box>
+      </Collapsable>
 
       <ActionButtonsStyled>{renderActions()}</ActionButtonsStyled>
     </FlashcardStyled>

@@ -13,6 +13,7 @@ from src.application.reading.protocols.reading_session_repository import (
     ReadingSessionRepositoryProtocol,
 )
 from src.domain.common.value_objects.ids import BookId, UserId
+from src.domain.common.value_objects.position import Position
 from src.domain.common.value_objects.position_index import PositionIndex
 from src.domain.library.entities.chapter import TocChapter
 from src.domain.reading.exceptions import BookNotFoundError
@@ -170,6 +171,12 @@ class EbookUploadUseCase:
 
         # Build position index from EPUB DOM
         position_index = self.position_index_service.build_position_index(epub_path)
+
+        # Set end_position on book from total element count
+        total = position_index.total_elements
+        if total > 0:
+            book.update_end_position(Position(index=total, char_index=0))
+            self.book_repository.save(book)
 
         # Parse TOC and sync chapters (with positions)
         toc_chapters = self.epub_toc_parser.parse_toc(epub_path)

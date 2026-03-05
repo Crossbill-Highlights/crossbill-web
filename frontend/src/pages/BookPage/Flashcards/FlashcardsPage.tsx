@@ -10,12 +10,13 @@ import { SearchBar } from '@/components/inputs/SearchBar.tsx';
 import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { ChapterNav, type ChapterNavigationData } from '@/pages/BookPage/navigation/ChapterNav.tsx';
-import { FilterListIcon, SortIcon } from '@/theme/Icons.tsx';
-import { Box, Fab, IconButton, Tooltip } from '@mui/material';
+import { SortIcon } from '@/theme/Icons.tsx';
+import { Box, Divider, IconButton, Tooltip } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { flatMap } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { FilterFab } from '../common/FilterFab.tsx';
 import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
 import { HighlightTagsList } from '../navigation/HighlightTagsList.tsx';
 import {
@@ -28,7 +29,7 @@ import { FlashcardEditDialog } from './FlashcardEditDialog.tsx';
 const BOOK_FLASHCARDS_KEY = -1;
 
 export const FlashcardsPage = () => {
-  const { book, isDesktop, leftSidebarEl, setHasFloatingFilter } = useBookPage();
+  const { book, isDesktop, leftSidebarEl, fabContainerEl } = useBookPage();
 
   const { search: urlSearch, tagId: urlTagId } = useSearch({ from: '/book/$bookId/flashcards' });
   const navigate = useNavigate({ from: '/book/$bookId/flashcards' });
@@ -203,14 +204,6 @@ export const FlashcardsPage = () => {
     book.highlight_tags
   );
 
-  // Signal to BookPage that this tab has a floating filter FAB on mobile
-  useEffect(() => {
-    if (!isDesktop) {
-      setHasFloatingFilter(true);
-      return () => setHasFloatingFilter(false);
-    }
-  }, [isDesktop, setHasFloatingFilter]);
-
   const filterTabs = useFlashcardsFilterTabs({
     navChapters: navData.chapters,
     tags: navData.tags,
@@ -307,20 +300,14 @@ export const FlashcardsPage = () => {
             animationKey="flashcards"
             onEditFlashcard={setEditingFlashcard}
           />
-          <Fab
-            size="small"
-            color="primary"
-            aria-label="Open filters"
-            onClick={() => setFilterDrawerOpen(true)}
-            sx={{
-              position: 'fixed',
-              bottom: 'calc(80px + env(safe-area-inset-bottom))',
-              right: 24,
-              zIndex: 1000,
-            }}
-          >
-            <FilterListIcon />
-          </Fab>
+          {fabContainerEl &&
+            createPortal(
+              <FilterFab
+                filterEnabled={!!selectedTagId}
+                onClick={() => setFilterDrawerOpen(true)}
+              />,
+              fabContainerEl
+            )}
           <FilterDrawer
             open={filterDrawerOpen}
             onClose={() => setFilterDrawerOpen(false)}
@@ -358,14 +345,17 @@ const FlashcardsSidebar = ({
   selectedTagId,
   onTagClick,
 }: FlashcardsSidebarProps) => (
-  <HighlightTagsList
-    tags={tags}
-    tagGroups={tagGroups}
-    bookId={bookId}
-    selectedTag={selectedTagId}
-    onTagClick={onTagClick}
-    hideEmptyGroups
-  />
+  <>
+    <Divider sx={{ mb: 4 }} />
+    <HighlightTagsList
+      tags={tags}
+      tagGroups={tagGroups}
+      bookId={bookId}
+      selectedTag={selectedTagId}
+      onTagClick={onTagClick}
+      hideEmptyGroups
+    />
+  </>
 );
 
 interface UseFlashcardsFilterTabsParams {

@@ -14,12 +14,13 @@ import { SearchBar } from '@/components/inputs/SearchBar.tsx';
 import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { useHighlightModal } from '@/pages/BookPage/Highlights/hooks/useHighlightModal.ts';
-import { FilterListIcon, SortIcon } from '@/theme/Icons.tsx';
-import { Box, Fab, IconButton, Tooltip } from '@mui/material';
+import { SortIcon } from '@/theme/Icons.tsx';
+import { Box, Divider, IconButton, Tooltip } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { FilterFab } from '../common/FilterFab.tsx';
 import { BookmarkList } from '../navigation/BookmarkList.tsx';
 import { ChapterNav, type ChapterNavigationData } from '../navigation/ChapterNav.tsx';
 import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
@@ -29,7 +30,7 @@ import { HighlightsList, type ChapterData } from './HighlightsList.tsx';
 import { HighlightViewModal } from './HighlightViewModal';
 
 export const HighlightsPage = () => {
-  const { book, isDesktop, leftSidebarEl, setHasFloatingFilter } = useBookPage();
+  const { book, isDesktop, leftSidebarEl, fabContainerEl } = useBookPage();
 
   const {
     search: urlSearch,
@@ -43,6 +44,8 @@ export const HighlightsPage = () => {
   const [selectedLabelId, setSelectedLabelId] = useState<number | undefined>(urlLabelId);
   const [isReversed, setIsReversed] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+
+  const filterEnabled = !!selectedLabelId || !!selectedTagId;
 
   useEffect(() => {
     setSelectedTagId(urlTagId);
@@ -189,14 +192,6 @@ export const HighlightsPage = () => {
     return 'No chapters found for this book.';
   }, [bookSearch.showSearchResults, selectedTagId, selectedLabelId]);
 
-  // Signal to BookPage that this tab has a floating filter FAB on mobile
-  useEffect(() => {
-    if (!isDesktop) {
-      setHasFloatingFilter(true);
-      return () => setHasFloatingFilter(false);
-    }
-  }, [isDesktop, setHasFloatingFilter]);
-
   const filterTabs = useHighlightsFilterTabs({
     navChapters: navData.chapters,
     tags,
@@ -271,6 +266,7 @@ export const HighlightsPage = () => {
               allHighlights={allHighlights}
               onBookmarkClick={handleBookmarkClick}
             />
+            <Divider />
             <ChapterNav
               chapters={navData.chapters}
               onChapterClick={handleChapterClick}
@@ -309,20 +305,13 @@ export const HighlightsPage = () => {
             animationKey="chapters-highlights"
             onOpenHighlight={handleOpenHighlight}
           />
-          <Fab
-            size="small"
-            color="primary"
-            aria-label="Open filters"
-            onClick={() => setFilterDrawerOpen(true)}
-            sx={{
-              position: 'fixed',
-              bottom: 'calc(80px + env(safe-area-inset-bottom))',
-              right: 24,
-              zIndex: 1000,
-            }}
-          >
-            <FilterListIcon />
-          </Fab>
+
+          {fabContainerEl &&
+            createPortal(
+              <FilterFab filterEnabled={filterEnabled} onClick={() => setFilterDrawerOpen(true)} />,
+              fabContainerEl
+            )}
+
           <FilterDrawer
             open={filterDrawerOpen}
             onClose={() => setFilterDrawerOpen(false)}
@@ -370,20 +359,23 @@ const HighlightsSidebar = ({
   selectedLabelId,
   onLabelClick,
 }: HighlightsSidebarProps) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-    <HighlightTagsList
-      tags={tags}
-      tagGroups={tagGroups}
-      bookId={bookId}
-      selectedTag={selectedTagId}
-      onTagClick={onTagClick}
-    />
-    <HighlightLabelsList
-      bookId={bookId}
-      selectedLabelId={selectedLabelId}
-      onLabelClick={onLabelClick}
-    />
-  </Box>
+  <>
+    <Divider sx={{ mb: 4 }} />
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <HighlightTagsList
+        tags={tags}
+        tagGroups={tagGroups}
+        bookId={bookId}
+        selectedTag={selectedTagId}
+        onTagClick={onTagClick}
+      />
+      <HighlightLabelsList
+        bookId={bookId}
+        selectedLabelId={selectedLabelId}
+        onLabelClick={onLabelClick}
+      />
+    </Box>
+  </>
 );
 
 interface UseHighlightsFilterTabsParams {

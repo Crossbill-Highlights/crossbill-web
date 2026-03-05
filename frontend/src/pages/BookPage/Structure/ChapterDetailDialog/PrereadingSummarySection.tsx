@@ -3,10 +3,10 @@ import {
   getGetBookPrereadingApiV1BooksBookIdPrereadingGetQueryKey,
   useGenerateChapterPrereadingApiV1ChaptersChapterIdPrereadingGeneratePost,
 } from '@/api/generated/prereading/prereading';
+import { AIActionButton } from '@/components/buttons/AIActionButton.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { PrereadingContent } from '@/pages/BookPage/Structure/PrereadingContent.tsx';
-import { AIIcon } from '@/theme/Icons.tsx';
-import { Box, Button } from '@mui/material';
+import { Box } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { CollapsibleSection } from './CollapsibleSection.tsx';
 
@@ -47,9 +47,7 @@ export const PrereadingSummarySection = ({
       ) : (
         <AIFeature>
           <Box sx={{ py: 1 }}>
-            <Button variant="outlined" size="small" startIcon={<AIIcon />} onClick={handleGenerate}>
-              Generate Pre-reading Overview
-            </Button>
+            <AIActionButton text={'Generate summary'} onClick={handleGenerate} />
           </Box>
         </AIFeature>
       )}

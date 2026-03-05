@@ -167,6 +167,7 @@ class Book(Base):
     last_viewed: Mapped[dt | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
+    end_position: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="books")

@@ -64,6 +64,13 @@ class PositionIndex:
             (frag, _normalize_xpath(xpath)): idx for (frag, xpath), idx in element_positions.items()
         }
 
+    @property
+    def total_elements(self) -> int:
+        """Return the total number of elements in the index (max position value), or 0 if empty."""
+        if not self._element_positions:
+            return 0
+        return max(self._element_positions.values())
+
     def resolve(self, xpoint_str: str) -> Position | None:
         """Resolve an xpoint string to a Position.
 

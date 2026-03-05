@@ -39,6 +39,8 @@ export interface BookDetails {
   chapters: ChapterWithHighlights[];
   /** User's current reading position from latest session */
   reading_position?: PositionResponse | null;
+  /** End position of the book (total document length) */
+  end_position?: PositionResponse | null;
   created_at: string;
   updated_at: string;
   last_viewed?: string | null;

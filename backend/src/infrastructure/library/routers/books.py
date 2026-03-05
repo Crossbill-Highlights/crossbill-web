@@ -30,6 +30,7 @@ from src.domain.reading.services import ChapterWithHighlights as DomainChapterWi
 from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
 from src.exceptions import CrossbillError
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.schemas.position_schemas import PositionResponse
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.learning.schemas import Flashcard
 from src.infrastructure.library.schemas import (
@@ -50,7 +51,6 @@ from src.infrastructure.reading.schemas import (
 from src.infrastructure.reading.schemas import (
     ChapterWithHighlights as ChapterWithHighlightsSchema,
 )
-from src.infrastructure.reading.schemas.highlight_schemas import PositionResponse
 
 logger = logging.getLogger(__name__)
 
@@ -215,6 +215,12 @@ def _build_book_details_schema(
         )
         if agg.reading_position
         else None,
+        end_position=PositionResponse(
+            index=agg.book.end_position.index,
+            char_index=agg.book.end_position.char_index,
+        )
+        if agg.book.end_position
+        else None,
         created_at=agg.book.created_at,
         updated_at=agg.book.updated_at,
         last_viewed=agg.book.last_viewed,
@@ -265,6 +271,12 @@ def get_books(
                 highlight_count=highlight_count,
                 flashcard_count=flashcard_count,
                 tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
+                end_position=PositionResponse(
+                    index=book.end_position.index,
+                    char_index=book.end_position.char_index,
+                )
+                if book.end_position
+                else None,
                 created_at=book.created_at,
                 updated_at=book.updated_at,
                 last_viewed=book.last_viewed,
@@ -324,6 +336,12 @@ def get_recently_viewed_books(
                 highlight_count=highlight_count,
                 flashcard_count=flashcard_count,
                 tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
+                end_position=PositionResponse(
+                    index=book.end_position.index,
+                    char_index=book.end_position.char_index,
+                )
+                if book.end_position
+                else None,
                 created_at=book.created_at,
                 updated_at=book.updated_at,
                 last_viewed=book.last_viewed,
@@ -419,6 +437,12 @@ def update_book(
             highlight_count=highlight_count,
             flashcard_count=flashcard_count,
             tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
+            end_position=PositionResponse(
+                index=book.end_position.index,
+                char_index=book.end_position.char_index,
+            )
+            if book.end_position
+            else None,
             created_at=book.created_at,
             updated_at=book.updated_at,
             last_viewed=book.last_viewed,
