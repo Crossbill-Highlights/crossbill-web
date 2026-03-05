@@ -30,7 +30,7 @@ import { HighlightsList, type ChapterData } from './HighlightsList.tsx';
 import { HighlightViewModal } from './HighlightViewModal';
 
 export const HighlightsPage = () => {
-  const { book, isDesktop, leftSidebarEl, setHasFloatingFilter } = useBookPage();
+  const { book, isDesktop, leftSidebarEl, fabContainerEl } = useBookPage();
 
   const {
     search: urlSearch,
@@ -192,14 +192,6 @@ export const HighlightsPage = () => {
     return 'No chapters found for this book.';
   }, [bookSearch.showSearchResults, selectedTagId, selectedLabelId]);
 
-  // Signal to BookPage that this tab has a floating filter FAB on mobile
-  useEffect(() => {
-    if (!isDesktop) {
-      setHasFloatingFilter(true);
-      return () => setHasFloatingFilter(false);
-    }
-  }, [isDesktop, setHasFloatingFilter]);
-
   const filterTabs = useHighlightsFilterTabs({
     navChapters: navData.chapters,
     tags,
@@ -313,7 +305,13 @@ export const HighlightsPage = () => {
             animationKey="chapters-highlights"
             onOpenHighlight={handleOpenHighlight}
           />
-          <FilterFab filterEnabled={filterEnabled} onClick={() => setFilterDrawerOpen(true)} />
+
+          {fabContainerEl &&
+            createPortal(
+              <FilterFab filterEnabled={filterEnabled} onClick={() => setFilterDrawerOpen(true)} />,
+              fabContainerEl
+            )}
+
           <FilterDrawer
             open={filterDrawerOpen}
             onClose={() => setFilterDrawerOpen(false)}

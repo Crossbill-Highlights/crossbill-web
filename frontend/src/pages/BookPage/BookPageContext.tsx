@@ -4,10 +4,10 @@ import { createContext, useContext } from 'react';
 interface BookPageContextValue {
   book: BookDetails;
   isDesktop: boolean;
+  // Portal element to add content to the left side bar below navigation
   leftSidebarEl: HTMLDivElement | null;
-  /** Whether a floating filter FAB is shown on mobile (affects ScrollToTop position) */
-  hasFloatingFilter: boolean;
-  setHasFloatingFilter: (visible: boolean) => void;
+  // Portal element to add fabs under the scroll to top button
+  fabContainerEl: HTMLDivElement | null;
 }
 
 const BookPageContext = createContext<BookPageContextValue | null>(null);

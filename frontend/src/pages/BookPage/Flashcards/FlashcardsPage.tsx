@@ -29,7 +29,7 @@ import { FlashcardEditDialog } from './FlashcardEditDialog.tsx';
 const BOOK_FLASHCARDS_KEY = -1;
 
 export const FlashcardsPage = () => {
-  const { book, isDesktop, leftSidebarEl, setHasFloatingFilter } = useBookPage();
+  const { book, isDesktop, leftSidebarEl, fabContainerEl } = useBookPage();
 
   const { search: urlSearch, tagId: urlTagId } = useSearch({ from: '/book/$bookId/flashcards' });
   const navigate = useNavigate({ from: '/book/$bookId/flashcards' });
@@ -204,14 +204,6 @@ export const FlashcardsPage = () => {
     book.highlight_tags
   );
 
-  // Signal to BookPage that this tab has a floating filter FAB on mobile
-  useEffect(() => {
-    if (!isDesktop) {
-      setHasFloatingFilter(true);
-      return () => setHasFloatingFilter(false);
-    }
-  }, [isDesktop, setHasFloatingFilter]);
-
   const filterTabs = useFlashcardsFilterTabs({
     navChapters: navData.chapters,
     tags: navData.tags,
@@ -308,7 +300,14 @@ export const FlashcardsPage = () => {
             animationKey="flashcards"
             onEditFlashcard={setEditingFlashcard}
           />
-          <FilterFab filterEnabled={!!selectedTagId} onClick={() => setFilterDrawerOpen(true)} />
+          {fabContainerEl &&
+            createPortal(
+              <FilterFab
+                filterEnabled={!!selectedTagId}
+                onClick={() => setFilterDrawerOpen(true)}
+              />,
+              fabContainerEl
+            )}
           <FilterDrawer
             open={filterDrawerOpen}
             onClose={() => setFilterDrawerOpen(false)}

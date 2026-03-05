@@ -13,7 +13,7 @@ import { DesktopNavLinks } from '@/pages/BookPage/navigation/DesktopNavLinks.tsx
 import { MobileBottomNav } from '@/pages/BookPage/navigation/MobileBottomNav.tsx';
 import { Alert, Box, useMediaQuery, useTheme } from '@mui/material';
 import { Outlet, useParams } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export const BookPage = () => {
   const { bookId } = useParams({ strict: false });
@@ -23,8 +23,7 @@ export const BookPage = () => {
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
 
   const [leftSidebarEl, setLeftSidebarEl] = useState<HTMLDivElement | null>(null);
-  const [hasFloatingFilter, setHasFloatingFilter] = useState(false);
-  const setHasFloatingFilterCb = useCallback((v: boolean) => setHasFloatingFilter(v), []);
+  const [fabContainerEl, setFabContainerEl] = useState<HTMLDivElement | null>(null);
 
   // Update recently viewed on mount
   useEffect(() => {
@@ -57,12 +56,26 @@ export const BookPage = () => {
         book,
         isDesktop,
         leftSidebarEl,
-        hasFloatingFilter,
-        setHasFloatingFilter: setHasFloatingFilterCb,
+        fabContainerEl,
       }}
     >
       <PageContainer maxWidth="xl">
-        <ScrollToTopButton bottomOffset={!isDesktop && hasFloatingFilter ? 56 : 0} />
+        <Box
+          sx={{
+            position: 'fixed',
+            bottom: { xs: 'calc(80px + env(safe-area-inset-bottom))', lg: 24 },
+            right: 24,
+            zIndex: 1000,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            alignItems: 'center',
+          }}
+        >
+          <ScrollToTopButton />
+          <div ref={setFabContainerEl} style={{ display: 'contents' }} />
+        </Box>
+
         <FadeInOut ekey={`book-${bookId}`}>
           {isDesktop ? (
             <>

@@ -1,4 +1,5 @@
 import { FilterListIcon } from '@/theme/Icons';
+import { Zoom } from '@mui/material';
 import Fab from '@mui/material/Fab';
 
 export const FilterFab = ({
@@ -9,19 +10,15 @@ export const FilterFab = ({
   onClick: () => void;
 }) => {
   return (
-    <Fab
-      size="small"
-      color={filterEnabled ? 'primary' : 'default'}
-      aria-label="Open filters"
-      onClick={() => onClick()}
-      sx={{
-        position: 'fixed',
-        bottom: 'calc(80px + env(safe-area-inset-bottom))',
-        right: 24,
-        zIndex: 1000,
-      }}
-    >
-      <FilterListIcon />
-    </Fab>
+    <Zoom in={true} mountOnEnter unmountOnExit>
+      <Fab
+        size="small"
+        color={filterEnabled ? 'primary' : 'default'}
+        aria-label="Open filters"
+        onClick={() => onClick()}
+      >
+        <FilterListIcon />
+      </Fab>
+    </Zoom>
   );
 };
