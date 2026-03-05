@@ -1,12 +1,13 @@
 import type { Bookmark, ReadingSession } from '@/api/generated/model';
 import { useGetReadingSessionAiSummaryApiV1ReadingSessionIdAiSummaryGet } from '@/api/generated/reading-sessions/reading-sessions';
+import { AIActionButton } from '@/components/buttons/AIActionButton';
 import { MetadataRow } from '@/components/cards/MetadataRow.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { useSettings } from '@/context/SettingsContext';
 import { useSnackbar } from '@/context/SnackbarContext';
 import { HighlightCard } from '@/pages/BookPage/Highlights/HighlightCard';
 import { formatDate, formatDuration, formatTime } from '@/utils/date';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import type { AxiosError } from 'axios';
 import { useEffect } from 'react';
 import { AISummary } from './AISummary';
@@ -66,9 +67,11 @@ const SummaryPlaceholder = ({ onGenerate, isLoading }: SummaryPlaceholderProps) 
       padding: 1.5,
     }}
   >
-    <Button onClick={onGenerate} disabled={isLoading} variant="contained">
-      {isLoading ? 'Generating...' : 'Generate Summary'}
-    </Button>
+    <AIActionButton
+      text={isLoading ? 'Generating...' : 'Generate Summary'}
+      disabled={isLoading}
+      onClick={onGenerate}
+    />
   </Box>
 );
 
