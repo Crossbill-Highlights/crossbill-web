@@ -309,7 +309,7 @@ export const FlashcardsPage = () => {
           />
           <Fab
             size="small"
-            color="primary"
+            color={selectedTagId ? 'primary' : 'default'}
             aria-label="Open filters"
             onClick={() => setFilterDrawerOpen(true)}
             sx={{

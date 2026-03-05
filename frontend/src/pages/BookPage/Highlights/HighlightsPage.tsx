@@ -44,6 +44,8 @@ export const HighlightsPage = () => {
   const [isReversed, setIsReversed] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
+  const filterEnabled = selectedLabelId || selectedTagId;
+
   useEffect(() => {
     setSelectedTagId(urlTagId);
   }, [urlTagId]);
@@ -312,7 +314,7 @@ export const HighlightsPage = () => {
           />
           <Fab
             size="small"
-            color="primary"
+            color={filterEnabled ? 'primary' : 'default'}
             aria-label="Open filters"
             onClick={() => setFilterDrawerOpen(true)}
             sx={{
