@@ -1,7 +1,7 @@
 import type { Highlight } from '@/api/generated/model';
 import { scrollToElementWithHighlight } from '@/components/animations/scrollUtils.ts';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 interface UseHighlightModalOptions {
   allHighlights: Highlight[];
@@ -31,6 +31,9 @@ export const useHighlightModal = ({
     replace?: boolean;
   }) => Promise<void>;
 
+  // Tracks whether modal was opened via user click (push) vs direct URL
+  const wasOpenedByPush = useRef(false);
+
   // Local state used when syncToUrl is false
   const [localHighlightId, setLocalHighlightId] = useState<number | undefined>();
 
@@ -55,15 +58,21 @@ export const useHighlightModal = ({
   // Push to history so back button closes the modal
   const handleOpenHighlight = useCallback(
     (highlightIdToOpen: number) => {
+      wasOpenedByPush.current = true;
       updateHighlightId(highlightIdToOpen, false);
     },
     [updateHighlightId]
   );
 
-  // Replace so back after closing doesn't reopen the modal
+  // Pop history entry if opened via push, otherwise replace
   const handleCloseHighlight = useCallback(
     (lastViewedHighlightId?: number) => {
-      updateHighlightId(undefined, true);
+      if (wasOpenedByPush.current && syncToUrl) {
+        wasOpenedByPush.current = false;
+        window.history.back();
+      } else {
+        updateHighlightId(undefined, true);
+      }
 
       if (lastViewedHighlightId && isMobile && syncToUrl) {
         scrollToElementWithHighlight(`highlight-${lastViewedHighlightId}`);
