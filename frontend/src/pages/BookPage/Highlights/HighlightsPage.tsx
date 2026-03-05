@@ -14,12 +14,13 @@ import { SearchBar } from '@/components/inputs/SearchBar.tsx';
 import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { useHighlightModal } from '@/pages/BookPage/Highlights/hooks/useHighlightModal.ts';
-import { FilterListIcon, SortIcon } from '@/theme/Icons.tsx';
-import { Box, Divider, Fab, IconButton, Tooltip } from '@mui/material';
+import { SortIcon } from '@/theme/Icons.tsx';
+import { Box, Divider, IconButton, Tooltip } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { FilterFab } from '../common/FilterFab.tsx';
 import { BookmarkList } from '../navigation/BookmarkList.tsx';
 import { ChapterNav, type ChapterNavigationData } from '../navigation/ChapterNav.tsx';
 import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
@@ -44,7 +45,7 @@ export const HighlightsPage = () => {
   const [isReversed, setIsReversed] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
-  const filterEnabled = selectedLabelId || selectedTagId;
+  const filterEnabled = !!selectedLabelId || !!selectedTagId;
 
   useEffect(() => {
     setSelectedTagId(urlTagId);
@@ -312,20 +313,7 @@ export const HighlightsPage = () => {
             animationKey="chapters-highlights"
             onOpenHighlight={handleOpenHighlight}
           />
-          <Fab
-            size="small"
-            color={filterEnabled ? 'primary' : 'default'}
-            aria-label="Open filters"
-            onClick={() => setFilterDrawerOpen(true)}
-            sx={{
-              position: 'fixed',
-              bottom: 'calc(80px + env(safe-area-inset-bottom))',
-              right: 24,
-              zIndex: 1000,
-            }}
-          >
-            <FilterListIcon />
-          </Fab>
+          <FilterFab filterEnabled={filterEnabled} onClick={() => setFilterDrawerOpen(true)} />
           <FilterDrawer
             open={filterDrawerOpen}
             onClose={() => setFilterDrawerOpen(false)}

@@ -10,12 +10,13 @@ import { SearchBar } from '@/components/inputs/SearchBar.tsx';
 import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { ChapterNav, type ChapterNavigationData } from '@/pages/BookPage/navigation/ChapterNav.tsx';
-import { FilterListIcon, SortIcon } from '@/theme/Icons.tsx';
-import { Box, Divider, Fab, IconButton, Tooltip } from '@mui/material';
+import { SortIcon } from '@/theme/Icons.tsx';
+import { Box, Divider, IconButton, Tooltip } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { flatMap } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { FilterFab } from '../common/FilterFab.tsx';
 import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
 import { HighlightTagsList } from '../navigation/HighlightTagsList.tsx';
 import {
@@ -307,20 +308,7 @@ export const FlashcardsPage = () => {
             animationKey="flashcards"
             onEditFlashcard={setEditingFlashcard}
           />
-          <Fab
-            size="small"
-            color={selectedTagId ? 'primary' : 'default'}
-            aria-label="Open filters"
-            onClick={() => setFilterDrawerOpen(true)}
-            sx={{
-              position: 'fixed',
-              bottom: 'calc(80px + env(safe-area-inset-bottom))',
-              right: 24,
-              zIndex: 1000,
-            }}
-          >
-            <FilterListIcon />
-          </Fab>
+          <FilterFab filterEnabled={!!selectedTagId} onClick={() => setFilterDrawerOpen(true)} />
           <FilterDrawer
             open={filterDrawerOpen}
             onClose={() => setFilterDrawerOpen(false)}
