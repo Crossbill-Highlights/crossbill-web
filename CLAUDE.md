@@ -6,7 +6,7 @@ This project uses **pyright** (not mypy) for type checking. Always run `pyright`
 
 ```bash
 # Backend type checking
-cd backend && .venv/bin/pyright <file>
+cd backend && uv run pyright <file>
 
 # Frontend type checking
 cd frontend && npm run type-check
@@ -19,7 +19,7 @@ cd frontend && npm run type-check
 
 ```bash
 # Backend linting
-cd backend && .venv/bin/ruff check <file>
+cd backend && uv run ruff check <file>
 
 # Frontend linting
 cd frontend && npm run lint
@@ -132,7 +132,7 @@ When migrating a service to DDD architecture:
 Always run the full test suite after completing any migration or refactoring:
 
 ```bash
-cd backend && .venv/bin/pytest
+cd backend && uv run pytest
 ```
 
 Do not declare work complete until all tests pass. If tests fail, fix them before stopping.

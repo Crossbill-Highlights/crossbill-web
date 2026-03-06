@@ -8,7 +8,7 @@ Backend API for crossbill - a self-hosted web app to sync highlights from KORead
 - SQLAlchemy 2.0 ORM
 - PostgreSQL database with Docker support
 - Alembic database migrations
-- Poetry dependency management
+- uv dependency management
 - Hexagonal architecture
 - Ruff linting
 - pytest testing framework
@@ -17,7 +17,7 @@ Backend API for crossbill - a self-hosted web app to sync highlights from KORead
 ## Prerequisites
 
 - Python 3.11+
-- Poetry
+- [uv](https://docs.astral.sh/uv/)
 - Docker and Docker Compose (for PostgreSQL)
 
 ## Setup
@@ -38,7 +38,7 @@ This starts a PostgreSQL 16 container with the following configuration:
 ### 2. Install dependencies
 
 ```bash
-poetry install
+uv sync
 ```
 
 ### 3. Copy environment variables
@@ -52,13 +52,13 @@ cp .env.example .env
 ### 4. Run migrations
 
 ```bash
-poetry run alembic upgrade head
+uv run alembic upgrade head
 ```
 
 ### 5. Run the development server
 
 ```bash
-poetry run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000 
+uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 The API will be available at http://localhost:8000
@@ -99,34 +99,34 @@ docker-compose exec postgres psql -U crossbill -d crossbill
 
 ### Running tests
 ```bash
-poetry run pytest
+uv run pytest
 ```
 
 ### Linting
 ```bash
-poetry run ruff check .
-poetry run ruff check --fix .  # Auto-fix issues
+uv run ruff check .
+uv run ruff check --fix .  # Auto-fix issues
 ```
 
 ### Formatting
 ```bash
-poetry run ruff format
+uv run ruff format
 ```
 
 ### Type checking
 ```bash
-poetry run pyright
+uv run pyright
 ```
 
 ### Creating migrations
 ```bash
-poetry run alembic revision --autogenerate -m "description"
-poetry run alembic upgrade head
+uv run alembic revision --autogenerate -m "description"
+uv run alembic upgrade head
 ```
 
 ## Create password hash to be saved to the database from password:
 ```
- poetry run python -c "from argon2 import PasswordHasher; ph = PasswordHasher(); print(ph.hash('your_password_here'))"
+ uv run python -c "from argon2 import PasswordHasher; ph = PasswordHasher(); print(ph.hash('your_password_here'))"
 ```
 
 ## API Documentation

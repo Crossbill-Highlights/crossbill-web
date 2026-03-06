@@ -15,14 +15,14 @@ for file in $CLAUDE_FILE_PATHS; do
             echo "━━━ Checking Python: $file ━━━"
 
             # Run ruff (linter)
-            if cd "$PROJECT_ROOT/backend" && .venv/bin/ruff check "$file" 2>&1 | head -20; then
+            if cd "$PROJECT_ROOT/backend" && uv run ruff check "$file" 2>&1 | head -20; then
                 echo "✓ Ruff: no issues"
             fi
 
             # Run pyright (type checker) - only show errors
             echo "Running pyright..."
             cd "$PROJECT_ROOT/backend"
-            if output=$(.venv/bin/pyright "$file" --outputjson 2>/dev/null); then
+            if output=$(uv run pyright "$file" --outputjson 2>/dev/null); then
                 error_count=$(echo "$output" | python3 -c "
 import sys, json
 try:
