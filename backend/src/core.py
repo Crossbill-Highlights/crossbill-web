@@ -159,6 +159,7 @@ from src.domain.reading.services.deduplication_service import HighlightDeduplica
 from src.domain.reading.services.highlight_grouping_service import HighlightGroupingService
 from src.domain.reading.services.highlight_style_resolver import HighlightStyleResolver
 from src.infrastructure.ai.ai_service import AIService
+from src.infrastructure.ai.repositories.ai_usage_repository import AIUsageRepository
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.services.password_service_adapter import PasswordServiceAdapter
 from src.infrastructure.identity.services.token_service_adapter import TokenServiceAdapter
@@ -212,7 +213,8 @@ class Container(containers.DeclarativeContainer):
     ebook_text_extraction_service = providers.Factory(EpubTextExtractionService)
     epub_toc_parser_service = providers.Factory(EpubTocParserService)
     epub_position_index_service = providers.Factory(EpubPositionIndexService)
-    ai_service = providers.Factory(AIService)
+    ai_usage_repository = providers.Factory(AIUsageRepository, db=db)
+    ai_service = providers.Factory(AIService, usage_repository=ai_usage_repository)
 
     # Identity repositories and services
     user_repository = providers.Factory(UserRepository, db=db)

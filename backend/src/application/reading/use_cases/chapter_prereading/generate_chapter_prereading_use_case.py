@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 import structlog
 
+from src.application.ai.ai_usage_context import AIUsageContext
 from src.application.library.protocols.book_repository import (
     BookRepositoryProtocol,
 )
@@ -97,7 +98,15 @@ class GenerateChapterPrereadingUseCase:
 
         # 5. Call AI service
         try:
-            ai_result = await self.ai_prereading_service.generate_prereading(chapter_text)
+            usage_context = AIUsageContext(
+                user_id=user_id,
+                task_type="prereading",
+                entity_type="chapter",
+                entity_id=chapter_id.value,
+            )
+            ai_result = await self.ai_prereading_service.generate_prereading(
+                chapter_text, usage_context
+            )
         except Exception as e:
             logger.error("ai_service_failed", error=str(e))
             raise DomainError(f"Failed to generate prereading content: {e}") from e

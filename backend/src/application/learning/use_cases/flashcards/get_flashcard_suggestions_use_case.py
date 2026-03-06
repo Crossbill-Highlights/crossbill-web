@@ -2,6 +2,7 @@
 
 import structlog
 
+from src.application.ai.ai_usage_context import AIUsageContext
 from src.application.learning.protocols.ai_flashcard_service import (
     AIFlashcardServiceProtocol,
 )
@@ -46,8 +47,14 @@ class GetFlashcardSuggestionsUseCase:
         if not highlight:
             raise NotFoundError(f"Highlight with id {highlight_id} not found")
 
+        usage_context = AIUsageContext(
+            user_id=user_id_vo,
+            task_type="flashcard_suggestions",
+            entity_type="highlight",
+            entity_id=highlight_id,
+        )
         ai_suggestions = await self.ai_flashcard_service.generate_flashcard_suggestions(
-            highlight.text
+            highlight.text, usage_context
         )
 
         suggestions = [

@@ -157,3 +157,18 @@ class PrereadingContentId(EntityId):
     @classmethod
     def generate(cls) -> "PrereadingContentId":
         return cls(0)  # Database assigns real ID
+
+
+@dataclass(frozen=True)
+class AIUsageRecordId(EntityId):
+    """Strongly-typed AI usage record identifier."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("AIUsageRecordId must be non-negative")
+
+    @classmethod
+    def generate(cls) -> "AIUsageRecordId":
+        return cls(0)  # Database assigns real ID
