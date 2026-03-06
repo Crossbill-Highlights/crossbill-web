@@ -161,7 +161,7 @@ class EpubTocParserService:
     @staticmethod
     def _href_to_spine_index(href: str, mapping: dict[str, int]) -> int | None:
         """Resolve a TOC href to a spine index using the mapping."""
-        file_part = href.split("#")[0]
+        file_part = href.split("#", 1)[0]
 
         if file_part in mapping:
             return mapping[file_part]
@@ -183,7 +183,9 @@ class EpubTocParserService:
 
         spine_idx = EpubTocParserService._href_to_spine_index(file_part, spine_mapping)
         if spine_idx is None:
-            spine_idx = EpubTocParserService._href_to_spine_index(href.split("#")[0], spine_mapping)
+            spine_idx = EpubTocParserService._href_to_spine_index(
+                href.split("#", 1)[0], spine_mapping
+            )
             if spine_idx is None:
                 return None
 
