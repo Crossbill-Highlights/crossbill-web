@@ -44,7 +44,7 @@ async def get_chapter_flashcard_suggestions(
     Requires the chapter to have a generated pre-reading summary.
     """
     try:
-        suggestions_data = await use_case.get_suggestions(chapter_id)
+        suggestions_data = await use_case.get_suggestions(chapter_id, current_user.id.value)
 
         suggestions = [
             FlashcardSuggestionItem(question=s.question, answer=s.answer) for s in suggestions_data

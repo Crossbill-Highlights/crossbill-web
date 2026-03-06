@@ -2,6 +2,7 @@
 
 import structlog
 
+from src.application.ai.ai_usage_context import AIUsageContext
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.application.reading.protocols.ai_text_summary_service import (
@@ -113,7 +114,13 @@ class ReadingSessionAISummaryUseCase:
             session_id=session_id,
             content_length=len(content),
         )
-        ai_summary = await self.ai_summary_service.generate_summary(content)
+        usage_context = AIUsageContext(
+            user_id=user_id_vo,
+            task_type="summary",
+            entity_type="reading_session",
+            entity_id=session_id,
+        )
+        ai_summary = await self.ai_summary_service.generate_summary(content, usage_context)
 
         session.set_ai_summary(ai_summary)
         self.session_repository.save(session)

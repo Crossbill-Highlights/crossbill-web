@@ -2,6 +2,7 @@
 
 import structlog
 
+from src.application.ai.ai_usage_context import AIUsageContext
 from src.application.learning.protocols.ai_flashcard_service import (
     AIFlashcardServiceProtocol,
 )
@@ -9,7 +10,7 @@ from src.application.learning.use_cases.dtos.flashcard_ai_dtos import FlashcardS
 from src.application.reading.protocols.chapter_prereading_repository import (
     ChapterPrereadingRepositoryProtocol,
 )
-from src.domain.common.value_objects.ids import ChapterId
+from src.domain.common.value_objects.ids import ChapterId, UserId
 from src.exceptions import NotFoundError
 
 logger = structlog.get_logger(__name__)
@@ -26,7 +27,7 @@ class GetChapterFlashcardSuggestionsUseCase:
         self.chapter_prereading_repository = chapter_prereading_repository
         self.ai_flashcard_service = ai_flashcard_service
 
-    async def get_suggestions(self, chapter_id: int) -> list[FlashcardSuggestion]:
+    async def get_suggestions(self, chapter_id: int, user_id: int) -> list[FlashcardSuggestion]:
         """
         Get AI-generated flashcard suggestions from chapter prereading content.
 
@@ -55,7 +56,15 @@ class GetChapterFlashcardSuggestionsUseCase:
             content_parts.extend(f"- {kp}" for kp in prereading.keypoints)
         content = "\n".join(content_parts)
 
-        ai_suggestions = await self.ai_flashcard_service.generate_flashcard_suggestions(content)
+        usage_context = AIUsageContext(
+            user_id=UserId(user_id),
+            task_type="flashcard_suggestions",
+            entity_type="chapter",
+            entity_id=chapter_id,
+        )
+        ai_suggestions = await self.ai_flashcard_service.generate_flashcard_suggestions(
+            content, usage_context
+        )
 
         suggestions = [
             FlashcardSuggestion(question=s.question, answer=s.answer) for s in ai_suggestions

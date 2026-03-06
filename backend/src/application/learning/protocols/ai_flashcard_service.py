@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Protocol
 
+from src.application.ai.ai_usage_context import AIUsageContext
+
 
 @dataclass(frozen=True)
 class AIFlashcardSuggestion:
@@ -9,4 +11,6 @@ class AIFlashcardSuggestion:
 
 
 class AIFlashcardServiceProtocol(Protocol):
-    async def generate_flashcard_suggestions(self, content: str) -> list[AIFlashcardSuggestion]: ...
+    async def generate_flashcard_suggestions(
+        self, content: str, usage_context: AIUsageContext
+    ) -> list[AIFlashcardSuggestion]: ...
