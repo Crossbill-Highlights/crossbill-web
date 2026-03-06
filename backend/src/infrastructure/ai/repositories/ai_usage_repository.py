@@ -12,4 +12,4 @@ class AIUsageRepository:
     def save(self, record: AIUsageRecord) -> None:
         orm = self.mapper.to_orm(record)
         self.db.add(orm)
-        self.db.flush()
+        self.db.commit()
