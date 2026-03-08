@@ -172,3 +172,18 @@ class AIUsageRecordId(EntityId):
     @classmethod
     def generate(cls) -> "AIUsageRecordId":
         return cls(0)  # Database assigns real ID
+
+
+@dataclass(frozen=True)
+class QuizSessionId(EntityId):
+    """Strongly-typed quiz session identifier."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("QuizSessionId must be non-negative")
+
+    @classmethod
+    def generate(cls) -> "QuizSessionId":
+        return cls(0)  # Database assigns real ID
