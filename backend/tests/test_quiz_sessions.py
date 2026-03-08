@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from src.models import AIChatSession as AIChatSessionModel
 from src.models import Book, Chapter
-from src.models import QuizSession as QuizSessionModel
 
 
 def create_quiz_chapter(db_session: Session, book: Book) -> Chapter:
@@ -108,14 +108,15 @@ class TestSendQuizMessage:
     ) -> None:
         chapter = create_quiz_chapter(db_session, test_book)
 
-        quiz_session = QuizSessionModel(
+        ai_chat_session = AIChatSessionModel(
             user_id=1,
             chapter_id=chapter.id,
+            session_type="quiz",
             message_history=[{"some": "history"}],
         )
-        db_session.add(quiz_session)
+        db_session.add(ai_chat_session)
         db_session.commit()
-        db_session.refresh(quiz_session)
+        db_session.refresh(ai_chat_session)
 
         mock_continue_quiz.return_value = (
             "Good answer! **Question 2/5:** What happened next?",
@@ -123,7 +124,7 @@ class TestSendQuizMessage:
         )
 
         response = client.post(
-            f"/api/v1/quiz-sessions/{quiz_session.id}/messages",
+            f"/api/v1/quiz-sessions/{ai_chat_session.id}/messages",
             json={"message": "The main topic is testing"},
         )
         assert response.status_code == 200

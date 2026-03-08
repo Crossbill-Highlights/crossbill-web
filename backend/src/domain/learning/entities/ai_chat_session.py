@@ -3,16 +3,17 @@ from datetime import datetime
 from typing import Any
 
 from src.domain.common.entity import Entity
-from src.domain.common.value_objects.ids import ChapterId, QuizSessionId, UserId
+from src.domain.common.value_objects.ids import AIChatSessionId, ChapterId, UserId
 
 
 @dataclass
-class QuizSession(Entity[QuizSessionId]):
-    """A quiz conversation session for a chapter."""
+class AIChatSession(Entity[AIChatSessionId]):
+    """A generalized AI chat session (e.g. quiz, discussion)."""
 
-    id: QuizSessionId
+    id: AIChatSessionId
     user_id: UserId
     chapter_id: ChapterId
+    session_type: str
     message_history: list[dict[str, Any]]
     created_at: datetime
 
@@ -21,12 +22,14 @@ class QuizSession(Entity[QuizSessionId]):
         cls,
         user_id: UserId,
         chapter_id: ChapterId,
+        session_type: str,
         created_at: datetime,
-    ) -> "QuizSession":
+    ) -> "AIChatSession":
         return cls(
-            id=QuizSessionId.generate(),
+            id=AIChatSessionId.generate(),
             user_id=user_id,
             chapter_id=chapter_id,
+            session_type=session_type,
             message_history=[],
             created_at=created_at,
         )
@@ -34,16 +37,18 @@ class QuizSession(Entity[QuizSessionId]):
     @classmethod
     def create_with_id(
         cls,
-        id: QuizSessionId,
+        id: AIChatSessionId,
         user_id: UserId,
         chapter_id: ChapterId,
+        session_type: str,
         message_history: list[dict[str, Any]],
         created_at: datetime,
-    ) -> "QuizSession":
+    ) -> "AIChatSession":
         return cls(
             id=id,
             user_id=user_id,
             chapter_id=chapter_id,
+            session_type=session_type,
             message_history=message_history,
             created_at=created_at,
         )

@@ -1,4 +1,4 @@
-"""Add quiz_sessions table.
+"""Add ai_chat_sessions table.
 
 Revision ID: 045
 Revises: 044
@@ -18,7 +18,7 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     op.create_table(
-        "quiz_sessions",
+        "ai_chat_sessions",
         sa.Column("id", sa.Integer(), primary_key=True, index=True),
         sa.Column(
             "user_id",
@@ -34,17 +34,16 @@ def upgrade() -> None:
             nullable=False,
             index=True,
         ),
+        sa.Column("session_type", sa.String(50), nullable=False, index=True),
         sa.Column("message_history", sa.JSON(), nullable=False),
-        sa.Column("question_count", sa.Integer(), nullable=False, server_default="5"),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
             server_default=sa.func.now(),
             nullable=False,
         ),
-        sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
     )
 
 
 def downgrade() -> None:
-    op.drop_table("quiz_sessions")
+    op.drop_table("ai_chat_sessions")

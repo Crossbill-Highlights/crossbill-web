@@ -169,8 +169,10 @@ from src.infrastructure.ai.repositories.ai_usage_repository import AIUsageReposi
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.services.password_service_adapter import PasswordServiceAdapter
 from src.infrastructure.identity.services.token_service_adapter import TokenServiceAdapter
+from src.infrastructure.learning.repositories.ai_chat_session_repository import (
+    AIChatSessionRepository,
+)
 from src.infrastructure.learning.repositories.flashcard_repository import FlashcardRepository
-from src.infrastructure.learning.repositories.quiz_session_repository import QuizSessionRepository
 from src.infrastructure.library.repositories import BookRepository
 from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
 from src.infrastructure.library.repositories.file_repository import FileRepository
@@ -552,12 +554,12 @@ class Container(containers.DeclarativeContainer):
         ai_flashcard_service=ai_service,
     )
 
-    # Quiz session
-    quiz_session_repository = providers.Factory(QuizSessionRepository, db=db)
+    # AI chat session (quiz, etc.)
+    ai_chat_session_repository = providers.Factory(AIChatSessionRepository, db=db)
 
     start_quiz_session_use_case = providers.Factory(
         StartQuizSessionUseCase,
-        quiz_session_repository=quiz_session_repository,
+        ai_chat_session_repository=ai_chat_session_repository,
         chapter_repo=chapter_repository,
         book_repo=book_repository,
         file_repo=file_repository,
@@ -567,7 +569,7 @@ class Container(containers.DeclarativeContainer):
 
     send_quiz_message_use_case = providers.Factory(
         SendQuizMessageUseCase,
-        quiz_session_repository=quiz_session_repository,
+        ai_chat_session_repository=ai_chat_session_repository,
         ai_quiz_service=ai_service,
     )
 

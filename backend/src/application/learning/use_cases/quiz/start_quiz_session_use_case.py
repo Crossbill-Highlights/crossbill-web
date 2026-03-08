@@ -3,10 +3,10 @@ from datetime import UTC, datetime
 import structlog
 
 from src.application.ai.ai_usage_context import AIUsageContext
-from src.application.learning.protocols.ai_quiz_service import AIQuizServiceProtocol
-from src.application.learning.protocols.quiz_session_repository import (
-    QuizSessionRepositoryProtocol,
+from src.application.learning.protocols.ai_chat_session_repository import (
+    AIChatSessionRepositoryProtocol,
 )
+from src.application.learning.protocols.ai_quiz_service import AIQuizServiceProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
@@ -15,7 +15,7 @@ from src.application.reading.protocols.ebook_text_extraction_service import (
 )
 from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import ChapterId, UserId
-from src.domain.learning.entities.quiz_session import QuizSession
+from src.domain.learning.entities.ai_chat_session import AIChatSession
 from src.exceptions import BookNotFoundError, NotFoundError
 
 logger = structlog.get_logger(__name__)
@@ -26,14 +26,14 @@ QUIZ_DEFAULT_QUESTION_COUNT = 5
 class StartQuizSessionUseCase:
     def __init__(
         self,
-        quiz_session_repository: QuizSessionRepositoryProtocol,
+        ai_chat_session_repository: AIChatSessionRepositoryProtocol,
         chapter_repo: ChapterRepositoryProtocol,
         book_repo: BookRepositoryProtocol,
         file_repo: FileRepositoryProtocol,
         text_extraction_service: EbookTextExtractionServiceProtocol,
         ai_quiz_service: AIQuizServiceProtocol,
     ) -> None:
-        self.quiz_session_repo = quiz_session_repository
+        self.ai_chat_session_repo = ai_chat_session_repository
         self.chapter_repo = chapter_repo
         self.book_repo = book_repo
         self.file_repo = file_repo
@@ -76,10 +76,11 @@ class StartQuizSessionUseCase:
             end_xpoint=chapter.end_xpoint,
         )
 
-        # 3. Create quiz session
-        session = QuizSession.create(
+        # 3. Create AI chat session
+        session = AIChatSession.create(
             user_id=user_id_vo,
             chapter_id=chapter_id_vo,
+            session_type="quiz",
             created_at=datetime.now(UTC),
         )
 
@@ -96,7 +97,7 @@ class StartQuizSessionUseCase:
 
         # 5. Persist session with message history
         session.message_history = message_history
-        saved_session = self.quiz_session_repo.create(session)
+        saved_session = self.ai_chat_session_repo.create(session)
 
         logger.info(
             "quiz_session_started",
