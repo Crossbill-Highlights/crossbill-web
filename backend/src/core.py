@@ -33,6 +33,12 @@ from src.application.learning.use_cases.flashcards.get_flashcards_by_book_use_ca
 from src.application.learning.use_cases.flashcards.update_flashcard_use_case import (
     UpdateFlashcardUseCase,
 )
+from src.application.learning.use_cases.quiz.send_quiz_message_use_case import (
+    SendQuizMessageUseCase,
+)
+from src.application.learning.use_cases.quiz.start_quiz_session_use_case import (
+    StartQuizSessionUseCase,
+)
 from src.application.library.use_cases.book_files.book_cover_use_case import BookCoverUseCase
 from src.application.library.use_cases.book_files.ebook_deletion_use_case import (
     EbookDeletionUseCase,
@@ -164,6 +170,7 @@ from src.infrastructure.identity.repositories.user_repository import UserReposit
 from src.infrastructure.identity.services.password_service_adapter import PasswordServiceAdapter
 from src.infrastructure.identity.services.token_service_adapter import TokenServiceAdapter
 from src.infrastructure.learning.repositories.flashcard_repository import FlashcardRepository
+from src.infrastructure.learning.repositories.quiz_session_repository import QuizSessionRepository
 from src.infrastructure.library.repositories import BookRepository
 from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
 from src.infrastructure.library.repositories.file_repository import FileRepository
@@ -543,6 +550,25 @@ class Container(containers.DeclarativeContainer):
         GetChapterFlashcardSuggestionsUseCase,
         chapter_prereading_repository=chapter_prereading_repository,
         ai_flashcard_service=ai_service,
+    )
+
+    # Quiz session
+    quiz_session_repository = providers.Factory(QuizSessionRepository, db=db)
+
+    start_quiz_session_use_case = providers.Factory(
+        StartQuizSessionUseCase,
+        quiz_session_repository=quiz_session_repository,
+        chapter_repo=chapter_repository,
+        book_repo=book_repository,
+        file_repo=file_repository,
+        text_extraction_service=ebook_text_extraction_service,
+        ai_quiz_service=ai_service,
+    )
+
+    send_quiz_message_use_case = providers.Factory(
+        SendQuizMessageUseCase,
+        quiz_session_repository=quiz_session_repository,
+        ai_quiz_service=ai_service,
     )
 
     # Identity use cases
