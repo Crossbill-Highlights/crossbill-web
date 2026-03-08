@@ -6,15 +6,14 @@ import type {
   HighlightTagInBook,
 } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
-import { AIActionButton } from '@/components/buttons/AIActionButton';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { CommonDialogHorizontalNavigation } from '@/components/dialogs/CommonDialogHorizontalNavigation.tsx';
 import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
-import { AIFeature } from '@/components/features/AIFeature';
 import { ProgressBar } from '@/pages/BookPage/Highlights/HighlightViewModal/components/ProgressBar.tsx';
 import { Box, Button } from '@mui/material';
 import { useState } from 'react';
+import { AfterReadingSection } from './AfterReadingSection.tsx';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
 import { HighlightsSection } from './HighlightsSection.tsx';
 import { PrereadingSummarySection } from './PrereadingSummarySection.tsx';
@@ -69,11 +68,7 @@ export const ChapterDetailDialog = ({
         prereadingSummary={prereadingSummary}
         defaultExpanded={true}
       />
-      <AIFeature>
-        <Box sx={{ px: 2, pb: 1 }}>
-          <AIActionButton text="Quiz me" onClick={() => setQuizOpen(true)} />
-        </Box>
-      </AIFeature>
+      <AfterReadingSection onStartQuiz={() => setQuizOpen(true)} />
       <HighlightsSection
         chapter={chapter}
         bookId={bookId}
