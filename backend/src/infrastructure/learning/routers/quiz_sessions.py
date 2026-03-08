@@ -77,10 +77,8 @@ async def send_quiz_message(
 ) -> SendQuizMessageResponse:
     """Send a message to an existing quiz session."""
     try:
-        ai_response, is_complete = await use_case.send(
-            session_id, body.message, current_user.id.value
-        )
-        return SendQuizMessageResponse(message=ai_response, is_complete=is_complete)
+        ai_response = await use_case.send(session_id, body.message, current_user.id.value)
+        return SendQuizMessageResponse(message=ai_response)
     except (CrossbillError, DomainError, ValidationError):
         raise
     except Exception as e:

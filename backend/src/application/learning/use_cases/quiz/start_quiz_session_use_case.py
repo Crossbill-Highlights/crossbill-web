@@ -80,7 +80,6 @@ class StartQuizSessionUseCase:
         session = QuizSession.create(
             user_id=user_id_vo,
             chapter_id=chapter_id_vo,
-            question_count=QUIZ_DEFAULT_QUESTION_COUNT,
             created_at=datetime.now(UTC),
         )
 

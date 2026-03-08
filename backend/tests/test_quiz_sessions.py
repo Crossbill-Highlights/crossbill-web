@@ -25,17 +25,12 @@ def create_quiz_chapter(db_session: Session, book: Book) -> Chapter:
 
 class TestCreateQuizSession:
     @patch("src.feature_flags.is_ai_enabled", return_value=True)
-    @patch(
-        "src.infrastructure.ai.ai_service.AIService.start_quiz", new_callable=AsyncMock
-    )
+    @patch("src.infrastructure.ai.ai_service.AIService.start_quiz", new_callable=AsyncMock)
     @patch(
         "src.infrastructure.library.services.epub_text_extraction_service"
         ".EpubTextExtractionService.extract_chapter_text"
     )
-    @patch(
-        "src.infrastructure.library.repositories.file_repository"
-        ".FileRepository.find_epub"
-    )
+    @patch("src.infrastructure.library.repositories.file_repository.FileRepository.find_epub")
     def test_create_quiz_session_success(
         self,
         mock_find_epub: MagicMock,
@@ -100,17 +95,12 @@ class TestSendQuizMessage:
 
     @patch("src.feature_flags.is_ai_enabled", return_value=True)
     @patch(
-        "src.application.learning.use_cases.quiz.send_quiz_message_use_case"
-        ".ModelMessagesTypeAdapter"
-    )
-    @patch(
         "src.infrastructure.ai.ai_service.AIService.continue_quiz",
         new_callable=AsyncMock,
     )
     def test_send_message_success(
         self,
         mock_continue_quiz: AsyncMock,
-        mock_adapter: MagicMock,
         mock_ai_enabled: MagicMock,
         client: TestClient,
         db_session: Session,
@@ -122,7 +112,6 @@ class TestSendQuizMessage:
             user_id=1,
             chapter_id=chapter.id,
             message_history=[{"some": "history"}],
-            question_count=5,
         )
         db_session.add(quiz_session)
         db_session.commit()
@@ -133,9 +122,6 @@ class TestSendQuizMessage:
             [{"updated": "history"}],
         )
 
-        # Mock the completion detection - return empty list so answer_count = -1, not complete
-        mock_adapter.validate_python.return_value = []
-
         response = client.post(
             f"/api/v1/quiz-sessions/{quiz_session.id}/messages",
             json={"message": "The main topic is testing"},
@@ -143,5 +129,4 @@ class TestSendQuizMessage:
         assert response.status_code == 200
         data = response.json()
         assert "message" in data
-        assert data["is_complete"] is False
         assert "Question 2/5" in data["message"]

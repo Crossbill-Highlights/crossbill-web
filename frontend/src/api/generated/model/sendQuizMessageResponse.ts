@@ -7,5 +7,4 @@
 
 export interface SendQuizMessageResponse {
   message: string;
-  is_complete: boolean;
 }

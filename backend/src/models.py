@@ -656,11 +656,9 @@ class QuizSession(Base):
         ForeignKey("chapters.id", ondelete="CASCADE"), nullable=False, index=True
     )
     message_history: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False)
-    question_count: Mapped[int] = mapped_column(nullable=False, server_default="5")
     created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    completed_at: Mapped[dt | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user: Mapped["User"] = relationship()
     chapter: Mapped["Chapter"] = relationship()

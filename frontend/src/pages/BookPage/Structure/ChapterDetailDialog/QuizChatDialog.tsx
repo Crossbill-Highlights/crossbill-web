@@ -41,7 +41,6 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState<number | null>(null);
-  const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sessionStartedRef = useRef(false);
@@ -66,13 +65,12 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
         onSuccess: (data) => {
           setError(null);
           setMessages((prev) => [...prev, { role: 'assistant', content: data.message }]);
-          setIsComplete(data.is_complete);
         },
         onError: () => {
           // Remove the optimistically-added user message and restore it to input
           setMessages((prev) => {
             const last = prev[prev.length - 1];
-            if (last?.role === 'user') {
+            if (last.role === 'user') {
               setInput(last.content);
               return prev.slice(0, -1);
             }
@@ -96,7 +94,6 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
     setMessages([]);
     setInput('');
     setSessionId(null);
-    setIsComplete(false);
     setError(null);
     sessionStartedRef.current = false;
   }, []);
@@ -230,11 +227,11 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
       <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
         <TextField
           fullWidth
-          placeholder={isComplete ? 'Quiz complete!' : 'Type your answer...'}
+          placeholder="Type your answer..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          disabled={isSending || isCreating || isComplete || !!hasSessionError}
+          disabled={isSending || isCreating || !!hasSessionError}
           multiline
           maxRows={3}
           slotProps={{
@@ -243,7 +240,7 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
                 <InputAdornment position="end">
                   <IconButton
                     onClick={handleSend}
-                    disabled={!input.trim() || isSending || isCreating || isComplete}
+                    disabled={!input.trim() || isSending || isCreating}
                     color="primary"
                   >
                     <SendIcon />

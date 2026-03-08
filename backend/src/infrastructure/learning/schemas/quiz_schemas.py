@@ -12,4 +12,3 @@ class SendQuizMessageRequest(BaseModel):
 
 class SendQuizMessageResponse(BaseModel):
     message: str
-    is_complete: bool

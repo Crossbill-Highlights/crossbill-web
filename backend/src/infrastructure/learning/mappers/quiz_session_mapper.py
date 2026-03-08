@@ -15,9 +15,7 @@ class QuizSessionMapper:
             user_id=UserId(model.user_id),
             chapter_id=ChapterId(model.chapter_id),
             message_history=model.message_history,
-            question_count=model.question_count,
             created_at=model.created_at,
-            completed_at=model.completed_at,
         )
 
     def to_orm(self, entity: QuizSession) -> QuizSessionModel:
@@ -26,9 +24,7 @@ class QuizSessionMapper:
             user_id=entity.user_id.value,
             chapter_id=entity.chapter_id.value,
             message_history=entity.message_history,
-            question_count=entity.question_count,
             created_at=entity.created_at,
-            completed_at=entity.completed_at,
         )
         if entity.id.value != 0:
             model.id = entity.id.value
