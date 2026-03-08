@@ -9,5 +9,8 @@ class AIQuizServiceProtocol(Protocol):
     ) -> tuple[str, list[dict[str, Any]]]: ...
 
     async def continue_quiz(
-        self, user_message: str, message_history: list[dict[str, Any]], usage_context: AIUsageContext
+        self,
+        user_message: str,
+        message_history: list[dict[str, Any]],
+        usage_context: AIUsageContext,
     ) -> tuple[str, list[dict[str, Any]]]: ...

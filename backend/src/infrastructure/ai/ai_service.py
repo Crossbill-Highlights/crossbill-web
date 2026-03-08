@@ -97,7 +97,10 @@ class AIService:
         return result.output, serialized
 
     async def continue_quiz(
-        self, user_message: str, message_history: list[dict[str, Any]], usage_context: AIUsageContext
+        self,
+        user_message: str,
+        message_history: list[dict[str, Any]],
+        usage_context: AIUsageContext,
     ) -> tuple[str, list[dict[str, Any]]]:
         agent = get_quiz_agent()
         restored = ModelMessagesTypeAdapter.validate_python(message_history)
