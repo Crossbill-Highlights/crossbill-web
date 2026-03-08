@@ -5,6 +5,4 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface BodyUploadBookEpubApiV1EreaderBooksClientBookIdEpubPost {
-  epub: string;
-}
+export type ValidationErrorCtx = { [key: string]: unknown };

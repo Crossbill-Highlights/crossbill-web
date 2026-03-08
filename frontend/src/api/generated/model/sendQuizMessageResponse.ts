@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface BodyUploadBookEpubApiV1EreaderBooksClientBookIdEpubPost {
-  epub: string;
+export interface SendQuizMessageResponse {
+  message: string;
+  is_complete: boolean;
 }
