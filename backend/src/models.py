@@ -1,6 +1,7 @@
 """Database models."""
 
 from datetime import datetime as dt
+from typing import Any
 
 from sqlalchemy import (
     Column,
@@ -640,3 +641,29 @@ class AIUsageRecord(Base):
 
     def __repr__(self) -> str:
         return f"<AIUsageRecord(id={self.id}, task_type={self.task_type}, entity_type={self.entity_type})>"
+
+
+class QuizSession(Base):
+    """ORM model for quiz sessions."""
+
+    __tablename__ = "quiz_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    chapter_id: Mapped[int] = mapped_column(
+        ForeignKey("chapters.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    message_history: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False)
+    question_count: Mapped[int] = mapped_column(nullable=False, server_default="5")
+    created_at: Mapped[dt] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    completed_at: Mapped[dt | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    user: Mapped["User"] = relationship()
+    chapter: Mapped["Chapter"] = relationship()
+
+    def __repr__(self) -> str:
+        return f"<QuizSession(id={self.id}, chapter_id={self.chapter_id})>"
