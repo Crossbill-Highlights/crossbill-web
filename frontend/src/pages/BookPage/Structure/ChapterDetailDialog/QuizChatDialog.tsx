@@ -1,7 +1,10 @@
 import CloseIcon from '@mui/icons-material/Close';
+import ReplayIcon from '@mui/icons-material/Replay';
 import SendIcon from '@mui/icons-material/Send';
 import {
+  Alert,
   Box,
+  Button,
   CircularProgress,
   Dialog,
   IconButton,
@@ -31,12 +34,15 @@ interface QuizChatDialogProps {
   chapterName: string;
 }
 
+const ERROR_MESSAGE = 'Something went wrong. The AI service may be temporarily unavailable.';
+
 export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizChatDialogProps) => {
   const theme = useTheme();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sessionStartedRef = useRef(false);
 
@@ -44,8 +50,12 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
     useCreateQuizSessionApiV1ChaptersChapterIdQuizSessionsPost({
       mutation: {
         onSuccess: (data) => {
+          setError(null);
           setSessionId(data.session_id);
           setMessages([{ role: 'assistant', content: data.message }]);
+        },
+        onError: () => {
+          setError(ERROR_MESSAGE);
         },
       },
     });
@@ -54,8 +64,21 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
     useSendQuizMessageApiV1QuizSessionsSessionIdMessagesPost({
       mutation: {
         onSuccess: (data) => {
+          setError(null);
           setMessages((prev) => [...prev, { role: 'assistant', content: data.message }]);
           setIsComplete(data.is_complete);
+        },
+        onError: () => {
+          // Remove the optimistically-added user message and restore it to input
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === 'user') {
+              setInput(last.content);
+              return prev.slice(0, -1);
+            }
+            return prev;
+          });
+          setError(ERROR_MESSAGE);
         },
       },
     });
@@ -74,23 +97,30 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
     setInput('');
     setSessionId(null);
     setIsComplete(false);
+    setError(null);
     sessionStartedRef.current = false;
   }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, error]);
 
   const handleSend = useCallback(() => {
     if (!input.trim() || !sessionId || isSending) return;
 
+    setError(null);
     const userMessage = input.trim();
     setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
     setInput('');
 
     sendMessage({ sessionId, data: { message: userMessage } });
   }, [input, sessionId, isSending, sendMessage]);
+
+  const handleRetryCreate = useCallback(() => {
+    setError(null);
+    createSession({ chapterId });
+  }, [createSession, chapterId]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -101,6 +131,9 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
     },
     [handleSend]
   );
+
+  const hasSessionError = error && !sessionId;
+  const hasSendError = error && sessionId;
 
   return (
     <Dialog fullScreen open={open} onClose={onClose} TransitionProps={{ onExited: handleExited }}>
@@ -140,6 +173,19 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
           </Box>
         )}
 
+        {hasSessionError && (
+          <Box
+            sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 4, gap: 2 }}
+          >
+            <Alert severity="error" sx={{ width: '100%', maxWidth: 400 }}>
+              {error}
+            </Alert>
+            <Button variant="outlined" startIcon={<ReplayIcon />} onClick={handleRetryCreate}>
+              Try again
+            </Button>
+          </Box>
+        )}
+
         {messages.map((msg, i) => (
           <Box
             key={i}
@@ -171,6 +217,12 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
           </Box>
         )}
 
+        {hasSendError && (
+          <Alert severity="error" sx={{ alignSelf: 'flex-start', maxWidth: '80%' }}>
+            {error}
+          </Alert>
+        )}
+
         <div ref={messagesEndRef} />
       </Box>
 
@@ -182,7 +234,7 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          disabled={isSending || isCreating || isComplete}
+          disabled={isSending || isCreating || isComplete || !!hasSessionError}
           multiline
           maxRows={3}
           slotProps={{
