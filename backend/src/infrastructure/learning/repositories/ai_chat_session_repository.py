@@ -1,10 +1,9 @@
 """Repository for AIChatSession domain entities."""
 
-from typing import Any
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from src.domain.common.types import SerializedMessageHistory
 from src.domain.common.value_objects.ids import AIChatSessionId, UserId
 from src.domain.learning.entities.ai_chat_session import AIChatSession
 from src.infrastructure.learning.mappers.ai_chat_session_mapper import AIChatSessionMapper
@@ -39,7 +38,7 @@ class AIChatSessionRepository:
     def update_message_history(
         self,
         session_id: AIChatSessionId,
-        message_history: list[dict[str, Any]],
+        message_history: SerializedMessageHistory,
     ) -> None:
         result = self.db.execute(
             select(AIChatSessionModel).where(AIChatSessionModel.id == session_id.value)

@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
 
 from src.domain.common.entity import Entity
+from src.domain.common.types import SerializedMessageHistory
 from src.domain.common.value_objects.ids import AIChatSessionId, ChapterId, UserId
 
 
@@ -14,7 +14,7 @@ class AIChatSession(Entity[AIChatSessionId]):
     user_id: UserId
     chapter_id: ChapterId
     session_type: str
-    message_history: list[dict[str, Any]]
+    message_history: SerializedMessageHistory
     created_at: datetime
 
     @classmethod
@@ -41,7 +41,7 @@ class AIChatSession(Entity[AIChatSessionId]):
         user_id: UserId,
         chapter_id: ChapterId,
         session_type: str,
-        message_history: list[dict[str, Any]],
+        message_history: SerializedMessageHistory,
         created_at: datetime,
     ) -> "AIChatSession":
         return cls(
