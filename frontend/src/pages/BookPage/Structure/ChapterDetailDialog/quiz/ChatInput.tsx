@@ -32,7 +32,7 @@ export const ChatInput = ({ value, onChange, onSend, disabled, sendDisabled }: C
         disabled={disabled}
         multiline
         maxRows={3}
-        sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'transparent' } }}
+        sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'background.default' } }}
         slotProps={{
           input: {
             endAdornment: (
