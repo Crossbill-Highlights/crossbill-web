@@ -1,4 +1,3 @@
-import CloseIcon from '@mui/icons-material/Close';
 import ReplayIcon from '@mui/icons-material/Replay';
 import SendIcon from '@mui/icons-material/Send';
 import {
@@ -6,7 +5,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
   IconButton,
   InputAdornment,
   TextField,
@@ -20,6 +18,8 @@ import {
   useCreateQuizSessionApiV1ChaptersChapterIdQuizSessionsPost,
   useSendQuizMessageApiV1QuizSessionsSessionIdMessagesPost,
 } from '@/api/generated/quiz/quiz';
+import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
+import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { markdownStyles } from '@/theme/theme';
 
 interface ChatMessage {
@@ -36,14 +36,29 @@ interface QuizChatDialogProps {
 
 const ERROR_MESSAGE = 'Something went wrong. The AI service may be temporarily unavailable.';
 
+/** Wrapper that remounts inner content each time the dialog opens, giving fresh state. */
 export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizChatDialogProps) => {
+  const title = <CommonDialogTitle>Quiz: {chapterName}</CommonDialogTitle>;
+
+  return (
+    <CommonDialog open={open} onClose={onClose} maxWidth="md" title={title}>
+      {open && <QuizChatContent chapterId={chapterId} chapterName={chapterName} />}
+    </CommonDialog>
+  );
+};
+
+interface QuizChatContentProps {
+  chapterId: number;
+  chapterName: string;
+}
+
+const QuizChatContent = ({ chapterId }: QuizChatContentProps) => {
   const theme = useTheme();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const sessionStartedRef = useRef(false);
 
   const { mutate: createSession, isPending: isCreating } =
     useCreateQuizSessionApiV1ChaptersChapterIdQuizSessionsPost({
@@ -81,22 +96,10 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
       },
     });
 
-  // Start session when dialog opens
+  // Start session on mount
   useEffect(() => {
-    if (open && !sessionStartedRef.current) {
-      sessionStartedRef.current = true;
-      createSession({ chapterId });
-    }
-  }, [open, createSession, chapterId]);
-
-  // Reset state after dialog close animation completes
-  const handleExited = useCallback(() => {
-    setMessages([]);
-    setInput('');
-    setSessionId(null);
-    setError(null);
-    sessionStartedRef.current = false;
-  }, []);
+    createSession({ chapterId });
+  }, [createSession, chapterId]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -133,35 +136,13 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
   const hasSendError = error && sessionId;
 
   return (
-    <Dialog fullScreen open={open} onClose={onClose} TransitionProps={{ onExited: handleExited }}>
-      {/* Header */}
+    <>
       <Box
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          p: 2,
-          borderBottom: 1,
-          borderColor: 'divider',
-        }}
-      >
-        <Typography variant="h6" noWrap sx={{ flex: 1 }}>
-          Quiz: {chapterName}
-        </Typography>
-        <IconButton onClick={onClose} edge="end">
-          <CloseIcon />
-        </IconButton>
-      </Box>
-
-      {/* Messages */}
-      <Box
-        sx={{
-          flex: 1,
-          overflow: 'auto',
-          p: 2,
           display: 'flex',
           flexDirection: 'column',
           gap: 2,
+          mb: 2,
         }}
       >
         {isCreating && (
@@ -224,7 +205,7 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
       </Box>
 
       {/* Input */}
-      <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+      <Box sx={{ position: 'sticky', bottom: 0, bgcolor: 'background.paper', pt: 1 }}>
         <TextField
           fullWidth
           placeholder="Type your answer..."
@@ -251,6 +232,6 @@ export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizCh
           }}
         />
       </Box>
-    </Dialog>
+    </>
   );
 };
