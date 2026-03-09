@@ -22,7 +22,7 @@ export const ChatInput = ({ value, onChange, onSend, disabled, sendDisabled }: C
   );
 
   return (
-    <Box sx={{ position: 'sticky', bottom: 0, bgcolor: 'background.paper', pt: 1 }}>
+    <Box sx={{ position: 'sticky', bottom: 0, pt: 1 }}>
       <TextField
         fullWidth
         placeholder="Type your answer..."
@@ -32,6 +32,7 @@ export const ChatInput = ({ value, onChange, onSend, disabled, sendDisabled }: C
         disabled={disabled}
         multiline
         maxRows={3}
+        sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'transparent' } }}
         slotProps={{
           input: {
             endAdornment: (
