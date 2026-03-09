@@ -24,7 +24,7 @@ def create_quiz_chapter(db_session: Session, book: Book) -> Chapter:
 
 
 class TestCreateQuizSession:
-    @patch("src.feature_flags.is_ai_enabled", return_value=True)
+    @patch("src.infrastructure.common.dependencies.is_ai_enabled", return_value=True)
     @patch("src.infrastructure.ai.ai_service.AIService.start_quiz", new_callable=AsyncMock)
     @patch(
         "src.infrastructure.library.services.epub_text_extraction_service"
@@ -64,7 +64,7 @@ class TestCreateQuizSession:
         assert "message" in data
         assert "Question 1/5" in data["message"]
 
-    @patch("src.feature_flags.is_ai_enabled", return_value=True)
+    @patch("src.infrastructure.common.dependencies.is_ai_enabled", return_value=True)
     def test_create_quiz_session_chapter_not_found(
         self, mock_ai_enabled: MagicMock, client: TestClient
     ) -> None:
@@ -73,7 +73,7 @@ class TestCreateQuizSession:
 
 
 class TestSendQuizMessage:
-    @patch("src.feature_flags.is_ai_enabled", return_value=True)
+    @patch("src.infrastructure.common.dependencies.is_ai_enabled", return_value=True)
     def test_send_message_session_not_found(
         self, mock_ai_enabled: MagicMock, client: TestClient
     ) -> None:
@@ -83,7 +83,7 @@ class TestSendQuizMessage:
         )
         assert response.status_code == 404
 
-    @patch("src.feature_flags.is_ai_enabled", return_value=True)
+    @patch("src.infrastructure.common.dependencies.is_ai_enabled", return_value=True)
     def test_send_empty_message_rejected(
         self, mock_ai_enabled: MagicMock, client: TestClient
     ) -> None:
@@ -93,7 +93,7 @@ class TestSendQuizMessage:
         )
         assert response.status_code == 422
 
-    @patch("src.feature_flags.is_ai_enabled", return_value=True)
+    @patch("src.infrastructure.common.dependencies.is_ai_enabled", return_value=True)
     @patch(
         "src.infrastructure.ai.ai_service.AIService.continue_quiz",
         new_callable=AsyncMock,
