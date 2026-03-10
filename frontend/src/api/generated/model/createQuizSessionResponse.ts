@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface BodyUploadBookEpubApiV1EreaderBooksClientBookIdEpubPost {
-  epub: string;
+export interface CreateQuizSessionResponse {
+  session_id: number;
+  message: string;
 }

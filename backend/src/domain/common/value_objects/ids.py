@@ -172,3 +172,18 @@ class AIUsageRecordId(EntityId):
     @classmethod
     def generate(cls) -> "AIUsageRecordId":
         return cls(0)  # Database assigns real ID
+
+
+@dataclass(frozen=True)
+class AIChatSessionId(EntityId):
+    """Strongly-typed AI chat session identifier."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("AIChatSessionId must be non-negative")
+
+    @classmethod
+    def generate(cls) -> "AIChatSessionId":
+        return cls(0)  # Database assigns real ID

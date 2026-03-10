@@ -12,9 +12,12 @@ import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { ProgressBar } from '@/pages/BookPage/Highlights/HighlightViewModal/components/ProgressBar.tsx';
 import { Box, Button } from '@mui/material';
+import { useState } from 'react';
+import { AfterReadingSection } from './AfterReadingSection.tsx';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
 import { HighlightsSection } from './HighlightsSection.tsx';
 import { PrereadingSummarySection } from './PrereadingSummarySection.tsx';
+import { QuizChatDialog } from './QuizChatDialog.tsx';
 
 interface ChapterDetailDialogProps {
   open: boolean;
@@ -43,6 +46,8 @@ export const ChapterDetailDialog = ({
   availableTags,
   bookFlashcards,
 }: ChapterDetailDialogProps) => {
+  const [quizOpen, setQuizOpen] = useState(false);
+
   const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext, swipeHandlers } =
     useModalHorizontalNavigation({
       open,
@@ -63,6 +68,7 @@ export const ChapterDetailDialog = ({
         prereadingSummary={prereadingSummary}
         defaultExpanded={true}
       />
+      <AfterReadingSection onStartQuiz={() => setQuizOpen(true)} />
       <HighlightsSection
         chapter={chapter}
         bookId={bookId}
@@ -79,32 +85,40 @@ export const ChapterDetailDialog = ({
   );
 
   return (
-    <CommonDialog
-      open={open}
-      onClose={onClose}
-      maxWidth="md"
-      title={title}
-      headerElement={
-        hasNavigation ? (
-          <ProgressBar currentIndex={currentIndex} totalCount={allLeafChapters.length} />
-        ) : undefined
-      }
-      footerActions={
-        <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
-          <Button onClick={onClose}>Close</Button>
-        </Box>
-      }
-    >
-      <CommonDialogHorizontalNavigation
-        hasNavigation={hasNavigation}
-        hasPrevious={hasPrevious}
-        hasNext={hasNext}
-        onPrevious={handlePrevious}
-        onNext={handleNext}
-        swipeHandlers={swipeHandlers}
+    <>
+      <CommonDialog
+        open={open}
+        onClose={onClose}
+        maxWidth="md"
+        title={title}
+        headerElement={
+          hasNavigation ? (
+            <ProgressBar currentIndex={currentIndex} totalCount={allLeafChapters.length} />
+          ) : undefined
+        }
+        footerActions={
+          <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
+            <Button onClick={onClose}>Close</Button>
+          </Box>
+        }
       >
-        <FadeInOut ekey={chapter.id}>{renderContent()}</FadeInOut>
-      </CommonDialogHorizontalNavigation>
-    </CommonDialog>
+        <CommonDialogHorizontalNavigation
+          hasNavigation={hasNavigation}
+          hasPrevious={hasPrevious}
+          hasNext={hasNext}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+          swipeHandlers={swipeHandlers}
+        >
+          <FadeInOut ekey={chapter.id}>{renderContent()}</FadeInOut>
+        </CommonDialogHorizontalNavigation>
+      </CommonDialog>
+      <QuizChatDialog
+        open={quizOpen}
+        onClose={() => setQuizOpen(false)}
+        chapterId={chapter.id}
+        chapterName={chapter.name}
+      />
+    </>
   );
 };

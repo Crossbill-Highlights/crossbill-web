@@ -6,5 +6,5 @@
  */
 
 export interface BodyUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost {
-  cover: Blob;
+  cover: string;
 }
