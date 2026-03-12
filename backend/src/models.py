@@ -670,3 +670,68 @@ class AIChatSession(Base):
         return (
             f"<AIChatSession(id={self.id}, type={self.session_type}, chapter_id={self.chapter_id})>"
         )
+
+
+class BatchJob(Base):
+    """ORM model for batch AI processing jobs."""
+
+    __tablename__ = "batch_jobs"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    book_id: Mapped[int] = mapped_column(ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    job_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    total_items: Mapped[int] = mapped_column(nullable=False, default=0)
+    completed_items: Mapped[int] = mapped_column(nullable=False, default=0)
+    failed_items: Mapped[int] = mapped_column(nullable=False, default=0)
+    created_at: Mapped[dt] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    completed_at: Mapped[dt | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_batch_jobs_active_lookup", "user_id", "book_id", "job_type", "status"),
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship()
+    book: Mapped["Book"] = relationship()
+    items: Mapped[list["BatchItem"]] = relationship(
+        back_populates="job", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self) -> str:
+        """String representation of BatchJob."""
+        return f"<BatchJob(id={self.id}, job_type='{self.job_type}', status='{self.status}')>"
+
+
+class BatchItem(Base):
+    """ORM model for individual items within a batch job."""
+
+    __tablename__ = "batch_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    batch_job_id: Mapped[int] = mapped_column(
+        ForeignKey("batch_jobs.id", ondelete="CASCADE"), nullable=False
+    )
+    entity_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    entity_id: Mapped[int] = mapped_column(nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    attempts: Mapped[int] = mapped_column(nullable=False, default=0)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[dt] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    completed_at: Mapped[dt | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (Index("ix_batch_items_job_id", "batch_job_id"),)
+
+    # Relationships
+    job: Mapped["BatchJob"] = relationship(back_populates="items")
+
+    def __repr__(self) -> str:
+        """String representation of BatchItem."""
+        return (
+            f"<BatchItem(id={self.id}, entity_type='{self.entity_type}', status='{self.status}')>"
+        )
