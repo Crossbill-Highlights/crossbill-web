@@ -16,7 +16,7 @@ class GetBookmarksUseCase:
         self.book_repository = book_repository
         self.bookmark_repository = bookmark_repository
 
-    def get_bookmarks_by_book(self, book_id: int, user_id: int) -> list[Bookmark]:
+    async def get_bookmarks_by_book(self, book_id: int, user_id: int) -> list[Bookmark]:
         """
         Get all bookmarks for a book.
 
@@ -35,9 +35,9 @@ class GetBookmarksUseCase:
         user_id_vo = UserId(user_id)
 
         # Validate book exists and belongs to user
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
         # Get bookmarks
-        return self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)
+        return await self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)

@@ -13,7 +13,7 @@ class HighlightDeleteUseCase:
         self.book_repository = book_repository
         self.highlight_repository = highlight_repository
 
-    def delete_highlights(self, book_id: int, highlight_ids: list[int], user_id: int) -> int:
+    async def delete_highlights(self, book_id: int, highlight_ids: list[int], user_id: int) -> int:
         """
         Soft delete highlights from a book.
 
@@ -41,12 +41,12 @@ class HighlightDeleteUseCase:
         highlight_ids_vo = [HighlightId(hid) for hid in highlight_ids]
 
         # Verify book exists
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
         # Soft delete highlights (cascades to bookmarks and flashcards)
-        return self.highlight_repository.soft_delete_by_ids(
+        return await self.highlight_repository.soft_delete_by_ids(
             highlight_ids=highlight_ids_vo,
             user_id=user_id_vo,
             book_id=book_id_vo,

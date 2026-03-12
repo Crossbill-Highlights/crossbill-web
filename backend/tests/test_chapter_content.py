@@ -2,15 +2,15 @@
 
 from unittest.mock import MagicMock, patch
 
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from src.models import Book, Chapter
 
 
-def create_test_chapter(
-    db_session: Session,
+async def create_test_chapter(
+    db_session: AsyncSession,
     book: Book,
     name: str,
     chapter_number: int,
@@ -28,26 +28,26 @@ def create_test_chapter(
         parent_id=parent_id,
     )
     db_session.add(chapter)
-    db_session.commit()
-    db_session.refresh(chapter)
+    await db_session.commit()
+    await db_session.refresh(chapter)
     return chapter
 
 
 class TestGetChapterContent:
     """Tests for GET /api/v1/chapters/{chapter_id}/content."""
 
-    def test_get_chapter_content_success(
+    async def test_get_chapter_content_success(
         self,
-        client: TestClient,
-        db_session: Session,
+        client: AsyncClient,
+        db_session: AsyncSession,
         test_book: Book,
     ) -> None:
         """Should return chapter text content from EPUB."""
         test_book.file_path = "test.epub"
         test_book.file_type = "epub"
-        db_session.commit()
+        await db_session.commit()
 
-        chapter = create_test_chapter(
+        chapter = await create_test_chapter(
             db_session,
             test_book,
             name="Chapter 1: Introduction",
@@ -68,7 +68,7 @@ class TestGetChapterContent:
             mock_find_epub.return_value = MagicMock(exists=lambda: True)
             mock_extract.return_value = "This is the chapter content."
 
-            response = client.get(f"/api/v1/chapters/{chapter.id}/content")
+            response = await client.get(f"/api/v1/chapters/{chapter.id}/content")
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -77,22 +77,22 @@ class TestGetChapterContent:
         assert data["book_id"] == test_book.id
         assert data["content"] == "This is the chapter content."
 
-    def test_get_chapter_content_not_found(
+    async def test_get_chapter_content_not_found(
         self,
-        client: TestClient,
+        client: AsyncClient,
     ) -> None:
         """Should return 404 for non-existent chapter."""
-        response = client.get("/api/v1/chapters/99999/content")
+        response = await client.get("/api/v1/chapters/99999/content")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_get_chapter_content_no_xpoint_data(
+    async def test_get_chapter_content_no_xpoint_data(
         self,
-        client: TestClient,
-        db_session: Session,
+        client: AsyncClient,
+        db_session: AsyncSession,
         test_book: Book,
     ) -> None:
         """Should return 400 when chapter has no position data."""
-        chapter = create_test_chapter(
+        chapter = await create_test_chapter(
             db_session,
             test_book,
             name="Chapter Without XPoints",
@@ -100,18 +100,18 @@ class TestGetChapterContent:
             start_xpoint=None,
         )
 
-        response = client.get(f"/api/v1/chapters/{chapter.id}/content")
+        response = await client.get(f"/api/v1/chapters/{chapter.id}/content")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "position data" in response.json()["detail"].lower()
 
-    def test_get_chapter_content_no_epub(
+    async def test_get_chapter_content_no_epub(
         self,
-        client: TestClient,
-        db_session: Session,
+        client: AsyncClient,
+        db_session: AsyncSession,
         test_book: Book,
     ) -> None:
         """Should return 404 when book has no EPUB file."""
-        chapter = create_test_chapter(
+        chapter = await create_test_chapter(
             db_session,
             test_book,
             name="Chapter 1",
@@ -119,5 +119,5 @@ class TestGetChapterContent:
             start_xpoint="/body/DocFragment[1]/body/div[1]",
         )
 
-        response = client.get(f"/api/v1/chapters/{chapter.id}/content")
+        response = await client.get(f"/api/v1/chapters/{chapter.id}/content")
         assert response.status_code == status.HTTP_404_NOT_FOUND

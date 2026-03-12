@@ -49,7 +49,7 @@ class BookCoverUseCase:
         self.book_repository = book_repository
         self.file_repository = file_repository
 
-    def upload_cover(self, book_id: int, cover: UploadFile, user_id: int) -> str:
+    async def upload_cover(self, book_id: int, cover: UploadFile, user_id: int) -> str:
         """
         Upload a book cover image.
 
@@ -72,7 +72,7 @@ class BookCoverUseCase:
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
@@ -96,11 +96,11 @@ class BookCoverUseCase:
         # Update book's cover field in database using domain method
         cover_url = f"/api/v1/books/{book_id}/cover"
         book.update_cover(cover_url)
-        self.book_repository.save(book)
+        await self.book_repository.save(book)
 
         return cover_url
 
-    def upload_cover_by_client_book_id(
+    async def upload_cover_by_client_book_id(
         self, client_book_id: str, cover: UploadFile, user_id: int
     ) -> str:
         """
@@ -123,16 +123,16 @@ class BookCoverUseCase:
         """
         user_id_vo = UserId(user_id)
 
-        book = self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)
+        book = await self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)
         if not book:
             raise BookNotFoundError(
                 message=f"Book with client_book_id '{client_book_id}' not found"
             )
 
         # Delegate to the existing upload_cover method using book.id
-        return self.upload_cover(book.id.value, cover, user_id)
+        return await self.upload_cover(book.id.value, cover, user_id)
 
-    def get_cover_path(self, book_id: int, user_id: int) -> Path:
+    async def get_cover_path(self, book_id: int, user_id: int) -> Path:
         """
         Get the file path for a book cover with ownership verification.
 
@@ -152,7 +152,7 @@ class BookCoverUseCase:
         user_id_vo = UserId(user_id)
 
         # Verify book exists and user owns it
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 

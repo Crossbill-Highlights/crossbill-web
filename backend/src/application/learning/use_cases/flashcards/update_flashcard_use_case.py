@@ -21,7 +21,7 @@ class UpdateFlashcardUseCase:
         """Initialize use case with repository protocols."""
         self.flashcard_repository = flashcard_repository
 
-    def update_flashcard(
+    async def update_flashcard(
         self,
         flashcard_id: int,
         user_id: int,
@@ -50,7 +50,7 @@ class UpdateFlashcardUseCase:
         flashcard_id_vo = FlashcardId(flashcard_id)
         user_id_vo = UserId(user_id)
 
-        flashcard = self.flashcard_repository.find_by_id(flashcard_id_vo, user_id_vo)
+        flashcard = await self.flashcard_repository.find_by_id(flashcard_id_vo, user_id_vo)
         if not flashcard:
             raise FlashcardNotFoundError(flashcard_id)
 
@@ -59,7 +59,7 @@ class UpdateFlashcardUseCase:
         if answer is not None:
             flashcard.update_answer(answer)
 
-        flashcard = self.flashcard_repository.save(flashcard)
+        flashcard = await self.flashcard_repository.save(flashcard)
 
         logger.info("updated_flashcard", flashcard_id=flashcard_id)
         return flashcard

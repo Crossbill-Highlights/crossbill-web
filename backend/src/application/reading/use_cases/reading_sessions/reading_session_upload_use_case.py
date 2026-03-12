@@ -73,7 +73,7 @@ class ReadingSessionUploadUseCase:
         settings = get_settings()
         self.min_duration = settings.MINIMUM_READING_SESSION_DURATION
 
-    def upload_reading_sessions(
+    async def upload_reading_sessions(
         self,
         client_book_id: str,
         sessions: list[ReadingSessionUploadData],
@@ -107,7 +107,7 @@ class ReadingSessionUploadUseCase:
 
         # Get book by client_book_id
         user_id_vo = UserId(user_id)
-        book = self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)
+        book = await self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)
 
         if not book:
             logger.error(
@@ -131,7 +131,7 @@ class ReadingSessionUploadUseCase:
             total = position_index.total_elements
             if total > 0:
                 book.update_end_position(Position(index=total, char_index=0))
-                self.book_repository.save(book)
+                await self.book_repository.save(book)
 
         # Resolve positions for all sessions upfront
         sessions_with_positions: list[
@@ -193,7 +193,7 @@ class ReadingSessionUploadUseCase:
             sessions_to_save=len(domain_sessions),
         )
 
-        result = self.session_repository.bulk_create(user_id_vo, domain_sessions)
+        result = await self.session_repository.bulk_create(user_id_vo, domain_sessions)
         created_count = result.created_count
         skipped_duplicate_count = len(domain_sessions) - created_count
 
@@ -206,7 +206,7 @@ class ReadingSessionUploadUseCase:
         # Link highlights to created reading sessions
         linked_count = 0
         if result.created_sessions:
-            linked_count = self._link_highlights_to_sessions(
+            linked_count = await self._link_highlights_to_sessions(
                 book.id, user_id_vo, result.created_sessions
             )
             logger.info(
@@ -249,7 +249,7 @@ class ReadingSessionUploadUseCase:
             return (start, end)
         return (None, None)
 
-    def _link_highlights_to_sessions(
+    async def _link_highlights_to_sessions(
         self,
         book_id: BookId,
         user_id: UserId,
@@ -270,7 +270,7 @@ class ReadingSessionUploadUseCase:
             Total number of highlight-session links created
         """
         # Get all highlights for this book via repository
-        highlights = self.highlight_repository.find_by_book_id(book_id, user_id)
+        highlights = await self.highlight_repository.find_by_book_id(book_id, user_id)
 
         if not highlights:
             return 0
@@ -287,7 +287,9 @@ class ReadingSessionUploadUseCase:
 
         # Bulk insert links via repository
         if session_highlight_pairs:
-            return self.session_repository.link_highlights_to_sessions(session_highlight_pairs)
+            return await self.session_repository.link_highlights_to_sessions(
+                session_highlight_pairs
+            )
 
         return 0
 

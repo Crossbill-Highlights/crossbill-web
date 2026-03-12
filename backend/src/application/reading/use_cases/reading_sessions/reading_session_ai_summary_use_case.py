@@ -60,7 +60,7 @@ class ReadingSessionAISummaryUseCase:
         session_id_vo = ReadingSessionId(session_id)
         user_id_vo = UserId(user_id)
 
-        session = self.session_repository.find_by_id(session_id_vo, user_id_vo)
+        session = await self.session_repository.find_by_id(session_id_vo, user_id_vo)
         if not session:
             raise ReadingSessionNotFoundError(session_id)
 
@@ -80,7 +80,7 @@ class ReadingSessionAISummaryUseCase:
             )
 
             # Resolve epub path
-            book = self.book_repo.find_by_id(session.book_id, user_id_vo)
+            book = await self.book_repo.find_by_id(session.book_id, user_id_vo)
             if not book or not book.file_path or book.file_type != "epub":
                 raise BookNotFoundError(
                     session.book_id.value, message="EPUB file not found for this book"
@@ -123,7 +123,7 @@ class ReadingSessionAISummaryUseCase:
         ai_summary = await self.ai_summary_service.generate_summary(content, usage_context)
 
         session.set_ai_summary(ai_summary)
-        self.session_repository.save(session)
+        await self.session_repository.save(session)
 
         logger.info(
             "ai_summary_generated_and_cached",

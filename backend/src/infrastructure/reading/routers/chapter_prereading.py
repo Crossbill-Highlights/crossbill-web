@@ -37,7 +37,7 @@ router = APIRouter(prefix="/chapters", tags=["prereading"])
     response_model=ChapterPrereadingResponse | None,
     status_code=status.HTTP_200_OK,
 )
-def get_chapter_prereading(
+async def get_chapter_prereading(
     chapter_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetChapterPrereadingUseCase = Depends(
@@ -46,7 +46,7 @@ def get_chapter_prereading(
 ) -> ChapterPrereadingResponse | None:
     """Get existing prereading content for a chapter."""
     try:
-        result = use_case.get_prereading_content(
+        result = await use_case.get_prereading_content(
             chapter_id=ChapterId(chapter_id),
             user_id=UserId(current_user.id.value),
         )
@@ -111,7 +111,7 @@ book_prereading_router = APIRouter(prefix="/books", tags=["prereading"])
     response_model=BookPrereadingResponse,
     status_code=status.HTTP_200_OK,
 )
-def get_book_prereading(
+async def get_book_prereading(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetBookPrereadingUseCase = Depends(
@@ -120,7 +120,7 @@ def get_book_prereading(
 ) -> BookPrereadingResponse:
     """Get all prereading content for chapters in a book."""
     try:
-        results = use_case.get_all_prereading_for_book(
+        results = await use_case.get_all_prereading_for_book(
             book_id=BookId(book_id),
             user_id=UserId(current_user.id.value),
         )

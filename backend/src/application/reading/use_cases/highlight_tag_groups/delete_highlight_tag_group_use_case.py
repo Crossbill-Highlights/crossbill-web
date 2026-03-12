@@ -21,7 +21,7 @@ class DeleteHighlightTagGroupUseCase:
     ) -> None:
         self.tag_repository = tag_repository
 
-    def delete_group(self, group_id: int, user_id: int) -> bool:
+    async def delete_group(self, group_id: int, user_id: int) -> bool:
         """
         Delete a tag group (nullifies tag associations).
 
@@ -34,7 +34,7 @@ class DeleteHighlightTagGroupUseCase:
         """
         group_id_vo = HighlightTagGroupId(group_id)
 
-        success = self.tag_repository.delete_group(group_id_vo)
+        success = await self.tag_repository.delete_group(group_id_vo)
         if success:
             logger.info("deleted_tag_group", group_id=group_id)
 

@@ -16,7 +16,7 @@ class CreateGlobalHighlightLabelUseCase:
     ) -> None:
         self.highlight_style_repository = highlight_style_repository
 
-    def execute(
+    async def execute(
         self,
         user_id: int,
         device_color: str | None,
@@ -33,4 +33,4 @@ class CreateGlobalHighlightLabelUseCase:
             label=label,
             ui_color=ui_color,
         )
-        return self.highlight_style_repository.save(style)
+        return await self.highlight_style_repository.save(style)

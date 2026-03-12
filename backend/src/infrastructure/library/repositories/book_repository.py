@@ -1,5 +1,6 @@
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.library.entities.book import Book
@@ -14,12 +15,12 @@ from src.models import Highlight as HighlightORM
 class BookRepository:
     """Domain-centric repository for Book persistence."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.mapper = BookMapper()
         self.tag_mapper = TagMapper()
 
-    def find_by_client_book_id(self, client_book_id: str, user_id: UserId) -> Book | None:
+    async def find_by_client_book_id(self, client_book_id: str, user_id: UserId) -> Book | None:
         """
         Find book by client-provided book ID.
 
@@ -30,54 +31,61 @@ class BookRepository:
             .where(BookORM.client_book_id == client_book_id)
             .where(BookORM.user_id == user_id.value)
         )
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        orm_model = result.scalar_one_or_none()
 
         if not orm_model:
             return None
 
         return self.mapper.to_domain(orm_model)
 
-    def find_by_id(self, book_id: BookId, user_id: UserId) -> Book | None:
+    async def find_by_id(self, book_id: BookId, user_id: UserId) -> Book | None:
         """Find book by ID with user ownership check."""
         stmt = (
             select(BookORM)
             .where(BookORM.id == book_id.value)
             .where(BookORM.user_id == user_id.value)
         )
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        orm_model = result.scalar_one_or_none()
 
         if not orm_model:
             return None
 
         return self.mapper.to_domain(orm_model)
 
-    def save(self, book: Book) -> Book:
+    async def save(self, book: Book) -> Book:
         """Persist book to database."""
         if book.id.value == 0:
             # Create new
             orm_model = self.mapper.to_orm(book)
             self.db.add(orm_model)
-            self.db.commit()
+            await self.db.commit()
+            await self.db.refresh(orm_model)
             return self.mapper.to_domain(orm_model)
         # Update existing
         stmt = select(BookORM).where(BookORM.id == book.id.value)
-        existing_orm = self.db.execute(stmt).scalar_one()
+        result = await self.db.execute(stmt)
+        existing_orm = result.scalar_one()
         self.mapper.to_orm(book, existing_orm)
-        self.db.commit()
+        await self.db.commit()
+        await self.db.refresh(existing_orm)
         return self.mapper.to_domain(existing_orm)
 
-    def delete(self, book: Book) -> None:
+    async def delete(self, book: Book) -> None:
         """
         Hard delete a book from the database.
 
-        Cascading deletes handled by database foreign key constraints.
+        Cascading deletes are handled by database-level ON DELETE CASCADE
+        constraints on foreign keys.
         """
         stmt = select(BookORM).where(BookORM.id == book.id.value)
-        book_orm = self.db.execute(stmt).scalar_one()
-        self.db.delete(book_orm)
-        self.db.commit()
+        result = await self.db.execute(stmt)
+        book_orm = result.scalar_one()
+        await self.db.delete(book_orm)
+        await self.db.commit()
 
-    def get_recently_viewed_books(
+    async def get_recently_viewed_books(
         self, user_id: UserId, limit: int = 10
     ) -> list[tuple[Book, int, int, list[Tag]]]:
         """
@@ -116,6 +124,7 @@ class BookRepository:
 
         stmt = (
             select(BookORM, highlight_count_subq, flashcard_count_subq)
+            .options(selectinload(BookORM.tags))
             .where(
                 BookORM.user_id == user_id.value,
                 BookORM.last_viewed.isnot(None),
@@ -124,7 +133,8 @@ class BookRepository:
             .limit(limit)
         )
 
-        results = self.db.execute(stmt).all()
+        result = await self.db.execute(stmt)
+        results = result.all()
 
         # Convert ORM models to domain entities with counts and tags
         return [
@@ -137,7 +147,7 @@ class BookRepository:
             for book_orm, highlight_count, flashcard_count in results
         ]
 
-    def get_books_with_counts(
+    async def get_books_with_counts(
         self,
         user_id: UserId,
         offset: int = 0,
@@ -176,7 +186,8 @@ class BookRepository:
 
         # Count query for total number of books
         total_stmt = select(func.count(BookORM.id)).where(*filters)
-        total = self.db.execute(total_stmt).scalar() or 0
+        total_result = await self.db.execute(total_stmt)
+        total = total_result.scalar() or 0
 
         # Subquery for highlight counts (excluding soft-deleted highlights)
         highlight_count_subq = (
@@ -202,13 +213,15 @@ class BookRepository:
         # Main query for books with both counts
         stmt = (
             select(BookORM, highlight_count_subq, flashcard_count_subq)
+            .options(selectinload(BookORM.tags))
             .where(*filters)
             .order_by(BookORM.title)
             .offset(offset)
             .limit(limit)
         )
 
-        results = self.db.execute(stmt).all()
+        result = await self.db.execute(stmt)
+        results = result.all()
 
         # Convert ORM models to domain entities with counts and tags
         return (

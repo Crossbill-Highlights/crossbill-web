@@ -30,7 +30,7 @@ class SendQuizMessageUseCase:
         user_id_vo = UserId(user_id)
 
         # 1. Load session
-        session = self.ai_chat_session_repo.find_by_id(session_id_vo, user_id_vo)
+        session = await self.ai_chat_session_repo.find_by_id(session_id_vo, user_id_vo)
         if not session:
             raise NotFoundError(f"Quiz session {session_id} not found")
 
@@ -46,7 +46,7 @@ class SendQuizMessageUseCase:
         )
 
         # 3. Update session
-        self.ai_chat_session_repo.update_message_history(session_id_vo, updated_history)
+        await self.ai_chat_session_repo.update_message_history(session_id_vo, updated_history)
 
         logger.info(
             "quiz_message_sent",

@@ -68,7 +68,7 @@ class GetBookDetailsUseCase:
         self.highlight_style_repository = highlight_style_repository
         self.highlight_style_resolver = highlight_style_resolver
 
-    def get_book_details(self, book_id: int, user_id: int) -> BookDetailsAggregation:
+    async def get_book_details(self, book_id: int, user_id: int) -> BookDetailsAggregation:
         """
         Get detailed information about a book including its chapters and highlights.
 
@@ -89,18 +89,18 @@ class GetBookDetailsUseCase:
         user_id_vo = UserId(user_id)
 
         # Fetch and update book (returns domain entity, not ORM)
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
         book.mark_as_viewed()
-        book = self.book_repository.save(book)
+        book = await self.book_repository.save(book)
 
         # Get highlight tags using use case (from reading context)
-        highlight_tags = self.highlight_tag_use_case.get_tags(book_id, user_id)
+        highlight_tags = await self.highlight_tag_use_case.get_tags(book_id, user_id)
 
         # Get all highlights for book (returns domain entities)
-        highlights_with_context = self.highlight_repository.search(
+        highlights_with_context = await self.highlight_repository.search(
             search_text="",
             user_id=user_id_vo,
             book_id=book_id_vo,
@@ -113,7 +113,7 @@ class GetBookDetailsUseCase:
         )
 
         # Load ALL chapters for this book (not just those with highlights)
-        all_chapters = self.chapter_repository.find_all_by_book(book_id_vo, user_id_vo)
+        all_chapters = await self.chapter_repository.find_all_by_book(book_id_vo, user_id_vo)
 
         # Merge: ensure every chapter appears, even those without highlights
         grouped_by_id = {g.chapter_id: g for g in grouped}
@@ -141,28 +141,30 @@ class GetBookDetailsUseCase:
             merged.append(remaining)
 
         # Get reading position from latest reading session
-        latest_sessions = self.reading_session_repository.find_by_book_id(
+        latest_sessions = await self.reading_session_repository.find_by_book_id(
             book_id_vo, user_id_vo, limit=1, offset=0
         )
         reading_position = latest_sessions[0].end_position if latest_sessions else None
 
         # Get bookmarks (returns domain entities)
-        bookmarks = self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)
+        bookmarks = await self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)
 
         # Get tags using use case
-        tags = self.get_book_tags_use_case.get_tags(book_id, user_id)
+        tags = await self.get_book_tags_use_case.get_tags(book_id, user_id)
 
         # Get highlight tag groups
-        highlight_tag_groups = self.highlight_tag_repository.find_groups_by_book(book_id_vo)
+        highlight_tag_groups = await self.highlight_tag_repository.find_groups_by_book(book_id_vo)
 
         # Get flashcards not associated with any highlight (book-level and chapter-level)
-        all_flashcards = self.flashcard_repository.find_by_book(book_id_vo, user_id_vo)
+        all_flashcards = await self.flashcard_repository.find_by_book(book_id_vo, user_id_vo)
         book_flashcards = [f for f in all_flashcards if f.highlight_id is None]
 
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}
         if self.highlight_style_repository and self.highlight_style_resolver:
-            all_styles = self.highlight_style_repository.find_for_resolution(user_id_vo, book_id_vo)
+            all_styles = await self.highlight_style_repository.find_for_resolution(
+                user_id_vo, book_id_vo
+            )
             for style in all_styles:
                 if style.is_combination_level() and not style.is_global():
                     resolved = self.highlight_style_resolver.resolve(style, all_styles)

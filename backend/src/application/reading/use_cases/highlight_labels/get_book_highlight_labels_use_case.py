@@ -26,18 +26,20 @@ class GetBookHighlightLabelsUseCase:
         self.book_repository = book_repository
         self.resolver = highlight_style_resolver
 
-    def execute(
+    async def execute(
         self, book_id: int, user_id: int
     ) -> list[tuple[HighlightStyle, ResolvedLabel, int]]:
         """Returns list of (style, resolved_label, highlight_count) for the book."""
         user_id_vo = UserId(user_id)
         book_id_vo = BookId(book_id)
 
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise NotFoundError(f"Book {book_id} not found")
 
-        all_styles = self.highlight_style_repository.find_for_resolution(user_id_vo, book_id_vo)
+        all_styles = await self.highlight_style_repository.find_for_resolution(
+            user_id_vo, book_id_vo
+        )
 
         book_combo_styles = [
             s for s in all_styles if s.is_combination_level() and not s.is_global()
@@ -46,7 +48,7 @@ class GetBookHighlightLabelsUseCase:
         results: list[tuple[HighlightStyle, ResolvedLabel, int]] = []
         for style in book_combo_styles:
             resolved = self.resolver.resolve(style, all_styles)
-            count = self.highlight_style_repository.count_highlights_by_style(style.id)
+            count = await self.highlight_style_repository.count_highlights_by_style(style.id)
             results.append((style, resolved, count))
 
         return results

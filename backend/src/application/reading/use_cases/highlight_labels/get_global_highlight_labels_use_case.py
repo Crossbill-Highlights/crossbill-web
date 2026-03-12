@@ -16,6 +16,6 @@ class GetGlobalHighlightLabelsUseCase:
     ) -> None:
         self.highlight_style_repository = highlight_style_repository
 
-    def execute(self, user_id: int) -> list[HighlightStyle]:
+    async def execute(self, user_id: int) -> list[HighlightStyle]:
         """Returns list of global highlight styles."""
-        return self.highlight_style_repository.find_global(UserId(user_id))
+        return await self.highlight_style_repository.find_global(UserId(user_id))

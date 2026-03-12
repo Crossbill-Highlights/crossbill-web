@@ -1,7 +1,7 @@
 """Repository for Bookmark domain entities."""
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.common.value_objects.ids import BookId, BookmarkId, HighlightId, UserId
 from src.domain.reading.entities.bookmark import Bookmark
@@ -13,11 +13,11 @@ from src.models import Bookmark as BookmarkORM
 class BookmarkRepository:
     """Repository for Bookmark domain entities."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.mapper = BookmarkMapper()
 
-    def find_by_book_and_highlight(
+    async def find_by_book_and_highlight(
         self, book_id: BookId, highlight_id: HighlightId
     ) -> Bookmark | None:
         """
@@ -34,10 +34,11 @@ class BookmarkRepository:
             BookmarkORM.book_id == book_id.value,
             BookmarkORM.highlight_id == highlight_id.value,
         )
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        orm_model = result.scalar_one_or_none()
         return self.mapper.to_domain(orm_model) if orm_model else None
 
-    def find_by_book(self, book_id: BookId, user_id: UserId) -> list[Bookmark]:
+    async def find_by_book(self, book_id: BookId, user_id: UserId) -> list[Bookmark]:
         """
         Get all bookmarks for a book.
 
@@ -57,10 +58,11 @@ class BookmarkRepository:
             )
             .order_by(BookmarkORM.created_at.desc())
         )
-        orm_models = self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        orm_models = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orm_models]
 
-    def save(self, bookmark: Bookmark) -> Bookmark:
+    async def save(self, bookmark: Bookmark) -> Bookmark:
         """
         Save a bookmark entity.
 
@@ -74,13 +76,13 @@ class BookmarkRepository:
             # Create new
             orm_model = self.mapper.to_orm(bookmark)
             self.db.add(orm_model)
-            self.db.commit()
-            self.db.refresh(orm_model)
+            await self.db.commit()
+            await self.db.refresh(orm_model)
             return self.mapper.to_domain(orm_model)
         # Bookmarks are immutable - no update case
         raise ValueError("Bookmarks cannot be updated")
 
-    def delete(self, bookmark_id: BookmarkId, user_id: UserId) -> bool:
+    async def delete(self, bookmark_id: BookmarkId, user_id: UserId) -> bool:
         """
         Delete a bookmark.
 
@@ -100,11 +102,12 @@ class BookmarkRepository:
                 BookORM.user_id == user_id.value,
             )
         )
-        bookmark_orm = self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        bookmark_orm = result.scalar_one_or_none()
 
         if not bookmark_orm:
             return False
 
-        self.db.delete(bookmark_orm)
-        self.db.commit()
+        await self.db.delete(bookmark_orm)
+        await self.db.commit()
         return True

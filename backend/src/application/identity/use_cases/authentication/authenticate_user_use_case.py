@@ -26,7 +26,7 @@ class AuthenticateUserUseCase:
         self.password_service = password_service
         self.token_service = token_service
 
-    def authenticate(self, email: str, password: str) -> tuple[User, TokenWithRefresh]:
+    async def authenticate(self, email: str, password: str) -> tuple[User, TokenWithRefresh]:
         """
         Authenticate a user with email and password.
 
@@ -40,7 +40,7 @@ class AuthenticateUserUseCase:
         Raises:
             InvalidCredentialsError: If credentials are invalid
         """
-        user = self.user_repository.find_by_email(email)
+        user = await self.user_repository.find_by_email(email)
 
         # Use constant-time comparison to prevent timing attacks
         if not user:

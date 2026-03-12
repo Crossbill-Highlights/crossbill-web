@@ -4,7 +4,7 @@ import logging
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.common.value_objects.ids import UserId
 from src.domain.identity.entities.user import User
@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 class UserRepository:
     """Repository for User domain entities."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.mapper = UserMapper()
 
-    def find_by_id(self, user_id: UserId) -> User | None:
+    async def find_by_id(self, user_id: UserId) -> User | None:
         """
         Find a user by ID.
 
@@ -33,10 +33,11 @@ class UserRepository:
             User entity if found, None otherwise
         """
         stmt = select(UserORM).where(UserORM.id == user_id.value)
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        orm_model = result.scalar_one_or_none()
         return self.mapper.to_domain(orm_model) if orm_model else None
 
-    def find_by_email(self, email: str) -> User | None:
+    async def find_by_email(self, email: str) -> User | None:
         """
         Find a user by email.
 
@@ -47,10 +48,11 @@ class UserRepository:
             User entity if found, None otherwise
         """
         stmt = select(UserORM).where(UserORM.email == email)
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        orm_model = result.scalar_one_or_none()
         return self.mapper.to_domain(orm_model) if orm_model else None
 
-    def email_exists(self, email: str) -> bool:
+    async def email_exists(self, email: str) -> bool:
         """
         Check if an email is already registered.
 
@@ -61,10 +63,10 @@ class UserRepository:
             True if email exists, False otherwise
         """
         stmt = select(UserORM.id).where(UserORM.email == email)
-        result = self.db.execute(stmt).scalar_one_or_none()
-        return result is not None
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none() is not None
 
-    def save(self, user: User) -> User:
+    async def save(self, user: User) -> User:
         """
         Save a user entity.
 
@@ -82,12 +84,12 @@ class UserRepository:
             try:
                 orm_model = self.mapper.to_orm(user)
                 self.db.add(orm_model)
-                self.db.commit()
-                self.db.refresh(orm_model)
+                await self.db.commit()
+                await self.db.refresh(orm_model)
                 logger.info(f"Created user with email: {user.email} (id={orm_model.id})")
                 return self.mapper.to_domain(orm_model)
             except IntegrityError as e:
-                self.db.rollback()
+                await self.db.rollback()
                 # Check if it's a unique constraint violation on email
                 if "email" in str(e.orig):
                     raise EmailAlreadyExistsError(user.email) from e
@@ -95,12 +97,13 @@ class UserRepository:
         else:
             # Update existing user
             stmt = select(UserORM).where(UserORM.id == user.id.value)
-            orm_model = self.db.execute(stmt).scalar_one_or_none()
+            result = await self.db.execute(stmt)
+            orm_model = result.scalar_one_or_none()
             if not orm_model:
                 raise ValueError(f"User with id {user.id.value} not found")
 
             orm_model = self.mapper.to_orm(user, orm_model)
-            self.db.commit()
-            self.db.refresh(orm_model)
+            await self.db.commit()
+            await self.db.refresh(orm_model)
             logger.info(f"Updated user {user.id.value}")
             return self.mapper.to_domain(orm_model)

@@ -57,7 +57,7 @@ class GenerateChapterPrereadingUseCase:
     ) -> ChapterPrereadingContent:
         """Generate new prereading content for a chapter."""
         # 1. Verify chapter exists and user owns it
-        chapter = self.chapter_repo.find_by_id(chapter_id, user_id)
+        chapter = await self.chapter_repo.find_by_id(chapter_id, user_id)
         if not chapter:
             raise NotFoundError(f"Chapter {chapter_id.value} not found")
 
@@ -69,7 +69,7 @@ class GenerateChapterPrereadingUseCase:
             )
 
         # 3. Resolve epub path
-        book = self.book_repo.find_by_id(chapter.book_id, user_id)
+        book = await self.book_repo.find_by_id(chapter.book_id, user_id)
         if not book or not book.file_path or book.file_type != "epub":
             raise BookNotFoundError(
                 chapter.book_id.value, message="EPUB file not found for this book"
@@ -126,4 +126,4 @@ class GenerateChapterPrereadingUseCase:
             chapter_id=chapter_id.value,
             keypoints_count=len(ai_result.keypoints),
         )
-        return self.prereading_repo.save(entity)
+        return await self.prereading_repo.save(entity)

@@ -23,7 +23,7 @@ class UpdateUserUseCase:
         self.user_repository = user_repository
         self.password_service = password_service
 
-    def update_user(
+    async def update_user(
         self,
         user_id: int,
         email: str | None = None,
@@ -48,7 +48,7 @@ class UpdateUserUseCase:
             ValidationError: If email is invalid or current_password not provided when required
         """
         # Load user
-        user = self.user_repository.find_by_id(UserId(user_id))
+        user = await self.user_repository.find_by_id(UserId(user_id))
         if not user:
             raise UserNotFoundError(user_id)
 
@@ -67,7 +67,7 @@ class UpdateUserUseCase:
             hashed_password = self.password_service.hash_password(new_password)
             user.update_password(hashed_password)
 
-        user = self.user_repository.save(user)
+        user = await self.user_repository.save(user)
 
         logger.info("user_profile_updated", user_id=user_id)
 

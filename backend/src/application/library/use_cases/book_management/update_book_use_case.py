@@ -32,7 +32,7 @@ class UpdateBookUseCase:
         self.flashcard_repository = flashcard_repository
         self.replace_book_tags_use_case = replace_book_tags_use_case
 
-    def update_book(
+    async def update_book(
         self, book_id: int, update_data: BookUpdateRequest, user_id: int
     ) -> tuple[Book, int, int, list[Tag]]:
         """
@@ -56,16 +56,18 @@ class UpdateBookUseCase:
         user_id_vo = UserId(user_id)
 
         # Verify book exists
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
         # Update tags using use case
-        tags = self.replace_book_tags_use_case.replace_tags(book_id, update_data.tags, user_id)
+        tags = await self.replace_book_tags_use_case.replace_tags(
+            book_id, update_data.tags, user_id
+        )
 
         # Get counts
-        highlight_count = self.highlight_repository.count_by_book(book_id_vo, user_id_vo)
-        flashcard_count = self.flashcard_repository.count_by_book(book_id_vo, user_id_vo)
+        highlight_count = await self.highlight_repository.count_by_book(book_id_vo, user_id_vo)
+        flashcard_count = await self.flashcard_repository.count_by_book(book_id_vo, user_id_vo)
 
         logger.info(f"Successfully updated book {book_id}")
 

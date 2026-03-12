@@ -36,7 +36,7 @@ router = APIRouter(prefix="/ereader", tags=["ereader"])
     response_model=EreaderBookMetadata,
     status_code=status.HTTP_200_OK,
 )
-def create_book(
+async def create_book(
     book_data: BookCreate,
     current_user: Annotated[User, Depends(get_current_user)],
     create_use_case: CreateBookUseCase = Depends(inject_use_case(container.create_book_use_case)),
@@ -59,9 +59,9 @@ def create_book(
         EreaderBookMetadata with book_id, bookname, author, has_cover, has_epub
     """
     try:
-        create_use_case.create_book(book_data, current_user.id.value)
+        await create_use_case.create_book(book_data, current_user.id.value)
 
-        metadata = metadata_use_case.get_metadata_for_ereader(
+        metadata = await metadata_use_case.get_metadata_for_ereader(
             book_data.client_book_id, current_user.id.value
         )
         return EreaderBookMetadata(
@@ -94,7 +94,7 @@ def create_book(
     response_model=EreaderBookMetadata,
     status_code=status.HTTP_200_OK,
 )
-def get_book_metadata(
+async def get_book_metadata(
     client_book_id: str,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetEreaderMetadataUseCase = Depends(
@@ -118,7 +118,7 @@ def get_book_metadata(
         HTTPException: 404 if book is not found
     """
     try:
-        metadata = use_case.get_metadata_for_ereader(client_book_id, current_user.id.value)
+        metadata = await use_case.get_metadata_for_ereader(client_book_id, current_user.id.value)
         return EreaderBookMetadata(
             book_id=metadata.book_id,
             bookname=metadata.title,
@@ -149,7 +149,7 @@ def get_book_metadata(
     response_model=CoverUploadResponse,
     status_code=status.HTTP_200_OK,
 )
-def upload_book_cover(
+async def upload_book_cover(
     client_book_id: str,
     cover: Annotated[UploadFile, File(...)],
     current_user: Annotated[User, Depends(get_current_user)],
@@ -173,7 +173,7 @@ def upload_book_cover(
         HTTPException: 404 if book is not found, or if upload fails
     """
     try:
-        cover_url = use_case.upload_cover_by_client_book_id(
+        cover_url = await use_case.upload_cover_by_client_book_id(
             client_book_id, cover, current_user.id.value
         )
         return CoverUploadResponse(
@@ -208,7 +208,7 @@ MAX_EBOOK_SIZE = 50 * 1024 * 1024
     response_model=EpubUploadResponse,
     status_code=status.HTTP_200_OK,
 )
-def upload_book_epub(
+async def upload_book_epub(
     client_book_id: str,
     epub: Annotated[UploadFile, File(...)],
     current_user: Annotated[User, Depends(get_current_user)],
@@ -248,7 +248,7 @@ def upload_book_epub(
                 detail=f"File too large (max {MAX_EBOOK_SIZE // (1024 * 1024)}MB)",
             )
 
-        use_case.upload_ebook(
+        await use_case.upload_ebook(
             client_book_id, content, epub.content_type or "", current_user.id.value
         )
 

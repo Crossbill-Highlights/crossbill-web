@@ -228,7 +228,7 @@ def _build_book_details_schema(
 
 
 @router.get("/", response_model=BooksListResponse, status_code=status.HTTP_200_OK)
-def get_books(
+async def get_books(
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetBooksWithCountsUseCase = Depends(
         inject_use_case(container.get_books_with_counts_use_case)
@@ -253,7 +253,7 @@ def get_books(
         HTTPException: If fetching books fails due to server error
     """
     try:
-        results, total = use_case.get_books_with_counts(
+        results, total = await use_case.get_books_with_counts(
             current_user.id.value, offset, limit, only_with_flashcards, search
         )
 
@@ -298,7 +298,7 @@ def get_books(
     response_model=RecentlyViewedBooksResponse,
     status_code=status.HTTP_200_OK,
 )
-def get_recently_viewed_books(
+async def get_recently_viewed_books(
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetRecentlyViewedBooksUseCase = Depends(
         inject_use_case(container.get_recently_viewed_books_use_case)
@@ -320,7 +320,7 @@ def get_recently_viewed_books(
         HTTPException: If fetching books fails due to server error
     """
     try:
-        results = use_case.get_recently_viewed(current_user.id.value, limit)
+        results = await use_case.get_recently_viewed(current_user.id.value, limit)
 
         books_list = [
             BookWithHighlightCount(
@@ -359,7 +359,7 @@ def get_recently_viewed_books(
 
 
 @router.get("/{book_id}", response_model=BookDetails, status_code=status.HTTP_200_OK)
-def get_book_details(
+async def get_book_details(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetBookDetailsUseCase = Depends(inject_use_case(container.get_book_details_use_case)),
@@ -377,7 +377,7 @@ def get_book_details(
         HTTPException: If book is not found or fetching fails
     """
     try:
-        agg = use_case.get_book_details(book_id, current_user.id.value)
+        agg = await use_case.get_book_details(book_id, current_user.id.value)
         return _build_book_details_schema(agg, agg.labels)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
@@ -399,7 +399,7 @@ def get_book_details(
     response_model=BookWithHighlightCount,
     status_code=status.HTTP_200_OK,
 )
-def update_book(
+async def update_book(
     book_id: int,
     request: BookUpdateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -421,7 +421,7 @@ def update_book(
         HTTPException: If book is not found or update fails
     """
     try:
-        book, highlight_count, flashcard_count, tags = use_case.update_book(
+        book, highlight_count, flashcard_count, tags = await use_case.update_book(
             book_id, request, current_user.id.value
         )
         return BookWithHighlightCount(
@@ -463,7 +463,7 @@ def update_book(
 
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_book(
+async def delete_book(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: DeleteBookUseCase = Depends(inject_use_case(container.delete_book_use_case)),
@@ -482,7 +482,7 @@ def delete_book(
         HTTPException: If book is not found or deletion fails
     """
     try:
-        use_case.delete_book(book_id, current_user.id.value)
+        await use_case.delete_book(book_id, current_user.id.value)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -499,7 +499,7 @@ def delete_book(
 
 
 @router.get("/{book_id}/cover", status_code=status.HTTP_200_OK)
-def get_book_cover(
+async def get_book_cover(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: BookCoverUseCase = Depends(inject_use_case(container.book_cover_use_case)),
@@ -520,5 +520,5 @@ def get_book_cover(
     Raises:
         HTTPException: If book is not found, user doesn't own it, or cover doesn't exist
     """
-    cover_path = use_case.get_cover_path(book_id, current_user.id.value)
+    cover_path = await use_case.get_cover_path(book_id, current_user.id.value)
     return FileResponse(cover_path, media_type="image/jpeg")

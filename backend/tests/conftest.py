@@ -1,14 +1,13 @@
 """Pytest configuration and fixtures."""
 
 import os
-from collections.abc import Generator
+from collections.abc import AsyncGenerator
 from datetime import datetime as dt
-from typing import Any
 
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy import event, select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
 from src.database import Base, get_db
@@ -31,8 +30,8 @@ from src.models import (
 )
 
 
-def create_test_book(
-    db_session: Session,
+async def create_test_book(
+    db_session: AsyncSession,
     user_id: int,
     title: str,
     author: str | None = None,
@@ -59,13 +58,13 @@ def create_test_book(
         client_book_id=client_book_id,
     )
     db_session.add(book)
-    db_session.commit()
-    db_session.refresh(book)
+    await db_session.commit()
+    await db_session.refresh(book)
     return book
 
 
-def create_test_highlight(
-    db_session: Session,
+async def create_test_highlight(
+    db_session: AsyncSession,
     book: Book,
     user_id: int,
     text: str,
@@ -101,13 +100,13 @@ def create_test_highlight(
         highlight_style_id=highlight_style_id,
     )
     db_session.add(highlight)
-    db_session.commit()
-    db_session.refresh(highlight)
+    await db_session.commit()
+    await db_session.refresh(highlight)
     return highlight
 
 
-def create_test_highlight_style(
-    db_session: Session,
+async def create_test_highlight_style(
+    db_session: AsyncSession,
     user_id: int,
     book_id: int,
     device_color: str = "gray",
@@ -125,64 +124,73 @@ def create_test_highlight_style(
         ui_color=ui_color,
     )
     db_session.add(style)
-    db_session.commit()
-    db_session.refresh(style)
+    await db_session.commit()
+    await db_session.refresh(style)
     return style
 
 
 # Set TESTING environment variable to skip database initialization in main.py
 os.environ["TESTING"] = "1"
 
-# Test database URL (in-memory SQLite)
-TEST_DATABASE_URL = "sqlite:///:memory:"
+# Test database URL (in-memory SQLite with aiosqlite)
+TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 # Create test engine with StaticPool to reuse the same connection
-test_engine = create_engine(
+test_engine = create_async_engine(
     TEST_DATABASE_URL,
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
 
+
+# Enable SQLite foreign key enforcement for cascade deletes
+@event.listens_for(test_engine.sync_engine, "connect")
+def _set_sqlite_pragma(dbapi_connection: object, connection_record: object) -> None:  # pyright: ignore[reportUnusedFunction]
+    cursor = dbapi_connection.cursor()  # type: ignore[union-attr]
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
+
 # Create test session factory
-TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+TestSessionLocal = async_sessionmaker(
+    autocommit=False, autoflush=False, bind=test_engine, expire_on_commit=False
+)
 
 
 @pytest.fixture
-def db_session() -> Generator[Session, None, None]:
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
     """Create a fresh database session for each test."""
     # Create all tables
-    Base.metadata.create_all(bind=test_engine)
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
-    session = TestSessionLocal()
-    try:
+    async with TestSessionLocal() as session:
         # Create the default user that services expect
         default_user = User(id=1, email="admin@test.com")
         session.add(default_user)
-        session.commit()
+        await session.commit()
         yield session
-    finally:
-        session.close()
-        # Drop all tables after test
-        Base.metadata.drop_all(bind=test_engine)
+
+    # Drop all tables after test
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest.fixture
-def test_user(db_session: Session) -> User:
+async def test_user(db_session: AsyncSession) -> User:
     """Get the default test user."""
-    user = db_session.query(User).filter_by(id=1).first()
+    result = await db_session.execute(select(User).filter_by(id=1))
+    user = result.scalar_one_or_none()
     assert user is not None
     return user
 
 
 @pytest.fixture
-def client(db_session: Session, test_user: User) -> Generator[TestClient, Any, None]:
+async def client(db_session: AsyncSession, test_user: User) -> AsyncGenerator[AsyncClient, None]:
     """Create a test client with database session and mocked authentication."""
 
-    def override_get_db() -> Generator[Session, None, None]:
-        try:
-            yield db_session
-        finally:
-            pass
+    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+        yield db_session
 
     async def override_get_current_user() -> DomainUser:
         # Convert ORM User to domain User entity for tests
@@ -197,16 +205,17 @@ def client(db_session: Session, test_user: User) -> Generator[TestClient, Any, N
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user
 
-    with TestClient(app) as test_client:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as test_client:
         yield test_client
 
     app.dependency_overrides.clear()
 
 
 @pytest.fixture
-def test_book(db_session: Session, test_user: User) -> Book:
+async def test_book(db_session: AsyncSession, test_user: User) -> Book:
     """Create a standard test book."""
-    return create_test_book(
+    return await create_test_book(
         db_session=db_session,
         user_id=test_user.id,
         title="Test Book",
@@ -215,22 +224,22 @@ def test_book(db_session: Session, test_user: User) -> Book:
 
 
 @pytest.fixture
-def test_chapter(db_session: Session, test_book: Book) -> Chapter:
+async def test_chapter(db_session: AsyncSession, test_book: Book) -> Chapter:
     """Create a standard test chapter attached to test_book."""
     chapter = Chapter(
         book_id=test_book.id,
         name="Test Chapter",
     )
     db_session.add(chapter)
-    db_session.commit()
-    db_session.refresh(chapter)
+    await db_session.commit()
+    await db_session.refresh(chapter)
     return chapter
 
 
 @pytest.fixture
-def test_highlight(db_session: Session, test_book: Book, test_user: User) -> Highlight:
+async def test_highlight(db_session: AsyncSession, test_book: Book, test_user: User) -> Highlight:
     """Create a standard test highlight attached to test_book."""
-    return create_test_highlight(
+    return await create_test_highlight(
         db_session=db_session,
         book=test_book,
         user_id=test_user.id,
@@ -241,7 +250,7 @@ def test_highlight(db_session: Session, test_book: Book, test_user: User) -> Hig
 
 
 @pytest.fixture
-def test_flashcard(db_session: Session, test_book: Book, test_user: User) -> Flashcard:
+async def test_flashcard(db_session: AsyncSession, test_book: Book, test_user: User) -> Flashcard:
     """Create a standard test flashcard attached to test_book."""
     flashcard = Flashcard(
         user_id=test_user.id,
@@ -250,23 +259,25 @@ def test_flashcard(db_session: Session, test_book: Book, test_user: User) -> Fla
         answer="Test answer",
     )
     db_session.add(flashcard)
-    db_session.commit()
-    db_session.refresh(flashcard)
+    await db_session.commit()
+    await db_session.refresh(flashcard)
     return flashcard
 
 
 @pytest.fixture
-def test_tag_group(db_session: Session, test_book: Book) -> HighlightTagGroup:
+async def test_tag_group(db_session: AsyncSession, test_book: Book) -> HighlightTagGroup:
     """Create a standard test tag group attached to test_book."""
     tag_group = HighlightTagGroup(book_id=test_book.id, name="Test Group")
     db_session.add(tag_group)
-    db_session.commit()
-    db_session.refresh(tag_group)
+    await db_session.commit()
+    await db_session.refresh(tag_group)
     return tag_group
 
 
 @pytest.fixture
-def test_highlight_tag(db_session: Session, test_book: Book, test_user: User) -> HighlightTag:
+async def test_highlight_tag(
+    db_session: AsyncSession, test_book: Book, test_user: User
+) -> HighlightTag:
     """Create a standard test highlight tag attached to test_book."""
     tag = HighlightTag(
         book_id=test_book.id,
@@ -274,6 +285,6 @@ def test_highlight_tag(db_session: Session, test_book: Book, test_user: User) ->
         name="Test Tag",
     )
     db_session.add(tag)
-    db_session.commit()
-    db_session.refresh(tag)
+    await db_session.commit()
+    await db_session.refresh(tag)
     return tag

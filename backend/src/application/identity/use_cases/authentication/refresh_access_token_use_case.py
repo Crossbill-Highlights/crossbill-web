@@ -24,7 +24,7 @@ class RefreshAccessTokenUseCase:
         self.user_repository = user_repository
         self.token_service = token_service
 
-    def refresh_token(self, refresh_token: str) -> tuple[User, TokenWithRefresh]:
+    async def refresh_token(self, refresh_token: str) -> tuple[User, TokenWithRefresh]:
         """
         Refresh access token using a refresh token.
 
@@ -41,7 +41,7 @@ class RefreshAccessTokenUseCase:
         if user_id is None:
             raise InvalidCredentialsError
 
-        user = self.user_repository.find_by_id(UserId(user_id))
+        user = await self.user_repository.find_by_id(UserId(user_id))
         if not user:
             raise InvalidCredentialsError
 

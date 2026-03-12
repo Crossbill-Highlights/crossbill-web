@@ -23,7 +23,7 @@ class CreateBookmarkUseCase:
         self.bookmark_repository = bookmark_repository
         self.highlight_repository = highlight_repository
 
-    def create_bookmark(self, book_id: int, highlight_id: int, user_id: int) -> Bookmark:
+    async def create_bookmark(self, book_id: int, highlight_id: int, user_id: int) -> Bookmark:
         """
         Create a new bookmark for a highlight.
 
@@ -45,12 +45,12 @@ class CreateBookmarkUseCase:
         user_id_vo = UserId(user_id)
 
         # Validate book exists and belongs to user
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
         # Validate highlight exists and belongs to user
-        highlight = self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
+        highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
             raise ValidationError(f"Highlight with id {highlight_id} not found", status_code=404)
 
@@ -62,7 +62,9 @@ class CreateBookmarkUseCase:
             )
 
         # Check if bookmark already exists (idempotent)
-        existing = self.bookmark_repository.find_by_book_and_highlight(book_id_vo, highlight_id_vo)
+        existing = await self.bookmark_repository.find_by_book_and_highlight(
+            book_id_vo, highlight_id_vo
+        )
         if existing:
             logger.info(
                 "bookmark_already_exists",
@@ -74,7 +76,7 @@ class CreateBookmarkUseCase:
 
         # Create new bookmark
         bookmark = Bookmark.create(book_id=book_id_vo, highlight_id=highlight_id_vo)
-        bookmark = self.bookmark_repository.save(bookmark)
+        bookmark = await self.bookmark_repository.save(bookmark)
 
         logger.info(
             "created_bookmark",

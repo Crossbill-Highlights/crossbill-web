@@ -34,7 +34,7 @@ router = APIRouter(prefix="/flashcards", tags=["flashcards"])
     response_model=FlashcardUpdateResponse,
     status_code=status.HTTP_200_OK,
 )
-def update_flashcard(
+async def update_flashcard(
     flashcard_id: int,
     request: FlashcardUpdateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -57,7 +57,7 @@ def update_flashcard(
         HTTPException: If flashcard not found or update fails
     """
     try:
-        flashcard_entity = use_case.update_flashcard(
+        flashcard_entity = await use_case.update_flashcard(
             flashcard_id=flashcard_id,
             user_id=current_user.id.value,
             question=request.question,
@@ -94,7 +94,7 @@ def update_flashcard(
     response_model=FlashcardDeleteResponse,
     status_code=status.HTTP_200_OK,
 )
-def delete_flashcard(
+async def delete_flashcard(
     flashcard_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: DeleteFlashcardUseCase = Depends(
@@ -115,7 +115,7 @@ def delete_flashcard(
         HTTPException: If flashcard not found or deletion fails
     """
     try:
-        use_case.delete_flashcard(flashcard_id=flashcard_id, user_id=current_user.id.value)
+        await use_case.delete_flashcard(flashcard_id=flashcard_id, user_id=current_user.id.value)
         return FlashcardDeleteResponse(
             success=True,
             message="Flashcard deleted successfully",

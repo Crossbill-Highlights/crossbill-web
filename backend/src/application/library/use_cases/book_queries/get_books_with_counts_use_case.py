@@ -13,7 +13,7 @@ class GetBooksWithCountsUseCase:
         """Initialize use case with dependencies."""
         self.book_repository = book_repository
 
-    def get_books_with_counts(
+    async def get_books_with_counts(
         self,
         user_id: int,
         offset: int = 0,
@@ -35,7 +35,7 @@ class GetBooksWithCountsUseCase:
             tuple[list[tuple[Book, highlight_count, flashcard_count, list[Tag]]], total_count]
         """
         user_id_vo = UserId(user_id)
-        return self.book_repository.get_books_with_counts(
+        return await self.book_repository.get_books_with_counts(
             user_id=user_id_vo,
             offset=offset,
             limit=limit,

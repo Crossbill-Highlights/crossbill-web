@@ -20,7 +20,7 @@ class GetHighlightTagsForBookUseCase:
         self.tag_repository = tag_repository
         self.book_repository = book_repository
 
-    def get_tags(self, book_id: int, user_id: int) -> list[HighlightTag]:
+    async def get_tags(self, book_id: int, user_id: int) -> list[HighlightTag]:
         """
         Get all tags for a book.
 
@@ -37,8 +37,8 @@ class GetHighlightTagsForBookUseCase:
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise NotFoundError(f"Book with id {book_id} not found")
 
-        return self.tag_repository.find_by_book(book_id_vo, user_id_vo)
+        return await self.tag_repository.find_by_book(book_id_vo, user_id_vo)

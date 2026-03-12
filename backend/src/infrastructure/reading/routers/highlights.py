@@ -144,7 +144,7 @@ async def upload_highlights(
             for h in request.highlights
         ]
 
-        created, skipped = use_case.upload_highlights(
+        created, skipped = await use_case.upload_highlights(
             client_book_id=request.client_book_id,
             highlight_data_list=highlight_data_list,
             user_id=current_user.id.value,
@@ -176,7 +176,7 @@ async def upload_highlights(
     response_model=HighlightNoteUpdateResponse,
     status_code=status.HTTP_200_OK,
 )
-def update_highlight_note(
+async def update_highlight_note(
     highlight_id: int,
     request: HighlightNoteUpdate,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -198,7 +198,7 @@ def update_highlight_note(
         HTTPException: If highlight not found or update fails
     """
     try:
-        result = use_case.update_note(highlight_id, current_user.id.value, request.note)
+        result = await use_case.update_note(highlight_id, current_user.id.value, request.note)
 
         if result is None:
             raise HTTPException(
@@ -275,7 +275,7 @@ def update_highlight_note(
     response_model=HighlightTagGroup,
     status_code=status.HTTP_200_OK,
 )
-def create_or_update_tag_group(
+async def create_or_update_tag_group(
     request: HighlightTagGroupCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     create_use_case: CreateHighlightTagGroupUseCase = Depends(
@@ -301,7 +301,7 @@ def create_or_update_tag_group(
         # Create or update based on whether ID is provided
         if request.id is not None:
             # Update existing
-            tag_group = update_use_case.update_group(
+            tag_group = await update_use_case.update_group(
                 group_id=request.id,
                 book_id=request.book_id,
                 new_name=request.name,
@@ -309,7 +309,7 @@ def create_or_update_tag_group(
             )
         else:
             # Create new
-            tag_group = create_use_case.create_group(
+            tag_group = await create_use_case.create_group(
                 book_id=request.book_id,
                 name=request.name,
                 user_id=current_user.id.value,
@@ -354,7 +354,7 @@ def create_or_update_tag_group(
     "/highlights/tag_group/{tag_group_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_tag_group(
+async def delete_tag_group(
     tag_group_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: DeleteHighlightTagGroupUseCase = Depends(
@@ -371,7 +371,7 @@ def delete_tag_group(
         HTTPException: If tag group not found or deletion fails
     """
     try:
-        success = use_case.delete_group(tag_group_id, current_user.id.value)
+        success = await use_case.delete_group(tag_group_id, current_user.id.value)
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -392,7 +392,7 @@ def delete_tag_group(
     response_model=FlashcardCreateResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_flashcard_for_highlight(
+async def create_flashcard_for_highlight(
     highlight_id: int,
     request: FlashcardCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -418,7 +418,7 @@ def create_flashcard_for_highlight(
         HTTPException: If highlight not found or creation fails
     """
     try:
-        flashcard_entity = use_case.create_flashcard(
+        flashcard_entity = await use_case.create_flashcard(
             highlight_id=highlight_id,
             user_id=current_user.id.value,
             question=request.question,
@@ -547,7 +547,7 @@ def _map_chapters_to_schemas(
     response_model=BookHighlightSearchResponse,
     status_code=status.HTTP_200_OK,
 )
-def search_book_highlights(
+async def search_book_highlights(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     search_text: str = Query(
@@ -567,7 +567,7 @@ def search_book_highlights(
     Results are ranked by relevance and excludes soft-deleted highlights.
     """
     try:
-        chapters_grouped, total, labels = use_case.search_book_highlights(
+        chapters_grouped, total, labels = await use_case.search_book_highlights(
             book_id, current_user.id.value, search_text
         )
         return BookHighlightSearchResponse(
@@ -594,7 +594,7 @@ def search_book_highlights(
     response_model=HighlightDeleteResponse,
     status_code=status.HTTP_200_OK,
 )
-def delete_highlights(
+async def delete_highlights(
     book_id: int,
     request: HighlightDeleteRequest,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -621,7 +621,7 @@ def delete_highlights(
         :param use_case:
     """
     try:
-        deleted_count = use_case.delete_highlights(
+        deleted_count = await use_case.delete_highlights(
             book_id, request.highlight_ids, current_user.id.value
         )
         return HighlightDeleteResponse(
@@ -649,7 +649,7 @@ def delete_highlights(
     response_model=HighlightTagsResponse,
     status_code=status.HTTP_200_OK,
 )
-def get_highlight_tags(
+async def get_highlight_tags(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetHighlightTagsForBookUseCase = Depends(
@@ -669,7 +669,7 @@ def get_highlight_tags(
         HTTPException: If book is not found
     """
     try:
-        tags = use_case.get_tags(book_id, current_user.id.value)
+        tags = await use_case.get_tags(book_id, current_user.id.value)
         return HighlightTagsResponse(
             tags=[
                 HighlightTag(
@@ -696,7 +696,7 @@ def get_highlight_tags(
     response_model=HighlightTag,
     status_code=status.HTTP_201_CREATED,
 )
-def create_highlight_tag(
+async def create_highlight_tag(
     book_id: int,
     request: HighlightTagCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -718,7 +718,7 @@ def create_highlight_tag(
         HTTPException: If book is not found, tag already exists, or creation fails
     """
     try:
-        tag = use_case.create_tag(book_id, request.name, user_id=current_user.id.value)
+        tag = await use_case.create_tag(book_id, request.name, user_id=current_user.id.value)
         return HighlightTag(
             id=tag.id.value,
             book_id=tag.book_id.value,
@@ -745,7 +745,7 @@ def create_highlight_tag(
     "/books/{book_id}/highlight_tag/{tag_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_highlight_tag(
+async def delete_highlight_tag(
     book_id: int,
     tag_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -766,7 +766,7 @@ def delete_highlight_tag(
         HTTPException: If tag is not found, doesn't belong to book, or deletion fails
     """
     try:
-        deleted = use_case.delete_tag(book_id, tag_id, current_user.id.value)
+        deleted = await use_case.delete_tag(book_id, tag_id, current_user.id.value)
         if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -799,7 +799,7 @@ def delete_highlight_tag(
     response_model=HighlightTag,
     status_code=status.HTTP_200_OK,
 )
-def update_highlight_tag(
+async def update_highlight_tag(
     book_id: int,
     tag_id: int,
     request: HighlightTagUpdateRequest,
@@ -829,7 +829,7 @@ def update_highlight_tag(
     try:
         # Update name if provided
         if request.name is not None:
-            tag = tag_use_case.update_tag_name(
+            tag = await tag_use_case.update_tag_name(
                 book_id=book_id,
                 tag_id=tag_id,
                 new_name=request.name,
@@ -840,7 +840,7 @@ def update_highlight_tag(
             # undefined before we return from this route.
             # Load tag for group update
             tag_repo = HighlightTagRepository(db)
-            tag = tag_repo.find_by_id(HighlightTagId(tag_id), UserId(current_user.id.value))
+            tag = await tag_repo.find_by_id(HighlightTagId(tag_id), UserId(current_user.id.value))
             if not tag:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -849,7 +849,7 @@ def update_highlight_tag(
 
         # Update group association if provided (including None to clear)
         if hasattr(request, "tag_group_id"):
-            tag = group_use_case.update_association(
+            tag = await group_use_case.update_association(
                 book_id=book_id,
                 tag_id=tag_id,
                 group_id=request.tag_group_id,
@@ -895,7 +895,7 @@ def update_highlight_tag(
     response_model=Highlight,
     status_code=status.HTTP_200_OK,
 )
-def add_tag_to_highlight(
+async def add_tag_to_highlight(
     book_id: int,
     highlight_id: int,
     request: HighlightTagAssociationRequest,
@@ -927,11 +927,11 @@ def add_tag_to_highlight(
     try:
         # Add tag by ID or by name (with get_or_create)
         if request.tag_id is not None:
-            highlight, flashcards, highlight_tags, labels = add_by_id_use_case.add_tag(
+            highlight, flashcards, highlight_tags, labels = await add_by_id_use_case.add_tag(
                 highlight_id, request.tag_id, current_user.id.value
             )
         elif request.name is not None:
-            highlight, flashcards, highlight_tags, labels = add_by_name_use_case.add_tag(
+            highlight, flashcards, highlight_tags, labels = await add_by_name_use_case.add_tag(
                 book_id, highlight_id, request.name, current_user.id.value
             )
         else:
@@ -1010,7 +1010,7 @@ def add_tag_to_highlight(
     response_model=Highlight,
     status_code=status.HTTP_200_OK,
 )
-def remove_tag_from_highlight(
+async def remove_tag_from_highlight(
     book_id: int,
     highlight_id: int,
     tag_id: int,
@@ -1034,7 +1034,7 @@ def remove_tag_from_highlight(
         HTTPException: If highlight not found or removal fails
     """
     try:
-        highlight, flashcards, highlight_tags, labels = use_case.remove_tag(
+        highlight, flashcards, highlight_tags, labels = await use_case.remove_tag(
             highlight_id, tag_id, current_user.id.value
         )
 

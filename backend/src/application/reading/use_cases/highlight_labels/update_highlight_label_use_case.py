@@ -17,7 +17,7 @@ class UpdateHighlightLabelUseCase:
     ) -> None:
         self.highlight_style_repository = highlight_style_repository
 
-    def execute(
+    async def execute(
         self,
         style_id: int,
         user_id: int,
@@ -25,7 +25,7 @@ class UpdateHighlightLabelUseCase:
         ui_color: str | None = None,
     ) -> HighlightStyle:
         """Update a highlight style's label and/or ui_color."""
-        style = self.highlight_style_repository.find_by_id(
+        style = await self.highlight_style_repository.find_by_id(
             HighlightStyleId(style_id), UserId(user_id)
         )
         if not style:
@@ -36,4 +36,4 @@ class UpdateHighlightLabelUseCase:
         if ui_color is not None:
             style.update_ui_color(ui_color)
 
-        return self.highlight_style_repository.save(style)
+        return await self.highlight_style_repository.save(style)

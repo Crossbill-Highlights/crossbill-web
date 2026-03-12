@@ -5,9 +5,10 @@ from datetime import UTC, datetime
 from typing import NamedTuple
 
 import pytest
-from fastapi import status
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
+from httpx import AsyncClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from starlette import status
 
 from src import models
 from tests.conftest import create_test_book
@@ -28,9 +29,9 @@ class BookWithSessions(NamedTuple):
 
 
 @pytest.fixture
-def test_book(db_session: Session) -> models.Book:
+async def test_book(db_session: AsyncSession) -> models.Book:
     """Create a test book with default values."""
-    return create_test_book(
+    return await create_test_book(
         db_session=db_session,
         user_id=DEFAULT_USER_ID,
         title="Test Book",
@@ -40,9 +41,11 @@ def test_book(db_session: Session) -> models.Book:
 
 
 @pytest.fixture
-def test_reading_session(db_session: Session, test_book: models.Book) -> models.ReadingSession:
+async def test_reading_session(
+    db_session: AsyncSession, test_book: models.Book
+) -> models.ReadingSession:
     """Create a test reading session for the test book."""
-    return create_reading_session(
+    return await create_reading_session(
         db_session=db_session,
         book=test_book,
         user_id=DEFAULT_USER_ID,
@@ -55,9 +58,9 @@ def test_reading_session(db_session: Session, test_book: models.Book) -> models.
 
 
 @pytest.fixture
-def book_with_sessions(db_session: Session, test_book: models.Book) -> BookWithSessions:
+async def book_with_sessions(db_session: AsyncSession, test_book: models.Book) -> BookWithSessions:
     """Create a test book with multiple reading sessions."""
-    session1 = create_reading_session(
+    session1 = await create_reading_session(
         db_session=db_session,
         book=test_book,
         user_id=DEFAULT_USER_ID,
@@ -67,7 +70,7 @@ def book_with_sessions(db_session: Session, test_book: models.Book) -> BookWithS
         start_page=10,
         end_page=15,
     )
-    session2 = create_reading_session(
+    session2 = await create_reading_session(
         db_session=db_session,
         book=test_book,
         user_id=DEFAULT_USER_ID,
@@ -80,8 +83,8 @@ def book_with_sessions(db_session: Session, test_book: models.Book) -> BookWithS
     return BookWithSessions(book=test_book, sessions=[session1, session2])
 
 
-def create_reading_session(
-    db_session: Session,
+async def create_reading_session(
+    db_session: AsyncSession,
     book: models.Book,
     user_id: int,
     start_time: datetime,
@@ -106,19 +109,19 @@ def create_reading_session(
         content_hash=str(uuid.uuid4()),
     )
     db_session.add(session)
-    db_session.commit()
-    db_session.refresh(session)
+    await db_session.commit()
+    await db_session.refresh(session)
     return session
 
 
 class TestUploadReadingSessions:
     """Test suite for POST /reading_sessions/upload endpoint."""
 
-    def test_upload_single_session_success(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_upload_single_session_success(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
         """Test successful upload of a single reading session."""
-        response = client.post(
+        response = await client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "client_book_id": "test-client-book-id",
@@ -141,7 +144,8 @@ class TestUploadReadingSessions:
         assert data["skipped_duplicate_count"] == 0
 
         # Verify session was created in database with correct values
-        session = db_session.query(models.ReadingSession).first()
+        result = await db_session.execute(select(models.ReadingSession))
+        session = result.scalar_one_or_none()
         assert session is not None
         assert session.book_id == test_book.id
         assert session.device_id == "kindle-123"
@@ -151,11 +155,11 @@ class TestUploadReadingSessions:
         assert session.start_xpoint == "/body/div[1]/p[1]"
         assert session.end_xpoint == "/body/div[1]/p[50]"
 
-    def test_upload_bulk_sessions_success(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_upload_bulk_sessions_success(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
         """Test successful bulk upload of multiple sessions for a single book."""
-        response = client.post(
+        response = await client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "client_book_id": "test-client-book-id",
@@ -191,7 +195,10 @@ class TestUploadReadingSessions:
         assert data["created_count"] == 3
 
         # Verify all sessions were created for the same book
-        sessions = db_session.query(models.ReadingSession).filter_by(book_id=test_book.id).all()
+        result = await db_session.execute(
+            select(models.ReadingSession).filter_by(book_id=test_book.id)
+        )
+        sessions = result.scalars().all()
         assert len(sessions) == 3
 
         # Verify session details
@@ -199,8 +206,8 @@ class TestUploadReadingSessions:
         assert sessions[0].start_page == 10
         assert sessions[2].end_page == 25
 
-    def test_upload_duplicate_sessions_skipped(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_upload_duplicate_sessions_skipped(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
         """Test that duplicate sessions are skipped and reported in count."""
         session_data = {
@@ -217,28 +224,29 @@ class TestUploadReadingSessions:
         }
 
         # First upload
-        response1 = client.post("/api/v1/reading_sessions/upload", json=session_data)
+        response1 = await client.post("/api/v1/reading_sessions/upload", json=session_data)
         assert response1.status_code == status.HTTP_200_OK
         data1 = response1.json()
         assert data1["created_count"] == 1
         assert data1["skipped_duplicate_count"] == 0
 
         # Second upload (duplicate)
-        response2 = client.post("/api/v1/reading_sessions/upload", json=session_data)
+        response2 = await client.post("/api/v1/reading_sessions/upload", json=session_data)
         assert response2.status_code == status.HTTP_200_OK
         data2 = response2.json()
         assert data2["created_count"] == 0
         assert data2["skipped_duplicate_count"] == 1
 
         # Verify only one session exists
-        sessions = db_session.query(models.ReadingSession).all()
+        result = await db_session.execute(select(models.ReadingSession))
+        sessions = result.scalars().all()
         assert len(sessions) == 1
 
-    def test_upload_same_time_different_device_allowed(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_upload_same_time_different_device_allowed(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
         """Test that same start time from different devices is allowed."""
-        response = client.post(
+        response = await client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "client_book_id": "test-client-book-id",
@@ -264,16 +272,17 @@ class TestUploadReadingSessions:
         assert response.status_code == status.HTTP_200_OK
 
         # Verify both sessions were created with different device IDs
-        sessions = db_session.query(models.ReadingSession).all()
+        result = await db_session.execute(select(models.ReadingSession))
+        sessions = result.scalars().all()
         assert len(sessions) == 2
         device_ids = {s.device_id for s in sessions}
         assert device_ids == {"device-1", "device-2"}
 
-    def test_upload_session_with_page_positions(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_upload_session_with_page_positions(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
         """Test uploading a session with page positions (for PDFs)."""
-        response = client.post(
+        response = await client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "client_book_id": "test-client-book-id",
@@ -291,7 +300,8 @@ class TestUploadReadingSessions:
         assert response.status_code == status.HTTP_200_OK
 
         # Verify session was created with correct page positions
-        session = db_session.query(models.ReadingSession).first()
+        result = await db_session.execute(select(models.ReadingSession))
+        session = result.scalar_one_or_none()
         assert session is not None
         assert session.book_id == test_book.id
         assert session.start_page == 10
@@ -299,10 +309,10 @@ class TestUploadReadingSessions:
         assert session.start_xpoint is None
         assert session.end_xpoint is None
 
-    def test_filter_sessions_with_same_pages_for_start_and_end(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_filter_sessions_with_same_pages_for_start_and_end(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
-        response = client.post(
+        response = await client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "client_book_id": "test-client-book-id",
@@ -320,13 +330,14 @@ class TestUploadReadingSessions:
         assert response.status_code == status.HTTP_200_OK
 
         # Verify session was created with correct page positions
-        session = db_session.query(models.ReadingSession).first()
+        result = await db_session.execute(select(models.ReadingSession))
+        session = result.scalar_one_or_none()
         assert session is None
 
-    def test_filter_sessions_with_same_xpoints_for_start_and_end(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_filter_sessions_with_same_xpoints_for_start_and_end(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
-        response = client.post(
+        response = await client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "client_book_id": "test-client-book-id",
@@ -344,13 +355,14 @@ class TestUploadReadingSessions:
         assert response.status_code == status.HTTP_200_OK
 
         # Verify session was created with correct page positions
-        session = db_session.query(models.ReadingSession).first()
+        result = await db_session.execute(select(models.ReadingSession))
+        session = result.scalar_one_or_none()
         assert session is None
 
-    def test_not_filter_sessions_with_same_pages_for_start_and_end_but_different_points(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_not_filter_sessions_with_same_pages_for_start_and_end_but_different_points(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
-        response = client.post(
+        response = await client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "client_book_id": "test-client-book-id",
@@ -370,14 +382,15 @@ class TestUploadReadingSessions:
         assert response.status_code == status.HTTP_200_OK
 
         # Verify session was created with correct page positions
-        session = db_session.query(models.ReadingSession).first()
+        result = await db_session.execute(select(models.ReadingSession))
+        session = result.scalar_one_or_none()
         assert session is not None
 
-    def test_upload_validation_failure_missing_required_field(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_upload_validation_failure_missing_required_field(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
         """Test that validation failures return 422 error."""
-        response = client.post(
+        response = await client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "client_book_id": "test-client-book-id",
@@ -396,14 +409,15 @@ class TestUploadReadingSessions:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
         # Verify nothing was saved to database
-        sessions = db_session.query(models.ReadingSession).all()
+        result = await db_session.execute(select(models.ReadingSession))
+        sessions = result.scalars().all()
         assert len(sessions) == 0
 
-    def test_upload_validation_failure_missing_positions(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_upload_validation_failure_missing_positions(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
         """Test that sessions missing both position types return 422 error."""
-        response = client.post(
+        response = await client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "client_book_id": "test-client-book-id",
@@ -421,14 +435,15 @@ class TestUploadReadingSessions:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
         # Verify nothing was saved to database
-        sessions = db_session.query(models.ReadingSession).all()
+        result = await db_session.execute(select(models.ReadingSession))
+        sessions = result.scalars().all()
         assert len(sessions) == 0
 
-    def test_upload_all_or_nothing_validation(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_upload_all_or_nothing_validation(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
         """Test that if any session is invalid, entire request fails and nothing is saved."""
-        response = client.post(
+        response = await client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "client_book_id": "test-client-book-id",
@@ -461,14 +476,15 @@ class TestUploadReadingSessions:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
         # Verify nothing was saved to database (all-or-nothing)
-        sessions = db_session.query(models.ReadingSession).all()
+        result = await db_session.execute(select(models.ReadingSession))
+        sessions = result.scalars().all()
         assert len(sessions) == 0
 
-    def test_upload_invalid_datetime_format(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_upload_invalid_datetime_format(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
         """Test that invalid datetime format returns 422 error."""
-        response = client.post(
+        response = await client.post(
             "/api/v1/reading_sessions/upload",
             json={
                 "client_book_id": "test-client-book-id",
@@ -487,20 +503,21 @@ class TestUploadReadingSessions:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
         # Verify nothing was saved to database
-        sessions = db_session.query(models.ReadingSession).all()
+        result = await db_session.execute(select(models.ReadingSession))
+        sessions = result.scalars().all()
         assert len(sessions) == 0
 
 
 class TestGetBookReadingSessions:
     """Test suite for GET /books/:id/reading_sessions endpoint."""
 
-    def test_get_sessions_success(
-        self, client: TestClient, book_with_sessions: BookWithSessions
+    async def test_get_sessions_success(
+        self, client: AsyncClient, book_with_sessions: BookWithSessions
     ) -> None:
         """Test successful retrieval of reading sessions for a book."""
         book, sessions = book_with_sessions
 
-        response = client.get(f"/api/v1/books/{book.id}/reading_sessions")
+        response = await client.get(f"/api/v1/books/{book.id}/reading_sessions")
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -513,11 +530,11 @@ class TestGetBookReadingSessions:
         expected_ids = {s.id for s in sessions}
         assert returned_ids == expected_ids
 
-    def test_get_sessions_ordered_by_start_time_desc(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_get_sessions_ordered_by_start_time_desc(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
         """Test that sessions are ordered by start_time descending (newest first)."""
-        older_session = create_reading_session(
+        older_session = await create_reading_session(
             db_session=db_session,
             book=test_book,
             user_id=DEFAULT_USER_ID,
@@ -527,7 +544,7 @@ class TestGetBookReadingSessions:
             start_page=10,
             end_page=15,
         )
-        newer_session = create_reading_session(
+        newer_session = await create_reading_session(
             db_session=db_session,
             book=test_book,
             user_id=DEFAULT_USER_ID,
@@ -538,7 +555,7 @@ class TestGetBookReadingSessions:
             end_page=25,
         )
 
-        response = client.get(f"/api/v1/books/{test_book.id}/reading_sessions")
+        response = await client.get(f"/api/v1/books/{test_book.id}/reading_sessions")
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -550,27 +567,27 @@ class TestGetBookReadingSessions:
         assert sessions[1]["id"] == older_session.id
         assert sessions[1]["device_id"] == "device-older"
 
-    def test_get_sessions_empty(self, client: TestClient, test_book: models.Book) -> None:
+    async def test_get_sessions_empty(self, client: AsyncClient, test_book: models.Book) -> None:
         """Test getting sessions when book has none."""
-        response = client.get(f"/api/v1/books/{test_book.id}/reading_sessions")
+        response = await client.get(f"/api/v1/books/{test_book.id}/reading_sessions")
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["sessions"] == []
         assert data["total"] == 0
 
-    def test_get_sessions_book_not_found(self, client: TestClient) -> None:
+    async def test_get_sessions_book_not_found(self, client: AsyncClient) -> None:
         """Test getting sessions for non-existent book."""
-        response = client.get("/api/v1/books/99999/reading_sessions")
+        response = await client.get("/api/v1/books/99999/reading_sessions")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_get_sessions_pagination(
-        self, client: TestClient, db_session: Session, test_book: models.Book
+    async def test_get_sessions_pagination(
+        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
     ) -> None:
         """Test pagination of reading sessions."""
         for i in range(5):
-            create_reading_session(
+            await create_reading_session(
                 db_session=db_session,
                 book=test_book,
                 user_id=DEFAULT_USER_ID,
@@ -582,14 +599,18 @@ class TestGetBookReadingSessions:
             )
 
         # Get first 2
-        response = client.get(f"/api/v1/books/{test_book.id}/reading_sessions?limit=2&offset=0")
+        response = await client.get(
+            f"/api/v1/books/{test_book.id}/reading_sessions?limit=2&offset=0"
+        )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert len(data["sessions"]) == 2
         assert data["total"] == 5
 
         # Get next 2
-        response = client.get(f"/api/v1/books/{test_book.id}/reading_sessions?limit=2&offset=2")
+        response = await client.get(
+            f"/api/v1/books/{test_book.id}/reading_sessions?limit=2&offset=2"
+        )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert len(data["sessions"]) == 2
@@ -598,19 +619,20 @@ class TestGetBookReadingSessions:
 class TestReadingSessionCascadeDelete:
     """Test suite for cascade deletion of reading sessions."""
 
-    def test_sessions_deleted_when_book_deleted(
+    async def test_sessions_deleted_when_book_deleted(
         self,
-        client: TestClient,
-        db_session: Session,
+        client: AsyncClient,
+        db_session: AsyncSession,
         test_book: models.Book,
         test_reading_session: models.ReadingSession,
     ) -> None:
         """Test that reading sessions are deleted when book is deleted."""
         session_id = test_reading_session.id
 
-        response = client.delete(f"/api/v1/books/{test_book.id}")
+        response = await client.delete(f"/api/v1/books/{test_book.id}")
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
         # Verify session was cascade deleted
-        deleted_session = db_session.query(models.ReadingSession).filter_by(id=session_id).first()
+        result = await db_session.execute(select(models.ReadingSession).filter_by(id=session_id))
+        deleted_session = result.scalar_one_or_none()
         assert deleted_session is None
