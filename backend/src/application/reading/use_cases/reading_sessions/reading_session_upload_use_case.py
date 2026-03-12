@@ -15,6 +15,7 @@ from src.application.reading.protocols.reading_session_repository import (
     ReadingSessionRepositoryProtocol,
 )
 from src.config import get_settings
+from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects import (
     BookId,
     ReadingSessionId,
@@ -170,22 +171,39 @@ class ReadingSessionUploadUseCase:
             # Parse XPointRange if both xpoints exist
             xpoint_range = None
             if session.start_xpoint and session.end_xpoint:
-                xpoint_range = XPointRange.parse(session.start_xpoint, session.end_xpoint)
+                try:
+                    xpoint_range = XPointRange.parse(session.start_xpoint, session.end_xpoint)
+                except ValueError:
+                    logger.warning(
+                        "skipping_invalid_xpoint_range",
+                        start_xpoint=session.start_xpoint,
+                        end_xpoint=session.end_xpoint,
+                    )
 
-            domain_session = ReadingSession(
-                id=ReadingSessionId.generate(),
-                user_id=user_id_vo,
-                book_id=book.id,
-                start_time=session.start_time,
-                end_time=session.end_time,
-                start_xpoint=xpoint_range,
-                start_page=session.start_page,
-                end_page=session.end_page,
-                start_position=start_position,
-                end_position=end_position,
-                device_id=session.device_id,
-                ai_summary=None,
-            )
+            try:
+                domain_session = ReadingSession(
+                    id=ReadingSessionId.generate(),
+                    user_id=user_id_vo,
+                    book_id=book.id,
+                    start_time=session.start_time,
+                    end_time=session.end_time,
+                    start_xpoint=xpoint_range,
+                    start_page=session.start_page,
+                    end_page=session.end_page,
+                    start_position=start_position,
+                    end_position=end_position,
+                    device_id=session.device_id,
+                    ai_summary=None,
+                )
+            except DomainError:
+                logger.warning(
+                    "skipping_invalid_session",
+                    start_time=session.start_time,
+                    end_time=session.end_time,
+                    start_page=session.start_page,
+                    end_page=session.end_page,
+                )
+                continue
             domain_sessions.append(domain_session)
 
         logger.debug(
