@@ -1,7 +1,7 @@
 """Tests for books API endpoints."""
 
 import json
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from typing import Any, NamedTuple
 
@@ -36,7 +36,7 @@ class BookWithChapterAndHighlights(NamedTuple):
 
 
 # Type alias for the book creation fixture
-CreateBookFunc = Callable[[dict[str, Any]], EreaderBookMetadata]
+CreateBookFunc = Callable[[dict[str, Any]], Awaitable[EreaderBookMetadata]]
 
 
 @pytest.fixture

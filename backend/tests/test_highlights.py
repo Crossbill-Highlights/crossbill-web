@@ -1,6 +1,6 @@
 """Tests for highlights API endpoints."""
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 import pytest
@@ -13,7 +13,7 @@ from src import models
 from src.infrastructure.library.schemas import EreaderBookMetadata
 
 # Type alias for the book creation fixture
-CreateBookFunc = Callable[[dict[str, Any]], EreaderBookMetadata]
+CreateBookFunc = Callable[[dict[str, Any]], Awaitable[EreaderBookMetadata]]
 
 
 @pytest.fixture

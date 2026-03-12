@@ -1,6 +1,6 @@
 """Integration tests for highlight labels feature."""
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 import pytest
@@ -17,7 +17,7 @@ from tests.conftest import create_test_book, create_test_highlight, create_test_
 DEFAULT_USER_ID = 1
 
 # Type alias for the book creation fixture
-CreateBookFunc = Callable[[dict[str, Any]], EreaderBookMetadata]
+CreateBookFunc = Callable[[dict[str, Any]], Awaitable[EreaderBookMetadata]]
 
 
 @pytest.fixture

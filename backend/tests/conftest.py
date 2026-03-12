@@ -145,7 +145,7 @@ test_engine = create_async_engine(
 
 # Enable SQLite foreign key enforcement for cascade deletes
 @event.listens_for(test_engine.sync_engine, "connect")
-def _set_sqlite_pragma(dbapi_connection: object, connection_record: object) -> None:
+def _set_sqlite_pragma(dbapi_connection: object, connection_record: object) -> None:  # pyright: ignore[reportUnusedFunction]
     cursor = dbapi_connection.cursor()  # type: ignore[union-attr]
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
