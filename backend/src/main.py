@@ -19,6 +19,7 @@ from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from src.config import configure_logging, get_settings
+from src.core import container
 from src.database import dispose_engine, get_session_factory, initialize_database
 from src.domain.common.exceptions import (
     BusinessRuleViolationError,
@@ -26,6 +27,7 @@ from src.domain.common.exceptions import (
     EntityNotFoundError,
 )
 from src.exceptions import BookNotFoundError, CrossbillError, NotFoundError
+from src.infrastructure.batch.routers.batch_jobs import router as batch_router
 from src.infrastructure.common.routers import settings as settings_router
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.routers import auth, users
@@ -106,6 +108,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan context manager."""
     # Initialize database engine and connection pool once at startup
     initialize_database(settings)
+
+    # Initialize SAQ queue for batch processing (if AI is enabled)
+    if settings.ai_enabled:
+        from saq import Queue  # noqa: PLC0415
+
+        queue_url = settings.DATABASE_URL.replace("postgresql://", "postgres://")
+        batch_queue = Queue.from_url(queue_url)
+        container.batch_queue.override(batch_queue)
 
     # Skip database initialization during tests
     if not os.getenv("TESTING"):
@@ -309,6 +319,9 @@ app.include_router(users.router, prefix=settings.API_V1_PREFIX)
 
 # Common
 app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)
+
+# Batch processing
+app.include_router(batch_router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health")

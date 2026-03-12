@@ -1,6 +1,15 @@
 from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.application.batch.use_cases.cancel_batch_job_use_case import (
+    CancelBatchJobUseCase,
+)
+from src.application.batch.use_cases.create_batch_prereading_use_case import (
+    CreateBatchPrereadingUseCase,
+)
+from src.application.batch.use_cases.get_batch_job_status_use_case import (
+    GetBatchJobStatusUseCase,
+)
 from src.application.identity.use_cases.authentication.authenticate_user_use_case import (
     AuthenticateUserUseCase,
 )
@@ -166,6 +175,13 @@ from src.domain.reading.services.highlight_grouping_service import HighlightGrou
 from src.domain.reading.services.highlight_style_resolver import HighlightStyleResolver
 from src.infrastructure.ai.ai_service import AIService
 from src.infrastructure.ai.repositories.ai_usage_repository import AIUsageRepository
+from src.infrastructure.batch.batch_queue_service import BatchQueueService
+from src.infrastructure.batch.providers.chapter_prereading_provider import (
+    ChapterPrereadingProvider,
+)
+from src.infrastructure.batch.repositories.batch_job_repository import (
+    BatchJobRepository,
+)
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.services.password_service_adapter import PasswordServiceAdapter
 from src.infrastructure.identity.services.token_service_adapter import TokenServiceAdapter
@@ -601,6 +617,29 @@ class Container(containers.DeclarativeContainer):
         user_repository=user_repository,
         password_service=password_service,
         token_service=token_service,
+    )
+
+    # Batch processing
+    batch_job_repository = providers.Factory(BatchJobRepository, db=db)
+    chapter_prereading_provider = providers.Factory(ChapterPrereadingProvider, db=db)
+    # batch_queue_service needs SAQ Queue instance — provided via Dependency
+    batch_queue = providers.Dependency()
+    batch_queue_service = providers.Factory(BatchQueueService, queue=batch_queue)
+
+    create_batch_prereading_use_case = providers.Factory(
+        CreateBatchPrereadingUseCase,
+        batch_job_repo=batch_job_repository,
+        batch_queue_service=batch_queue_service,
+        chapter_provider=chapter_prereading_provider,
+    )
+    get_batch_job_status_use_case = providers.Factory(
+        GetBatchJobStatusUseCase,
+        batch_job_repo=batch_job_repository,
+    )
+    cancel_batch_job_use_case = providers.Factory(
+        CancelBatchJobUseCase,
+        batch_job_repo=batch_job_repository,
+        batch_queue_service=batch_queue_service,
     )
 
 
