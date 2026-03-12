@@ -49,6 +49,26 @@ services:
     networks:
       - crossbill-network
 
+  worker:
+    image: tumetsu/crossbill:latest
+    command: uv run saq src.infrastructure.batch.worker.settings
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://crossbill:${POSTGRES_PASSWORD:-crossbill_secure_password}@postgres:5432/crossbill
+      - AI_PROVIDER=${AI_PROVIDER:-}
+      - AI_MODEL_NAME=${AI_MODEL_NAME:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - BATCH_AI_PROVIDER=${BATCH_AI_PROVIDER:-}
+      - BATCH_AI_MODEL_NAME=${BATCH_AI_MODEL_NAME:-}
+      - BATCH_MAX_CONCURRENCY=${BATCH_MAX_CONCURRENCY:-5}
+    networks:
+      - crossbill-network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
     driver: local
