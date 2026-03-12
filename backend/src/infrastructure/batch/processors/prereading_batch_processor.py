@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 
 import structlog
+from pydantic_ai import Agent
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,15 +15,14 @@ from src.infrastructure.ai.ai_agents import PrereadingContent
 from src.infrastructure.ai.repositories.ai_usage_repository import AIUsageRepository
 from src.infrastructure.batch.batch_ai_model import get_batch_ai_model
 from src.infrastructure.library.repositories.file_repository import FileRepository
-from src.infrastructure.reading.repositories.chapter_prereading_repository import (
-    ChapterPrereadingRepository,
-)
 from src.infrastructure.library.services.epub_text_extraction_service import (
     EpubTextExtractionService,
 )
+from src.infrastructure.reading.repositories.chapter_prereading_repository import (
+    ChapterPrereadingRepository,
+)
 from src.models import Book as BookORM
 from src.models import Chapter as ChapterORM
-from pydantic_ai import Agent
 
 logger = structlog.get_logger(__name__)
 

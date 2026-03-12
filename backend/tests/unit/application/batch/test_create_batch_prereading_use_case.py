@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
 
 import pytest
 

@@ -1,7 +1,5 @@
 from datetime import UTC, datetime
 
-import pytest
-
 from src.domain.batch.entities.batch_item import BatchItem, BatchItemStatus
 from src.domain.batch.entities.batch_job import BatchJob, BatchJobStatus
 from src.domain.common.value_objects.ids import (

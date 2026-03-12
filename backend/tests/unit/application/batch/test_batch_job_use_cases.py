@@ -12,7 +12,6 @@ from src.domain.batch.entities.batch_item import BatchItem
 from src.domain.batch.entities.batch_job import BatchJob, BatchJobStatus
 from src.domain.common.exceptions import BusinessRuleViolationError, EntityNotFoundError
 from src.domain.common.value_objects.ids import (
-    BatchItemId,
     BatchJobId,
     BookId,
     UserId,
@@ -140,5 +139,5 @@ class TestCancelBatchJob:
 
         use_case = CancelBatchJobUseCase(batch_job_repo=repo, batch_queue_service=queue)
 
-        with pytest.raises(BusinessRuleViolationError, match="already completed|Cannot cancel"):
+        with pytest.raises(BusinessRuleViolationError, match=r"already completed|Cannot cancel"):
             await use_case.execute(user_id=UserId(1), job_id=BatchJobId(1))

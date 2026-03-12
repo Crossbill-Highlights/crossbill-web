@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Self
 
 from src.domain.common.entity import Entity
 from src.domain.common.value_objects.ids import BatchItemId, BatchJobId
 
 
-class BatchItemStatus(str, Enum):
+class BatchItemStatus(StrEnum):
     PENDING = "pending"
     PROCESSING = "processing"
     SUCCEEDED = "succeeded"
