@@ -72,6 +72,11 @@ class Settings(BaseSettings):
     # google
     GEMINI_API_KEY: str | None = None
 
+    # Batch AI settings (infrastructure concern)
+    BATCH_AI_PROVIDER: Literal["ollama", "openai", "anthropic", "google"] | None = None
+    BATCH_AI_MODEL_NAME: str | None = None
+    BATCH_MAX_CONCURRENCY: int = 5
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def ai_enabled(self) -> bool:
