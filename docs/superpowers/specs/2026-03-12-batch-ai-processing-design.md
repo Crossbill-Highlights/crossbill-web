@@ -26,6 +26,9 @@ Crossbill's AI features (prereading, flashcards, summaries) currently execute in
 - SAQ is async-native, fits the async FastAPI + SQLAlchemy stack
 - Provides durable jobs, retry support, and cancellation out of the box
 - Worker runs as a second container using the same Docker image
+- SAQ's PostgreSQL backend uses psycopg 3, the same async driver this project already uses
+
+SAQ's PostgreSQL backend is newer than its Redis backend (introduced mid-2024, with stability improvements through 2025-2026). It is production-ready but less battle-tested. If stability issues arise, switching to the Redis backend is a straightforward change (add Redis to docker-compose, change the queue URL).
 
 Alternatives considered and rejected:
 - **In-process asyncio tasks**: jobs don't survive app restarts
@@ -67,7 +70,7 @@ Alternatives considered and rejected:
 │    → selects processor by job_type                       │
 │    → runs items concurrently (semaphore-throttled)       │
 │    → retries failures (3 attempts, exponential backoff)  │
-│    → checks for cancellation between items               │
+│    → checks for cancellation before launching each item  │
 │    → updates progress in DB                              │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -78,12 +81,14 @@ Alternatives considered and rejected:
 
 Located in `domain/batch/entities/batch_job.py`.
 
+Uses typed IDs consistent with the existing codebase pattern (`EntityId` subclasses in `domain/common/value_objects/ids.py`).
+
 ```python
 @dataclass
 class BatchJob:
-    id: int
+    id: BatchJobId
     user_id: UserId
-    book_id: int
+    book_id: BookId
     job_type: str              # "prereading", "embedding" (future)
     status: BatchJobStatus     # pending, processing, completed, failed, cancelled
     total_items: int
@@ -102,6 +107,8 @@ class BatchJobStatus(str, Enum):
     CANCELLED = "cancelled"
 ```
 
+A job with `status == COMPLETED` means all items were attempted. The frontend uses `failed_items > 0` to distinguish clean completion from partial failure — no separate `COMPLETED_WITH_ERRORS` status is needed. The `FAILED` status is reserved for job-level infrastructure errors (e.g., worker crash, database unavailable) — not for "all items failed," which is still `COMPLETED` with `failed_items == total_items`.
+
 ### BatchItem Entity
 
 Located in `domain/batch/entities/batch_item.py`.
@@ -109,16 +116,18 @@ Located in `domain/batch/entities/batch_item.py`.
 ```python
 @dataclass
 class BatchItem:
-    id: int
-    batch_job_id: int
+    id: BatchItemId
+    batch_job_id: BatchJobId
     entity_type: str           # "chapter", "highlight"
-    entity_id: int
+    entity_id: int             # polymorphic reference, kept as raw int intentionally
     status: BatchItemStatus    # pending, processing, succeeded, failed
     attempts: int
     error_message: str | None
     created_at: datetime
     completed_at: datetime | None
 ```
+
+`entity_id` is a raw `int` because it references different entity types (chapters, highlights, etc.) depending on `entity_type`. A typed ID would be misleading here.
 
 ```python
 class BatchItemStatus(str, Enum):
@@ -128,34 +137,44 @@ class BatchItemStatus(str, Enum):
     FAILED = "failed"
 ```
 
+New typed IDs `BatchJobId` and `BatchItemId` are added to `domain/common/value_objects/ids.py` following the existing `EntityId` subclass pattern.
+
 ## Application Layer
 
-### Protocol
+### Protocols
 
-Located in `application/batch/protocols/batch_job_service.py`.
+Located in `application/batch/protocols/`.
+
+**`BatchJobRepositoryProtocol`** (`application/batch/protocols/batch_job_repository.py`) — data access, consistent with how all other repository protocols are placed in the application layer:
 
 ```python
-class BatchJobServiceProtocol(Protocol):
-    async def enqueue_batch_prereading(
-        self, user_id: UserId, book_id: int
-    ) -> BatchJob: ...
-
-    async def get_batch_job_status(
-        self, user_id: UserId, job_id: int
-    ) -> BatchJob: ...
-
-    async def cancel_batch_job(
-        self, user_id: UserId, job_id: int
-    ) -> BatchJob: ...
+class BatchJobRepositoryProtocol(Protocol):
+    async def save_job(self, job: BatchJob) -> BatchJob: ...
+    async def save_item(self, item: BatchItem) -> BatchItem: ...
+    async def get_job(self, job_id: BatchJobId) -> BatchJob | None: ...
+    async def get_job_items(self, job_id: BatchJobId) -> list[BatchItem]: ...
+    async def find_active_job(
+        self, user_id: UserId, book_id: BookId, job_type: str
+    ) -> BatchJob | None: ...
 ```
+
+**`BatchQueueServiceProtocol`** (`application/batch/protocols/batch_queue_service.py`) — queue operations, separated from data access:
+
+```python
+class BatchQueueServiceProtocol(Protocol):
+    async def enqueue_job(self, job_id: BatchJobId) -> None: ...
+    async def cancel_job(self, job_id: BatchJobId) -> None: ...
+```
+
+This separation keeps data access (repository) and side effects (queue enqueueing) in distinct protocols, consistent with the codebase's existing patterns and making testing easier.
 
 ### Use Cases
 
 Located in `application/batch/use_cases/`.
 
-- **`CreateBatchPrereadingUseCase`** — validates user owns the book, determines which chapters still need prereading (skips those that already have it), calls `enqueue_batch_prereading`. Returns the created `BatchJob`.
-- **`GetBatchJobStatusUseCase`** — returns current `BatchJob` state. Used by frontend on page load.
-- **`CancelBatchJobUseCase`** — marks job as cancelled, stops remaining work.
+- **`CreateBatchPrereadingUseCase`** — validates user owns the book, **checks for an existing pending/processing batch job for the same book** (raises domain error if one exists, resulting in 409 at the API layer), determines which chapters still need prereading (skips those that already have it), creates `BatchJob` + `BatchItem` entities via the repository, calls `enqueue_job` on the queue service. Returns the created `BatchJob`.
+- **`GetBatchJobStatusUseCase`** — loads and returns current `BatchJob` state via the repository. Used by frontend on page load.
+- **`CancelBatchJobUseCase`** — loads job, validates it's still active, marks as cancelled via the repository, calls `cancel_job` on the queue service.
 
 Use cases work with domain entities and protocols only. No awareness of SAQ, providers, or concurrency.
 
@@ -179,7 +198,7 @@ Located in `infrastructure/batch/models.py`.
 | created_at | TIMESTAMP | |
 | completed_at | TIMESTAMP | nullable |
 
-Index: `(user_id, job_type, status)` — for checking if a running job already exists.
+Index: `(user_id, book_id, job_type, status)` — for the `find_active_job` duplicate prevention query.
 
 **`batch_items` table:**
 | Column | Type | Notes |
@@ -194,13 +213,18 @@ Index: `(user_id, job_type, status)` — for checking if a running job already e
 | created_at | TIMESTAMP | |
 | completed_at | TIMESTAMP | nullable |
 
-### BatchJobService (Infrastructure Implementation)
+### Repository Implementation
 
-Located in `infrastructure/batch/batch_job_service.py`. Implements `BatchJobServiceProtocol`.
+Located in `infrastructure/batch/repositories/batch_job_repository.py`. Implements `BatchJobRepositoryProtocol`.
 
-- `enqueue_batch_prereading`: creates `BatchJob` + `BatchItem` rows in DB, enqueues a SAQ task with the job ID
-- `get_batch_job_status`: loads and returns the `BatchJob`
-- `cancel_batch_job`: updates job status to `cancelled`
+Handles all ORM ↔ domain entity conversion via `BatchJobMapper` and `BatchItemMapper` in `infrastructure/batch/mappers.py`.
+
+### BatchQueueService (Infrastructure Implementation)
+
+Located in `infrastructure/batch/batch_queue_service.py`. Implements `BatchQueueServiceProtocol`.
+
+- `enqueue_job`: enqueues a SAQ task with the job ID
+- `cancel_job`: calls SAQ's abort/cancel mechanism for the task
 
 ### Batch Processors
 
@@ -221,19 +245,35 @@ The `PrereadingBatchProcessor` reuses existing infrastructure services (text ext
 
 Located in `infrastructure/batch/worker.py`.
 
+#### Worker Bootstrapping
+
+The worker runs as a separate process and needs its own infrastructure setup:
+
+- Initializes its own async SQLAlchemy engine and session factory using `DATABASE_URL` (reusing the existing `database.py` module)
+- Constructs dependencies (repositories, processors, AI services) directly — does **not** reuse the FastAPI DI container, since it runs outside the FastAPI request lifecycle
+- SAQ lifecycle hooks manage setup and teardown:
+  - `startup`: initialize database engine, create session factory, construct processors
+  - `shutdown`: dispose database engine
+  - `before_process`: create a new async session for each job
+  - `after_process`: close the session
+
+#### Task Execution
+
 Single SAQ task function `process_batch_job(ctx, batch_job_id)`:
 
 1. Load `BatchJob` and pending `BatchItem`s from DB
 2. Look up processor by `job.job_type`
 3. Mark job as `processing`
-4. Run items concurrently using `asyncio.Semaphore(max_concurrency)` + `asyncio.TaskGroup`
+4. Process items concurrently using `asyncio.Semaphore(max_concurrency)` + `asyncio.TaskGroup`:
+   - Items are launched from a loop that checks cancellation **before acquiring the semaphore** for each new item
+   - If the job is cancelled, the loop stops launching new items; in-flight items are allowed to complete naturally
+   - This means cancellation is cooperative: no in-flight AI calls are interrupted, but no new ones start
 5. Per item:
-   - Check if job is cancelled → stop early if so
    - Call `processor.process_item(item)`
    - On success: mark item `succeeded`, increment `completed_items`
-   - On failure: retry up to 3 times with exponential backoff, then mark `failed`, increment `failed_items`
-   - Update job progress in DB after each item
-6. When done: mark job `completed` (or `failed` if all items failed)
+   - On failure: release semaphore, wait with exponential backoff, re-acquire semaphore, retry (up to 3 attempts). After all retries exhausted, mark `failed`, increment `failed_items`
+   - Update item status and job progress counters atomically (same transaction) to keep progress display consistent
+6. When done: mark job `completed` (all items attempted, regardless of individual outcomes). Mark `failed` only for job-level infrastructure errors (not item-level failures)
 
 ### Configuration
 
@@ -262,7 +302,7 @@ Creates a batch job to generate prereading for all chapters that don't already h
 
 **Error cases:**
 - 404: book not found or not owned by user
-- 409: a prereading batch job is already running for this book
+- 409: a prereading batch job is already pending/processing for this book
 
 ### `GET /api/batch-jobs/{job_id}`
 
@@ -320,31 +360,33 @@ For local development: `cd backend && uv run saq src.infrastructure.batch.worker
 ```
 backend/src/
 ├── domain/batch/
-│   ├── entities/
-│   │   ├── batch_job.py
-│   │   └── batch_item.py
-│   └── protocols/
-│       └── batch_job_repository.py
+│   └── entities/
+│       ├── batch_job.py          # BatchJob, BatchJobStatus
+│       └── batch_item.py         # BatchItem, BatchItemStatus
+│
+├── domain/common/value_objects/
+│   └── ids.py                    # + BatchJobId, BatchItemId (added to existing file)
 │
 ├── application/batch/
 │   ├── protocols/
-│   │   └── batch_job_service.py
+│   │   ├── batch_job_repository.py   # BatchJobRepositoryProtocol
+│   │   └── batch_queue_service.py    # BatchQueueServiceProtocol
 │   └── use_cases/
 │       ├── create_batch_prereading_use_case.py
 │       ├── get_batch_job_status_use_case.py
 │       └── cancel_batch_job_use_case.py
 │
 ├── infrastructure/batch/
-│   ├── models.py
-│   ├── mappers.py
+│   ├── models.py                 # ORM models for batch_jobs, batch_items
+│   ├── mappers.py                # ORM ↔ domain entity mapping
 │   ├── repositories/
-│   │   └── batch_job_repository.py
-│   ├── batch_job_service.py
+│   │   └── batch_job_repository.py   # SQLAlchemy implementation
+│   ├── batch_queue_service.py    # SAQ queue implementation
 │   ├── processors/
 │   │   └── prereading_batch_processor.py
-│   ├── worker.py
+│   ├── worker.py                 # SAQ worker config, lifecycle hooks, task function
 │   └── routers/
-│       └── batch_jobs.py
+│       └── batch_jobs.py         # API endpoints
 ```
 
 ## Future Extensions
@@ -356,7 +398,7 @@ This section documents how to extend the batch processing framework for future n
 1. **Create a new processor** in `infrastructure/batch/processors/` (e.g., `embedding_batch_processor.py`) with a `process_item` method
 2. **Register the processor** in the worker's processor lookup by `job_type`
 3. **Add a new use case** in `application/batch/use_cases/` (e.g., `create_batch_embeddings_use_case.py`)
-4. **Add a method** to `BatchJobServiceProtocol` (e.g., `enqueue_batch_embeddings`)
+4. **Add a method** to `BatchQueueServiceProtocol` or reuse the generic `enqueue_job`
 5. **Add environment variables** for the new task type's model/provider config (e.g., `EMBEDDING_PROVIDER`, `EMBEDDING_MODEL_NAME`)
 6. **Add an API endpoint** if needed
 
