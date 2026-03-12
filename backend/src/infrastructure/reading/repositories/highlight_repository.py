@@ -239,7 +239,7 @@ class HighlightRepository:
             List of tuples containing (Highlight, Book, Chapter or None, list[HighlightTag], list[Flashcard])
         """
         # Check database type
-        dialect_name = self.db.get_bind().dialect.name
+        dialect_name = self.db.bind.dialect.name
         is_postgresql = dialect_name == "postgresql"
 
         # Build the base query with eager loading of relationships

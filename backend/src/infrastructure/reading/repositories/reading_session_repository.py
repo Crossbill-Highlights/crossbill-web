@@ -15,7 +15,6 @@ from src.application.reading.protocols.reading_session_repository import BulkCre
 from src.domain.common.value_objects import BookId, HighlightId, ReadingSessionId, UserId
 from src.domain.common.value_objects.position import Position
 from src.domain.reading.entities.reading_session import ReadingSession
-from src.exceptions import ServiceError
 from src.infrastructure.reading.mappers.reading_session_mapper import ReadingSessionMapper
 from src.models import ReadingSession as ReadingSessionORM
 from src.models import reading_session_highlights
@@ -76,12 +75,7 @@ class ReadingSessionRepository:
             for s in sessions
         ]
 
-        try:
-            bind = self.db.get_bind()
-        except Exception as exc:
-            raise ServiceError("Database not bound!") from exc
-
-        dialect = bind.dialect.name
+        dialect = self.db.bind.dialect.name
 
         if dialect == "postgresql":
             stmt = (

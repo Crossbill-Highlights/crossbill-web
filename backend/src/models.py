@@ -463,7 +463,9 @@ class HighlightTag(Base):
     # Relationships
     user: Mapped["User"] = relationship(back_populates="highlight_tags")
     book: Mapped["Book"] = relationship(back_populates="highlight_tags")
-    tag_group: Mapped["HighlightTagGroup | None"] = relationship(back_populates="highlight_tags")
+    tag_group: Mapped["HighlightTagGroup | None"] = relationship(
+        back_populates="highlight_tags", lazy="selectin"
+    )
     highlights: Mapped[list["Highlight"]] = relationship(
         secondary=highlight_highlight_tags, back_populates="highlight_tags", lazy="selectin"
     )
