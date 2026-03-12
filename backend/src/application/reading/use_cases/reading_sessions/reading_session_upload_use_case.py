@@ -170,7 +170,14 @@ class ReadingSessionUploadUseCase:
             # Parse XPointRange if both xpoints exist
             xpoint_range = None
             if session.start_xpoint and session.end_xpoint:
-                xpoint_range = XPointRange.parse(session.start_xpoint, session.end_xpoint)
+                try:
+                    xpoint_range = XPointRange.parse(session.start_xpoint, session.end_xpoint)
+                except ValueError:
+                    logger.warning(
+                        "skipping_invalid_xpoint_range",
+                        start_xpoint=session.start_xpoint,
+                        end_xpoint=session.end_xpoint,
+                    )
 
             domain_session = ReadingSession(
                 id=ReadingSessionId.generate(),
