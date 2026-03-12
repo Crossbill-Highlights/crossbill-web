@@ -1,7 +1,8 @@
 """Repository for Tag domain entity."""
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.domain.common.value_objects.ids import BookId, TagId, UserId
 from src.domain.library.entities.tag import Tag
@@ -13,11 +14,11 @@ from src.models import Tag as TagORM
 class TagRepository:
     """Repository for Tag domain entity."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.mapper = TagMapper()
 
-    def _find_by_names(self, names: list[str], user_id: UserId) -> list[Tag]:
+    async def _find_by_names(self, names: list[str], user_id: UserId) -> list[Tag]:
         """
         Get multiple tags by their names for a specific user in a single query.
 
@@ -35,10 +36,11 @@ class TagRepository:
             TagORM.name.in_(names),
             TagORM.user_id == user_id.value,
         )
-        orm_models = self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        orm_models = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orm_models]
 
-    def find_tags_for_book(self, book_id: BookId, user_id: UserId) -> list[Tag]:
+    async def find_tags_for_book(self, book_id: BookId, user_id: UserId) -> list[Tag]:
         """
         Get all tags associated with a book.
 
@@ -58,10 +60,11 @@ class TagRepository:
             )
             .order_by(TagORM.name)
         )
-        orm_models = self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        orm_models = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orm_models]
 
-    def get_or_create_many(self, names: list[str], user_id: UserId) -> list[Tag]:
+    async def get_or_create_many(self, names: list[str], user_id: UserId) -> list[Tag]:
         """
         Get existing tags or create new ones for a list of names.
 
@@ -85,7 +88,7 @@ class TagRepository:
             return []
 
         # Single query to get all existing tags
-        existing_tags = self._find_by_names(normalized, user_id)
+        existing_tags = await self._find_by_names(normalized, user_id)
         existing_names = {tag.name for tag in existing_tags}
 
         # Find names that need to be created
@@ -96,14 +99,18 @@ class TagRepository:
         if new_names:
             new_tag_orms = [TagORM(name=name, user_id=user_id.value) for name in new_names]
             self.db.add_all(new_tag_orms)
-            self.db.commit()
+            await self.db.commit()
+            for orm in new_tag_orms:
+                await self.db.refresh(orm)
             new_tags = [self.mapper.to_domain(orm) for orm in new_tag_orms]
 
         return existing_tags + new_tags
 
     # Book-tag association methods
 
-    def add_tags_to_book(self, book_id: BookId, tag_ids: list[TagId], user_id: UserId) -> None:
+    async def add_tags_to_book(
+        self, book_id: BookId, tag_ids: list[TagId], user_id: UserId
+    ) -> None:
         """
         Add tags to a book (manages the many-to-many association).
 
@@ -118,12 +125,16 @@ class TagRepository:
             return
 
         # Verify ownership and get ORM models
-        book_orm = self.db.execute(
-            select(BookORM).where(
+        stmt = (
+            select(BookORM)
+            .options(selectinload(BookORM.tags))
+            .where(
                 BookORM.id == book_id.value,
                 BookORM.user_id == user_id.value,
             )
-        ).scalar_one_or_none()
+        )
+        result = await self.db.execute(stmt)
+        book_orm = result.scalar_one_or_none()
 
         if not book_orm:
             return
@@ -136,18 +147,21 @@ class TagRepository:
         if not tag_id_values:
             return
 
-        stmt = select(TagORM).where(
+        stmt2 = select(TagORM).where(
             TagORM.id.in_(tag_id_values),
             TagORM.user_id == user_id.value,
         )
-        tag_orms = list(self.db.execute(stmt).scalars().all())
+        result2 = await self.db.execute(stmt2)
+        tag_orms = list(result2.scalars().all())
 
         # Add associations
         if tag_orms:
             book_orm.tags.extend(tag_orms)
-            self.db.commit()
+            await self.db.commit()
 
-    def replace_book_tags(self, book_id: BookId, tag_ids: list[TagId], user_id: UserId) -> None:
+    async def replace_book_tags(
+        self, book_id: BookId, tag_ids: list[TagId], user_id: UserId
+    ) -> None:
         """
         Replace all tags on a book (manages the many-to-many association).
 
@@ -157,12 +171,16 @@ class TagRepository:
             user_id: The user ID for authorization check
         """
         # Verify ownership and get ORM model
-        book_orm = self.db.execute(
-            select(BookORM).where(
+        stmt = (
+            select(BookORM)
+            .options(selectinload(BookORM.tags))
+            .where(
                 BookORM.id == book_id.value,
                 BookORM.user_id == user_id.value,
             )
-        ).scalar_one_or_none()
+        )
+        result = await self.db.execute(stmt)
+        book_orm = result.scalar_one_or_none()
 
         if not book_orm:
             return
@@ -170,14 +188,15 @@ class TagRepository:
         # Fetch tag ORMs
         if tag_ids:
             tag_id_values = [tid.value for tid in tag_ids]
-            stmt = select(TagORM).where(
+            stmt2 = select(TagORM).where(
                 TagORM.id.in_(tag_id_values),
                 TagORM.user_id == user_id.value,
             )
-            tag_orms = list(self.db.execute(stmt).scalars().all())
+            result2 = await self.db.execute(stmt2)
+            tag_orms = list(result2.scalars().all())
         else:
             tag_orms = []
 
         # Replace entire collection
         book_orm.tags = tag_orms
-        self.db.commit()
+        await self.db.commit()

@@ -9,7 +9,7 @@ import logging
 
 from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.reading.protocols.reading_session_repository import BulkCreateResult
 from src.domain.common.value_objects import BookId, HighlightId, ReadingSessionId, UserId
@@ -26,17 +26,19 @@ logger = logging.getLogger(__name__)
 class ReadingSessionRepository:
     """Repository for ReadingSession persistence (domain-centric)."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         """
         Initialize repository.
 
         Args:
-            db: SQLAlchemy database session
+            db: SQLAlchemy async database session
         """
         self.db = db
         self.mapper = ReadingSessionMapper()
 
-    def bulk_create(self, user_id: UserId, sessions: list[ReadingSession]) -> BulkCreateResult:
+    async def bulk_create(
+        self, user_id: UserId, sessions: list[ReadingSession]
+    ) -> BulkCreateResult:
         """
         Bulk create reading sessions with deduplication.
 
@@ -74,10 +76,12 @@ class ReadingSessionRepository:
             for s in sessions
         ]
 
-        if self.db.bind is None:
-            raise ServiceError("Database not bound!")
+        try:
+            bind = self.db.get_bind()
+        except Exception as exc:
+            raise ServiceError("Database not bound!") from exc
 
-        dialect = self.db.bind.dialect.name
+        dialect = bind.dialect.name
 
         if dialect == "postgresql":
             stmt = (
@@ -86,72 +90,62 @@ class ReadingSessionRepository:
                 .on_conflict_do_nothing(index_elements=["user_id", "content_hash"])
                 .returning(ReadingSessionORM.id)
             )
-            result = self.db.execute(stmt)
+            result = await self.db.execute(stmt)
             created_ids = [row[0] for row in result.fetchall()]
 
             # Fetch the created sessions and convert to domain
             if created_ids:
-                created_orms = list(
-                    self.db.execute(
-                        select(ReadingSessionORM).where(ReadingSessionORM.id.in_(created_ids))
-                    )
-                    .scalars()
-                    .all()
+                result = await self.db.execute(
+                    select(ReadingSessionORM).where(ReadingSessionORM.id.in_(created_ids))
                 )
+                created_orms = list(result.scalars().all())
                 created_sessions = [self.mapper.to_domain(orm) for orm in created_orms]
             else:
                 created_sessions = []
 
-            self.db.commit()
+            await self.db.commit()
             return BulkCreateResult(
                 created_count=len(created_ids), created_sessions=created_sessions
             )
 
         # SQLite - count before and after to determine how many were inserted
-        count_before = (
-            self.db.execute(
-                select(func.count(ReadingSessionORM.id)).where(
-                    ReadingSessionORM.user_id == user_id.value
-                )
-            ).scalar()
-            or 0
+        result = await self.db.execute(
+            select(func.count(ReadingSessionORM.id)).where(
+                ReadingSessionORM.user_id == user_id.value
+            )
         )
+        count_before = result.scalar() or 0
 
         stmt = insert(ReadingSessionORM).values(values).prefix_with("OR IGNORE")
-        self.db.execute(stmt)
+        await self.db.execute(stmt)
 
-        count_after = (
-            self.db.execute(
-                select(func.count(ReadingSessionORM.id)).where(
-                    ReadingSessionORM.user_id == user_id.value
-                )
-            ).scalar()
-            or 0
+        result = await self.db.execute(
+            select(func.count(ReadingSessionORM.id)).where(
+                ReadingSessionORM.user_id == user_id.value
+            )
         )
+        count_after = result.scalar() or 0
 
         created_count = count_after - count_before
 
         # For SQLite, fetch created sessions by content_hash
         if created_count > 0:
             content_hashes = list(session_by_hash.keys())
-            created_orms = list(
-                self.db.execute(
-                    select(ReadingSessionORM).where(
-                        ReadingSessionORM.user_id == user_id.value,
-                        ReadingSessionORM.content_hash.in_(content_hashes),
-                    )
+            result = await self.db.execute(
+                select(ReadingSessionORM).where(
+                    ReadingSessionORM.user_id == user_id.value,
+                    ReadingSessionORM.content_hash.in_(content_hashes),
                 )
-                .scalars()
-                .all()
             )
+            created_orms = list(result.scalars().all())
             created_sessions = [self.mapper.to_domain(orm) for orm in created_orms]
         else:
             created_sessions = []
 
-        self.db.commit()
+        await self.db.commit()
         return BulkCreateResult(created_count=created_count, created_sessions=created_sessions)
 
-    def find_by_book_id(
+    async def find_by_book_id(
         self, book_id: BookId, user_id: UserId, limit: int, offset: int
     ) -> list[ReadingSession]:
         """
@@ -179,10 +173,11 @@ class ReadingSessionRepository:
             .offset(offset)
             .limit(limit)
         )
-        orms = self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        orms = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orms]
 
-    def count_by_book_id(self, book_id: BookId, user_id: UserId) -> int:
+    async def count_by_book_id(self, book_id: BookId, user_id: UserId) -> int:
         """
         Count all reading sessions for a book.
 
@@ -197,9 +192,12 @@ class ReadingSessionRepository:
             ReadingSessionORM.book_id == book_id.value,
             ReadingSessionORM.user_id == user_id.value,
         )
-        return self.db.execute(stmt).scalar() or 0
+        result = await self.db.execute(stmt)
+        return result.scalar() or 0
 
-    def find_by_id(self, session_id: ReadingSessionId, user_id: UserId) -> ReadingSession | None:
+    async def find_by_id(
+        self, session_id: ReadingSessionId, user_id: UserId
+    ) -> ReadingSession | None:
         """
         Load reading session by ID.
 
@@ -214,14 +212,15 @@ class ReadingSessionRepository:
             ReadingSessionORM.id == session_id.value,
             ReadingSessionORM.user_id == user_id.value,
         )
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        orm_model = result.scalar_one_or_none()
 
         if not orm_model:
             return None
 
         return self.mapper.to_domain(orm_model)
 
-    def save(self, session: ReadingSession) -> ReadingSession:
+    async def save(self, session: ReadingSession) -> ReadingSession:
         """
         Update existing reading session.
 
@@ -234,15 +233,17 @@ class ReadingSessionRepository:
             ReadingSession with any updated values from database
         """
         stmt = select(ReadingSessionORM).where(ReadingSessionORM.id == session.id.value)
-        existing_orm = self.db.execute(stmt).scalar_one()
+        result = await self.db.execute(stmt)
+        existing_orm = result.scalar_one()
 
         # Update ORM model using mapper
         self.mapper.to_orm(session, existing_orm)
-        self.db.commit()
+        await self.db.commit()
+        await self.db.refresh(existing_orm)
 
         return self.mapper.to_domain(existing_orm)
 
-    def bulk_update_positions(
+    async def bulk_update_positions(
         self,
         position_updates: list[tuple[ReadingSessionId, Position, Position]],
     ) -> int:
@@ -251,7 +252,7 @@ class ReadingSessionRepository:
             return 0
 
         for session_id, start_pos, end_pos in position_updates:
-            self.db.execute(
+            await self.db.execute(
                 update(ReadingSessionORM)
                 .where(ReadingSessionORM.id == session_id.value)
                 .values(
@@ -260,10 +261,10 @@ class ReadingSessionRepository:
                 )
             )
 
-        self.db.commit()
+        await self.db.commit()
         return len(position_updates)
 
-    def link_highlights_to_sessions(
+    async def link_highlights_to_sessions(
         self,
         session_highlight_pairs: list[tuple[ReadingSessionId, HighlightId]],
     ) -> int:
@@ -289,7 +290,7 @@ class ReadingSessionRepository:
         ]
 
         # Bulk insert into join table
-        self.db.execute(reading_session_highlights.insert(), links_to_insert)
-        self.db.commit()
+        await self.db.execute(reading_session_highlights.insert(), links_to_insert)
+        await self.db.commit()
 
         return len(links_to_insert)

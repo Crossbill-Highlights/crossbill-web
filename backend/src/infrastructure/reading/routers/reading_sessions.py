@@ -75,7 +75,7 @@ async def upload_reading_sessions(
         ]
 
         # Call use case
-        result = use_case.upload_reading_sessions(
+        result = await use_case.upload_reading_sessions(
             client_book_id=request.client_book_id,
             sessions=upload_data,
             user_id=current_user.id.value,
@@ -136,7 +136,7 @@ async def get_book_reading_sessions(
     """
     try:
         # Call use case
-        result = use_case.get_sessions_for_book(
+        result = await use_case.get_sessions_for_book(
             book_id=book_id,
             user_id=current_user.id.value,
             limit=limit,

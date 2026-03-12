@@ -19,7 +19,7 @@ class DeleteBookmarkUseCase:
         self.book_repository = book_repository
         self.bookmark_repository = bookmark_repository
 
-    def delete_bookmark(self, book_id: int, bookmark_id: int, user_id: int) -> None:
+    async def delete_bookmark(self, book_id: int, bookmark_id: int, user_id: int) -> None:
         """
         Delete a bookmark (idempotent operation).
 
@@ -37,12 +37,12 @@ class DeleteBookmarkUseCase:
         user_id_vo = UserId(user_id)
 
         # Validate book exists and belongs to user
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
         # Delete bookmark (idempotent)
-        deleted = self.bookmark_repository.delete(bookmark_id_vo, user_id_vo)
+        deleted = await self.bookmark_repository.delete(bookmark_id_vo, user_id_vo)
 
         if deleted:
             logger.info("deleted_bookmark", bookmark_id=bookmark_id, book_id=book_id)

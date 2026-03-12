@@ -9,7 +9,7 @@ from src.domain.learning.entities.flashcard import Flashcard
 class FlashcardRepositoryProtocol(Protocol):
     """Protocol for Flashcard repository operations in learning context."""
 
-    def find_by_id(self, flashcard_id: FlashcardId, user_id: UserId) -> Flashcard | None:
+    async def find_by_id(self, flashcard_id: FlashcardId, user_id: UserId) -> Flashcard | None:
         """
         Find a flashcard by ID with user ownership check.
 
@@ -22,7 +22,7 @@ class FlashcardRepositoryProtocol(Protocol):
         """
         ...
 
-    def find_by_book(self, book_id: BookId, user_id: UserId) -> list[Flashcard]:
+    async def find_by_book(self, book_id: BookId, user_id: UserId) -> list[Flashcard]:
         """
         Get all flashcards for a book.
 
@@ -35,7 +35,7 @@ class FlashcardRepositoryProtocol(Protocol):
         """
         ...
 
-    def count_by_book(self, book_id: BookId, user_id: UserId) -> int:
+    async def count_by_book(self, book_id: BookId, user_id: UserId) -> int:
         """
         Count flashcards for a book.
 
@@ -48,7 +48,7 @@ class FlashcardRepositoryProtocol(Protocol):
         """
         ...
 
-    def save(self, flashcard: Flashcard) -> Flashcard:
+    async def save(self, flashcard: Flashcard) -> Flashcard:
         """
         Save a flashcard entity (create or update).
 
@@ -60,7 +60,7 @@ class FlashcardRepositoryProtocol(Protocol):
         """
         ...
 
-    def delete(self, flashcard_id: FlashcardId, user_id: UserId) -> bool:
+    async def delete(self, flashcard_id: FlashcardId, user_id: UserId) -> bool:
         """
         Delete a flashcard.
 

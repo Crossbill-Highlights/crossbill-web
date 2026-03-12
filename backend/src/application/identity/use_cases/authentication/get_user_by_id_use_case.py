@@ -20,7 +20,7 @@ class GetUserByIdUseCase:
         """Initialize use case with dependencies."""
         self.user_repository = user_repository
 
-    def get_user(self, user_id: int) -> User:
+    async def get_user(self, user_id: int) -> User:
         """
         Get a user by ID (used internally by dependency injection).
 
@@ -33,7 +33,7 @@ class GetUserByIdUseCase:
         Raises:
             UserNotFoundError: If user is not found
         """
-        user = self.user_repository.find_by_id(UserId(user_id))
+        user = await self.user_repository.find_by_id(UserId(user_id))
         if not user:
             raise UserNotFoundError(user_id)
         return user

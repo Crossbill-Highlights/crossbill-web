@@ -1,5 +1,5 @@
 from dependency_injector import containers, providers
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.identity.use_cases.authentication.authenticate_user_use_case import (
     AuthenticateUserUseCase,
@@ -203,7 +203,7 @@ class Container(containers.DeclarativeContainer):
     """Dependency injection container."""
 
     # Declare db as a dependency that will be provided at runtime
-    db = providers.Dependency(instance_of=Session)
+    db = providers.Dependency(instance_of=AsyncSession)
 
     # Repositories
     book_repository = providers.Factory(BookRepository, db=db)

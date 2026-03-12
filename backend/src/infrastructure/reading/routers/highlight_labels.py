@@ -28,7 +28,7 @@ router = APIRouter(tags=["highlight-labels"])
 
 
 @router.get("/books/{book_id}/highlight-labels", response_model=list[HighlightLabelInBook])
-def get_book_highlight_labels(
+async def get_book_highlight_labels(
     book_id: int,
     current_user: User = Depends(get_current_user),
     use_case: GetBookHighlightLabelsUseCase = Depends(
@@ -36,7 +36,7 @@ def get_book_highlight_labels(
     ),
 ) -> list[HighlightLabelInBook]:
     """Get all highlight labels for a book with resolved labels."""
-    results = use_case.execute(book_id=book_id, user_id=current_user.id.value)
+    results = await use_case.execute(book_id=book_id, user_id=current_user.id.value)
     return [
         HighlightLabelInBook(
             id=style.id.value,
@@ -52,7 +52,7 @@ def get_book_highlight_labels(
 
 
 @router.patch("/highlight-labels/{style_id}", response_model=HighlightLabelInBook)
-def update_highlight_label(
+async def update_highlight_label(
     style_id: int,
     body: HighlightLabelUpdate,
     current_user: User = Depends(get_current_user),
@@ -61,7 +61,7 @@ def update_highlight_label(
     ),
 ) -> HighlightLabelInBook:
     """Update label and/or ui_color on a highlight style."""
-    style = use_case.execute(
+    style = await use_case.execute(
         style_id=style_id,
         user_id=current_user.id.value,
         label=body.label,
@@ -79,14 +79,14 @@ def update_highlight_label(
 
 
 @router.get("/highlight-labels/global", response_model=list[HighlightLabelInBook])
-def get_global_highlight_labels(
+async def get_global_highlight_labels(
     current_user: User = Depends(get_current_user),
     use_case: GetGlobalHighlightLabelsUseCase = Depends(
         inject_use_case(container.get_global_highlight_labels_use_case)
     ),
 ) -> list[HighlightLabelInBook]:
     """Get all global default highlight labels."""
-    styles = use_case.execute(user_id=current_user.id.value)
+    styles = await use_case.execute(user_id=current_user.id.value)
     return [
         HighlightLabelInBook(
             id=s.id.value,
@@ -102,7 +102,7 @@ def get_global_highlight_labels(
 
 
 @router.post("/highlight-labels/global", response_model=HighlightLabelInBook, status_code=201)
-def create_global_highlight_label(
+async def create_global_highlight_label(
     body: HighlightLabelCreate,
     current_user: User = Depends(get_current_user),
     use_case: CreateGlobalHighlightLabelUseCase = Depends(
@@ -110,7 +110,7 @@ def create_global_highlight_label(
     ),
 ) -> HighlightLabelInBook:
     """Create a global default highlight label."""
-    style = use_case.execute(
+    style = await use_case.execute(
         user_id=current_user.id.value,
         device_color=body.device_color,
         device_style=body.device_style,

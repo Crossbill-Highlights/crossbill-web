@@ -26,7 +26,7 @@ class CreateFlashcardForBookUseCase:
         self.book_repository = book_repository
         self.chapter_repository = chapter_repository
 
-    def create_flashcard(
+    async def create_flashcard(
         self,
         book_id: int,
         user_id: int,
@@ -57,7 +57,7 @@ class CreateFlashcardForBookUseCase:
         user_id_vo = UserId(user_id)
 
         # Validate book exists and belongs to user
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
@@ -65,7 +65,7 @@ class CreateFlashcardForBookUseCase:
         chapter_id_vo: ChapterId | None = None
         if chapter_id is not None:
             chapter_id_vo = ChapterId(chapter_id)
-            chapter = self.chapter_repository.find_by_id(chapter_id_vo, user_id_vo)
+            chapter = await self.chapter_repository.find_by_id(chapter_id_vo, user_id_vo)
             if not chapter:
                 raise NotFoundError(f"Chapter with id {chapter_id} not found")
             if chapter.book_id != book_id_vo:
@@ -82,7 +82,7 @@ class CreateFlashcardForBookUseCase:
         )
 
         # Persist (commit handled by DI infrastructure)
-        flashcard = self.flashcard_repository.save(flashcard)
+        flashcard = await self.flashcard_repository.save(flashcard)
 
         logger.info(
             "created_flashcard_for_book",

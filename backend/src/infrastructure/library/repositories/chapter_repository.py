@@ -2,7 +2,7 @@ import logging
 from collections.abc import Sequence
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.library.entities.chapter import Chapter, TocChapter
@@ -63,11 +63,11 @@ class _ChapterTracker:
 class ChapterRepository:
     """Domain-centric repository for Chapter persistence."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.mapper = ChapterMapper()
 
-    def find_by_id(self, chapter_id: ChapterId, user_id: UserId) -> Chapter | None:
+    async def find_by_id(self, chapter_id: ChapterId, user_id: UserId) -> Chapter | None:
         """Find a chapter by ID with ownership verification."""
         stmt = (
             select(ChapterORM)
@@ -75,10 +75,11 @@ class ChapterRepository:
             .where(ChapterORM.id == chapter_id.value)
             .where(BookORM.user_id == user_id.value)
         )
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        orm_model = result.scalar_one_or_none()
         return self.mapper.to_domain(orm_model) if orm_model else None
 
-    def find_all_by_book(self, book_id: BookId, user_id: UserId) -> list[Chapter]:
+    async def find_all_by_book(self, book_id: BookId, user_id: UserId) -> list[Chapter]:
         """Find all chapters for a book, ordered by chapter_number."""
         stmt = (
             select(ChapterORM)
@@ -87,16 +88,17 @@ class ChapterRepository:
             .where(BookORM.user_id == user_id.value)
             .order_by(ChapterORM.chapter_number)
         )
-        orm_models = self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        orm_models = result.scalars().all()
         return [self.mapper.to_domain(m) for m in orm_models]
 
-    def get_by_numbers(
+    async def get_by_numbers(
         self, book_id: BookId, chapter_numbers: set[int], user_id: UserId
     ) -> dict[int, Chapter]:
         """
         Get chapters by their numeric chapter_number.
 
-        Returns dict mapping chapter_number → Chapter entity.
+        Returns dict mapping chapter_number -> Chapter entity.
         Only includes chapters with non-null chapter_number.
         Used during highlight upload for efficient chapter association.
         """
@@ -112,15 +114,16 @@ class ChapterRepository:
             .where(ChapterORM.chapter_number.is_not(None))
         )
 
-        orm_models = self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        orm_models = result.scalars().all()
 
         # Map to dict by chapter_number
-        result: dict[int, Chapter] = {}
+        result_dict: dict[int, Chapter] = {}
         for orm_model in orm_models:
             if orm_model.chapter_number is not None:
-                result[orm_model.chapter_number] = self.mapper.to_domain(orm_model)
+                result_dict[orm_model.chapter_number] = self.mapper.to_domain(orm_model)
 
-        return result
+        return result_dict
 
     @staticmethod
     def _apply_field_updates(orm: ChapterORM, toc: TocChapter, parent_id: int | None) -> bool:
@@ -158,7 +161,7 @@ class ChapterRepository:
             return chapter
         return None
 
-    def _create_chapter_orm(
+    async def _create_chapter_orm(
         self,
         book_id: BookId,
         ch: TocChapter,
@@ -177,11 +180,11 @@ class ChapterRepository:
             end_position=ch.end_position.to_json() if ch.end_position else None,
         )
         self.db.add(chapter)
-        self.db.commit()
-        self.db.refresh(chapter)
+        await self.db.commit()
+        await self.db.refresh(chapter)
         tracker.register_new(chapter)
 
-    def sync_chapters_from_toc(
+    async def sync_chapters_from_toc(
         self,
         book_id: BookId,
         user_id: UserId,
@@ -213,13 +216,14 @@ class ChapterRepository:
             .where(BookORM.user_id == user_id.value)
             .where(ChapterORM.name.in_(chapter_names))
         )
-        existing_chapters_list = self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        existing_chapters_list = result.scalars().all()
         tracker = _ChapterTracker(list(existing_chapters_list))
 
         updated: list[ChapterORM] = []
         created_count = 0
 
-        # Stage 2: Process each TOC entry (sequential — parents before children)
+        # Stage 2: Process each TOC entry (sequential -- parents before children)
         for ch in chapters:
             parent_id = tracker.resolve_parent_id(ch.parent_name)
             key = (ch.name, parent_id)
@@ -248,12 +252,12 @@ class ChapterRepository:
                 continue
 
             # Case 3: Truly new chapter
-            self._create_chapter_orm(book_id, ch, parent_id, tracker)
+            await self._create_chapter_orm(book_id, ch, parent_id, tracker)
             created_count += 1
 
         # Stage 3: Commit updates
         if updated:
-            self.db.commit()
+            await self.db.commit()
             logger.info(f"Updated {len(updated)} existing chapters")
 
         logger.info(

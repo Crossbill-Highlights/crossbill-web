@@ -42,7 +42,7 @@ class GetChapterFlashcardSuggestionsUseCase:
         """
         chapter_id_vo = ChapterId(chapter_id)
 
-        prereading = self.chapter_prereading_repository.find_by_chapter_id(chapter_id_vo)
+        prereading = await self.chapter_prereading_repository.find_by_chapter_id(chapter_id_vo)
         if not prereading:
             raise NotFoundError(
                 f"No prereading content found for chapter {chapter_id}. "

@@ -1,7 +1,7 @@
 """Repository for Flashcard domain entities."""
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.common.value_objects.ids import BookId, FlashcardId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
@@ -12,11 +12,11 @@ from src.models import Flashcard as FlashcardORM
 class FlashcardRepository:
     """Repository for Flashcard domain entities."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.mapper = FlashcardMapper()
 
-    def find_by_id(self, flashcard_id: FlashcardId, user_id: UserId) -> Flashcard | None:
+    async def find_by_id(self, flashcard_id: FlashcardId, user_id: UserId) -> Flashcard | None:
         """
         Find a flashcard by ID with user ownership check.
 
@@ -31,10 +31,11 @@ class FlashcardRepository:
             FlashcardORM.id == flashcard_id.value,
             FlashcardORM.user_id == user_id.value,
         )
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        orm_model = result.scalar_one_or_none()
         return self.mapper.to_domain(orm_model) if orm_model else None
 
-    def find_by_book(self, book_id: BookId, user_id: UserId) -> list[Flashcard]:
+    async def find_by_book(self, book_id: BookId, user_id: UserId) -> list[Flashcard]:
         """
         Get all flashcards for a book.
 
@@ -53,10 +54,11 @@ class FlashcardRepository:
             )
             .order_by(FlashcardORM.created_at.desc())
         )
-        orm_models = self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        orm_models = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orm_models]
 
-    def count_by_book(self, book_id: BookId, user_id: UserId) -> int:
+    async def count_by_book(self, book_id: BookId, user_id: UserId) -> int:
         """
         Count flashcards for a book.
 
@@ -71,9 +73,10 @@ class FlashcardRepository:
             FlashcardORM.book_id == book_id.value,
             FlashcardORM.user_id == user_id.value,
         )
-        return self.db.execute(stmt).scalar() or 0
+        result = await self.db.execute(stmt)
+        return result.scalar() or 0
 
-    def save(self, flashcard: Flashcard) -> Flashcard:
+    async def save(self, flashcard: Flashcard) -> Flashcard:
         """
         Save a flashcard entity (create or update).
 
@@ -87,19 +90,19 @@ class FlashcardRepository:
             # Create new
             orm_model = self.mapper.to_orm(flashcard)
             self.db.add(orm_model)
-            self.db.commit()
-            self.db.refresh(orm_model)
+            await self.db.commit()
+            await self.db.refresh(orm_model)
             return self.mapper.to_domain(orm_model)
         # Update existing
-        orm_model = self.db.get(FlashcardORM, flashcard.id.value)
+        orm_model = await self.db.get(FlashcardORM, flashcard.id.value)
         if not orm_model:
             raise ValueError(f"Flashcard {flashcard.id.value} not found")
         self.mapper.to_orm(flashcard, orm_model)
-        self.db.commit()
-        self.db.refresh(orm_model)
+        await self.db.commit()
+        await self.db.refresh(orm_model)
         return self.mapper.to_domain(orm_model)
 
-    def delete(self, flashcard_id: FlashcardId, user_id: UserId) -> bool:
+    async def delete(self, flashcard_id: FlashcardId, user_id: UserId) -> bool:
         """
         Delete a flashcard.
 
@@ -114,11 +117,12 @@ class FlashcardRepository:
             FlashcardORM.id == flashcard_id.value,
             FlashcardORM.user_id == user_id.value,
         )
-        flashcard_orm = self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        flashcard_orm = result.scalar_one_or_none()
 
         if not flashcard_orm:
             return False
 
-        self.db.delete(flashcard_orm)
-        self.db.commit()
+        await self.db.delete(flashcard_orm)
+        await self.db.commit()
         return True

@@ -81,7 +81,7 @@ class EbookUploadUseCase:
         self.highlight_repository = highlight_repository
         self.session_repository = session_repository
 
-    def upload_ebook(
+    async def upload_ebook(
         self,
         client_book_id: str,
         content: bytes,
@@ -107,12 +107,12 @@ class EbookUploadUseCase:
         """
         # Route by content type
         if content_type in ["application/epub+zip", "application/epub"]:
-            return self._upload_epub(client_book_id, content, UserId(user_id))
+            return await self._upload_epub(client_book_id, content, UserId(user_id))
         if content_type == "application/pdf":
             raise NotImplementedError("PDF upload not yet implemented")
         raise InvalidEbookError(f"Unsupported content type: {content_type}", ebook_type="UNKNOWN")
 
-    def _upload_epub(
+    async def _upload_epub(
         self,
         client_book_id: str,
         content: bytes,
@@ -143,7 +143,7 @@ class EbookUploadUseCase:
             InvalidEbookError: If epub structure validation fails
         """
         # Find book by client_book_id
-        book = self.book_repository.find_by_client_book_id(client_book_id, user_id)
+        book = await self.book_repository.find_by_client_book_id(client_book_id, user_id)
         if not book:
             raise BookNotFoundError(f"client_book_id={client_book_id}")
 
@@ -167,7 +167,7 @@ class EbookUploadUseCase:
         # Save new epub file
         epub_path = self.file_repository.save_epub(book.id, content, epub_filename)
         book.update_file(epub_filename, "epub")
-        self.book_repository.save(book)
+        await self.book_repository.save(book)
 
         # Build position index from EPUB DOM
         position_index = self.position_index_service.build_position_index(epub_path)
@@ -176,7 +176,7 @@ class EbookUploadUseCase:
         total = position_index.total_elements
         if total > 0:
             book.update_end_position(Position(index=total, char_index=0))
-            self.book_repository.save(book)
+            await self.book_repository.save(book)
 
         # Parse TOC and sync chapters (with positions)
         toc_chapters = self.epub_toc_parser.parse_toc(epub_path)
@@ -196,14 +196,16 @@ class EbookUploadUseCase:
                         end_position=end_pos,
                     )
                 )
-            self.chapter_repository.sync_chapters_from_toc(book.id, user_id, enriched_chapters)
+            await self.chapter_repository.sync_chapters_from_toc(
+                book.id, user_id, enriched_chapters
+            )
 
         # Backfill positions for existing entities
-        self._backfill_positions(book.id, user_id, position_index)
+        await self._backfill_positions(book.id, user_id, position_index)
 
         return epub_filename, str(epub_path)
 
-    def _backfill_positions(
+    async def _backfill_positions(
         self,
         book_id: BookId,
         user_id: UserId,
@@ -211,7 +213,7 @@ class EbookUploadUseCase:
     ) -> None:
         """Backfill position data for existing highlights and reading sessions."""
         # Backfill highlights
-        highlights = self.highlight_repository.find_by_book_id(book_id, user_id)
+        highlights = await self.highlight_repository.find_by_book_id(book_id, user_id)
         highlight_updates = []
         for h in highlights:
             if h.xpoints and h.xpoints.start:
@@ -219,10 +221,12 @@ class EbookUploadUseCase:
                 if pos:
                     highlight_updates.append((h.id, pos))
         if highlight_updates:
-            self.highlight_repository.bulk_update_positions(highlight_updates)
+            await self.highlight_repository.bulk_update_positions(highlight_updates)
 
         # Backfill reading sessions
-        sessions = self.session_repository.find_by_book_id(book_id, user_id, limit=10000, offset=0)
+        sessions = await self.session_repository.find_by_book_id(
+            book_id, user_id, limit=10000, offset=0
+        )
         session_updates = []
         for s in sessions:
             if s.start_xpoint:
@@ -231,4 +235,4 @@ class EbookUploadUseCase:
                 if start_pos and end_pos:
                     session_updates.append((s.id, start_pos, end_pos))
         if session_updates:
-            self.session_repository.bulk_update_positions(session_updates)
+            await self.session_repository.bulk_update_positions(session_updates)

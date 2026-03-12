@@ -54,7 +54,7 @@ logger = structlog.get_logger(__name__)
 STATIC_DIR = (Path(__file__).parent.parent / "static").resolve()
 
 
-def _initialize_admin_password() -> None:
+async def _initialize_admin_password() -> None:
     """Initialize admin user password from environment variable if not set."""
     if not settings.ADMIN_PASSWORD:
         logger.info("admin_password_skip", reason="ADMIN_PASSWORD not set")
@@ -62,12 +62,10 @@ def _initialize_admin_password() -> None:
 
     # Use singleton session factory instead of creating new engine
     session_factory = get_session_factory(settings)
-    db = session_factory()
-
-    try:
+    async with session_factory() as db:
         # Use repository to find and update admin user
         user_repository = UserRepository(db)
-        admin_user = user_repository.find_by_email(settings.ADMIN_USERNAME)
+        admin_user = await user_repository.find_by_email(settings.ADMIN_USERNAME)
 
         if not admin_user:
             logger.warning(
@@ -89,15 +87,13 @@ def _initialize_admin_password() -> None:
         admin_user.update_password(hashed)
 
         # Save via repository
-        user_repository.save(admin_user)
-        db.commit()
+        await user_repository.save(admin_user)
+        await db.commit()
 
         logger.info(
             "admin_password_initialized",
             username=settings.ADMIN_USERNAME,
         )
-    finally:
-        db.close()
 
 
 @asynccontextmanager
@@ -108,7 +104,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Skip database initialization during tests
     if not os.getenv("TESTING"):
-        _initialize_admin_password()
+        await _initialize_admin_password()
 
     yield
 

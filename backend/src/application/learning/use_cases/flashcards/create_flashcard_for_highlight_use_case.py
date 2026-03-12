@@ -23,7 +23,7 @@ class CreateFlashcardForHighlightUseCase:
         self.flashcard_repository = flashcard_repository
         self.highlight_repository = highlight_repository
 
-    def create_flashcard(
+    async def create_flashcard(
         self, highlight_id: int, user_id: int, question: str, answer: str
     ) -> Flashcard:
         """
@@ -44,7 +44,7 @@ class CreateFlashcardForHighlightUseCase:
         highlight_id_vo = HighlightId(highlight_id)
         user_id_vo = UserId(user_id)
 
-        highlight = self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
+        highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
             raise NotFoundError(f"Highlight with id {highlight_id} not found")
 
@@ -55,7 +55,7 @@ class CreateFlashcardForHighlightUseCase:
             answer=answer,
             highlight_id=highlight_id_vo,
         )
-        flashcard = self.flashcard_repository.save(flashcard)
+        flashcard = await self.flashcard_repository.save(flashcard)
 
         logger.info(
             "created_flashcard_for_highlight",

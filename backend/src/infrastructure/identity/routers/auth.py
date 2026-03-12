@@ -71,7 +71,7 @@ async def login(
 ) -> TokenWithRefresh:
     # OAuth2PasswordRequestForm uses 'username' field, but we use it for email
     try:
-        _, token_pair = use_case.authenticate(form_data.username, form_data.password)
+        _, token_pair = await use_case.authenticate(form_data.username, form_data.password)
         set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
     except InvalidCredentialsError:
@@ -112,7 +112,7 @@ async def refresh(
         )
 
     try:
-        _, token_pair = use_case.refresh_token(token)
+        _, token_pair = await use_case.refresh_token(token)
         set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
     except InvalidCredentialsError:

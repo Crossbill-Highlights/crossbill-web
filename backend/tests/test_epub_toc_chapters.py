@@ -14,7 +14,8 @@ which handles:
 from __future__ import annotations
 
 import pytest
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import models
 from src.domain.common.value_objects.ids import BookId, UserId
@@ -41,15 +42,15 @@ def toc_ch(
 
 
 @pytest.fixture
-def chapter_repo(db_session: Session) -> ChapterRepository:
+async def chapter_repo(db_session: AsyncSession) -> ChapterRepository:
     """Create a ChapterRepository instance with test database session."""
     return ChapterRepository(db=db_session)
 
 
 @pytest.fixture
-def test_book_for_toc(db_session: Session) -> models.Book:
+async def test_book_for_toc(db_session: AsyncSession) -> models.Book:
     """Create a test book for ToC testing."""
-    return create_test_book(
+    return await create_test_book(
         db_session=db_session,
         user_id=1,
         title="ToC Test Book",
@@ -60,25 +61,34 @@ def test_book_for_toc(db_session: Session) -> models.Book:
 class TestSimpleChapterCreation:
     """Test basic chapter creation without hierarchy."""
 
-    def test_create_single_chapter(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_create_single_chapter(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ) -> None:
         """Test creating a single chapter from ToC."""
         chapters = [toc_ch("Introduction", 1)]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 1
-        db_chapters = db_session.query(models.Chapter).filter_by(book_id=test_book_for_toc.id).all()
+        result = await db_session.execute(
+            select(models.Chapter).filter_by(book_id=test_book_for_toc.id)
+        )
+        db_chapters = result.scalars().all()
         assert len(db_chapters) == 1
         assert db_chapters[0].name == "Introduction"
         assert db_chapters[0].chapter_number == 1
         assert db_chapters[0].parent_id is None
 
-    def test_create_multiple_chapters(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_create_multiple_chapters(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ):
         """Test creating multiple chapters from ToC."""
         chapters = [
@@ -87,41 +97,50 @@ class TestSimpleChapterCreation:
             toc_ch("Chapter 3", 3),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 3
-        db_chapters = (
-            db_session.query(models.Chapter)
+        result = await db_session.execute(
+            select(models.Chapter)
             .filter_by(book_id=test_book_for_toc.id)
             .order_by(models.Chapter.chapter_number)
-            .all()
         )
+        db_chapters = result.scalars().all()
         assert len(db_chapters) == 3
         assert [ch.name for ch in db_chapters] == ["Chapter 1", "Chapter 2", "Chapter 3"]
         assert all(ch.parent_id is None for ch in db_chapters)
 
-    def test_empty_chapters_list(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_empty_chapters_list(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ):
         """Test handling empty chapters list."""
         chapters: list[TocChapter] = []
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 0
-        db_chapters = db_session.query(models.Chapter).filter_by(book_id=test_book_for_toc.id).all()
+        result = await db_session.execute(
+            select(models.Chapter).filter_by(book_id=test_book_for_toc.id)
+        )
+        db_chapters = result.scalars().all()
         assert len(db_chapters) == 0
 
 
 class TestHierarchicalChapters:
     """Test hierarchical parent-child chapter relationships."""
 
-    def test_simple_parent_child(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_simple_parent_child(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ):
         """Test creating parent chapter with child chapters."""
         chapters = [
@@ -130,17 +149,17 @@ class TestHierarchicalChapters:
             toc_ch("Chapter 2", 3, "Part I"),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 3
-        db_chapters = (
-            db_session.query(models.Chapter)
+        result = await db_session.execute(
+            select(models.Chapter)
             .filter_by(book_id=test_book_for_toc.id)
             .order_by(models.Chapter.chapter_number)
-            .all()
         )
+        db_chapters = result.scalars().all()
         assert len(db_chapters) == 3
 
         part1 = db_chapters[0]
@@ -156,8 +175,11 @@ class TestHierarchicalChapters:
         assert chapter2.name == "Chapter 2"
         assert chapter2.parent_id == part1.id
 
-    def test_multiple_parent_levels(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_multiple_parent_levels(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ):
         """Test creating multiple levels of parent-child hierarchy."""
         chapters = [
@@ -168,17 +190,17 @@ class TestHierarchicalChapters:
             toc_ch("Chapter 2", 5, "Part I"),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 5
-        db_chapters = (
-            db_session.query(models.Chapter)
+        result = await db_session.execute(
+            select(models.Chapter)
             .filter_by(book_id=test_book_for_toc.id)
             .order_by(models.Chapter.chapter_number)
-            .all()
         )
+        db_chapters = result.scalars().all()
 
         part1, chapter1, section11, section12, chapter2 = db_chapters
 
@@ -196,8 +218,11 @@ class TestDuplicateChapterNames:
     as long as they have different parents.
     """
 
-    def test_duplicate_names_different_parents_allowed(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_duplicate_names_different_parents_allowed(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ):
         """Test that chapters with same name under different parents are both created.
 
@@ -211,17 +236,17 @@ class TestDuplicateChapterNames:
             toc_ch("Harjoitukset", 4, "Part II"),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 4
-        db_chapters = (
-            db_session.query(models.Chapter)
+        result = await db_session.execute(
+            select(models.Chapter)
             .filter_by(book_id=test_book_for_toc.id)
             .order_by(models.Chapter.chapter_number)
-            .all()
         )
+        db_chapters = result.scalars().all()
         assert len(db_chapters) == 4
 
         part1, harjoitukset1, part2, harjoitukset2 = db_chapters
@@ -238,11 +263,11 @@ class TestDuplicateChapterNames:
         # They should have different IDs
         assert harjoitukset1.id != harjoitukset2.id
 
-    def test_duplicate_names_at_root_level_skipped(
+    async def test_duplicate_names_at_root_level_skipped(
         self,
         chapter_repo: ChapterRepository,
         test_book_for_toc: models.Book,
-        db_session: Session,
+        db_session: AsyncSession,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         """Test that duplicate root-level chapters (both parent_id=None) are skipped.
@@ -255,13 +280,16 @@ class TestDuplicateChapterNames:
             toc_ch("Preface", 2),  # Duplicate at root level
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         # Only one created, duplicate skipped
         assert created_count == 1
-        db_chapters = db_session.query(models.Chapter).filter_by(book_id=test_book_for_toc.id).all()
+        result = await db_session.execute(
+            select(models.Chapter).filter_by(book_id=test_book_for_toc.id)
+        )
+        db_chapters = result.scalars().all()
         assert len(db_chapters) == 1
         assert db_chapters[0].name == "Preface"
         assert db_chapters[0].parent_id is None
@@ -269,11 +297,11 @@ class TestDuplicateChapterNames:
         # Should log a warning about the duplicate
         assert "Duplicate chapter 'Preface' in ToC with same parent" in caplog.text
 
-    def test_true_duplicate_in_toc_skipped(
+    async def test_true_duplicate_in_toc_skipped(
         self,
         chapter_repo: ChapterRepository,
         test_book_for_toc: models.Book,
-        db_session: Session,
+        db_session: AsyncSession,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         """Test that true duplicates (same name and parent in ToC) are skipped.
@@ -287,18 +315,18 @@ class TestDuplicateChapterNames:
             toc_ch("Chapter 1", 3, "Part I"),  # True duplicate - same name and parent
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         # Only 2 chapters created (duplicate skipped)
         assert created_count == 2
-        db_chapters = (
-            db_session.query(models.Chapter)
+        result = await db_session.execute(
+            select(models.Chapter)
             .filter_by(book_id=test_book_for_toc.id)
             .order_by(models.Chapter.chapter_number)
-            .all()
         )
+        db_chapters = result.scalars().all()
         assert len(db_chapters) == 2
         assert db_chapters[0].name == "Part I"
         assert db_chapters[1].name == "Chapter 1"
@@ -310,8 +338,11 @@ class TestDuplicateChapterNames:
 class TestUpdatingExistingChapters:
     """Test updating existing chapters when re-uploading ToC."""
 
-    def test_update_chapter_number(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_update_chapter_number(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ):
         """Test updating chapter_number for existing chapter."""
         # Create initial chapter
@@ -322,23 +353,26 @@ class TestUpdatingExistingChapters:
             parent_id=None,
         )
         db_session.add(existing_chapter)
-        db_session.commit()
+        await db_session.commit()
         chapter_id = existing_chapter.id
 
         # Re-upload with different chapter number
         chapters = [toc_ch("Chapter 1", 5)]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 0  # No new chapters created
-        db_session.refresh(existing_chapter)
+        await db_session.refresh(existing_chapter)
         assert existing_chapter.id == chapter_id  # Same chapter
         assert existing_chapter.chapter_number == 5  # Updated
 
-    def test_update_parent_id(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_update_parent_id(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ):
         """Test updating parent_id for existing chapter when they share the same parent.
 
@@ -351,8 +385,8 @@ class TestUpdatingExistingChapters:
             book_id=test_book_for_toc.id, name="Part I", chapter_number=1, parent_id=None
         )
         db_session.add(parent)
-        db_session.commit()
-        db_session.refresh(parent)
+        await db_session.commit()
+        await db_session.refresh(parent)
 
         child = models.Chapter(
             book_id=test_book_for_toc.id,
@@ -361,7 +395,7 @@ class TestUpdatingExistingChapters:
             parent_id=parent.id,  # Initially HAS parent
         )
         db_session.add(child)
-        db_session.commit()
+        await db_session.commit()
         child_id = child.id
 
         # Re-upload with same parent but different chapter number
@@ -370,18 +404,21 @@ class TestUpdatingExistingChapters:
             toc_ch("Chapter 1", 5, "Part I"),  # Same parent, different number
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 0  # No new chapters
-        db_session.refresh(child)
+        await db_session.refresh(child)
         assert child.id == child_id  # Same chapter
         assert child.parent_id == parent.id  # Parent unchanged
         assert child.chapter_number == 5  # Updated
 
-    def test_mixed_create_and_update(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_mixed_create_and_update(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ):
         """Test creating new chapters while updating existing ones."""
         # Create initial chapter
@@ -392,7 +429,7 @@ class TestUpdatingExistingChapters:
             parent_id=None,
         )
         db_session.add(existing)
-        db_session.commit()
+        await db_session.commit()
         existing_id = existing.id
 
         # Upload with existing chapter (different number) and new chapters
@@ -402,23 +439,26 @@ class TestUpdatingExistingChapters:
             toc_ch("Chapter 3", 7),  # New - create
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 2  # Only new chapters counted
-        db_chapters = (
-            db_session.query(models.Chapter)
+        result = await db_session.execute(
+            select(models.Chapter)
             .filter_by(book_id=test_book_for_toc.id)
             .order_by(models.Chapter.chapter_number)
-            .all()
         )
+        db_chapters = result.scalars().all()
         assert len(db_chapters) == 3
         assert db_chapters[0].id == existing_id  # Same chapter
         assert db_chapters[0].chapter_number == 5  # Updated
 
-    def test_reupload_with_duplicate_chapter_names(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_reupload_with_duplicate_chapter_names(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ):
         """Test re-uploading EPUB TOC when book already has duplicate chapter names under different parents.
 
@@ -437,14 +477,14 @@ class TestUpdatingExistingChapters:
             toc_ch("Harjoitukset", 4, "Part II"),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=initial_chapters
         )
         assert created_count == 4
 
         # Re-upload the same TOC (simulating re-uploading the EPUB file via API)
         # This should detect all existing chapters and update them, not try to create duplicates
-        created_count_2 = chapter_repo.sync_chapters_from_toc(
+        created_count_2 = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=initial_chapters
         )
 
@@ -452,12 +492,12 @@ class TestUpdatingExistingChapters:
         assert created_count_2 == 0
 
         # Should still have exactly 4 chapters in database
-        db_chapters = (
-            db_session.query(models.Chapter)
+        result = await db_session.execute(
+            select(models.Chapter)
             .filter_by(book_id=test_book_for_toc.id)
             .order_by(models.Chapter.chapter_number)
-            .all()
         )
+        db_chapters = result.scalars().all()
         assert len(db_chapters) == 4
 
         # Verify both "Harjoitukset" chapters still exist with correct parents
@@ -485,8 +525,11 @@ class TestLegacyFlatChapterMigration:
     duplicates and orphaning highlights attached to the old chapters.
     """
 
-    def test_legacy_flat_chapters_updated_in_place(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_legacy_flat_chapters_updated_in_place(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ) -> None:
         """Legacy flat chapters are updated in-place when EPUB TOC provides hierarchy.
 
@@ -517,7 +560,7 @@ class TestLegacyFlatChapterMigration:
             end_xpoint=None,
         )
         db_session.add_all([legacy_part, legacy_ch1, legacy_ch2])
-        db_session.commit()
+        await db_session.commit()
 
         # Record original IDs to verify in-place updates
         part_id = legacy_part.id
@@ -535,19 +578,19 @@ class TestLegacyFlatChapterMigration:
             ),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=toc_chapters
         )
 
-        # No new chapters should be created — all matched to legacy chapters
+        # No new chapters should be created -- all matched to legacy chapters
         assert created_count == 0
 
-        db_chapters = (
-            db_session.query(models.Chapter)
+        result = await db_session.execute(
+            select(models.Chapter)
             .filter_by(book_id=test_book_for_toc.id)
             .order_by(models.Chapter.chapter_number)
-            .all()
         )
+        db_chapters = result.scalars().all()
 
         # Total count should equal TOC size (no duplicates)
         assert len(db_chapters) == 3
@@ -572,8 +615,11 @@ class TestLegacyFlatChapterMigration:
         assert ch2.start_xpoint == "/body/DocFragment[4]/body"
         assert ch2.end_xpoint == "/body/DocFragment[5]/body"
 
-    def test_legacy_migration_with_duplicate_names_under_different_parents(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_legacy_migration_with_duplicate_names_under_different_parents(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ) -> None:
         """Legacy flat chapters with duplicate names are matched correctly.
 
@@ -595,7 +641,7 @@ class TestLegacyFlatChapterMigration:
             book_id=test_book_for_toc.id, name="Part II", chapter_number=3, parent_id=None
         )
         db_session.add_all([legacy_part1, legacy_exercises, legacy_part2])
-        db_session.commit()
+        await db_session.commit()
 
         exercises_id = legacy_exercises.id
 
@@ -607,19 +653,19 @@ class TestLegacyFlatChapterMigration:
             toc_ch("Exercises", 4, "Part II"),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=toc_chapters
         )
 
         # First "Exercises" matched legacy, second one is new
         assert created_count == 1
 
-        db_chapters = (
-            db_session.query(models.Chapter)
+        result = await db_session.execute(
+            select(models.Chapter)
             .filter_by(book_id=test_book_for_toc.id)
             .order_by(models.Chapter.chapter_number)
-            .all()
         )
+        db_chapters = result.scalars().all()
 
         assert len(db_chapters) == 4
 
@@ -637,8 +683,11 @@ class TestLegacyFlatChapterMigration:
 class TestEdgeCases:
     """Test edge cases and potential issues in the ToC logic."""
 
-    def test_duplicate_parent_names_correct_assignment(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_duplicate_parent_names_correct_assignment(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ):
         """Test that duplicate parent names work correctly with the fixed logic.
 
@@ -653,10 +702,10 @@ class TestEdgeCases:
         Example:
             Part I
               Introduction (id=10)
-                Chapter 1 (should have parent_id=10) ✓
+                Chapter 1 (should have parent_id=10) correct
             Part II
               Introduction (id=20)
-                Chapter 1 (should have parent_id=20) ✓
+                Chapter 1 (should have parent_id=20) correct
         """
         chapters = [
             toc_ch("Part I", 1),
@@ -667,17 +716,17 @@ class TestEdgeCases:
             toc_ch("Chapter 1", 6, "Introduction"),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 6
-        db_chapters = (
-            db_session.query(models.Chapter)
+        result = await db_session.execute(
+            select(models.Chapter)
             .filter_by(book_id=test_book_for_toc.id)
             .order_by(models.Chapter.chapter_number)
-            .all()
         )
+        db_chapters = result.scalars().all()
 
         part1, intro1, chapter1_under_intro1, part2, intro2, chapter1_under_intro2 = db_chapters
 
@@ -695,8 +744,11 @@ class TestEdgeCases:
         # Chapter 1 (number 6) should have intro2 as parent
         assert chapter1_under_intro2.parent_id == intro2.id
 
-    def test_parent_referenced_before_definition(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_parent_referenced_before_definition(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ):
         """Test that parent chapters must come before children in ToC.
 
@@ -709,17 +761,17 @@ class TestEdgeCases:
             toc_ch("Part I", 2),
         ]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 2
-        db_chapters = (
-            db_session.query(models.Chapter)
+        result = await db_session.execute(
+            select(models.Chapter)
             .filter_by(book_id=test_book_for_toc.id)
             .order_by(models.Chapter.chapter_number)
-            .all()
         )
+        db_chapters = result.scalars().all()
 
         chapter1, part1 = db_chapters
 
@@ -727,18 +779,24 @@ class TestEdgeCases:
         assert chapter1.parent_id is None
         assert part1.parent_id is None
 
-    def test_nonexistent_parent_name(
-        self, chapter_repo: ChapterRepository, test_book_for_toc: models.Book, db_session: Session
+    async def test_nonexistent_parent_name(
+        self,
+        chapter_repo: ChapterRepository,
+        test_book_for_toc: models.Book,
+        db_session: AsyncSession,
     ):
         """Test handling of parent_name that doesn't exist in ToC."""
         chapters = [toc_ch("Chapter 1", 1, "Part I")]
 
-        created_count = chapter_repo.sync_chapters_from_toc(
+        created_count = await chapter_repo.sync_chapters_from_toc(
             book_id=BookId(test_book_for_toc.id), user_id=UserId(1), chapters=chapters
         )
 
         assert created_count == 1
-        db_chapters = db_session.query(models.Chapter).filter_by(book_id=test_book_for_toc.id).all()
+        result = await db_session.execute(
+            select(models.Chapter).filter_by(book_id=test_book_for_toc.id)
+        )
+        db_chapters = result.scalars().all()
         assert len(db_chapters) == 1
         # Parent doesn't exist, so parent_id is None
         assert db_chapters[0].parent_id is None

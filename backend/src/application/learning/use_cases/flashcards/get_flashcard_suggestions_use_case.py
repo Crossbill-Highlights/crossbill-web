@@ -43,7 +43,7 @@ class GetFlashcardSuggestionsUseCase:
         highlight_id_vo = HighlightId(highlight_id)
         user_id_vo = UserId(user_id)
 
-        highlight = self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
+        highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
             raise NotFoundError(f"Highlight with id {highlight_id} not found")
 

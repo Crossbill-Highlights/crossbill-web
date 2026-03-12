@@ -31,7 +31,7 @@ class AddTagsToBookUseCase:
         self.tag_repository = tag_repository
         self.book_repository = book_repository
 
-    def add_tags(self, book_id: int, tag_names: list[str], user_id: int) -> list[Tag]:
+    async def add_tags(self, book_id: int, tag_names: list[str], user_id: int) -> list[Tag]:
         """
         Add tags to book without removing existing ones.
 
@@ -49,17 +49,17 @@ class AddTagsToBookUseCase:
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(f"Book with id {book_id} not found")
 
         if not tag_names:
             # Return existing tags if no new ones to add
-            return self.tag_repository.find_tags_for_book(book_id_vo, user_id_vo)
+            return await self.tag_repository.find_tags_for_book(book_id_vo, user_id_vo)
 
-        all_tags = self.tag_repository.get_or_create_many(tag_names, user_id_vo)
+        all_tags = await self.tag_repository.get_or_create_many(tag_names, user_id_vo)
         tag_ids = [tag.id for tag in all_tags]
-        self.tag_repository.add_tags_to_book(book_id_vo, tag_ids, user_id_vo)
+        await self.tag_repository.add_tags_to_book(book_id_vo, tag_ids, user_id_vo)
 
         logger.info(
             "added_tags_to_book",
@@ -68,4 +68,4 @@ class AddTagsToBookUseCase:
             tag_names=[tag.name for tag in all_tags],
         )
 
-        return self.tag_repository.find_tags_for_book(book_id_vo, user_id_vo)
+        return await self.tag_repository.find_tags_for_book(book_id_vo, user_id_vo)

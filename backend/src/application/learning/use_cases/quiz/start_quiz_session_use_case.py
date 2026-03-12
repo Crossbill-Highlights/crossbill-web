@@ -50,7 +50,7 @@ class StartQuizSessionUseCase:
         user_id_vo = UserId(user_id)
 
         # 1. Verify chapter exists and user owns it
-        chapter = self.chapter_repo.find_by_id(chapter_id_vo, user_id_vo)
+        chapter = await self.chapter_repo.find_by_id(chapter_id_vo, user_id_vo)
         if not chapter:
             raise NotFoundError(f"Chapter {chapter_id} not found")
 
@@ -60,7 +60,7 @@ class StartQuizSessionUseCase:
                 "Chapter does not have position data. EPUB must be uploaded with chapter positions."
             )
 
-        book = self.book_repo.find_by_id(chapter.book_id, user_id_vo)
+        book = await self.book_repo.find_by_id(chapter.book_id, user_id_vo)
         if not book or not book.file_path or book.file_type != "epub":
             raise BookNotFoundError(
                 chapter.book_id.value, message="EPUB file not found for this book"
@@ -97,7 +97,7 @@ class StartQuizSessionUseCase:
 
         # 5. Persist session with message history
         session.message_history = message_history
-        saved_session = self.ai_chat_session_repo.create(session)
+        saved_session = await self.ai_chat_session_repo.create(session)
 
         logger.info(
             "quiz_session_started",

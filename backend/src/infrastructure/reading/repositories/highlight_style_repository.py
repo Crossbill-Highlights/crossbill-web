@@ -1,7 +1,7 @@
 """Repository for HighlightStyle persistence."""
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.common.value_objects import BookId, HighlightStyleId, UserId
 from src.domain.reading.entities.highlight_style import HighlightStyle
@@ -13,19 +13,22 @@ from src.models import HighlightStyle as HighlightStyleORM
 class HighlightStyleRepository:
     """SQLAlchemy implementation of HighlightStyle repository."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.mapper = HighlightStyleMapper()
 
-    def find_by_id(self, style_id: HighlightStyleId, user_id: UserId) -> HighlightStyle | None:
+    async def find_by_id(
+        self, style_id: HighlightStyleId, user_id: UserId
+    ) -> HighlightStyle | None:
         stmt = select(HighlightStyleORM).where(
             HighlightStyleORM.id == style_id.value,
             HighlightStyleORM.user_id == user_id.value,
         )
-        orm = self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        orm = result.scalar_one_or_none()
         return self.mapper.to_domain(orm) if orm else None
 
-    def find_or_create(
+    async def find_or_create(
         self,
         user_id: UserId,
         book_id: BookId,
@@ -38,7 +41,8 @@ class HighlightStyleRepository:
             HighlightStyleORM.device_color == device_color,
             HighlightStyleORM.device_style == device_style,
         )
-        orm = self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        orm = result.scalar_one_or_none()
         if orm:
             return self.mapper.to_domain(orm)
 
@@ -50,54 +54,62 @@ class HighlightStyleRepository:
         )
         orm = self.mapper.to_orm(style)
         self.db.add(orm)
-        self.db.commit()
+        await self.db.commit()
+        await self.db.refresh(orm)
         return self.mapper.to_domain(orm)
 
-    def find_by_book(self, book_id: BookId, user_id: UserId) -> list[HighlightStyle]:
+    async def find_by_book(self, book_id: BookId, user_id: UserId) -> list[HighlightStyle]:
         stmt = select(HighlightStyleORM).where(
             HighlightStyleORM.user_id == user_id.value,
             HighlightStyleORM.book_id == book_id.value,
         )
-        orms = self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        orms = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orms]
 
-    def find_global(self, user_id: UserId) -> list[HighlightStyle]:
+    async def find_global(self, user_id: UserId) -> list[HighlightStyle]:
         stmt = select(HighlightStyleORM).where(
             HighlightStyleORM.user_id == user_id.value,
             HighlightStyleORM.book_id.is_(None),
         )
-        orms = self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        orms = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orms]
 
-    def find_for_resolution(self, user_id: UserId, book_id: BookId) -> list[HighlightStyle]:
+    async def find_for_resolution(self, user_id: UserId, book_id: BookId) -> list[HighlightStyle]:
         stmt = select(HighlightStyleORM).where(
             HighlightStyleORM.user_id == user_id.value,
             (HighlightStyleORM.book_id == book_id.value) | (HighlightStyleORM.book_id.is_(None)),
         )
-        orms = self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        orms = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orms]
 
-    def save(self, style: HighlightStyle) -> HighlightStyle:
+    async def save(self, style: HighlightStyle) -> HighlightStyle:
         if style.id.value == 0:
             orm = self.mapper.to_orm(style)
             self.db.add(orm)
-            self.db.commit()
+            await self.db.commit()
+            await self.db.refresh(orm)
             return self.mapper.to_domain(orm)
 
-        existing = self.db.execute(
+        result = await self.db.execute(
             select(HighlightStyleORM).where(HighlightStyleORM.id == style.id.value)
-        ).scalar_one_or_none()
+        )
+        existing = result.scalar_one_or_none()
         if existing:
             self.mapper.to_orm(style, existing)
-            self.db.commit()
+            await self.db.commit()
+            await self.db.refresh(existing)
             return self.mapper.to_domain(existing)
 
         orm = self.mapper.to_orm(style)
         self.db.add(orm)
-        self.db.commit()
+        await self.db.commit()
+        await self.db.refresh(orm)
         return self.mapper.to_domain(orm)
 
-    def count_highlights_by_style(self, style_id: HighlightStyleId) -> int:
+    async def count_highlights_by_style(self, style_id: HighlightStyleId) -> int:
         stmt = (
             select(func.count())
             .select_from(HighlightORM)
@@ -106,5 +118,5 @@ class HighlightStyleRepository:
                 HighlightORM.deleted_at.is_(None),
             )
         )
-        result = self.db.execute(stmt).scalar()
-        return result or 0
+        result = await self.db.execute(stmt)
+        return result.scalar() or 0

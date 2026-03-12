@@ -10,31 +10,31 @@ from src.domain.reading import Highlight, HighlightTag
 
 
 class HighlightRepositoryProtocol(Protocol):
-    def find_by_id(self, highlight_id: HighlightId, user_id: UserId) -> Highlight | None: ...
+    async def find_by_id(self, highlight_id: HighlightId, user_id: UserId) -> Highlight | None: ...
 
-    def find_by_id_with_relations(
+    async def find_by_id_with_relations(
         self, highlight_id: HighlightId, user_id: UserId
     ) -> tuple[Highlight, list[Flashcard], list[HighlightTag]] | None: ...
 
-    def find_by_ids_with_tags(
+    async def find_by_ids_with_tags(
         self, highlight_ids: list[HighlightId], user_id: UserId
     ) -> list[tuple[Highlight, Chapter | None, list[HighlightTag]]]: ...
 
-    def find_by_book_id(self, book_id: BookId, user_id: UserId) -> list[Highlight]: ...
+    async def find_by_book_id(self, book_id: BookId, user_id: UserId) -> list[Highlight]: ...
 
-    def count_by_book(self, book_id: BookId, user_id: UserId) -> int: ...
+    async def count_by_book(self, book_id: BookId, user_id: UserId) -> int: ...
 
-    def get_highlights_by_session_ids(
+    async def get_highlights_by_session_ids(
         self,
         session_ids: list[ReadingSessionId],
         user_id: UserId,
     ) -> dict[ReadingSessionId, list[Highlight]]: ...
 
-    def get_existing_hashes(
+    async def get_existing_hashes(
         self, user_id: UserId, book_id: BookId, hashes: list[ContentHash]
     ) -> set[ContentHash]: ...
 
-    def search(
+    async def search(
         self,
         search_text: str,
         user_id: UserId,
@@ -42,16 +42,16 @@ class HighlightRepositoryProtocol(Protocol):
         limit: int = 100,
     ) -> list[tuple[Highlight, Book, Chapter | None, list[HighlightTag], list[Flashcard]]]: ...
 
-    def save(self, highlight: Highlight) -> Highlight: ...
+    async def save(self, highlight: Highlight) -> Highlight: ...
 
-    def bulk_save(self, highlights: list[Highlight]) -> list[Highlight]: ...
+    async def bulk_save(self, highlights: list[Highlight]) -> list[Highlight]: ...
 
-    def bulk_update_positions(
+    async def bulk_update_positions(
         self,
         position_updates: list[tuple[HighlightId, Position]],
     ) -> int: ...
 
-    def soft_delete_by_ids(
+    async def soft_delete_by_ids(
         self,
         highlight_ids: list[HighlightId],
         user_id: UserId,

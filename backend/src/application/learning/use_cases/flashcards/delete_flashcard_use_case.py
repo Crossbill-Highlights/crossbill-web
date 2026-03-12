@@ -19,7 +19,7 @@ class DeleteFlashcardUseCase:
         """Initialize use case with repository protocols."""
         self.flashcard_repository = flashcard_repository
 
-    def delete_flashcard(self, flashcard_id: int, user_id: int) -> None:
+    async def delete_flashcard(self, flashcard_id: int, user_id: int) -> None:
         """
         Delete a flashcard.
 
@@ -33,7 +33,7 @@ class DeleteFlashcardUseCase:
         flashcard_id_vo = FlashcardId(flashcard_id)
         user_id_vo = UserId(user_id)
 
-        deleted = self.flashcard_repository.delete(flashcard_id_vo, user_id_vo)
+        deleted = await self.flashcard_repository.delete(flashcard_id_vo, user_id_vo)
         if not deleted:
             raise NotFoundError(f"Flashcard with id {flashcard_id} not found")
 

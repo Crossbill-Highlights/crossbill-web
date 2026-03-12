@@ -30,7 +30,7 @@ class ChapterContentUseCase:
         self.file_repo = file_repo
         self.text_extraction = text_extraction_service
 
-    def get_chapter_content(self, chapter_id: int, user_id: int) -> tuple[str, str, int]:
+    async def get_chapter_content(self, chapter_id: int, user_id: int) -> tuple[str, str, int]:
         """Extract text content for a chapter.
 
         Args:
@@ -48,7 +48,7 @@ class ChapterContentUseCase:
         user_id_vo = UserId(user_id)
 
         # 1. Verify chapter exists and user owns it
-        chapter = self.chapter_repo.find_by_id(chapter_id_vo, user_id_vo)
+        chapter = await self.chapter_repo.find_by_id(chapter_id_vo, user_id_vo)
         if not chapter:
             raise NotFoundError(f"Chapter {chapter_id} not found")
 
@@ -59,7 +59,7 @@ class ChapterContentUseCase:
             )
 
         # 3. Resolve epub path
-        book = self.book_repo.find_by_id(chapter.book_id, user_id_vo)
+        book = await self.book_repo.find_by_id(chapter.book_id, user_id_vo)
         if not book or not book.file_path or book.file_type != "epub":
             raise BookNotFoundError(
                 chapter.book_id.value, message="EPUB file not found for this book"

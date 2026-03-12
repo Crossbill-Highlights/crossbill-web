@@ -47,8 +47,8 @@ async def register(
     Returns token pair for immediate login after registration.
     """
     try:
-        _, token_pair = use_case.register_user(register_data.email, register_data.password)
-        db.commit()
+        _, token_pair = await use_case.register_user(register_data.email, register_data.password)
+        await db.commit()
         set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
     except RegistrationDisabledError:
@@ -95,13 +95,13 @@ async def update_me(
     - To change password: provide both `current_password` and `new_password` fields
     """
     try:
-        user = use_case.update_user(
+        user = await use_case.update_user(
             user_id=current_user.id.value,
             email=update_data.email,
             current_password=update_data.current_password,
             new_password=update_data.new_password,
         )
-        db.commit()
+        await db.commit()
         return UserDetailsResponse(email=user.email, id=user.id.value)
     except PasswordVerificationError:
         raise HTTPException(

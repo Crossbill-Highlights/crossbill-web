@@ -41,7 +41,7 @@ class AddTagToHighlightByIdUseCase:
         self.highlight_style_repository = highlight_style_repository
         self.highlight_style_resolver = highlight_style_resolver
 
-    def add_tag(
+    async def add_tag(
         self, highlight_id: int, tag_id: int, user_id: int
     ) -> tuple[Highlight, list[Flashcard], list[HighlightTag], dict[int, ResolvedLabel]]:
         """
@@ -63,11 +63,11 @@ class AddTagToHighlightByIdUseCase:
         user_id_vo = UserId(user_id)
 
         # Load entities
-        highlight = self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
+        highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
             raise NotFoundError(f"Highlight with id {highlight_id} not found")
 
-        tag = self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
+        tag = await self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
         if not tag:
             raise NotFoundError(f"Tag with id {tag_id} not found")
 
@@ -75,12 +75,16 @@ class AddTagToHighlightByIdUseCase:
         highlight.add_tag(tag)
 
         # Persist association via repository
-        added = self.tag_repository.add_tag_to_highlight(highlight_id_vo, tag_id_vo, user_id_vo)
+        added = await self.tag_repository.add_tag_to_highlight(
+            highlight_id_vo, tag_id_vo, user_id_vo
+        )
         if added:
             logger.info("added_tag_to_highlight", highlight_id=highlight_id, tag_id=tag_id)
 
         # Reload with relations
-        result = self.highlight_repository.find_by_id_with_relations(highlight_id_vo, user_id_vo)
+        result = await self.highlight_repository.find_by_id_with_relations(
+            highlight_id_vo, user_id_vo
+        )
         if not result:
             raise NotFoundError(f"Highlight with id {highlight_id} not found after reload")
         highlight, flashcards, tags = result
@@ -88,7 +92,7 @@ class AddTagToHighlightByIdUseCase:
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}
         if self.highlight_style_repository and self.highlight_style_resolver:
-            all_styles = self.highlight_style_repository.find_for_resolution(
+            all_styles = await self.highlight_style_repository.find_for_resolution(
                 user_id_vo, highlight.book_id
             )
             for style in all_styles:

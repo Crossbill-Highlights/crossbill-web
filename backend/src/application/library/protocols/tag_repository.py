@@ -9,7 +9,7 @@ from src.domain.library.entities.tag import Tag
 class TagRepositoryProtocol(Protocol):
     """Protocol for Tag repository operations in library context."""
 
-    def find_tags_for_book(self, book_id: BookId, user_id: UserId) -> list[Tag]:
+    async def find_tags_for_book(self, book_id: BookId, user_id: UserId) -> list[Tag]:
         """
         Get all tags associated with a book.
 
@@ -22,7 +22,7 @@ class TagRepositoryProtocol(Protocol):
         """
         ...
 
-    def get_or_create_many(self, names: list[str], user_id: UserId) -> list[Tag]:
+    async def get_or_create_many(self, names: list[str], user_id: UserId) -> list[Tag]:
         """
         Get existing tags or create new ones for a list of names.
 
@@ -35,7 +35,9 @@ class TagRepositoryProtocol(Protocol):
         """
         ...
 
-    def add_tags_to_book(self, book_id: BookId, tag_ids: list[TagId], user_id: UserId) -> None:
+    async def add_tags_to_book(
+        self, book_id: BookId, tag_ids: list[TagId], user_id: UserId
+    ) -> None:
         """
         Add tags to a book (manages the many-to-many association).
 
@@ -48,7 +50,9 @@ class TagRepositoryProtocol(Protocol):
         """
         ...
 
-    def replace_book_tags(self, book_id: BookId, tag_ids: list[TagId], user_id: UserId) -> None:
+    async def replace_book_tags(
+        self, book_id: BookId, tag_ids: list[TagId], user_id: UserId
+    ) -> None:
         """
         Replace all tags on a book (manages the many-to-many association).
 

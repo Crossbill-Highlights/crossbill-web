@@ -22,7 +22,7 @@ class GetRecentlyViewedBooksUseCase:
         """
         self.book_repository = book_repository
 
-    def get_recently_viewed(
+    async def get_recently_viewed(
         self, user_id: int, limit: int = 10
     ) -> list[tuple[Book, int, int, list[Tag]]]:
         """
@@ -41,7 +41,7 @@ class GetRecentlyViewedBooksUseCase:
         user_id_vo = UserId(user_id)
 
         # Delegate to repository
-        return self.book_repository.get_recently_viewed_books(
+        return await self.book_repository.get_recently_viewed_books(
             user_id=user_id_vo,
             limit=limit,
         )
