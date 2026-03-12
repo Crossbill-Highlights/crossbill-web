@@ -57,7 +57,9 @@ def initialize_database(settings: Settings) -> None:
             pool_recycle=3600,  # Recycle connections after 1 hour
         )
 
-    _session_factory = async_sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+    _session_factory = async_sessionmaker(
+        autocommit=False, autoflush=False, expire_on_commit=False, bind=_engine
+    )
 
 
 def get_engine() -> AsyncEngine:
