@@ -63,6 +63,20 @@ uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 The API will be available at http://localhost:8000
 
+### 6. Run the batch worker (optional)
+
+The batch worker processes background AI tasks (e.g. batch chapter prereading generation). It requires AI to be enabled and uses the same PostgreSQL database as the main app for its job queue.
+
+```bash
+uv run saq src.infrastructure.batch.worker.settings
+```
+
+You can optionally configure the worker with these environment variables:
+
+- `BATCH_AI_PROVIDER` — AI provider for batch tasks (defaults to main `AI_PROVIDER`)
+- `BATCH_AI_MODEL_NAME` — model name for batch tasks (defaults to main `AI_MODEL_NAME`)
+- `BATCH_MAX_CONCURRENCY` — max concurrent AI calls per job (default: `5`)
+
 ## Docker Commands
 
 ### Stop the database

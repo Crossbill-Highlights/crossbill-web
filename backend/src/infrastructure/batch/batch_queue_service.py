@@ -12,7 +12,8 @@ class BatchQueueService:
     async def enqueue_job(self, job_id: BatchJobId) -> None:
         await self.queue.enqueue(
             "process_prereading_job",
-            batch_job_id=job_id.value,
+            job_id=job_id.value,
+            timeout=3600,
         )
 
     async def cancel_job(self, job_id: BatchJobId) -> None:

@@ -113,8 +113,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         from src.core import container  # noqa: PLC0415
 
-        queue_url = settings.DATABASE_URL.replace("postgresql://", "postgres://")
-        batch_queue = Queue.from_url(queue_url)
+        batch_queue = Queue.from_url(settings.DATABASE_URL, name="batch")
+        await batch_queue.connect()
         container.batch_queue.override(batch_queue)
 
     # Skip database initialization during tests
@@ -124,6 +124,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
     # Cleanup on shutdown
+    if settings.ai_enabled:
+        await batch_queue.disconnect()  # type: ignore[possibly-undefined]
     dispose_engine()
 
 

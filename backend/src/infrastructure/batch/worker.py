@@ -45,11 +45,65 @@ def _get_semaphore() -> asyncio.Semaphore:
 
 
 async def startup(ctx: Context) -> None:
-    """Initialise database and semaphore once on worker start."""
+    """Initialise database and semaphore once on worker start.
+
+    Also recovers any jobs stuck in 'pending' or 'processing' status from a
+    previous crash by resetting them to 'pending' and re-enqueuing into SAQ.
+    """
     global _semaphore  # noqa: PLW0603
     settings = get_settings()
     initialize_database(settings)
     _semaphore = asyncio.Semaphore(settings.BATCH_MAX_CONCURRENCY)
+
+    # Recover stuck jobs from previous crashes
+    try:
+        session_factory = get_session_factory(settings)
+        queue: Queue = ctx["worker"].queue
+
+        async with session_factory() as db:
+            # Reset processing jobs back to pending and reset their items
+            result = await db.execute(
+                update(BatchJobORM)
+                .where(
+                    BatchJobORM.status.in_(
+                        [
+                            BatchJobStatus.PENDING.value,
+                            BatchJobStatus.PROCESSING.value,
+                        ]
+                    )
+                )
+                .values(status=BatchJobStatus.PENDING.value)
+                .returning(BatchJobORM.id)
+            )
+            stuck_jobs = [row.id for row in result.all()]
+
+            if stuck_jobs:
+                # Reset in-progress items back to pending
+                await db.execute(
+                    update(BatchItemORM)
+                    .where(
+                        BatchItemORM.batch_job_id.in_(stuck_jobs),
+                        BatchItemORM.status == BatchItemStatus.PROCESSING.value,
+                    )
+                    .values(status=BatchItemStatus.PENDING.value)
+                )
+                await db.commit()
+
+                # Re-enqueue each job into SAQ
+                for job_id in stuck_jobs:
+                    await queue.enqueue(
+                        "process_prereading_job",
+                        job_id=job_id,
+                        timeout=3600,
+                    )
+
+                logger.warning(
+                    "batch_worker_recovered_stuck_jobs",
+                    job_ids=stuck_jobs,
+                )
+    except Exception:
+        logger.exception("batch_worker_recovery_failed")
+
     logger.info(
         "batch_worker_started",
         concurrency=settings.BATCH_MAX_CONCURRENCY,
