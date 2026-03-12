@@ -187,3 +187,33 @@ class AIChatSessionId(EntityId):
     @classmethod
     def generate(cls) -> "AIChatSessionId":
         return cls(0)  # Database assigns real ID
+
+
+@dataclass(frozen=True)
+class BatchJobId(EntityId):
+    """Strongly-typed batch job identifier."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("BatchJobId must be non-negative")
+
+    @classmethod
+    def generate(cls) -> "BatchJobId":
+        return cls(0)  # Database assigns real ID
+
+
+@dataclass(frozen=True)
+class BatchItemId(EntityId):
+    """Strongly-typed batch item identifier."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("BatchItemId must be non-negative")
+
+    @classmethod
+    def generate(cls) -> "BatchItemId":
+        return cls(0)  # Database assigns real ID
