@@ -58,7 +58,6 @@ class CreateBookUseCase:
             description=book_data.description,
             language=book_data.language,
             page_count=book_data.page_count,
-            cover=book_data.cover,
         )
 
         # Save book

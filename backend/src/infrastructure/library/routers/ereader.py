@@ -175,13 +175,10 @@ async def upload_book_cover(
         HTTPException: 404 if book is not found, or if upload fails
     """
     try:
-        cover_url = await use_case.upload_cover_by_client_book_id(
-            client_book_id, cover, current_user.id.value
-        )
+        await use_case.upload_cover_by_client_book_id(client_book_id, cover, current_user.id.value)
         return CoverUploadResponse(
             success=True,
             message="Cover uploaded successfully",
-            cover_url=cover_url,
         )
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers

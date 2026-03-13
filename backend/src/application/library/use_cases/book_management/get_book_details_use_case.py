@@ -5,6 +5,7 @@ import logging
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
+from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.application.library.use_cases.book_tag_associations.get_book_tags_use_case import (
     GetBookTagsUseCase,
 )
@@ -48,6 +49,7 @@ class GetBookDetailsUseCase:
         highlight_repository: HighlightRepositoryProtocol,
         highlight_tag_repository: HighlightTagRepositoryProtocol,
         flashcard_repository: FlashcardRepositoryProtocol,
+        file_repository: FileRepositoryProtocol,
         get_book_tags_use_case: GetBookTagsUseCase,
         highlight_tag_use_case: GetHighlightTagsForBookUseCase,
         highlight_grouping_service: HighlightGroupingService,
@@ -61,6 +63,7 @@ class GetBookDetailsUseCase:
         self.highlight_repository = highlight_repository
         self.highlight_tag_repository = highlight_tag_repository
         self.flashcard_repository = flashcard_repository
+        self.file_repository = file_repository
         self.get_book_tags_use_case = get_book_tags_use_case
         self.highlight_tag_use_case = highlight_tag_use_case
         self.highlight_grouping_service = highlight_grouping_service
@@ -170,6 +173,9 @@ class GetBookDetailsUseCase:
                     resolved = self.highlight_style_resolver.resolve(style, all_styles)
                     labels[style.id.value] = resolved
 
+        # Check if cover file exists
+        has_cover = await self.file_repository.find_cover(book_id_vo) is not None
+
         # Return domain aggregation
         return BookDetailsAggregation(
             book=book,
@@ -178,6 +184,7 @@ class GetBookDetailsUseCase:
             highlight_tag_groups=highlight_tag_groups,
             bookmarks=bookmarks,
             chapters_with_highlights=merged,
+            has_cover=has_cover,
             book_flashcards=book_flashcards,
             reading_position=reading_position,
             labels=labels,

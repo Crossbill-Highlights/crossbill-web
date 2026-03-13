@@ -111,6 +111,7 @@ class LibraryContainer(containers.DeclarativeContainer):
         highlight_repository=highlight_repository,
         highlight_tag_repository=highlight_tag_repository,
         flashcard_repository=flashcard_repository,
+        file_repository=file_repository,
         get_book_tags_use_case=get_book_tags_use_case,
         highlight_tag_use_case=get_highlight_tags_for_book_use_case,
         highlight_grouping_service=highlight_grouping_service,
@@ -123,6 +124,7 @@ class LibraryContainer(containers.DeclarativeContainer):
         book_repository=book_repository,
         highlight_repository=highlight_repository,
         flashcard_repository=flashcard_repository,
+        file_repository=file_repository,
         replace_book_tags_use_case=replace_book_tags_use_case,
     )
     delete_book_use_case = providers.Factory(
@@ -135,10 +137,12 @@ class LibraryContainer(containers.DeclarativeContainer):
     get_books_with_counts_use_case = providers.Factory(
         GetBooksWithCountsUseCase,
         book_repository=book_repository,
+        file_repository=file_repository,
     )
     get_recently_viewed_books_use_case = providers.Factory(
         GetRecentlyViewedBooksUseCase,
         book_repository=book_repository,
+        file_repository=file_repository,
     )
     get_ereader_metadata_use_case = providers.Factory(
         GetEreaderMetadataUseCase,

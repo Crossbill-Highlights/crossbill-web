@@ -4,6 +4,7 @@ import logging
 
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
+from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.application.library.use_cases.book_tag_associations.replace_book_tags_use_case import (
     ReplaceBookTagsUseCase,
 )
@@ -25,16 +26,18 @@ class UpdateBookUseCase:
         book_repository: BookRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
         flashcard_repository: FlashcardRepositoryProtocol,
+        file_repository: FileRepositoryProtocol,
         replace_book_tags_use_case: ReplaceBookTagsUseCase,
     ) -> None:
         self.book_repository = book_repository
         self.highlight_repository = highlight_repository
         self.flashcard_repository = flashcard_repository
+        self.file_repository = file_repository
         self.replace_book_tags_use_case = replace_book_tags_use_case
 
     async def update_book(
         self, book_id: int, update_data: BookUpdateRequest, user_id: int
-    ) -> tuple[Book, int, int, list[Tag]]:
+    ) -> tuple[Book, int, int, list[Tag], bool]:
         """
         Update book information.
 
@@ -69,7 +72,10 @@ class UpdateBookUseCase:
         highlight_count = await self.highlight_repository.count_by_book(book_id_vo, user_id_vo)
         flashcard_count = await self.flashcard_repository.count_by_book(book_id_vo, user_id_vo)
 
+        # Check if cover file exists
+        has_cover = await self.file_repository.find_cover(book_id_vo) is not None
+
         logger.info(f"Successfully updated book {book_id}")
 
         # Return domain entities
-        return book, highlight_count, flashcard_count, tags
+        return book, highlight_count, flashcard_count, tags, has_cover

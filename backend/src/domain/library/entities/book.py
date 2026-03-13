@@ -33,7 +33,6 @@ class Book(Entity[BookId]):
     description: str | None = None
     language: str | None = None
     page_count: int | None = None
-    cover: str | None = None
     file_path: str | None = None
     file_type: str | None = None
     last_viewed: datetime | None = None
@@ -56,10 +55,6 @@ class Book(Entity[BookId]):
     def mark_as_viewed(self) -> None:
         """Update last viewed timestamp to now."""
         self.last_viewed = datetime.now(UTC)
-
-    def update_cover(self, cover_url: str) -> None:
-        """Update book cover URL."""
-        self.cover = cover_url
 
     def update_end_position(self, position: Position) -> None:
         """Update the book's end position (total document length)."""
@@ -84,7 +79,6 @@ class Book(Entity[BookId]):
         description: str | None = None,
         language: str | None = None,
         page_count: int | None = None,
-        cover: str | None = None,
         file_path: str | None = None,
         file_type: str | None = None,
         end_position: Position | None = None,
@@ -101,7 +95,6 @@ class Book(Entity[BookId]):
             description=description,
             language=language,
             page_count=page_count,
-            cover=cover,
             file_path=file_path,
             file_type=file_type,
             created_at=now,
@@ -124,7 +117,6 @@ class Book(Entity[BookId]):
         description: str | None = None,
         language: str | None = None,
         page_count: int | None = None,
-        cover: str | None = None,
         file_path: str | None = None,
         file_type: str | None = None,
         last_viewed: datetime | None = None,
@@ -141,7 +133,6 @@ class Book(Entity[BookId]):
             description=description,
             language=language,
             page_count=page_count,
-            cover=cover,
             file_path=file_path,
             file_type=file_type,
             created_at=created_at,

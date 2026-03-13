@@ -40,7 +40,8 @@ export const BookCard = ({ book }: BookCardProps) => {
           {/* Book cover with highlight count overlay */}
           <Box sx={{ position: 'relative', width: 'fit-content' }}>
             <BookCover
-              coverPath={book.cover}
+              bookId={book.id}
+              hasCover={book.has_cover}
               title={book.title}
               width={150}
               height={220}
