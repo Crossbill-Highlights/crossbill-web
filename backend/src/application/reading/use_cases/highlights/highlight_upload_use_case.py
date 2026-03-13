@@ -126,7 +126,7 @@ class HighlightUploadUseCase:
         # Build position index if EPUB
         position_index = None
         if book.file_type == "epub":
-            epub_path = self.file_repository.find_epub(book.id)
+            epub_path = await self.file_repository.find_epub(book.id)
             if epub_path:
                 position_index = self.position_index_service.build_position_index(epub_path)
 
