@@ -88,7 +88,7 @@ class BookCoverUseCase:
         if file_type not in {"jpeg", "png", "webp"}:
             raise ValidationError("Invalid image file")
 
-        self.file_repository.save_cover(book_id_vo, content)
+        await self.file_repository.save_cover(book_id_vo, content)
 
         # TODO: Do we need to save the cover image api url to the database? Frontend could infer the path by book id...?
         # Update book's cover field in database using domain method
@@ -155,7 +155,7 @@ class BookCoverUseCase:
             raise BookNotFoundError(book_id)
 
         # Find cover file
-        cover_path = self.file_repository.find_cover(book_id_vo)
+        cover_path = await self.file_repository.find_cover(book_id_vo)
         if not cover_path:
             raise HTTPException(status_code=404, detail="Cover not found")
 

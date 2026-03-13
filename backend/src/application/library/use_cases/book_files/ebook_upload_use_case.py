@@ -123,7 +123,7 @@ class EbookUploadUseCase:
         if not self.epub_toc_parser.validate_epub(content):
             raise InvalidEbookError("EPUB structure validation failed", ebook_type="EPUB")
 
-        epub_path = self.file_repository.save_epub(book.id, content, book.title)
+        epub_path = await self.file_repository.save_epub(book.id, content, book.title)
         book.update_file(epub_path.name, "epub")
         await self.book_repository.save(book)
 

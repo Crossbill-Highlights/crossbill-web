@@ -30,10 +30,13 @@ class TestCreateQuizSession:
         "src.infrastructure.library.services.epub_text_extraction_service"
         ".EpubTextExtractionService.extract_chapter_text"
     )
-    @patch("src.infrastructure.library.repositories.file_repository.FileRepository.find_epub")
+    @patch(
+        "src.infrastructure.library.repositories.file_repository.FileRepository.find_epub",
+        new_callable=AsyncMock,
+    )
     async def test_create_quiz_session_success(
         self,
-        mock_find_epub: MagicMock,
+        mock_find_epub: AsyncMock,
         mock_extract: MagicMock,
         mock_start_quiz: AsyncMock,
         mock_ai_enabled: MagicMock,

@@ -66,7 +66,7 @@ class StartQuizSessionUseCase:
                 chapter.book_id.value, message="EPUB file not found for this book"
             )
 
-        epub_path = self.file_repo.find_epub(book.id)
+        epub_path = await self.file_repo.find_epub(book.id)
         if not epub_path or not epub_path.exists():
             raise BookNotFoundError(chapter.book_id.value, message="EPUB file not found on disk")
 

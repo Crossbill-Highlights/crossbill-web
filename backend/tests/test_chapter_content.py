@@ -1,6 +1,6 @@
 """Tests for chapter content endpoint."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -58,7 +58,8 @@ class TestGetChapterContent:
 
         with (
             patch(
-                "src.infrastructure.library.repositories.file_repository.FileRepository.find_epub"
+                "src.infrastructure.library.repositories.file_repository.FileRepository.find_epub",
+                new_callable=AsyncMock,
             ) as mock_find_epub,
             patch(
                 "src.infrastructure.library.services.epub_text_extraction_service."
