@@ -35,7 +35,7 @@ async def get_highlight_flashcard_suggestions(
     highlight_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetFlashcardSuggestionsUseCase = Depends(
-        inject_use_case(container.get_flashcard_suggestions_use_case)
+        inject_use_case(container.learning.get_flashcard_suggestions_use_case)
     ),
 ) -> HighlightFlashcardSuggestionsResponse:
     """

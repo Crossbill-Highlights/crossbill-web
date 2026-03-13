@@ -32,7 +32,7 @@ async def get_book_highlight_labels(
     book_id: int,
     current_user: User = Depends(get_current_user),
     use_case: GetBookHighlightLabelsUseCase = Depends(
-        inject_use_case(container.get_book_highlight_labels_use_case)
+        inject_use_case(container.reading.get_book_highlight_labels_use_case)
     ),
 ) -> list[HighlightLabelInBook]:
     """Get all highlight labels for a book with resolved labels."""
@@ -57,7 +57,7 @@ async def update_highlight_label(
     body: HighlightLabelUpdate,
     current_user: User = Depends(get_current_user),
     use_case: UpdateHighlightLabelUseCase = Depends(
-        inject_use_case(container.update_highlight_label_use_case)
+        inject_use_case(container.reading.update_highlight_label_use_case)
     ),
 ) -> HighlightLabelInBook:
     """Update label and/or ui_color on a highlight style."""
@@ -82,7 +82,7 @@ async def update_highlight_label(
 async def get_global_highlight_labels(
     current_user: User = Depends(get_current_user),
     use_case: GetGlobalHighlightLabelsUseCase = Depends(
-        inject_use_case(container.get_global_highlight_labels_use_case)
+        inject_use_case(container.reading.get_global_highlight_labels_use_case)
     ),
 ) -> list[HighlightLabelInBook]:
     """Get all global default highlight labels."""
@@ -106,7 +106,7 @@ async def create_global_highlight_label(
     body: HighlightLabelCreate,
     current_user: User = Depends(get_current_user),
     use_case: CreateGlobalHighlightLabelUseCase = Depends(
-        inject_use_case(container.create_global_highlight_label_use_case)
+        inject_use_case(container.reading.create_global_highlight_label_use_case)
     ),
 ) -> HighlightLabelInBook:
     """Create a global default highlight label."""

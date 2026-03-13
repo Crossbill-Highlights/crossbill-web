@@ -110,7 +110,7 @@ async def upload_highlights(
     request: HighlightUploadRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: HighlightUploadUseCase = Depends(
-        inject_use_case(container.highlight_upload_use_case)
+        inject_use_case(container.reading.highlight_upload_use_case)
     ),
 ) -> HighlightUploadResponse:
     """
@@ -181,7 +181,7 @@ async def update_highlight_note(
     request: HighlightNoteUpdate,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: HighlightUpdateNoteUseCase = Depends(
-        inject_use_case(container.highlight_update_note_use_case)
+        inject_use_case(container.reading.highlight_update_note_use_case)
     ),
 ) -> HighlightNoteUpdateResponse:
     """
@@ -279,10 +279,10 @@ async def create_or_update_tag_group(
     request: HighlightTagGroupCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     create_use_case: CreateHighlightTagGroupUseCase = Depends(
-        inject_use_case(container.create_highlight_tag_group_use_case)
+        inject_use_case(container.reading.create_highlight_tag_group_use_case)
     ),
     update_use_case: UpdateHighlightTagGroupUseCase = Depends(
-        inject_use_case(container.update_highlight_tag_group_use_case)
+        inject_use_case(container.reading.update_highlight_tag_group_use_case)
     ),
 ) -> HighlightTagGroup:
     """
@@ -358,7 +358,7 @@ async def delete_tag_group(
     tag_group_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: DeleteHighlightTagGroupUseCase = Depends(
-        inject_use_case(container.delete_highlight_tag_group_use_case)
+        inject_use_case(container.reading.delete_highlight_tag_group_use_case)
     ),
 ) -> None:
     """
@@ -397,7 +397,7 @@ async def create_flashcard_for_highlight(
     request: FlashcardCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: CreateFlashcardForHighlightUseCase = Depends(
-        inject_use_case(container.create_flashcard_for_highlight_use_case)
+        inject_use_case(container.learning.create_flashcard_for_highlight_use_case)
     ),
 ) -> FlashcardCreateResponse:
     """
@@ -557,7 +557,7 @@ async def search_book_highlights(
         description="Text to search for in highlights",
     ),
     use_case: HighlightSearchUseCase = Depends(
-        inject_use_case(container.highlight_search_use_case)
+        inject_use_case(container.reading.highlight_search_use_case)
     ),
 ) -> BookHighlightSearchResponse:
     """
@@ -599,7 +599,7 @@ async def delete_highlights(
     request: HighlightDeleteRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: HighlightDeleteUseCase = Depends(
-        inject_use_case(container.highlight_delete_use_case)
+        inject_use_case(container.reading.highlight_delete_use_case)
     ),
 ) -> HighlightDeleteResponse:
     """
@@ -653,7 +653,7 @@ async def get_highlight_tags(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetHighlightTagsForBookUseCase = Depends(
-        inject_use_case(container.get_highlight_tags_for_book_use_case)
+        inject_use_case(container.reading.get_highlight_tags_for_book_use_case)
     ),
 ) -> HighlightTagsResponse:
     """
@@ -701,7 +701,7 @@ async def create_highlight_tag(
     request: HighlightTagCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: CreateHighlightTagUseCase = Depends(
-        inject_use_case(container.create_highlight_tag_use_case)
+        inject_use_case(container.reading.create_highlight_tag_use_case)
     ),
 ) -> HighlightTag:
     """
@@ -750,7 +750,7 @@ async def delete_highlight_tag(
     tag_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: DeleteHighlightTagUseCase = Depends(
-        inject_use_case(container.delete_highlight_tag_use_case)
+        inject_use_case(container.reading.delete_highlight_tag_use_case)
     ),
 ) -> None:
     """
@@ -806,10 +806,10 @@ async def update_highlight_tag(
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
     tag_use_case: UpdateHighlightTagNameUseCase = Depends(
-        inject_use_case(container.update_highlight_tag_name_use_case)
+        inject_use_case(container.reading.update_highlight_tag_name_use_case)
     ),
     group_use_case: UpdateTagGroupAssociationUseCase = Depends(
-        inject_use_case(container.update_tag_group_association_use_case)
+        inject_use_case(container.reading.update_tag_group_association_use_case)
     ),
 ) -> HighlightTag:
     """
@@ -901,10 +901,10 @@ async def add_tag_to_highlight(
     request: HighlightTagAssociationRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     add_by_id_use_case: AddTagToHighlightByIdUseCase = Depends(
-        inject_use_case(container.add_tag_to_highlight_by_id_use_case)
+        inject_use_case(container.reading.add_tag_to_highlight_by_id_use_case)
     ),
     add_by_name_use_case: AddTagToHighlightByNameUseCase = Depends(
-        inject_use_case(container.add_tag_to_highlight_by_name_use_case)
+        inject_use_case(container.reading.add_tag_to_highlight_by_name_use_case)
     ),
 ) -> Highlight:
     """
@@ -1016,7 +1016,7 @@ async def remove_tag_from_highlight(
     tag_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: RemoveTagFromHighlightUseCase = Depends(
-        inject_use_case(container.remove_tag_from_highlight_use_case)
+        inject_use_case(container.reading.remove_tag_from_highlight_use_case)
     ),
 ) -> Highlight:
     """

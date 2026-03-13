@@ -32,7 +32,9 @@ router = APIRouter(prefix="/chapters", tags=["chapters"])
 async def get_chapter_content(
     chapter_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: ChapterContentUseCase = Depends(inject_use_case(container.chapter_content_use_case)),
+    use_case: ChapterContentUseCase = Depends(
+        inject_use_case(container.reading.chapter_content_use_case)
+    ),
 ) -> ChapterContentResponse:
     """Get the full text content of a chapter from the EPUB file."""
     try:

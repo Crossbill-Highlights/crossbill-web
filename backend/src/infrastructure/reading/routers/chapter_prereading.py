@@ -41,7 +41,7 @@ async def get_chapter_prereading(
     chapter_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetChapterPrereadingUseCase = Depends(
-        inject_use_case(container.get_chapter_prereading_use_case)
+        inject_use_case(container.reading.get_chapter_prereading_use_case)
     ),
 ) -> ChapterPrereadingResponse | None:
     """Get existing prereading content for a chapter."""
@@ -75,7 +75,7 @@ async def generate_chapter_prereading(
     chapter_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GenerateChapterPrereadingUseCase = Depends(
-        inject_use_case(container.generate_chapter_prereading_use_case)
+        inject_use_case(container.reading.generate_chapter_prereading_use_case)
     ),
 ) -> ChapterPrereadingResponse:
     """Generate prereading content for a chapter."""
@@ -115,7 +115,7 @@ async def get_book_prereading(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetBookPrereadingUseCase = Depends(
-        inject_use_case(container.get_book_prereading_use_case)
+        inject_use_case(container.reading.get_book_prereading_use_case)
     ),
 ) -> BookPrereadingResponse:
     """Get all prereading content for chapters in a book."""

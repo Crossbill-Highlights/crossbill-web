@@ -39,9 +39,11 @@ router = APIRouter(prefix="/ereader", tags=["ereader"])
 async def create_book(
     book_data: BookCreate,
     current_user: Annotated[User, Depends(get_current_user)],
-    create_use_case: CreateBookUseCase = Depends(inject_use_case(container.create_book_use_case)),
+    create_use_case: CreateBookUseCase = Depends(
+        inject_use_case(container.library.create_book_use_case)
+    ),
     metadata_use_case: GetEreaderMetadataUseCase = Depends(
-        inject_use_case(container.get_ereader_metadata_use_case)
+        inject_use_case(container.library.get_ereader_metadata_use_case)
     ),
 ) -> EreaderBookMetadata:
     """
@@ -98,7 +100,7 @@ async def get_book_metadata(
     client_book_id: str,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetEreaderMetadataUseCase = Depends(
-        inject_use_case(container.get_ereader_metadata_use_case)
+        inject_use_case(container.library.get_ereader_metadata_use_case)
     ),
 ) -> EreaderBookMetadata:
     """
@@ -153,7 +155,7 @@ async def upload_book_cover(
     client_book_id: str,
     cover: Annotated[UploadFile, File(...)],
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookCoverUseCase = Depends(inject_use_case(container.book_cover_use_case)),
+    use_case: BookCoverUseCase = Depends(inject_use_case(container.library.book_cover_use_case)),
 ) -> CoverUploadResponse:
     """
     Upload a book cover image using client_book_id.
@@ -212,7 +214,9 @@ async def upload_book_epub(
     client_book_id: str,
     epub: Annotated[UploadFile, File(...)],
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: EbookUploadUseCase = Depends(inject_use_case(container.ebook_upload_use_case)),
+    use_case: EbookUploadUseCase = Depends(
+        inject_use_case(container.library.ebook_upload_use_case)
+    ),
 ) -> EpubUploadResponse:
     """
     Upload an ebook file (EPUB) for a book using client_book_id.
