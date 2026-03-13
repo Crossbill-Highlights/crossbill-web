@@ -1,7 +1,6 @@
 """Use case for ebook upload operations."""
 
 import logging
-import re
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
@@ -20,32 +19,6 @@ from src.domain.reading.exceptions import BookNotFoundError
 from src.exceptions import InvalidEbookError
 
 logger = logging.getLogger(__name__)
-
-
-def _sanitize_filename(text: str) -> str:
-    """
-    Sanitize text for use in filename.
-
-    Removes/replaces characters that are invalid in filenames.
-    Limits length to prevent overly long filenames.
-
-    Args:
-        text: Text to sanitize
-
-    Returns:
-        Sanitized text safe for filenames
-    """
-    # Remove invalid filename characters
-    sanitized = re.sub(r'[<>:"/\\|?*]', "", text)
-    # Replace spaces and other whitespace with underscores
-    sanitized = re.sub(r"\s+", "_", sanitized)
-    # Remove leading/trailing underscores and dots
-    sanitized = sanitized.strip("_.")
-    # Limit length (leave room for book_id and extension)
-    max_length = 100
-    if len(sanitized) > max_length:
-        sanitized = sanitized[:max_length]
-    return sanitized
 
 
 class EbookUploadUseCase:
@@ -150,23 +123,8 @@ class EbookUploadUseCase:
         if not self.epub_toc_parser.validate_epub(content):
             raise InvalidEbookError("EPUB structure validation failed", ebook_type="EPUB")
 
-        # TODO: These likely belong to the repository level
-        # Generate filename: sanitized_title_bookid.epub
-        sanitized_title = _sanitize_filename(book.title)
-        epub_filename = f"{sanitized_title}_{book.id.value}.epub"
-
-        # Check if book already has an epub file for deletion
-        old_file_path = None
-        if book.file_path and book.file_type == "epub":
-            old_file_path = book.file_path
-
-        # Delete old epub file if it exists and has different name
-        if old_file_path and old_file_path != epub_filename:
-            self.file_repository.delete_epub(book.id)
-
-        # Save new epub file
-        epub_path = self.file_repository.save_epub(book.id, content, epub_filename)
-        book.update_file(epub_filename, "epub")
+        epub_path = self.file_repository.save_epub(book.id, content, book.title)
+        book.update_file(epub_path.name, "epub")
         await self.book_repository.save(book)
 
         # Build position index from EPUB DOM
@@ -203,7 +161,7 @@ class EbookUploadUseCase:
         # Backfill positions for existing entities
         await self._backfill_positions(book.id, user_id, position_index)
 
-        return epub_filename, str(epub_path)
+        return epub_path.name, str(epub_path)
 
     async def _backfill_positions(
         self,

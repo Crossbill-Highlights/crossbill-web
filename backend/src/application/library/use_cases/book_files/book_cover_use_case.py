@@ -88,9 +88,7 @@ class BookCoverUseCase:
         if file_type not in {"jpeg", "png", "webp"}:
             raise ValidationError("Invalid image file")
 
-        # TODO: Do not set id here. Set it in the repository implementation
-        cover_filename = f"{book_id}.jpg"
-        self.file_repository.save_cover(book_id_vo, content, cover_filename)
+        self.file_repository.save_cover(book_id_vo, content)
 
         # TODO: Do we need to save the cover image api url to the database? Frontend could infer the path by book id...?
         # Update book's cover field in database using domain method

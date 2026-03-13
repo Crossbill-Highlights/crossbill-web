@@ -1,6 +1,7 @@
 """Repository for file I/O operations."""
 
 import logging
+import re
 from pathlib import Path
 
 from src.config import BOOK_COVERS_DIR, EPUBS_DIR, PDFS_DIR  # type: ignore[attr-defined]
@@ -9,11 +10,37 @@ from src.domain.common.value_objects.ids import BookId
 logger = logging.getLogger(__name__)
 
 
+def _sanitize_title(text: str) -> str:
+    """
+    Sanitize text for use in filename.
+
+    Removes/replaces characters that are invalid in filenames.
+    Limits length to prevent overly long filenames.
+
+    Args:
+        text: Text to sanitize
+
+    Returns:
+        Sanitized text safe for filenames
+    """
+    # Remove invalid filename characters
+    sanitized = re.sub(r'[<>:"/\\|?*]', "", text)
+    # Replace spaces and other whitespace with underscores
+    sanitized = re.sub(r"\s+", "_", sanitized)
+    # Remove leading/trailing underscores and dots
+    sanitized = sanitized.strip("_.")
+    # Limit length (leave room for book_id and extension)
+    max_length = 100
+    if len(sanitized) > max_length:
+        sanitized = sanitized[:max_length]
+    return sanitized
+
+
+# TODO: Async - await
 class FileRepository:
     """Repository for managing book files (EPUB, PDF, covers)."""
 
-    # TODO: BOOK ID PITÄISI SISÄLLYTTÄÄ TIEDOSTOPOLKUUN JOTTA DELETE TOIMISI!!!
-    def save_epub(self, book_id: BookId, content: bytes, filename: str) -> Path:
+    def save_epub(self, book_id: BookId, content: bytes, title: str) -> Path:
         """
         Save an EPUB file to disk.
 
@@ -26,12 +53,17 @@ class FileRepository:
             Path to the saved file
         """
         EPUBS_DIR.mkdir(parents=True, exist_ok=True)
-        file_path = EPUBS_DIR / filename
+
+        # Delete possible existing epub file before saving the new one
+        self.delete_epub(book_id)
+
+        sanitized_title = _sanitize_title(title)
+        file_path = EPUBS_DIR / f"{sanitized_title}_{book_id.value}.epub"
         file_path.write_bytes(content)
         logger.info(f"Saved EPUB file: {file_path}")
         return file_path
 
-    def save_pdf(self, book_id: BookId, content: bytes, filename: str) -> Path:
+    def save_pdf(self, book_id: BookId, content: bytes, title: str) -> Path:
         """
         Save a PDF file to disk.
 
@@ -44,12 +76,13 @@ class FileRepository:
             Path to the saved file
         """
         PDFS_DIR.mkdir(parents=True, exist_ok=True)
-        file_path = PDFS_DIR / filename
+        sanitized_title = _sanitize_title(title)
+        file_path = PDFS_DIR / f"{sanitized_title}_{book_id.value}.epub"
         file_path.write_bytes(content)
         logger.info(f"Saved PDF file: {file_path}")
         return file_path
 
-    def save_cover(self, book_id: BookId, content: bytes, filename: str) -> Path:
+    def save_cover(self, book_id: BookId, content: bytes) -> Path:
         """
         Save a cover image to disk.
 
@@ -62,6 +95,7 @@ class FileRepository:
             Path to the saved file
         """
         BOOK_COVERS_DIR.mkdir(parents=True, exist_ok=True)
+        filename = f"{book_id.value}.jpg"
         file_path = BOOK_COVERS_DIR / filename
         file_path.write_bytes(content)
         logger.info(f"Saved cover file: {file_path}")
