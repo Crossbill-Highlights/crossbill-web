@@ -49,21 +49,17 @@ class BookCoverUseCase:
         self.book_repository = book_repository
         self.file_repository = file_repository
 
-    async def upload_cover(self, book_id: int, cover: UploadFile, user_id: int) -> str:
+    async def upload_cover(self, book_id: int, cover: UploadFile, user_id: int) -> None:
         """
         Upload a book cover image.
 
         This method accepts an uploaded image file and saves it as the book's cover.
-        The cover is saved to the covers directory with the filename {book_id}.jpg
-        and the book's cover field is updated in the database.
+        The cover is saved to the covers directory with the filename {book_id}.jpg.
 
         Args:
             book_id: ID of the book
             cover: Uploaded image file (JPEG, PNG, or WebP)
             user_id: ID of the user uploading the cover
-
-        Returns:
-            Cover URL path
 
         Raises:
             BookNotFoundError: If book is not found
@@ -90,17 +86,9 @@ class BookCoverUseCase:
 
         await self.file_repository.save_cover(book_id_vo, content)
 
-        # TODO: Do we need to save the cover image api url to the database? Frontend could infer the path by book id...?
-        # Update book's cover field in database using domain method
-        cover_url = f"/api/v1/books/{book_id}/cover"
-        book.update_cover(cover_url)
-        await self.book_repository.save(book)
-
-        return cover_url
-
     async def upload_cover_by_client_book_id(
         self, client_book_id: str, cover: UploadFile, user_id: int
-    ) -> str:
+    ) -> None:
         """
         Upload a book cover image using client_book_id.
 
@@ -111,9 +99,6 @@ class BookCoverUseCase:
             client_book_id: The client-provided book identifier
             cover: Uploaded image file (JPEG, PNG, or WebP)
             user_id: ID of the user uploading the cover
-
-        Returns:
-            Cover URL path
 
         Raises:
             BookNotFoundError: If book is not found for the given client_book_id
@@ -128,7 +113,7 @@ class BookCoverUseCase:
             )
 
         # Delegate to the existing upload_cover method using book.id
-        return await self.upload_cover(book.id.value, cover, user_id)
+        await self.upload_cover(book.id.value, cover, user_id)
 
     async def get_cover_path(self, book_id: int, user_id: int) -> Path:
         """

@@ -13,6 +13,4 @@ export interface CoverUploadResponse {
   success: boolean;
   /** Response message */
   message: string;
-  /** URL path to the uploaded cover image */
-  cover_url: string;
 }

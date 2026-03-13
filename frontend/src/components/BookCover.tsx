@@ -3,7 +3,8 @@ import { BookCoverIcon } from '@/theme/Icons.tsx';
 import { Box, CircularProgress, type SxProps, type Theme, useTheme } from '@mui/material';
 
 export interface BookCoverProps {
-  coverPath: string | null | undefined;
+  bookId: number;
+  hasCover: boolean;
   title: string;
   /**
    * Width of the cover container
@@ -25,7 +26,8 @@ export interface BookCoverProps {
 }
 
 export const BookCover = ({
-  coverPath,
+  bookId,
+  hasCover,
   title,
   width = '100%',
   height = 200,
@@ -33,19 +35,14 @@ export const BookCover = ({
   sx,
 }: BookCoverProps) => {
   const theme = useTheme();
-  // Get the API base URL for cover images
-  // Use empty string in production for same-origin requests
   const apiUrl =
     import.meta.env.VITE_API_URL !== undefined
       ? import.meta.env.VITE_API_URL
       : 'http://localhost:8000';
 
-  // For authenticated URLs, fetch as blob with auth headers
-  const { objectUrl, loading, error } = useAuthenticatedImage(
-    coverPath ? `${apiUrl}${coverPath}` : null
-  );
+  const imageUrl = hasCover ? `${apiUrl}/api/v1/books/${bookId}/cover` : null;
+  const { objectUrl, loading, error } = useAuthenticatedImage(imageUrl);
 
-  // Determine final URL to use
   const coverUrl = objectUrl;
 
   const placeholderBackground = theme.palette.action.hover;
