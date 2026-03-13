@@ -45,7 +45,7 @@ async def upload_reading_sessions(
     request: ReadingSessionUploadRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: ReadingSessionUploadUseCase = Depends(
-        inject_use_case(container.reading_session_upload_use_case)
+        inject_use_case(container.reading.reading_session_upload_use_case)
     ),
 ) -> ReadingSessionUploadResponse:
     """
@@ -118,7 +118,7 @@ async def get_book_reading_sessions(
     limit: int = Query(30, ge=1, le=1000, description="Maximum sessions to return"),
     offset: int = Query(0, ge=0, description="Number of sessions to skip"),
     use_case: ReadingSessionQueryUseCase = Depends(
-        inject_use_case(container.reading_session_query_use_case)
+        inject_use_case(container.reading.reading_session_query_use_case)
     ),
 ) -> ReadingSessionsResponse:
     """
@@ -235,7 +235,7 @@ async def get_reading_session_ai_summary(
     reading_session_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: ReadingSessionAISummaryUseCase = Depends(
-        inject_use_case(container.reading_session_ai_summary_use_case)
+        inject_use_case(container.reading.reading_session_ai_summary_use_case)
     ),
 ) -> ReadingSessionAISummaryResponse:
     """

@@ -34,7 +34,9 @@ async def create_bookmark(
     book_id: int,
     request: BookmarkCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: CreateBookmarkUseCase = Depends(inject_use_case(container.create_bookmark_use_case)),
+    use_case: CreateBookmarkUseCase = Depends(
+        inject_use_case(container.reading.create_bookmark_use_case)
+    ),
 ) -> Bookmark:
     """
     Create a bookmark for a highlight in a book.
@@ -86,7 +88,9 @@ async def delete_bookmark(
     book_id: int,
     bookmark_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: DeleteBookmarkUseCase = Depends(inject_use_case(container.delete_bookmark_use_case)),
+    use_case: DeleteBookmarkUseCase = Depends(
+        inject_use_case(container.reading.delete_bookmark_use_case)
+    ),
 ) -> None:
     """
     Delete a bookmark from a book.
@@ -126,7 +130,9 @@ async def delete_bookmark(
 async def get_bookmarks(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: GetBookmarksUseCase = Depends(inject_use_case(container.get_bookmarks_use_case)),
+    use_case: GetBookmarksUseCase = Depends(
+        inject_use_case(container.reading.get_bookmarks_use_case)
+    ),
 ) -> BookmarksResponse:
     """
     Get all bookmarks for a book.

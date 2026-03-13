@@ -231,7 +231,7 @@ def _build_book_details_schema(
 async def get_books(
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetBooksWithCountsUseCase = Depends(
-        inject_use_case(container.get_books_with_counts_use_case)
+        inject_use_case(container.library.get_books_with_counts_use_case)
     ),
     offset: int = Query(0, ge=0, description="Number of books to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of books to return"),
@@ -301,7 +301,7 @@ async def get_books(
 async def get_recently_viewed_books(
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetRecentlyViewedBooksUseCase = Depends(
-        inject_use_case(container.get_recently_viewed_books_use_case)
+        inject_use_case(container.library.get_recently_viewed_books_use_case)
     ),
     limit: int = Query(10, ge=1, le=50, description="Maximum number of books to return"),
 ) -> RecentlyViewedBooksResponse:
@@ -362,7 +362,9 @@ async def get_recently_viewed_books(
 async def get_book_details(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: GetBookDetailsUseCase = Depends(inject_use_case(container.get_book_details_use_case)),
+    use_case: GetBookDetailsUseCase = Depends(
+        inject_use_case(container.library.get_book_details_use_case)
+    ),
 ) -> BookDetails:
     """
     Get detailed information about a book including its chapters and highlights.
@@ -403,7 +405,7 @@ async def update_book(
     book_id: int,
     request: BookUpdateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: UpdateBookUseCase = Depends(inject_use_case(container.update_book_use_case)),
+    use_case: UpdateBookUseCase = Depends(inject_use_case(container.library.update_book_use_case)),
 ) -> BookWithHighlightCount:
     """
     Update book information.
@@ -466,7 +468,7 @@ async def update_book(
 async def delete_book(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: DeleteBookUseCase = Depends(inject_use_case(container.delete_book_use_case)),
+    use_case: DeleteBookUseCase = Depends(inject_use_case(container.library.delete_book_use_case)),
 ) -> None:
     """
     Delete a book and all its contents (hard delete).
@@ -502,7 +504,7 @@ async def delete_book(
 async def get_book_cover(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookCoverUseCase = Depends(inject_use_case(container.book_cover_use_case)),
+    use_case: BookCoverUseCase = Depends(inject_use_case(container.library.book_cover_use_case)),
 ) -> FileResponse:
     """
     Get the cover image for a book.

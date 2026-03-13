@@ -44,7 +44,7 @@ async def create_flashcard_for_book(
     request: FlashcardCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: CreateFlashcardForBookUseCase = Depends(
-        inject_use_case(container.create_flashcard_for_book_use_case)
+        inject_use_case(container.learning.create_flashcard_for_book_use_case)
     ),
 ) -> FlashcardCreateResponse:
     """
@@ -108,7 +108,7 @@ async def get_flashcards_for_book(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetFlashcardsByBookUseCase = Depends(
-        inject_use_case(container.get_flashcards_by_book_use_case)
+        inject_use_case(container.learning.get_flashcards_by_book_use_case)
     ),
 ) -> FlashcardsWithHighlightsResponse:
     """

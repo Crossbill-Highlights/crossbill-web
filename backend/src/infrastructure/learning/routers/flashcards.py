@@ -39,7 +39,7 @@ async def update_flashcard(
     request: FlashcardUpdateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: UpdateFlashcardUseCase = Depends(
-        inject_use_case(container.update_flashcard_use_case)
+        inject_use_case(container.learning.update_flashcard_use_case)
     ),
 ) -> FlashcardUpdateResponse:
     """
@@ -98,7 +98,7 @@ async def delete_flashcard(
     flashcard_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: DeleteFlashcardUseCase = Depends(
-        inject_use_case(container.delete_flashcard_use_case)
+        inject_use_case(container.learning.delete_flashcard_use_case)
     ),
 ) -> FlashcardDeleteResponse:
     """

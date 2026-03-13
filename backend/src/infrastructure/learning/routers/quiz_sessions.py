@@ -39,7 +39,7 @@ async def create_quiz_session(
     chapter_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: StartQuizSessionUseCase = Depends(
-        inject_use_case(container.start_quiz_session_use_case)
+        inject_use_case(container.learning.start_quiz_session_use_case)
     ),
 ) -> CreateQuizSessionResponse:
     """Start a new quiz session for a chapter."""
@@ -72,7 +72,7 @@ async def send_quiz_message(
     body: SendQuizMessageRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: SendQuizMessageUseCase = Depends(
-        inject_use_case(container.send_quiz_message_use_case)
+        inject_use_case(container.learning.send_quiz_message_use_case)
     ),
 ) -> SendQuizMessageResponse:
     """Send a message to an existing quiz session."""

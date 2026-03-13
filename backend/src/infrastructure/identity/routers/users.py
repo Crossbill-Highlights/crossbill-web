@@ -38,7 +38,9 @@ async def register(
     response: Response,
     register_data: UserRegisterRequest,
     db: DatabaseSession,
-    use_case: RegisterUserUseCase = Depends(inject_use_case(container.register_user_use_case)),
+    use_case: RegisterUserUseCase = Depends(
+        inject_use_case(container.identity.register_user_use_case)
+    ),
 ) -> TokenWithRefresh:
     """
     Register a new user account.
@@ -86,7 +88,7 @@ async def update_me(
     current_user: Annotated[User, Depends(get_current_user)],
     db: DatabaseSession,
     update_data: UserUpdateRequest,
-    use_case: UpdateUserUseCase = Depends(inject_use_case(container.update_user_use_case)),
+    use_case: UpdateUserUseCase = Depends(inject_use_case(container.identity.update_user_use_case)),
 ) -> UserDetailsResponse:
     """
     Update the current user's profile.

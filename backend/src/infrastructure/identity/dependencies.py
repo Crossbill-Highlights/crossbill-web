@@ -40,7 +40,7 @@ async def get_current_user(
 
     try:
         container.db.override(db)
-        use_case = container.get_user_by_id_use_case()
+        use_case = container.identity.get_user_by_id_use_case()
         return await use_case.get_user(user_id)
     except UserNotFoundError:
         raise CredentialsException from None
