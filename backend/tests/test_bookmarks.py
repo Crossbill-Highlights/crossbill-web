@@ -19,17 +19,6 @@ DEFAULT_USER_ID = 1
 
 
 @pytest.fixture
-async def test_book(db_session: AsyncSession) -> models.Book:
-    """Create a test book with default values."""
-    return await create_test_book(
-        db_session=db_session,
-        user_id=DEFAULT_USER_ID,
-        title="Test Book",
-        author="Test Author",
-    )
-
-
-@pytest.fixture
 async def test_highlight(db_session: AsyncSession, test_book: models.Book) -> models.Highlight:
     """Create a test highlight for the test book."""
     return await create_test_highlight(
