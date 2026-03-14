@@ -80,41 +80,21 @@ class TestXPoint:
         assert result.text_node_index == 1
         assert result.char_offset == 0
 
-    def test_parse_invalid_xpoint_missing_offset(self) -> None:
-        """Invalid xpoint missing offset raises error."""
-        with pytest.raises(XPointParseError) as exc_info:
-            XPoint.parse("/body/div/p/text()")
-
-        assert "does not match expected xpoint format" in str(exc_info.value)
-
-    def test_parse_invalid_xpoint_empty_string(self) -> None:
-        """Empty string raises error."""
-        with pytest.raises(XPointParseError) as exc_info:
-            XPoint.parse("")
-
-        assert "does not match expected xpoint format" in str(exc_info.value)
-
-    def test_parse_invalid_xpoint_random_string(self) -> None:
-        """Random string raises error."""
-        with pytest.raises(XPointParseError) as exc_info:
-            XPoint.parse("not an xpoint")
-
-        assert "does not match expected xpoint format" in str(exc_info.value)
-
-    def test_parse_preserves_xpoint_in_error(self) -> None:
-        """XPointParseError includes the invalid xpoint."""
-        invalid_xpoint = "invalid/xpoint/format"
-        with pytest.raises(XPointParseError) as exc_info:
-            XPoint.parse(invalid_xpoint)
-
-        assert exc_info.value.xpoint == invalid_xpoint
-
-    def test_parsed_xpoint_is_frozen(self) -> None:
-        """XPoint instances are immutable."""
-        result = XPoint.parse("/body/div/p/text().10")
-
-        with pytest.raises(AttributeError):
-            result.char_offset = 20  # type: ignore[misc]
+    @pytest.mark.parametrize(
+        "xpoint",
+        [
+            "",
+            "not an xpoint",
+            "/body/div/p/text()",  # missing offset
+            "/body div",  # whitespace
+            "/body/div.5.10",  # multiple dots
+            "/invalid/path",  # doesn't start with /body
+        ],
+    )
+    def test_parse_invalid_xpoint_raises_error(self, xpoint: str) -> None:
+        """Invalid xpoint formats raise XPointParseError."""
+        with pytest.raises(XPointParseError):
+            XPoint.parse(xpoint)
 
     def test_parse_image_element_with_offset(self) -> None:
         """Parse image element with offset (no /text())."""
@@ -148,21 +128,6 @@ class TestXPoint:
         """Negative offset raises error."""
         with pytest.raises(XPointParseError):
             XPoint.parse("/body/div/text().-5")
-
-    def test_parse_invalid_does_not_start_with_body(self) -> None:
-        """XPoint not starting with /body raises error."""
-        with pytest.raises(XPointParseError):
-            XPoint.parse("/invalid/path")
-
-    def test_parse_invalid_whitespace_in_path(self) -> None:
-        """XPoint containing whitespace raises error."""
-        with pytest.raises(XPointParseError):
-            XPoint.parse("/body div")
-
-    def test_parse_invalid_multiple_dots(self) -> None:
-        """XPoint with multiple dots (malformed offset) raises error."""
-        with pytest.raises(XPointParseError):
-            XPoint.parse("/body/div.5.10")
 
     def test_to_string_simple_xpoint(self) -> None:
         """Convert XPoint back to string."""

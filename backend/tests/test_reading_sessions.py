@@ -386,126 +386,58 @@ class TestUploadReadingSessions:
         session = result.scalar_one_or_none()
         assert session is not None
 
-    async def test_upload_validation_failure_missing_required_field(
-        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
+    @pytest.mark.parametrize(
+        "sessions",
+        [
+            # Missing required start_time
+            [{"end_time": "2024-01-15T11:00:00Z", "start_page": 10, "end_page": 25}],
+            # Missing both position types
+            [{"start_time": "2024-01-15T10:00:00Z", "end_time": "2024-01-15T11:00:00Z"}],
+            # Invalid datetime format
+            [
+                {
+                    "start_time": "invalid-date",
+                    "end_time": "2024-01-15T11:00:00Z",
+                    "start_page": 10,
+                    "end_page": 25,
+                }
+            ],
+            # Mix of valid and invalid sessions (all-or-nothing)
+            [
+                {
+                    "start_time": "2024-01-15T10:00:00Z",
+                    "end_time": "2024-01-15T11:00:00Z",
+                    "start_page": 10,
+                    "end_page": 25,
+                },
+                {"start_time": "2024-01-16T10:00:00Z", "end_time": "2024-01-16T11:00:00Z"},
+            ],
+        ],
+        ids=[
+            "missing_required_field",
+            "missing_positions",
+            "invalid_datetime",
+            "mixed_valid_invalid",
+        ],
+    )
+    async def test_upload_invalid_sessions_returns_422(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        test_book: models.Book,
+        sessions: list[dict[str, object]],
     ) -> None:
-        """Test that validation failures return 422 error."""
+        """Test that invalid session payloads return 422 and nothing is saved."""
         response = await client.post(
             "/api/v1/reading_sessions/upload",
-            json={
-                "client_book_id": "test-client-book-id",
-                "sessions": [
-                    {
-                        # Missing required start_time field
-                        "end_time": "2024-01-15T11:00:00Z",
-                        "start_page": 10,
-                        "end_page": 25,
-                    }
-                ],
-            },
+            json={"client_book_id": "test-client-book-id", "sessions": sessions},
         )
-
-        # FastAPI validation error
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
         # Verify nothing was saved to database
         result = await db_session.execute(select(models.ReadingSession))
-        sessions = result.scalars().all()
-        assert len(sessions) == 0
-
-    async def test_upload_validation_failure_missing_positions(
-        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
-    ) -> None:
-        """Test that sessions missing both position types return 422 error."""
-        response = await client.post(
-            "/api/v1/reading_sessions/upload",
-            json={
-                "client_book_id": "test-client-book-id",
-                "sessions": [
-                    {
-                        "start_time": "2024-01-15T10:00:00Z",
-                        "end_time": "2024-01-15T11:00:00Z",
-                        # Missing both xpoint and page positions
-                    }
-                ],
-            },
-        )
-
-        # FastAPI validation error (caught by model validator)
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-        # Verify nothing was saved to database
-        result = await db_session.execute(select(models.ReadingSession))
-        sessions = result.scalars().all()
-        assert len(sessions) == 0
-
-    async def test_upload_all_or_nothing_validation(
-        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
-    ) -> None:
-        """Test that if any session is invalid, entire request fails and nothing is saved."""
-        response = await client.post(
-            "/api/v1/reading_sessions/upload",
-            json={
-                "client_book_id": "test-client-book-id",
-                "sessions": [
-                    # Valid session
-                    {
-                        "start_time": "2024-01-15T10:00:00Z",
-                        "end_time": "2024-01-15T11:00:00Z",
-                        "start_page": 10,
-                        "end_page": 25,
-                    },
-                    # Invalid session (missing positions)
-                    {
-                        "start_time": "2024-01-16T10:00:00Z",
-                        "end_time": "2024-01-16T11:00:00Z",
-                        # Missing positions
-                    },
-                    # Another valid session
-                    {
-                        "start_time": "2024-01-17T10:00:00Z",
-                        "end_time": "2024-01-17T11:00:00Z",
-                        "start_page": 26,
-                        "end_page": 40,
-                    },
-                ],
-            },
-        )
-
-        # FastAPI rejects entire request with 422 if any session is invalid
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-        # Verify nothing was saved to database (all-or-nothing)
-        result = await db_session.execute(select(models.ReadingSession))
-        sessions = result.scalars().all()
-        assert len(sessions) == 0
-
-    async def test_upload_invalid_datetime_format(
-        self, client: AsyncClient, db_session: AsyncSession, test_book: models.Book
-    ) -> None:
-        """Test that invalid datetime format returns 422 error."""
-        response = await client.post(
-            "/api/v1/reading_sessions/upload",
-            json={
-                "client_book_id": "test-client-book-id",
-                "sessions": [
-                    {
-                        "start_time": "invalid-date",
-                        "end_time": "2024-01-15T11:00:00Z",
-                        "start_page": 10,
-                        "end_page": 25,
-                    }
-                ],
-            },
-        )
-
-        # FastAPI validation error
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-        # Verify nothing was saved to database
-        result = await db_session.execute(select(models.ReadingSession))
-        sessions = result.scalars().all()
-        assert len(sessions) == 0
+        sessions_in_db = result.scalars().all()
+        assert len(sessions_in_db) == 0
 
 
 class TestGetBookReadingSessions:
