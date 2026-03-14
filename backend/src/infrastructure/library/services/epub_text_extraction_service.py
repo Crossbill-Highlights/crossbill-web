@@ -54,6 +54,36 @@ class EpubTextExtractionService:
             return self._extract_within_fragment(epub_book, start, end)
         return self._extract_across_fragments(epub_book, start, end)
 
+    def _extract_fragment_by_element_range(
+        self,
+        epub_book: epub.EpubBook,
+        fragment: int,
+        start_xpoint: XPoint | None = None,
+        end_xpoint: XPoint | None = None,
+    ) -> str:
+        """Extract text from a fragment, optionally bounded by start/end elements."""
+        tree = self._get_spine_item_content(epub_book, fragment)
+        body = tree.xpath("//body")
+        if not body:
+            return ""
+        start_elem = self._find_element(tree, start_xpoint) if start_xpoint else None
+        end_elem = self._find_element(tree, end_xpoint) if end_xpoint else None
+        return self._extract_text_by_element_range(body[0], start_elem, end_elem)
+
+    def _extract_chapter_in_same_fragment(
+        self, epub_book: epub.EpubBook, start: XPoint, end: XPoint
+    ) -> str:
+        return self._extract_fragment_by_element_range(
+            epub_book, start.doc_fragment_index, start, end
+        )
+
+    def _get_full_fragment_content(self, epub_book: epub.EpubBook, fragment: int) -> str:
+        tree = self._get_spine_item_content(epub_book, fragment)
+        body = tree.xpath("//body")
+        if body:
+            return "".join(body[0].itertext())
+        return ""
+
     def extract_chapter_text(
         self,
         epub_path: Path,
@@ -84,54 +114,27 @@ class EpubTextExtractionService:
         end_frag = end.doc_fragment_index if end else None
 
         # Case 1: Same fragment
-        if end_frag is not None and start_frag == end_frag:
-            tree = self._get_spine_item_content(epub_book, start_frag)
-            body = tree.xpath("//body")
-            if not body:
-                return ""
-            start_elem = self._find_element(tree, start)
-            end_elem = self._find_element(tree, end)  # pyright: ignore[reportArgumentType]
-            return self._extract_text_by_element_range(body[0], start_elem, end_elem)
+        if end is not None and start_frag == end_frag:
+            return self._extract_chapter_in_same_fragment(epub_book, start, end)
 
-        # Case 2: Cross-fragment (or last chapter)
+        # Case 2+3: Cross-fragment or last chapter
         result_parts: list[str] = []
 
         # First fragment: from start element to end of fragment
-        first_tree = self._get_spine_item_content(epub_book, start_frag)
-        first_body = first_tree.xpath("//body")
-        if first_body:
-            start_elem = self._find_element(first_tree, start)
+        result_parts.append(
+            self._extract_fragment_by_element_range(epub_book, start_frag, start_xpoint=start)
+        )
+
+        # Middle + remaining fragments
+        last_frag = end_frag if end_frag is not None else len(epub_book.spine) + 1
+        for frag_idx in range(start_frag + 1, last_frag):
+            result_parts.append(self._get_full_fragment_content(epub_book, frag_idx))
+
+        # End fragment: partial extraction if end has precise xpath
+        if end and end_frag is not None and end.xpath != "/body":
             result_parts.append(
-                self._extract_text_by_element_range(first_body[0], start_elem, None)
+                self._extract_fragment_by_element_range(epub_book, end_frag, end_xpoint=end)
             )
-
-        # Determine range of middle/remaining fragments
-        if end_frag is not None:
-            # Cross-fragment: middle fragments are full, end fragment needs element range
-            for frag_idx in range(start_frag + 1, end_frag):
-                tree = self._get_spine_item_content(epub_book, frag_idx)
-                body = tree.xpath("//body")
-                if body:
-                    result_parts.append("".join(body[0].itertext()))
-
-            # Last fragment: only if end XPoint has a precise xpath (not just /body)
-            if end.xpath != "/body":  # pyright: ignore[reportOptionalMemberAccess]
-                end_tree = self._get_spine_item_content(epub_book, end_frag)
-                end_body = end_tree.xpath("//body")
-                if end_body:
-                    end_elem = self._find_element(end_tree, end)  # pyright: ignore[reportArgumentType]
-                    result_parts.append(
-                        self._extract_text_by_element_range(end_body[0], None, end_elem)
-                    )
-            # If end.xpath == "/body", skip end fragment entirely
-            # (next chapter starts at beginning of that fragment)
-        else:
-            # Last chapter: all remaining fragments to end of spine
-            for frag_idx in range(start_frag + 1, len(epub_book.spine) + 1):
-                tree = self._get_spine_item_content(epub_book, frag_idx)
-                body = tree.xpath("//body")
-                if body:
-                    result_parts.append("".join(body[0].itertext()))
 
         return "".join(result_parts)
 
@@ -314,10 +317,7 @@ class EpubTextExtractionService:
         result_parts.append(self._extract_from_position_to_end(start_tree, start))
 
         for frag_idx in range(start.doc_fragment_index + 1, end.doc_fragment_index):
-            tree = self._get_spine_item_content(book, frag_idx)
-            body = tree.xpath("//body")
-            if body:
-                result_parts.append("".join(body[0].itertext()))
+            result_parts.append(self._get_full_fragment_content(book, frag_idx))
 
         end_tree = self._get_spine_item_content(book, end.doc_fragment_index)
         result_parts.append(self._extract_from_start_to_position(end_tree, end))
