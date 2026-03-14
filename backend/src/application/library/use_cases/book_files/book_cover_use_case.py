@@ -59,4 +59,3 @@ class BookCoverUseCase:
 
         # Find cover file
         return await self.file_repository.find_cover(book_id_vo)
-

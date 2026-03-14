@@ -221,9 +221,7 @@ class EpubParserService:
 
         spine_idx = EpubParserService._href_to_spine_index(file_part, spine_mapping)
         if spine_idx is None:
-            spine_idx = EpubParserService._href_to_spine_index(
-                href.split("#", 1)[0], spine_mapping
-            )
+            spine_idx = EpubParserService._href_to_spine_index(href.split("#", 1)[0], spine_mapping)
             if spine_idx is None:
                 return None
 

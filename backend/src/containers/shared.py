@@ -17,13 +17,13 @@ from src.infrastructure.library.repositories import BookRepository
 from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
 from src.infrastructure.library.repositories.file_repository import FileRepository
 from src.infrastructure.library.repositories.tag_repository import TagRepository
+from src.infrastructure.library.services.epub_parser_service import EpubParserService
 from src.infrastructure.library.services.epub_position_index_service import (
     EpubPositionIndexService,
 )
 from src.infrastructure.library.services.epub_text_extraction_service import (
     EpubTextExtractionService,
 )
-from src.infrastructure.library.services.epub_parser_service import EpubParserService
 from src.infrastructure.reading.repositories import (
     BookmarkRepository,
     HighlightRepository,
