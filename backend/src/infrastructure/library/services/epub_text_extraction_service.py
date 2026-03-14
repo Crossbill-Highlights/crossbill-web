@@ -51,7 +51,9 @@ class EpubTextExtractionService:
 
         # Extract text based on whether positions are in same fragment
         if start.doc_fragment_index == end.doc_fragment_index:
-            return self._extract_within_fragment(epub_book, start, end)
+            return self._extract_fragment_by_char_range(
+                epub_book, start.doc_fragment_index, start, end
+            )
         return self._extract_across_fragments(epub_book, start, end)
 
     def _extract_fragment_by_element_range(
@@ -70,11 +72,45 @@ class EpubTextExtractionService:
         end_elem = self._find_element(tree, end_xpoint) if end_xpoint else None
         return self._extract_text_by_element_range(body[0], start_elem, end_elem)
 
-    def _extract_chapter_in_same_fragment(
-        self, epub_book: epub.EpubBook, start: XPoint, end: XPoint
+    def _extract_fragment_by_char_range(
+        self,
+        book: epub.EpubBook,
+        fragment: int,
+        start: XPoint | None = None,
+        end: XPoint | None = None,
     ) -> str:
-        return self._extract_fragment_by_element_range(
-            epub_book, start.doc_fragment_index, start, end
+        """Extract text from a fragment using char-offset precision."""
+        tree = self._get_spine_item_content(book, fragment)
+        body = tree.xpath("//body")
+        if not body:
+            return ""
+
+        if start:
+            start_elem = self._find_element(tree, start)
+            start_target, start_attr = self._resolve_text_node_location(
+                start_elem, start.text_node_index, tree
+            )
+            start_offset = start.char_offset
+        else:
+            start_target, start_attr, start_offset = None, None, 0
+
+        if end:
+            end_elem = self._find_element(tree, end)
+            end_target, end_attr = self._resolve_text_node_location(
+                end_elem, end.text_node_index, tree
+            )
+            end_offset = end.char_offset
+        else:
+            end_target, end_attr, end_offset = None, None, None
+
+        return self._extract_between_locations(
+            body[0],
+            start_target,
+            start_attr,
+            start_offset,
+            end_target,
+            end_attr,
+            end_offset,
         )
 
     def _get_full_fragment_content(self, epub_book: epub.EpubBook, fragment: int) -> str:
@@ -115,7 +151,7 @@ class EpubTextExtractionService:
 
         # Case 1: Same fragment
         if end is not None and start_frag == end_frag:
-            return self._extract_chapter_in_same_fragment(epub_book, start, end)
+            return self._extract_fragment_by_element_range(epub_book, start_frag, start, end)
 
         # Case 2+3: Cross-fragment or last chapter
         result_parts: list[str] = []
@@ -164,39 +200,6 @@ class EpubTextExtractionService:
         content = item.get_content()
         parser = etree.HTMLParser()
         return etree.fromstring(content, parser)
-
-    def _extract_within_fragment(
-        self,
-        book: epub.EpubBook,
-        start: XPoint,
-        end: XPoint,
-    ) -> str:
-        """Extract text when start and end are in same DocFragment."""
-        tree = self._get_spine_item_content(book, start.doc_fragment_index)
-
-        start_elem = self._find_element(tree, start)
-        start_target_elem, start_attr = self._resolve_text_node_location(
-            start_elem, start.text_node_index, tree
-        )
-
-        end_elem = self._find_element(tree, end)
-        end_target_elem, end_attr = self._resolve_text_node_location(
-            end_elem, end.text_node_index, tree
-        )
-
-        body = tree.xpath("//body")
-        if not body:
-            return ""
-
-        return self._extract_between_locations(
-            body[0],
-            start_target_elem,
-            start_attr,
-            start.char_offset,
-            end_target_elem,
-            end_attr,
-            end.char_offset,
-        )
 
     def _convert_xpath(self, xpath: str) -> str:
         """Convert xpoint xpath to lxml-compatible xpath."""
@@ -311,43 +314,18 @@ class EpubTextExtractionService:
         end: XPoint,
     ) -> str:
         """Extract text when start and end are in different DocFragments."""
-        result_parts = []
-
-        start_tree = self._get_spine_item_content(book, start.doc_fragment_index)
-        result_parts.append(self._extract_from_position_to_end(start_tree, start))
+        result_parts = [
+            self._extract_fragment_by_char_range(book, start.doc_fragment_index, start=start)
+        ]
 
         for frag_idx in range(start.doc_fragment_index + 1, end.doc_fragment_index):
             result_parts.append(self._get_full_fragment_content(book, frag_idx))
 
-        end_tree = self._get_spine_item_content(book, end.doc_fragment_index)
-        result_parts.append(self._extract_from_start_to_position(end_tree, end))
+        result_parts.append(
+            self._extract_fragment_by_char_range(book, end.doc_fragment_index, end=end)
+        )
 
         return "".join(result_parts)
-
-    def _extract_from_position_to_end(
-        self,
-        tree: etree._Element,
-        start: XPoint,
-    ) -> str:
-        """Extract text from xpoint position to end of document body."""
-        start_elem = self._find_element(tree, start)
-        start_target_elem, start_attr = self._resolve_text_node_location(
-            start_elem, start.text_node_index, tree
-        )
-
-        body = tree.xpath("//body")
-        if not body:
-            return ""
-
-        return self._extract_between_locations(
-            body[0],
-            start_target_elem,
-            start_attr,
-            start.char_offset,
-            None,
-            None,
-            None,
-        )
 
     def _extract_text_by_element_range(
         self,
@@ -385,28 +363,3 @@ class EpubTextExtractionService:
                 result_parts.append(text)
 
         return "".join(result_parts)
-
-    def _extract_from_start_to_position(
-        self,
-        tree: etree._Element,
-        end: XPoint,
-    ) -> str:
-        """Extract text from start of document body to xpoint position."""
-        end_elem = self._find_element(tree, end)
-        end_target_elem, end_attr = self._resolve_text_node_location(
-            end_elem, end.text_node_index, tree
-        )
-
-        body = tree.xpath("//body")
-        if not body:
-            return ""
-
-        return self._extract_between_locations(
-            body[0],
-            None,
-            None,
-            0,
-            end_target_elem,
-            end_attr,
-            end.char_offset,
-        )
