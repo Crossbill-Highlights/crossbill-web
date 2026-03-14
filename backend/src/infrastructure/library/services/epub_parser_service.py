@@ -1,4 +1,4 @@
-"""Infrastructure service for parsing EPUB table of contents."""
+"""Infrastructure service for parsing EPUB files."""
 
 # pyright: reportPrivateUsage=false
 
@@ -7,6 +7,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any, cast
 
+import ebooklib
 from ebooklib import epub
 from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -55,8 +56,8 @@ def _extract_toc_hierarchy(
     return chapters
 
 
-class EpubTocParserService:
-    """Infrastructure service for parsing EPUB table of contents and validation."""
+class EpubParserService:
+    """Infrastructure service for parsing EPUB files."""
 
     def validate_epub(self, content: bytes) -> bool:
         """
@@ -141,6 +142,39 @@ class EpubTocParserService:
             logger.error(f"Failed to parse TOC from EPUB at {epub_path}: {e!s}")
             return []
 
+    def extract_cover(self, epub_path: Path) -> bytes | None:
+        """
+        Extract cover image from an EPUB file.
+
+        Args:
+            epub_path: Path to the EPUB file
+
+        Returns:
+            Cover image bytes, or None if no cover found.
+        """
+        try:
+            book = epub.read_epub(str(epub_path))
+
+            # Try cover-image item first
+            for item in book.get_items_of_type(ebooklib.ITEM_COVER):
+                content = item.get_content()
+                if content:
+                    return content
+
+            # Fall back to items with cover in id or properties
+            for item in book.get_items_of_type(ebooklib.ITEM_IMAGE):
+                item_id = getattr(item, "id", "") or ""
+                if "cover" in item_id.lower():
+                    content = item.get_content()
+                    if content:
+                        return content
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Failed to extract cover from EPUB at {epub_path}: {e!s}")
+            return None
+
     @staticmethod
     def _build_href_to_spine_index(book: Any) -> dict[str, int]:  # noqa: ANN401
         """Build a mapping from spine item file names to 1-based spine indices."""
@@ -181,9 +215,9 @@ class EpubTocParserService:
         file_part = parts[0]
         fragment_id = parts[1] if len(parts) > 1 else None
 
-        spine_idx = EpubTocParserService._href_to_spine_index(file_part, spine_mapping)
+        spine_idx = EpubParserService._href_to_spine_index(file_part, spine_mapping)
         if spine_idx is None:
-            spine_idx = EpubTocParserService._href_to_spine_index(
+            spine_idx = EpubParserService._href_to_spine_index(
                 href.split("#", 1)[0], spine_mapping
             )
             if spine_idx is None:

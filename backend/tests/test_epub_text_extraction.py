@@ -13,7 +13,7 @@ from src.exceptions import XPointNavigationError, XPointParseError
 from src.infrastructure.library.services.epub_text_extraction_service import (
     EpubTextExtractionService,
 )
-from src.infrastructure.library.services.epub_toc_parser_service import EpubTocParserService
+from src.infrastructure.library.services.epub_parser_service import EpubParserService
 from src.models import User
 from tests.conftest import create_test_book
 
@@ -494,10 +494,10 @@ class TestResolveHrefToXpoint:
     async def test_href_with_fragment_resolves_to_precise_xpoint(self, tmp_path: Path) -> None:
         """Href with #fragment produces precise XPoint with element path."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EpubTocParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        spine_mapping = EpubParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
         html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        result = EpubTocParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
+        result = EpubParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml#main", spine_mapping, html_cache
         )
 
@@ -508,10 +508,10 @@ class TestResolveHrefToXpoint:
     async def test_href_without_fragment_returns_body_level(self, tmp_path: Path) -> None:
         """Href without #fragment produces body-level XPoint."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EpubTocParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        spine_mapping = EpubParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
         html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        result = EpubTocParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
+        result = EpubParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml", spine_mapping, html_cache
         )
 
@@ -520,10 +520,10 @@ class TestResolveHrefToXpoint:
     async def test_href_with_nonexistent_fragment_falls_back(self, tmp_path: Path) -> None:
         """Href with unknown #fragment falls back to body-level XPoint."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EpubTocParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        spine_mapping = EpubParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
         html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        result = EpubTocParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
+        result = EpubParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml#nonexistent", spine_mapping, html_cache
         )
 
@@ -532,10 +532,10 @@ class TestResolveHrefToXpoint:
     async def test_href_with_unknown_file_returns_none(self, tmp_path: Path) -> None:
         """Href pointing to unknown file returns None."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EpubTocParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        spine_mapping = EpubParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
         html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        result = EpubTocParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
+        result = EpubParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "unknown.xhtml#intro", spine_mapping, html_cache
         )
 
@@ -544,16 +544,16 @@ class TestResolveHrefToXpoint:
     async def test_html_cache_is_reused(self, tmp_path: Path) -> None:
         """Multiple calls for same spine item reuse cached HTML tree."""
         epub_book = self._make_epub_with_fragments(tmp_path)
-        spine_mapping = EpubTocParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
+        spine_mapping = EpubParserService._build_href_to_spine_index(epub_book)  # pyright: ignore[reportPrivateUsage]
         html_cache: dict[int, etree._Element] = {}  # pyright: ignore[reportPrivateUsage]
 
-        EpubTocParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
+        EpubParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml#intro", spine_mapping, html_cache
         )
         assert 2 in html_cache
         cached_tree = html_cache[2]
 
-        EpubTocParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
+        EpubParserService._resolve_href_to_xpoint(  # pyright: ignore[reportPrivateUsage]
             epub_book, "chapter.xhtml#main", spine_mapping, html_cache
         )
         assert html_cache[2] is cached_tree
