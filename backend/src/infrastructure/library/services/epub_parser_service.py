@@ -146,7 +146,11 @@ class EpubParserService:
         """
         Extract cover image from an EPUB file.
 
-        Tries OPF metadata first, then falls back to ITEM_COVER type.
+        Tries three strategies in order:
+        1. OPF metadata via get_metadata("OPF", "cover")
+        2. Items with ITEM_COVER type
+        3. Scanning OPF "meta" entries for cover reference (handles namespace issues)
+
         Returns None if no cover found or on any error.
         """
         try:
@@ -171,6 +175,21 @@ class EpubParserService:
                 if content:
                     logger.info(f"Extracted cover from ITEM_COVER for {epub_path}")
                     return bytes(content)
+
+            # Strategy 3: Scan OPF "meta" entries for cover reference
+            # ebooklib sometimes stores <meta name="cover" content="..."/> under
+            # ("OPF", "meta") instead of ("OPF", "cover") due to XML namespace handling.
+            opf_meta_entries = book.get_metadata("OPF", "meta")
+            for _text, attrs in opf_meta_entries:
+                if attrs.get("name") == "cover":
+                    cover_id = attrs.get("content", "")
+                    if cover_id:
+                        item = book.get_item_with_id(cover_id)
+                        if item:
+                            content = item.get_content()
+                            if content:
+                                logger.info(f"Extracted cover from OPF meta scan for {epub_path}")
+                                return bytes(content)
 
             logger.info(f"No cover image found in EPUB {epub_path}")
             return None
