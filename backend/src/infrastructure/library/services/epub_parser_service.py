@@ -146,33 +146,37 @@ class EpubParserService:
         """
         Extract cover image from an EPUB file.
 
-        Args:
-            epub_path: Path to the EPUB file
-
-        Returns:
-            Cover image bytes, or None if no cover found.
+        Tries OPF metadata first, then falls back to ITEM_COVER type.
+        Returns None if no cover found or on any error.
         """
         try:
             book = epub.read_epub(str(epub_path))
 
-            # Try cover-image item first
-            for item in book.get_items_of_type(ebooklib.ITEM_COVER):
-                content = item.get_content()
+            # Strategy 1: Check OPF metadata for cover item ID
+            cover_meta = book.get_metadata("OPF", "cover")
+            if cover_meta:
+                cover_id = cover_meta[0][1].get("content", "") if cover_meta[0][1] else ""
+                if cover_id:
+                    item = book.get_item_with_id(cover_id)
+                    if item:
+                        content = item.get_content()
+                        if content:
+                            logger.info(f"Extracted cover from OPF metadata for {epub_path}")
+                            return bytes(content)
+
+            # Strategy 2: Fall back to ITEM_COVER type
+            cover_items = list(book.get_items_of_type(ebooklib.ITEM_COVER))
+            if cover_items:
+                content = cover_items[0].get_content()
                 if content:
-                    return content
+                    logger.info(f"Extracted cover from ITEM_COVER for {epub_path}")
+                    return bytes(content)
 
-            # Fall back to items with cover in id or properties
-            for item in book.get_items_of_type(ebooklib.ITEM_IMAGE):
-                item_id = getattr(item, "id", "") or ""
-                if "cover" in item_id.lower():
-                    content = item.get_content()
-                    if content:
-                        return content
-
+            logger.info(f"No cover image found in EPUB {epub_path}")
             return None
 
         except Exception as e:
-            logger.error(f"Failed to extract cover from EPUB at {epub_path}: {e!s}")
+            logger.warning(f"Failed to extract cover from EPUB {epub_path}: {e!s}")
             return None
 
     @staticmethod
