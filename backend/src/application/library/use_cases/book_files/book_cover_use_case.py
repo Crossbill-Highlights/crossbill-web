@@ -7,8 +7,6 @@ Handles cover file operations for the library context.
 import logging
 from pathlib import Path
 
-from fastapi import HTTPException
-
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.domain.common.value_objects import BookId, UserId
@@ -35,7 +33,7 @@ class BookCoverUseCase:
         self.book_repository = book_repository
         self.file_repository = file_repository
 
-    async def get_cover_path(self, book_id: int, user_id: int) -> Path:
+    async def get_cover_path(self, book_id: int, user_id: int) -> Path | None:
         """
         Get the file path for a book cover with ownership verification.
 
@@ -60,9 +58,5 @@ class BookCoverUseCase:
             raise BookNotFoundError(book_id)
 
         # Find cover file
-        cover_path = await self.file_repository.find_cover(book_id_vo)
-        if not cover_path:
-            # TODO: Remove Fastapi dependency from application layer
-            raise HTTPException(status_code=404, detail="Cover not found")
+        return await self.file_repository.find_cover(book_id_vo)
 
-        return cover_path

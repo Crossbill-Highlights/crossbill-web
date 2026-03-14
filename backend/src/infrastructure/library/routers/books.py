@@ -523,4 +523,8 @@ async def get_book_cover(
         HTTPException: If book is not found, user doesn't own it, or cover doesn't exist
     """
     cover_path = await use_case.get_cover_path(book_id, current_user.id.value)
+
+    if cover_path is None:
+        raise HTTPException(status_code=404, detail="Cover not found")
+
     return FileResponse(cover_path, media_type="image/jpeg")
