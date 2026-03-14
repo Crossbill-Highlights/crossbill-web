@@ -1,6 +1,7 @@
 """Use case for ebook upload operations."""
 
 import logging
+from pathlib import Path
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
@@ -126,6 +127,9 @@ class EbookUploadUseCase:
         epub_path = await self.file_repository.save_epub(book.id, content, book.title)
         book.update_file(epub_path.name, "epub")
 
+        # Extract and save cover if none exists
+        await self._extract_and_save_cover(book.id, epub_path)
+
         # Build position index from EPUB DOM
         position_index = self.position_index_service.build_position_index(epub_path)
 
@@ -162,6 +166,20 @@ class EbookUploadUseCase:
         await self._backfill_positions(book.id, user_id, position_index)
 
         return epub_path.name, str(epub_path)
+
+    async def _extract_and_save_cover(
+        self,
+        book_id: BookId,
+        epub_path: Path,
+    ) -> None:
+        """Extract cover from EPUB and save it, if no cover already exists."""
+        existing_cover = await self.file_repository.find_cover(book_id)
+        if existing_cover:
+            return
+
+        cover_bytes = self.epub_parser.extract_cover(epub_path)
+        if cover_bytes:
+            await self.file_repository.save_cover(book_id, cover_bytes)
 
     async def _backfill_positions(
         self,
