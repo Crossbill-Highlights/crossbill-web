@@ -109,7 +109,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
     # Cleanup on shutdown
-    dispose_engine()
+    await dispose_engine()
 
 
 app = FastAPI(

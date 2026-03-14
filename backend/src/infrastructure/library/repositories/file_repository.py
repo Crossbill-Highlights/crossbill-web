@@ -171,7 +171,7 @@ class FileRepository:
             True if file was deleted, False if not found
         """
         cover_files = await asyncio.to_thread(
-            lambda: list(BOOK_COVERS_DIR.glob(f"*_{book_id.value}.*"))
+            lambda: list(BOOK_COVERS_DIR.glob(f"{book_id.value}.*"))
         )
 
         if not cover_files:

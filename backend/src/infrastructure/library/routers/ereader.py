@@ -5,7 +5,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from src.application.library.use_cases.book_files.book_cover_use_case import BookCoverUseCase
 from src.application.library.use_cases.book_files.ebook_upload_use_case import EbookUploadUseCase
 from src.application.library.use_cases.book_management.create_book_use_case import (
     CreateBookUseCase,
@@ -21,7 +20,6 @@ from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.library.schemas import (
     BookCreate,
-    CoverUploadResponse,
     EpubUploadResponse,
     EreaderBookMetadata,
 )
@@ -138,58 +136,6 @@ async def get_book_metadata(
     except Exception as e:
         logger.error(
             f"Failed to get book metadata for client_book_id={client_book_id}: {e!s}",
-            exc_info=True,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
-
-
-@router.post(
-    "/books/{client_book_id}/cover",
-    response_model=CoverUploadResponse,
-    status_code=status.HTTP_200_OK,
-)
-async def upload_book_cover(
-    client_book_id: str,
-    cover: Annotated[UploadFile, File(...)],
-    current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookCoverUseCase = Depends(inject_use_case(container.library.book_cover_use_case)),
-) -> CoverUploadResponse:
-    """
-    Upload a book cover image using client_book_id.
-
-    This endpoint accepts an uploaded image file and saves it as the book's cover.
-    Used by KOReader which identifies books by client_book_id.
-
-    Args:
-        client_book_id: The client-provided stable book identifier
-        cover: Uploaded image file (JPEG, PNG, or WebP)
-        current_user: Authenticated user
-
-    Returns:
-        CoverUploadResponse with success status and cover URL
-
-    Raises:
-        HTTPException: 404 if book is not found, or if upload fails
-    """
-    try:
-        await use_case.upload_cover_by_client_book_id(client_book_id, cover, current_user.id.value)
-        return CoverUploadResponse(
-            success=True,
-            message="Cover uploaded successfully",
-        )
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
-        raise
-    except DomainError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except Exception as e:
-        logger.error(
-            f"Failed to upload cover for client_book_id={client_book_id}: {e!s}",
             exc_info=True,
         )
         raise HTTPException(

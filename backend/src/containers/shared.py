@@ -17,13 +17,13 @@ from src.infrastructure.library.repositories import BookRepository
 from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
 from src.infrastructure.library.repositories.file_repository import FileRepository
 from src.infrastructure.library.repositories.tag_repository import TagRepository
+from src.infrastructure.library.services.epub_parser_service import EpubParserService
 from src.infrastructure.library.services.epub_position_index_service import (
     EpubPositionIndexService,
 )
 from src.infrastructure.library.services.epub_text_extraction_service import (
     EpubTextExtractionService,
 )
-from src.infrastructure.library.services.epub_toc_parser_service import EpubTocParserService
 from src.infrastructure.reading.repositories import (
     BookmarkRepository,
     HighlightRepository,
@@ -62,7 +62,7 @@ class SharedContainer(containers.DeclarativeContainer):
     ai_service = providers.Factory(AIService, usage_repository=ai_usage_repository)
 
     # Infrastructure services (no db dependency)
-    epub_toc_parser_service = providers.Factory(EpubTocParserService)
+    epub_parser_service = providers.Factory(EpubParserService)
     epub_position_index_service = providers.Factory(EpubPositionIndexService)
     ebook_text_extraction_service = providers.Factory(EpubTextExtractionService)
 

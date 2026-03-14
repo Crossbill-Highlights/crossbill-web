@@ -1,10 +1,11 @@
 """Use case for ebook upload operations."""
 
 import logging
+from pathlib import Path
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
-from src.application.library.protocols.epub_toc_parser import EpubTocParserProtocol
+from src.application.library.protocols.epub_parser import EpubParserProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.application.library.protocols.position_index_service import PositionIndexServiceProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
@@ -29,7 +30,7 @@ class EbookUploadUseCase:
         book_repository: BookRepositoryProtocol,
         chapter_repository: ChapterRepositoryProtocol,
         file_repository: FileRepositoryProtocol,
-        epub_toc_parser: EpubTocParserProtocol,
+        epub_parser: EpubParserProtocol,
         position_index_service: PositionIndexServiceProtocol,
         highlight_repository: HighlightRepositoryProtocol,
         session_repository: ReadingSessionRepositoryProtocol,
@@ -41,7 +42,7 @@ class EbookUploadUseCase:
             book_repository: Book repository protocol implementation
             chapter_repository: Chapter repository protocol implementation
             file_repository: File repository protocol implementation
-            epub_toc_parser: EPUB TOC parser service
+            epub_parser: EPUB parser service
             position_index_service: Service for building position indices from EPUBs
             highlight_repository: Repository for highlight persistence
             session_repository: Repository for reading session persistence
@@ -49,7 +50,7 @@ class EbookUploadUseCase:
         self.book_repository = book_repository
         self.chapter_repository = chapter_repository
         self.file_repository = file_repository
-        self.epub_toc_parser = epub_toc_parser
+        self.epub_parser = epub_parser
         self.position_index_service = position_index_service
         self.highlight_repository = highlight_repository
         self.session_repository = session_repository
@@ -120,12 +121,14 @@ class EbookUploadUseCase:
         if not book:
             raise BookNotFoundError(f"client_book_id={client_book_id}")
 
-        if not self.epub_toc_parser.validate_epub(content):
+        if not self.epub_parser.validate_epub(content):
             raise InvalidEbookError("EPUB structure validation failed", ebook_type="EPUB")
 
         epub_path = await self.file_repository.save_epub(book.id, content, book.title)
         book.update_file(epub_path.name, "epub")
-        await self.book_repository.save(book)
+
+        # Extract and save cover if none exists
+        await self._extract_and_save_cover(book.id, epub_path)
 
         # Build position index from EPUB DOM
         position_index = self.position_index_service.build_position_index(epub_path)
@@ -134,10 +137,11 @@ class EbookUploadUseCase:
         total = position_index.total_elements
         if total > 0:
             book.update_end_position(Position(index=total, char_index=0))
-            await self.book_repository.save(book)
+
+        await self.book_repository.save(book)
 
         # Parse TOC and sync chapters (with positions)
-        toc_chapters = self.epub_toc_parser.parse_toc(epub_path)
+        toc_chapters = self.epub_parser.parse_toc(epub_path)
         if toc_chapters:
             enriched_chapters = []
             for tc in toc_chapters:
@@ -162,6 +166,20 @@ class EbookUploadUseCase:
         await self._backfill_positions(book.id, user_id, position_index)
 
         return epub_path.name, str(epub_path)
+
+    async def _extract_and_save_cover(
+        self,
+        book_id: BookId,
+        epub_path: Path,
+    ) -> None:
+        """Extract cover from EPUB and save it, if no cover already exists."""
+        existing_cover = await self.file_repository.find_cover(book_id)
+        if existing_cover:
+            return
+
+        cover_bytes = self.epub_parser.extract_cover(epub_path)
+        if cover_bytes:
+            await self.file_repository.save_cover(book_id, cover_bytes)
 
     async def _backfill_positions(
         self,

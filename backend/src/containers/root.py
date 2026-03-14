@@ -54,7 +54,7 @@ class RootContainer(containers.DeclarativeContainer):
         file_repository=shared.file_repository,
         highlight_grouping_service=shared.highlight_grouping_service,
         highlight_style_resolver=shared.highlight_style_resolver,
-        epub_toc_parser_service=shared.epub_toc_parser_service,
+        epub_parser_service=shared.epub_parser_service,
         epub_position_index_service=shared.epub_position_index_service,
         get_highlight_tags_for_book_use_case=reading.get_highlight_tags_for_book_use_case,
     )
