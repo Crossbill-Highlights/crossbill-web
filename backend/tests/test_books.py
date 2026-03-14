@@ -1,9 +1,8 @@
 """Tests for books API endpoints."""
 
 import json
-from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
 import pytest
 from fastapi import status
@@ -12,7 +11,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import models
-from src.infrastructure.library.schemas import EreaderBookMetadata
 from tests.conftest import create_test_book, create_test_highlight
 
 # Default user ID used by services (matches conftest default user)
@@ -33,43 +31,6 @@ class BookWithChapterAndHighlights(NamedTuple):
     book: models.Book
     chapter: models.Chapter
     highlights: list[models.Highlight]
-
-
-# Type alias for the book creation fixture
-CreateBookFunc = Callable[[dict[str, Any]], Awaitable[EreaderBookMetadata]]
-
-
-@pytest.fixture
-async def create_book_via_api(client: AsyncClient) -> CreateBookFunc:
-    """Fixture factory for creating books via the API endpoint.
-
-    Returns a function that can be called with book data to create a book.
-    """
-
-    async def _create_book(book_data: dict[str, Any]) -> EreaderBookMetadata:
-        """Create a book via POST /api/v1/ereader/books endpoint.
-
-        Args:
-            book_data: Dictionary with book creation data (client_book_id, title, etc.)
-
-        Returns:
-            EreaderBookMetadata response from the API
-        """
-        response = await client.post("/api/v1/ereader/books", json=book_data)
-        assert response.status_code == status.HTTP_200_OK
-        return EreaderBookMetadata(**response.json())
-
-    return _create_book
-
-
-@pytest.fixture
-async def test_book(db_session: AsyncSession) -> models.Book:
-    return await create_test_book(
-        db_session=db_session,
-        user_id=DEFAULT_USER_ID,
-        title="Test Book",
-        author="Test Author",
-    )
 
 
 @pytest.fixture
@@ -211,12 +172,6 @@ class TestDeleteBook:
         data = response.json()
         assert "not found" in data["message"].lower()
         assert data["book_id"] == 99999
-
-    async def test_delete_book_empty_database(self, client: AsyncClient) -> None:
-        """Test deletion when database is empty."""
-        response = await client.delete("/api/v1/books/1")
-
-        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 class TestDeleteHighlights:
