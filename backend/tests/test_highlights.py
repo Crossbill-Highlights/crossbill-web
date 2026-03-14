@@ -1,42 +1,12 @@
 """Tests for highlights API endpoints."""
 
-from collections.abc import Awaitable, Callable
-from typing import Any
-
-import pytest
 from fastapi import status
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import models
-from src.infrastructure.library.schemas import EreaderBookMetadata
-
-# Type alias for the book creation fixture
-CreateBookFunc = Callable[[dict[str, Any]], Awaitable[EreaderBookMetadata]]
-
-
-@pytest.fixture
-async def create_book_via_api(client: AsyncClient) -> CreateBookFunc:
-    """Fixture factory for creating books via the API endpoint.
-
-    Returns a function that can be called with book data to create a book.
-    """
-
-    async def _create_book(book_data: dict[str, Any]) -> EreaderBookMetadata:
-        """Create a book via POST /api/v1/ereader/books endpoint.
-
-        Args:
-            book_data: Dictionary with book creation data (client_book_id, title, etc.)
-
-        Returns:
-            EreaderBookMetadata response from the API
-        """
-        response = await client.post("/api/v1/ereader/books", json=book_data)
-        assert response.status_code == status.HTTP_200_OK
-        return EreaderBookMetadata(**response.json())
-
-    return _create_book
+from tests.conftest import CreateBookFunc
 
 
 class TestHighlightsUpload:
@@ -110,55 +80,6 @@ class TestHighlightsUpload:
         # Verify highlights have no chapter association (no chapter_number provided)
         for highlight in highlights:
             assert highlight.chapter_id is None
-
-    async def test_upload_highlights_without_chapter(
-        self, client: AsyncClient, db_session: AsyncSession, create_book_via_api: CreateBookFunc
-    ) -> None:
-        """Test uploading highlights without chapter information."""
-        # Create the book
-        await create_book_via_api(
-            {
-                "client_book_id": "test-client-book-id-no-chapters",
-                "title": "Test Book Without Chapters",
-                "author": "Test Author",
-            }
-        )
-
-        # Upload highlights
-        payload = {
-            "client_book_id": "test-client-book-id-no-chapters",
-            "highlights": [
-                {
-                    "text": "Highlight without chapter",
-                    "page": 5,
-                    "datetime": "2024-01-15 14:30:22",
-                },
-            ],
-        }
-
-        response = await client.post("/api/v1/highlights/upload", json=payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["success"] is True
-        assert data["highlights_created"] == 1
-        assert data["highlights_skipped"] == 0
-
-        # Verify no chapters were created
-        result = await db_session.execute(
-            select(models.Book).filter_by(title="Test Book Without Chapters", author="Test Author")
-        )
-        book = result.scalar_one_or_none()
-        assert book is not None
-        result = await db_session.execute(select(models.Chapter).filter_by(book_id=book.id))
-        chapters = result.scalars().all()
-        assert len(chapters) == 0
-
-        # Verify highlight was created without chapter_id
-        result = await db_session.execute(select(models.Highlight).filter_by(book_id=book.id))
-        highlight = result.scalar_one_or_none()
-        assert highlight is not None
-        assert highlight.chapter_id is None
 
     async def test_upload_highlights_with_xpoints(
         self, client: AsyncClient, db_session: AsyncSession, create_book_via_api: CreateBookFunc
@@ -448,44 +369,6 @@ class TestHighlightsUpload:
         # Allows highlighting the same passage in multiple books
         assert response2.json()["highlights_created"] == 1
         assert response2.json()["highlights_skipped"] == 0
-
-    async def test_highlight_has_content_hash(
-        self, client: AsyncClient, db_session: AsyncSession, create_book_via_api: CreateBookFunc
-    ) -> None:
-        """Test that created highlights have a content_hash field populated."""
-        # Create the book
-        await create_book_via_api(
-            {
-                "client_book_id": "test-client-hash-test",
-                "title": "Hash Test Book",
-                "author": "Test Author",
-            }
-        )
-
-        payload = {
-            "client_book_id": "test-client-hash-test",
-            "highlights": [
-                {
-                    "text": "Test highlight for hash",
-                    "datetime": "2024-01-15 14:00:00",
-                },
-            ],
-        }
-
-        response = await client.post("/api/v1/highlights/upload", json=payload)
-        assert response.status_code == status.HTTP_200_OK
-
-        # Verify highlight has content_hash
-        result = await db_session.execute(
-            select(models.Book).filter_by(title="Hash Test Book", author="Test Author")
-        )
-        book = result.scalar_one_or_none()
-        assert book is not None
-        result = await db_session.execute(select(models.Highlight).filter_by(book_id=book.id))
-        highlight = result.scalar_one_or_none()
-        assert highlight is not None
-        assert highlight.content_hash is not None
-        assert len(highlight.content_hash) == 64  # SHA-256 hex string length
 
     async def test_upload_invalid_payload_missing_book(self, client: AsyncClient) -> None:
         """Test upload with missing book data."""

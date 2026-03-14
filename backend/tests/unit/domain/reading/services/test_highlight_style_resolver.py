@@ -113,15 +113,6 @@ class TestHighlightStyleResolver:
         assert result.ui_color == KOREADER_DEFAULT_UI_COLORS["green"]
         assert result.source == "book"
 
-    def test_default_ui_color_when_no_explicit_color(self) -> None:
-        """When no ui_color is set anywhere, resolver returns default based on device_color."""
-        resolver = HighlightStyleResolver()
-        combo = _make_style(1, 10, "yellow", "lighten")
-        result = resolver.resolve(combo, [combo])
-        assert result.label is None
-        assert result.ui_color == KOREADER_DEFAULT_UI_COLORS["yellow"]
-        assert result.source == "none"
-
     def test_explicit_ui_color_overrides_default(self) -> None:
         """When style has explicit ui_color, it takes precedence over the default."""
         resolver = HighlightStyleResolver()

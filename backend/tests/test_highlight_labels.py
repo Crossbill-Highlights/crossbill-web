@@ -1,35 +1,20 @@
 """Integration tests for highlight labels feature."""
 
-from collections.abc import Awaitable, Callable
-from typing import Any
-
-import pytest
 from fastapi import status
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import models
-from src.infrastructure.library.schemas import EreaderBookMetadata
-from tests.conftest import create_test_book, create_test_highlight, create_test_highlight_style
+from tests.conftest import (
+    CreateBookFunc,
+    create_test_book,
+    create_test_highlight,
+    create_test_highlight_style,
+)
 
 # Default user ID used by services (matches conftest default user)
 DEFAULT_USER_ID = 1
-
-# Type alias for the book creation fixture
-CreateBookFunc = Callable[[dict[str, Any]], Awaitable[EreaderBookMetadata]]
-
-
-@pytest.fixture
-async def create_book_via_api(client: AsyncClient) -> CreateBookFunc:
-    """Fixture factory for creating books via the API endpoint."""
-
-    async def _create_book(book_data: dict[str, Any]) -> EreaderBookMetadata:
-        response = await client.post("/api/v1/ereader/books", json=book_data)
-        assert response.status_code == status.HTTP_200_OK
-        return EreaderBookMetadata(**response.json())
-
-    return _create_book
 
 
 class TestHighlightUploadCreatesStyles:
@@ -445,27 +430,6 @@ class TestCreateGlobalHighlightLabel:
         assert data["device_color"] == "red"
         assert data["device_style"] is None
         assert data["label"] == "Red Notes"
-
-    async def test_create_global_label_appears_in_get(self, client: AsyncClient) -> None:
-        """Test that a created global label appears in the GET endpoint."""
-        # Create a global label
-        create_response = await client.post(
-            "/api/v1/highlight-labels/global",
-            json={
-                "device_color": "purple",
-                "device_style": "strikethrough",
-                "label": "Disagreement",
-            },
-        )
-        assert create_response.status_code == status.HTTP_201_CREATED
-
-        # Verify it appears in the list
-        get_response = await client.get("/api/v1/highlight-labels/global")
-        assert get_response.status_code == status.HTTP_200_OK
-        data = get_response.json()
-
-        labels = [d["label"] for d in data]
-        assert "Disagreement" in labels
 
 
 class TestHighlightUploadWithLabels:

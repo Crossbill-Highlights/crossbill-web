@@ -1,8 +1,9 @@
 """Pytest configuration and fixtures."""
 
 import os
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from datetime import datetime as dt
+from typing import Any
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -15,6 +16,7 @@ from src.domain.common.value_objects import ContentHash
 from src.domain.common.value_objects.ids import UserId
 from src.domain.identity.entities.user import User as DomainUser
 from src.infrastructure.identity.dependencies import get_current_user
+from src.infrastructure.library.schemas import EreaderBookMetadata
 from src.main import app
 from src.models import (
     Book,
@@ -286,3 +288,19 @@ async def test_highlight_tag(
     await db_session.commit()
     await db_session.refresh(tag)
     return tag
+
+
+# Type alias for the book creation fixture (used across multiple test files)
+CreateBookFunc = Callable[[dict[str, Any]], Awaitable[EreaderBookMetadata]]
+
+
+@pytest.fixture
+async def create_book_via_api(client: AsyncClient) -> CreateBookFunc:
+    """Fixture factory for creating books via the API endpoint."""
+
+    async def _create_book(book_data: dict[str, Any]) -> EreaderBookMetadata:
+        response = await client.post("/api/v1/ereader/books", json=book_data)
+        assert response.status_code == 200
+        return EreaderBookMetadata(**response.json())
+
+    return _create_book
