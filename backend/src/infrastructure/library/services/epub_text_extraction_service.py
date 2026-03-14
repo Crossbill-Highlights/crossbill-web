@@ -78,11 +78,6 @@ class EpubTextExtractionService:
         start = XPoint.parse(start_xpoint)
         end = XPoint.parse(end_xpoint) if end_xpoint else None
 
-        if start.doc_fragment_index is None:
-            raise XPointNavigationError(
-                start_xpoint, "chapter XPoint must have a DocFragment index"
-            )
-
         epub_book = epub.read_epub(str(epub_path))
 
         start_frag = start.doc_fragment_index
@@ -143,14 +138,14 @@ class EpubTextExtractionService:
     def _get_spine_item_content(
         self,
         book: epub.EpubBook,
-        fragment_index: int | None,
+        fragment_index: int,
     ) -> etree._Element:
         """Get parsed HTML content for a spine item."""
-        spine_index = (fragment_index or 1) - 1
+        spine_index = fragment_index - 1
 
         if spine_index < 0 or spine_index >= len(book.spine):
             raise XPointNavigationError(
-                f"DocFragment[{fragment_index or 1}]",
+                f"DocFragment[{fragment_index}]",
                 f"index out of range (spine has {len(book.spine)} items)",
             )
 
@@ -159,7 +154,7 @@ class EpubTextExtractionService:
 
         if item is None:
             raise XPointNavigationError(
-                f"DocFragment[{fragment_index or 1}]",
+                f"DocFragment[{fragment_index}]",
                 f"spine item '{item_id}' not found in EPUB",
             )
 
@@ -313,12 +308,6 @@ class EpubTextExtractionService:
         end: XPoint,
     ) -> str:
         """Extract text when start and end are in different DocFragments."""
-        if start.doc_fragment_index is None or end.doc_fragment_index is None:
-            raise XPointNavigationError(
-                "cross-fragment",
-                "cannot extract across fragments when DocFragment index is missing",
-            )
-
         result_parts = []
 
         start_tree = self._get_spine_item_content(book, start.doc_fragment_index)

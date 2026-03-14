@@ -10,10 +10,10 @@ class TestXPoint:
     """Test suite for XPoint parsing and operations."""
 
     def test_parse_simple_xpoint(self) -> None:
-        """Parse xpoint without DocFragment."""
+        """Parse xpoint without DocFragment defaults to fragment 1."""
         result = XPoint.parse("/body/div[1]/p[5]/text()[1].42")
 
-        assert result.doc_fragment_index is None
+        assert result.doc_fragment_index == 1
         assert result.xpath == "/body/div[1]/p[5]"
         assert result.text_node_index == 1
         assert result.char_offset == 42
@@ -31,7 +31,7 @@ class TestXPoint:
         """Parse xpoint with explicit text node index."""
         result = XPoint.parse("/body/div/p/text()[3].100")
 
-        assert result.doc_fragment_index is None
+        assert result.doc_fragment_index == 1
         assert result.xpath == "/body/div/p"
         assert result.text_node_index == 3
         assert result.char_offset == 100
@@ -66,7 +66,7 @@ class TestXPoint:
         """Parse simple element boundary xpoint."""
         result = XPoint.parse("/body/div/p")
 
-        assert result.doc_fragment_index is None
+        assert result.doc_fragment_index == 1
         assert result.xpath == "/body/div/p"
         assert result.text_node_index == 1
         assert result.char_offset == 0
@@ -75,7 +75,7 @@ class TestXPoint:
         """Parse element boundary with indexed element."""
         result = XPoint.parse("/body/div[3]/span[2]")
 
-        assert result.doc_fragment_index is None
+        assert result.doc_fragment_index == 1
         assert result.xpath == "/body/div[3]/span[2]"
         assert result.text_node_index == 1
         assert result.char_offset == 0
@@ -109,7 +109,7 @@ class TestXPoint:
         """Parse element with offset but no /text() specifier."""
         result = XPoint.parse("/body/span.5")
 
-        assert result.doc_fragment_index is None
+        assert result.doc_fragment_index == 1
         assert result.xpath == "/body/span"
         assert result.text_node_index == 1
         assert result.char_offset == 5
@@ -129,10 +129,15 @@ class TestXPoint:
         with pytest.raises(XPointParseError):
             XPoint.parse("/body/div/text().-5")
 
+    def test_parse_without_doc_fragment_defaults_to_1(self) -> None:
+        """XPoints without DocFragment prefix (single-spine EPUBs) default to fragment 1."""
+        result = XPoint.parse("/body/div[1]/p[5]/text()[1].42")
+        assert result.doc_fragment_index == 1
+
     def test_to_string_simple_xpoint(self) -> None:
-        """Convert XPoint back to string."""
+        """Convert XPoint back to string — always includes DocFragment."""
         xpoint = XPoint.parse("/body/div[1]/p[5]/text()[1].42")
-        assert xpoint.to_string() == "/body/div[1]/p[5]/text().42"
+        assert xpoint.to_string() == "/body/DocFragment[1]/body/div[1]/p[5]/text().42"
 
     def test_to_string_with_doc_fragment(self) -> None:
         """Convert XPoint with DocFragment to string."""
@@ -140,9 +145,9 @@ class TestXPoint:
         assert xpoint.to_string() == "/body/DocFragment[12]/body/div/p[88]/text().223"
 
     def test_to_string_element_boundary(self) -> None:
-        """Convert element boundary XPoint to string."""
+        """Convert element boundary XPoint to string — always includes DocFragment."""
         xpoint = XPoint.parse("/body/div/p")
-        assert xpoint.to_string() == "/body/div/p"
+        assert xpoint.to_string() == "/body/DocFragment[1]/body/div/p"
 
     def test_to_dict_and_from_dict(self) -> None:
         """XPoint can be serialized to dict and back."""

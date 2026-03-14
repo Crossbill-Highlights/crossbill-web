@@ -137,8 +137,8 @@ class TestHighlightsUpload:
 
         # First highlight should have xpoints
         # Note: XPoint value object normalizes text()[1].0 (defaults) to just xpath
-        assert highlights[0].start_xpoint == "/body/div[1]/p[5]"
-        assert highlights[0].end_xpoint == "/body/div[1]/p[5]/text().42"
+        assert highlights[0].start_xpoint == "/body/DocFragment[1]/body/div[1]/p[5]"
+        assert highlights[0].end_xpoint == "/body/DocFragment[1]/body/div[1]/p[5]/text().42"
 
         # Second highlight should have null xpoints
         assert highlights[1].start_xpoint is None

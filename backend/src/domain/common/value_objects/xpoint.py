@@ -20,7 +20,7 @@ from src.exceptions import XPointParseError
 class XPointDict(TypedDict):
     """Dictionary representation of XPoint for JSON serialization."""
 
-    doc_fragment_index: int | None
+    doc_fragment_index: int
     xpath: str
     text_node_index: int
     char_offset: int
@@ -91,13 +91,13 @@ class XPoint:
     - /body/DocFragment[20]/body/div/p[1]/img.0 (non-text element like image with offset)
 
     Attributes:
-        doc_fragment_index: 1-based index into EPUB spine (None if not present)
+        doc_fragment_index: 1-based index into EPUB spine (defaults to 1)
         xpath: XPath to the element (without text() selector)
         text_node_index: 1-based index of text node within element (default 1)
         char_offset: 0-based character offset within text node (default 0)
     """
 
-    doc_fragment_index: int | None
+    doc_fragment_index: int
     xpath: str
     text_node_index: int
     char_offset: int
@@ -128,12 +128,12 @@ class XPoint:
 
         doc_fragment_str, xpath, text_node_str, offset_str = match.groups()
 
-        doc_fragment_index = int(doc_fragment_str) if doc_fragment_str else None
+        doc_fragment_index = int(doc_fragment_str) if doc_fragment_str else 1
         text_node_index = int(text_node_str) if text_node_str else 1
         # When /text().offset is omitted, default to offset 0 (element boundary)
         char_offset = int(offset_str) if offset_str else 0
 
-        if doc_fragment_index is not None and doc_fragment_index < 1:
+        if doc_fragment_index < 1:
             raise XPointParseError(xpoint, "DocFragment index must be >= 1")
 
         if text_node_index < 1:
@@ -158,9 +158,8 @@ class XPoint:
         """
         parts = []
 
-        # Add DocFragment if present
-        if self.doc_fragment_index is not None:
-            parts.append(f"/body/DocFragment[{self.doc_fragment_index}]")
+        # Add DocFragment
+        parts.append(f"/body/DocFragment[{self.doc_fragment_index}]")
 
         # Add xpath
         parts.append(self.xpath)
@@ -187,7 +186,7 @@ class XPoint:
             XPoint instance
         """
         return cls(
-            doc_fragment_index=data.get("doc_fragment_index"),
+            doc_fragment_index=data["doc_fragment_index"],
             xpath=data["xpath"],
             text_node_index=data.get("text_node_index", 1),
             char_offset=data.get("char_offset", 0),
@@ -212,7 +211,7 @@ class XPoint:
         Compare this XPoint to another for ordering.
 
         Comparison order:
-        1. doc_fragment_index (None treated as 1)
+        1. doc_fragment_index
         2. XPath segments (element name, then index for each segment)
         3. text_node_index
         4. char_offset
@@ -231,9 +230,9 @@ class XPoint:
              0 if self == other (same position)
              1 if self > other (self comes after other)
         """
-        # Compare doc_fragment_index (None treated as 1)
-        self_frag = self.doc_fragment_index if self.doc_fragment_index is not None else 1
-        other_frag = other.doc_fragment_index if other.doc_fragment_index is not None else 1
+        # Compare doc_fragment_index
+        self_frag = self.doc_fragment_index
+        other_frag = other.doc_fragment_index
 
         if self_frag != other_frag:
             return -1 if self_frag < other_frag else 1
@@ -283,11 +282,9 @@ class XPointRange:
 
     def __post_init__(self) -> None:
         """Validate that start comes before or at end position."""
-        # Compare doc_fragment_index (treating None as 1)
-        start_frag = (
-            self.start.doc_fragment_index if self.start.doc_fragment_index is not None else 1
-        )
-        end_frag = self.end.doc_fragment_index if self.end.doc_fragment_index is not None else 1
+        # Compare doc_fragment_index
+        start_frag = self.start.doc_fragment_index
+        end_frag = self.end.doc_fragment_index
 
         if start_frag > end_frag:
             raise ValueError("Start XPoint must come before end XPoint")
