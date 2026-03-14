@@ -83,15 +83,11 @@ def get_session_factory(
     return _session_factory
 
 
-def dispose_engine() -> None:
-    """Dispose database engine on shutdown.
-
-    Note: For async engine, dispose() is synchronous and safe to call
-    from the async lifespan context.
-    """
+async def dispose_engine() -> None:
+    """Dispose database engine on shutdown."""
     global _engine, _session_factory  # noqa: PLW0603
     if _engine is not None:
-        _engine.sync_engine.dispose()
+        await _engine.dispose()
         _engine = None
         _session_factory = None
 
