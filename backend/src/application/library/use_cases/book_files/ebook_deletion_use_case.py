@@ -31,6 +31,7 @@ class EbookDeletionUseCase:
 
         epub_deleted = await self.file_repository.delete_epub(book_id_obj)
         pdf_deleted = await self.file_repository.delete_pdf(book_id_obj)
+        await self.file_repository.delete_cover(book_id_obj)
 
         if epub_deleted or pdf_deleted:
             logger.info(f"Deleted ebook file(s) for book {book_id}")
