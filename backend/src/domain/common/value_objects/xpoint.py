@@ -33,9 +33,6 @@ class XPointRangeDict(TypedDict):
     end: XPointDict
 
 
-# Regex pattern for parsing XPath segments like "div", "div[1]", "p[15]"
-_XPATH_SEGMENT_PATTERN = re.compile(r"([a-zA-Z][a-zA-Z0-9_-]*)(?:\[(\d+)\])?$")
-
 # Regex pattern for parsing xpoint strings
 # Format: /body/DocFragment[N]/body/.../text()[N].offset
 # Or: /body/DocFragment[N]/body/... (element boundary, defaults to offset 0)
@@ -51,33 +48,6 @@ _XPOINT_PATTERN = re.compile(
     r")?"
     r"$"
 )
-
-
-def _parse_xpath_segments(xpath: str) -> list[tuple[str, int]]:
-    """Parse an XPath string into a list of (element_name, index) tuples.
-
-    Args:
-        xpath: XPath string like "/body/div[2]/section[1]/article/p[15]"
-
-    Returns:
-        List of tuples like [("body", 1), ("div", 2), ("section", 1), ("article", 1), ("p", 15)]
-        Elements without explicit index default to 1.
-    """
-    # Split by "/" and filter out empty strings
-    parts = [p for p in xpath.split("/") if p]
-    segments: list[tuple[str, int]] = []
-
-    for part in parts:
-        match = _XPATH_SEGMENT_PATTERN.match(part)
-        if match:
-            element_name = match.group(1)
-            index = int(match.group(2)) if match.group(2) else 1
-            segments.append((element_name, index))
-        else:
-            # Fallback: treat as element with index 1
-            segments.append((part, 1))
-
-    return segments
 
 
 @dataclass(frozen=True)
@@ -206,68 +176,6 @@ class XPoint:
             "char_offset": self.char_offset,
         }
 
-    def compare_to(self, other: XPoint) -> int:  # noqa: PLR0911
-        """
-        Compare this XPoint to another for ordering.
-
-        Comparison order:
-        1. doc_fragment_index
-        2. XPath segments (element name, then index for each segment)
-        3. text_node_index
-        4. char_offset
-
-        Note: This comparison provides deterministic ordering but may not reflect
-        actual document reading order when comparing siblings with different tag names.
-        Sibling elements are compared alphabetically by tag name (e.g., "div" < "p"),
-        which may differ from their actual order in the DOM. This is acceptable for
-        most use cases where highlights are within similar structures.
-
-        Args:
-            other: XPoint to compare to
-
-        Returns:
-            -1 if self < other (self comes before other)
-             0 if self == other (same position)
-             1 if self > other (self comes after other)
-        """
-        # Compare doc_fragment_index
-        self_frag = self.doc_fragment_index
-        other_frag = other.doc_fragment_index
-
-        if self_frag != other_frag:
-            return -1 if self_frag < other_frag else 1
-
-        # Compare XPath segments
-        segments_self = _parse_xpath_segments(self.xpath)
-        segments_other = _parse_xpath_segments(other.xpath)
-
-        # Compare segment by segment
-        for seg_self, seg_other in zip(segments_self, segments_other, strict=False):
-            name_self, idx_self = seg_self
-            name_other, idx_other = seg_other
-
-            # First compare element names (alphabetically)
-            if name_self != name_other:
-                return -1 if name_self < name_other else 1
-
-            # Then compare indices
-            if idx_self != idx_other:
-                return -1 if idx_self < idx_other else 1
-
-        # If one xpath has more segments, the shorter one comes first
-        if len(segments_self) != len(segments_other):
-            return -1 if len(segments_self) < len(segments_other) else 1
-
-        # Compare text_node_index
-        if self.text_node_index != other.text_node_index:
-            return -1 if self.text_node_index < other.text_node_index else 1
-
-        # Compare char_offset
-        if self.char_offset != other.char_offset:
-            return -1 if self.char_offset < other.char_offset else 1
-
-        return 0
-
 
 @dataclass(frozen=True)
 class XPointRange:
@@ -334,19 +242,3 @@ class XPointRange:
             "start": self.start.to_dict(),
             "end": self.end.to_dict(),
         }
-
-    def contains(self, point: XPoint) -> bool:
-        """
-        Check if a point falls within this range.
-
-        Args:
-            point: XPoint to check
-
-        Returns:
-            True if point is within [start, end] range (inclusive)
-        """
-        # Point must be >= start and <= end
-        cmp_start = point.compare_to(self.start)
-        cmp_end = point.compare_to(self.end)
-
-        return cmp_start >= 0 and cmp_end <= 0
