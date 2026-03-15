@@ -32,11 +32,6 @@ class Tag(Entity[TagId]):
         if not self.name or not self.name.strip():
             raise DomainError("Tag name cannot be empty")
 
-    # Query methods
-    def matches_name(self, search: str) -> bool:
-        """Check if tag name contains the search string (case-insensitive)."""
-        return search.lower() in self.name.lower()
-
     # Factory methods
     @classmethod
     def create(

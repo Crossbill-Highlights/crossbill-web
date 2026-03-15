@@ -62,13 +62,6 @@ def initialize_database(settings: Settings) -> None:
     )
 
 
-def get_engine() -> AsyncEngine:
-    """Get the singleton database engine."""
-    if _engine is None:
-        raise RuntimeError("Database not initialized. Call initialize_database() first.")
-    return _engine
-
-
 def get_session_factory(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> async_sessionmaker[AsyncSession]:

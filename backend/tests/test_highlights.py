@@ -383,7 +383,7 @@ class TestHighlightsUpload:
 
         response = await client.post("/api/v1/highlights/upload", json=payload)
 
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     async def test_upload_invalid_payload_missing_required_fields(
         self, client: AsyncClient
@@ -401,4 +401,4 @@ class TestHighlightsUpload:
 
         response = await client.post("/api/v1/highlights/upload", json=payload)
 
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT

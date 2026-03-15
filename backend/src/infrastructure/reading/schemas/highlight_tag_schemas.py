@@ -3,18 +3,13 @@
 from pydantic import BaseModel, Field
 
 
-class HighlightTagBase(BaseModel):
-    """Base schema for HighlightTag."""
-
-    name: str = Field(..., min_length=1, max_length=100, description="Tag name")
-
-
-class HighlightTag(HighlightTagBase):
+class HighlightTag(BaseModel):
     """Schema for HighlightTag response."""
 
     id: int
     book_id: int
     tag_group_id: int | None = None
+    name: str = Field(..., min_length=1, max_length=100, description="Tag name")
 
     model_config = {"from_attributes": True}
 
@@ -57,17 +52,12 @@ class HighlightTagUpdateRequest(BaseModel):
     tag_group_id: int | None = Field(None, description="ID of tag group to associate with")
 
 
-class HighlightTagGroupBase(BaseModel):
-    """Base schema for HighlightTagGroup."""
-
-    name: str = Field(..., min_length=1, max_length=100, description="Tag group name")
-
-
-class HighlightTagGroup(HighlightTagGroupBase):
+class HighlightTagGroup(BaseModel):
     """Schema for HighlightTagGroup response."""
 
     id: int
     book_id: int
+    name: str = Field(..., min_length=1, max_length=100, description="Tag group name")
 
     model_config = {"from_attributes": True}
 
@@ -87,9 +77,3 @@ class HighlightTagGroupCreateRequest(BaseModel):
     id: int | None = Field(None, description="ID of existing tag group to update (optional)")
     book_id: int = Field(..., description="ID of the book this tag group belongs to")
     name: str = Field(..., min_length=1, max_length=100, description="Tag group name")
-
-
-class HighlightTagGroupsResponse(BaseModel):
-    """Schema for list of highlight tag groups response."""
-
-    tag_groups: list[HighlightTagGroup] = Field(..., description="List of highlight tag groups")

@@ -3,20 +3,7 @@
 from pydantic import BaseModel, Field
 
 
-class FlashcardBase(BaseModel):
-    """Base schema for Flashcard."""
-
-    question: str = Field(..., min_length=1, description="Question text for the flashcard")
-    answer: str = Field(..., min_length=1, description="Answer text for the flashcard")
-
-
-class FlashcardCreate(FlashcardBase):
-    """Schema for creating a flashcard."""
-
-    highlight_id: int | None = Field(None, description="Optional highlight ID to associate with")
-
-
-class Flashcard(FlashcardBase):
+class Flashcard(BaseModel):
     """Schema for Flashcard response (without embedded highlight)."""
 
     id: int
@@ -24,6 +11,9 @@ class Flashcard(FlashcardBase):
     book_id: int
     highlight_id: int | None
     chapter_id: int | None = None
+
+    question: str = Field(..., min_length=1, description="Question text for the flashcard")
+    answer: str = Field(..., min_length=1, description="Answer text for the flashcard")
 
     model_config = {"from_attributes": True}
 
@@ -64,12 +54,6 @@ class FlashcardDeleteResponse(BaseModel):
 
     success: bool = Field(..., description="Whether the deletion was successful")
     message: str = Field(..., description="Response message")
-
-
-class FlashcardsListResponse(BaseModel):
-    """Schema for list of flashcards response."""
-
-    flashcards: list[Flashcard] = Field(..., description="List of flashcards")
 
 
 class FlashcardSuggestionItem(BaseModel):

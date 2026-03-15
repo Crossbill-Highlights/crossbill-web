@@ -59,15 +59,6 @@ class Chapter(Entity[ChapterId]):
         if self.chapter_number is not None and self.chapter_number < 0:
             raise DomainError("Chapter number cannot be negative")
 
-    # Query methods
-    def is_top_level(self) -> bool:
-        """Check if this is a top-level chapter (no parent)."""
-        return self.parent_id is None
-
-    def has_numeric_index(self) -> bool:
-        """Check if chapter has a numeric index."""
-        return self.chapter_number is not None
-
     # Factory methods
     @classmethod
     def create(

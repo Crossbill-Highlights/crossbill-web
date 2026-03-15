@@ -432,7 +432,7 @@ class TestUploadReadingSessions:
             "/api/v1/reading_sessions/upload",
             json={"client_book_id": "test-client-book-id", "sessions": sessions},
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
         # Verify nothing was saved to database
         result = await db_session.execute(select(models.ReadingSession))
