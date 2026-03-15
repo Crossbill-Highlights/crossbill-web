@@ -87,14 +87,3 @@ class InvariantViolationError(DomainError):
         super().__init__(message, {"aggregate": aggregate, "invariant": invariant})
         self.aggregate = aggregate
         self.invariant = invariant
-
-
-class AuthorizationError(DomainError):
-    """
-    Raised when an operation is not authorized.
-
-    Example: User trying to access another user's flashcard.
-    """
-
-    def __init__(self, message: str = "Not authorized to perform this action") -> None:
-        super().__init__(message)

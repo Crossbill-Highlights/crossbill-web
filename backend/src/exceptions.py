@@ -54,10 +54,6 @@ class ValidationError(CrossbillError):
     """Validation error."""
 
 
-class ServiceError(CrossbillError):
-    """Service layer error."""
-
-
 class XPointParseError(ValidationError):
     """Invalid xpoint format."""
 
