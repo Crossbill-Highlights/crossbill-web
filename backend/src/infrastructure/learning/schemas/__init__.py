@@ -6,12 +6,9 @@ from src.infrastructure.learning.schemas.flashcard_api_schemas import (
 )
 from src.infrastructure.learning.schemas.flashcard_schemas import (
     Flashcard,
-    FlashcardBase,
-    FlashcardCreate,
     FlashcardCreateRequest,
     FlashcardCreateResponse,
     FlashcardDeleteResponse,
-    FlashcardsListResponse,
     FlashcardSuggestionItem,
     FlashcardUpdateRequest,
     FlashcardUpdateResponse,
@@ -20,8 +17,6 @@ from src.infrastructure.learning.schemas.flashcard_schemas import (
 
 __all__ = [
     "Flashcard",
-    "FlashcardBase",
-    "FlashcardCreate",
     "FlashcardCreateRequest",
     "FlashcardCreateResponse",
     "FlashcardDeleteResponse",
@@ -29,7 +24,6 @@ __all__ = [
     "FlashcardUpdateRequest",
     "FlashcardUpdateResponse",
     "FlashcardWithHighlight",
-    "FlashcardsListResponse",
     "FlashcardsWithHighlightsResponse",
     "HighlightFlashcardSuggestionsResponse",
 ]
