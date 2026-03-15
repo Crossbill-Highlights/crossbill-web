@@ -85,7 +85,7 @@ class PositionIndex:
         except Exception:
             return None
 
-        doc_frag = xpoint.doc_fragment_index if xpoint.doc_fragment_index is not None else 1
+        doc_frag = xpoint.doc_fragment_index
         normalized_xpath = _normalize_xpath(xpoint.xpath)
         key = (doc_frag, normalized_xpath)
 

@@ -1,5 +1,6 @@
 """Pytest configuration and fixtures."""
 
+import logging
 import os
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from datetime import datetime as dt
@@ -30,6 +31,8 @@ from src.models import (
 from src.models import (
     HighlightStyle as HighlightStyleModel,
 )
+
+logging.getLogger("aiosqlite").setLevel(logging.WARNING)
 
 
 async def create_test_book(

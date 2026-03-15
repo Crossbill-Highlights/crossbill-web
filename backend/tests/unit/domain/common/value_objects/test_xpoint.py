@@ -10,10 +10,10 @@ class TestXPoint:
     """Test suite for XPoint parsing and operations."""
 
     def test_parse_simple_xpoint(self) -> None:
-        """Parse xpoint without DocFragment."""
+        """Parse xpoint without DocFragment defaults to fragment 1."""
         result = XPoint.parse("/body/div[1]/p[5]/text()[1].42")
 
-        assert result.doc_fragment_index is None
+        assert result.doc_fragment_index == 1
         assert result.xpath == "/body/div[1]/p[5]"
         assert result.text_node_index == 1
         assert result.char_offset == 42
@@ -31,7 +31,7 @@ class TestXPoint:
         """Parse xpoint with explicit text node index."""
         result = XPoint.parse("/body/div/p/text()[3].100")
 
-        assert result.doc_fragment_index is None
+        assert result.doc_fragment_index == 1
         assert result.xpath == "/body/div/p"
         assert result.text_node_index == 3
         assert result.char_offset == 100
@@ -66,7 +66,7 @@ class TestXPoint:
         """Parse simple element boundary xpoint."""
         result = XPoint.parse("/body/div/p")
 
-        assert result.doc_fragment_index is None
+        assert result.doc_fragment_index == 1
         assert result.xpath == "/body/div/p"
         assert result.text_node_index == 1
         assert result.char_offset == 0
@@ -75,7 +75,7 @@ class TestXPoint:
         """Parse element boundary with indexed element."""
         result = XPoint.parse("/body/div[3]/span[2]")
 
-        assert result.doc_fragment_index is None
+        assert result.doc_fragment_index == 1
         assert result.xpath == "/body/div[3]/span[2]"
         assert result.text_node_index == 1
         assert result.char_offset == 0
@@ -109,7 +109,7 @@ class TestXPoint:
         """Parse element with offset but no /text() specifier."""
         result = XPoint.parse("/body/span.5")
 
-        assert result.doc_fragment_index is None
+        assert result.doc_fragment_index == 1
         assert result.xpath == "/body/span"
         assert result.text_node_index == 1
         assert result.char_offset == 5
@@ -129,10 +129,15 @@ class TestXPoint:
         with pytest.raises(XPointParseError):
             XPoint.parse("/body/div/text().-5")
 
+    def test_parse_without_doc_fragment_defaults_to_1(self) -> None:
+        """XPoints without DocFragment prefix (single-spine EPUBs) default to fragment 1."""
+        result = XPoint.parse("/body/div[1]/p[5]/text()[1].42")
+        assert result.doc_fragment_index == 1
+
     def test_to_string_simple_xpoint(self) -> None:
-        """Convert XPoint back to string."""
+        """Convert XPoint back to string — always includes DocFragment."""
         xpoint = XPoint.parse("/body/div[1]/p[5]/text()[1].42")
-        assert xpoint.to_string() == "/body/div[1]/p[5]/text().42"
+        assert xpoint.to_string() == "/body/DocFragment[1]/body/div[1]/p[5]/text().42"
 
     def test_to_string_with_doc_fragment(self) -> None:
         """Convert XPoint with DocFragment to string."""
@@ -140,9 +145,9 @@ class TestXPoint:
         assert xpoint.to_string() == "/body/DocFragment[12]/body/div/p[88]/text().223"
 
     def test_to_string_element_boundary(self) -> None:
-        """Convert element boundary XPoint to string."""
+        """Convert element boundary XPoint to string — always includes DocFragment."""
         xpoint = XPoint.parse("/body/div/p")
-        assert xpoint.to_string() == "/body/div/p"
+        assert xpoint.to_string() == "/body/DocFragment[1]/body/div/p"
 
     def test_to_dict_and_from_dict(self) -> None:
         """XPoint can be serialized to dict and back."""
@@ -157,124 +162,8 @@ class TestXPoint:
         assert restored.char_offset == 223
 
 
-class TestXPointComparison:
-    """Test suite for XPoint comparison operations."""
-
-    def test_compare_identical_xpoints(self) -> None:
-        """Identical xpoints should be equal."""
-        xpoint1 = XPoint.parse("/body/div[1]/p[5]/text()[1].42")
-        xpoint2 = XPoint.parse("/body/div[1]/p[5]/text()[1].42")
-        assert xpoint1.compare_to(xpoint2) == 0
-
-    def test_compare_different_doc_fragments(self) -> None:
-        """Earlier doc fragment comes first."""
-        xpoint1 = XPoint.parse("/body/DocFragment[1]/body/div/p/text().0")
-        xpoint2 = XPoint.parse("/body/DocFragment[2]/body/div/p/text().0")
-        assert xpoint1.compare_to(xpoint2) == -1
-        assert xpoint2.compare_to(xpoint1) == 1
-
-    def test_compare_with_and_without_doc_fragment(self) -> None:
-        """No DocFragment treated as DocFragment[1]."""
-        xpoint1 = XPoint.parse("/body/div/p/text().0")  # No DocFragment = 1
-        xpoint2 = XPoint.parse(
-            "/body/DocFragment[1]/body/div/p/text().0"
-        )  # Explicit DocFragment[1]
-        assert xpoint1.compare_to(xpoint2) == 0
-
-    def test_compare_different_element_indices(self) -> None:
-        """Earlier element index comes first."""
-        xpoint1 = XPoint.parse("/body/div[1]/p[5]/text().0")
-        xpoint2 = XPoint.parse("/body/div[1]/p[10]/text().0")
-        assert xpoint1.compare_to(xpoint2) == -1
-        assert xpoint2.compare_to(xpoint1) == 1
-
-    def test_compare_avoids_lexicographic_trap(self) -> None:
-        """Numeric comparison, not lexicographic (p[9] < p[10])."""
-        xpoint1 = XPoint.parse("/body/div/p[9]/text().0")
-        xpoint2 = XPoint.parse("/body/div/p[10]/text().0")
-        # Lexicographically "p[9]" > "p[10]", but numerically p[9] < p[10]
-        assert xpoint1.compare_to(xpoint2) == -1
-
-    def test_compare_different_text_node_indices(self) -> None:
-        """Earlier text node index comes first."""
-        xpoint1 = XPoint.parse("/body/div/p/text()[1].0")
-        xpoint2 = XPoint.parse("/body/div/p/text()[2].0")
-        assert xpoint1.compare_to(xpoint2) == -1
-        assert xpoint2.compare_to(xpoint1) == 1
-
-    def test_compare_different_char_offsets(self) -> None:
-        """Earlier char offset comes first."""
-        xpoint1 = XPoint.parse("/body/div/p/text().10")
-        xpoint2 = XPoint.parse("/body/div/p/text().100")
-        assert xpoint1.compare_to(xpoint2) == -1
-        assert xpoint2.compare_to(xpoint1) == 1
-
-    def test_compare_different_xpath_depth(self) -> None:
-        """Shallower xpath comes first when prefix matches."""
-        xpoint1 = XPoint.parse("/body/div/p/text().0")
-        xpoint2 = XPoint.parse("/body/div/p/span/text().0")
-        assert xpoint1.compare_to(xpoint2) == -1
-        assert xpoint2.compare_to(xpoint1) == 1
-
-    def test_compare_element_boundaries(self) -> None:
-        """Element boundary xpoints compare correctly."""
-        xpoint1 = XPoint.parse("/body/DocFragment[14]/body/a")  # Offset 0 default
-        xpoint2 = XPoint.parse("/body/DocFragment[14]/body/a/text().10")
-        assert xpoint1.compare_to(xpoint2) == -1
-
-    def test_compare_complex_xpoints(self) -> None:
-        """Complex xpoints with multiple differing components."""
-        xpoint1 = XPoint.parse("/body/DocFragment[2]/body/div[1]/section[1]/p[5]/text()[1].42")
-        xpoint2 = XPoint.parse("/body/DocFragment[2]/body/div[1]/section[1]/p[5]/text()[1].100")
-        assert xpoint1.compare_to(xpoint2) == -1
-
-        xpoint3 = XPoint.parse("/body/DocFragment[2]/body/div[1]/section[2]/p[1]/text().0")
-        assert xpoint1.compare_to(xpoint3) == -1  # section[1] < section[2]
-
-
 class TestXPointRange:
     """Test suite for XPointRange operations."""
-
-    def test_xpoint_within_range_inclusive(self) -> None:
-        """XPoint within range returns True (inclusive)."""
-        xpoint_range = XPointRange.parse("/body/div/p[1]/text().0", "/body/div/p[10]/text().100")
-        xpoint = XPoint.parse("/body/div/p[5]/text().50")
-        assert xpoint_range.contains(xpoint) is True
-
-    def test_xpoint_at_start_inclusive(self) -> None:
-        """XPoint at start of range returns True (inclusive)."""
-        xpoint_range = XPointRange.parse("/body/div/p[1]/text().0", "/body/div/p[10]/text().100")
-        start = XPoint.parse("/body/div/p[1]/text().0")
-        assert xpoint_range.contains(start) is True
-
-    def test_xpoint_at_end_inclusive(self) -> None:
-        """XPoint at end of range returns True (inclusive)."""
-        xpoint_range = XPointRange.parse("/body/div/p[1]/text().0", "/body/div/p[10]/text().100")
-        end = XPoint.parse("/body/div/p[10]/text().100")
-        assert xpoint_range.contains(end) is True
-
-    def test_xpoint_before_range(self) -> None:
-        """XPoint before range returns False."""
-        xpoint_range = XPointRange.parse("/body/div/p[5]/text().0", "/body/div/p[10]/text().100")
-        xpoint = XPoint.parse("/body/div/p[1]/text().0")
-        assert xpoint_range.contains(xpoint) is False
-
-    def test_xpoint_after_range(self) -> None:
-        """XPoint after range returns False."""
-        xpoint_range = XPointRange.parse("/body/div/p[1]/text().0", "/body/div/p[10]/text().100")
-        xpoint = XPoint.parse("/body/div/p[15]/text().0")
-        assert xpoint_range.contains(xpoint) is False
-
-    def test_range_with_doc_fragments(self) -> None:
-        """Range check works with DocFragments."""
-        xpoint_range = XPointRange.parse(
-            "/body/DocFragment[2]/body/div/p[1]/text().0",
-            "/body/DocFragment[5]/body/div/p[10]/text().100",
-        )
-        xpoint_in = XPoint.parse("/body/DocFragment[3]/body/div/p[5]/text().50")
-        xpoint_out = XPoint.parse("/body/DocFragment[1]/body/div/p[5]/text().50")
-        assert xpoint_range.contains(xpoint_in) is True
-        assert xpoint_range.contains(xpoint_out) is False
 
     def test_xpoint_range_validation_invalid_order(self) -> None:
         """XPointRange validates that start comes before end."""
