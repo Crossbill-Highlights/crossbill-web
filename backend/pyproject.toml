@@ -112,3 +112,7 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = ["-v", "--strict-markers", "--tb=short"]
 log_level = "WARNING"
+filterwarnings = [
+    "ignore:.*_UnionGenericAlias.*:DeprecationWarning:google.genai",
+    "ignore:.*asyncio.iscoroutinefunction.*:DeprecationWarning:slowapi",
+]
