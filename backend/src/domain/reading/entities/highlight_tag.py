@@ -68,10 +68,6 @@ class HighlightTag(Entity[HighlightTagId]):
         """Check if this tag belongs to the specified book."""
         return self.book_id == book_id
 
-    def belongs_to_user(self, user_id: UserId) -> bool:
-        """Check if this tag belongs to the specified user."""
-        return self.user_id == user_id
-
     @classmethod
     def create(
         cls,

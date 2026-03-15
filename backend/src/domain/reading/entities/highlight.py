@@ -151,30 +151,6 @@ class Highlight(AggregateRoot[HighlightId]):
         # Actual persistence of association happens in infrastructure layer
         # This method provides domain-level validation
 
-    def remove_tag(self, tag: HighlightTag) -> None:
-        """
-        Remove a tag from this highlight (domain validation).
-
-        Args:
-            tag: The tag to remove
-        """
-        # Validation logic here if needed
-        # Actual persistence happens in infrastructure layer
-
-    def has_tag(self, tag_id: int) -> bool:
-        """
-        Check if this highlight has the given tag.
-
-        Args:
-            tag_id: The tag ID to check
-
-        Returns:
-            True if highlight has the tag
-        """
-        return tag_id in self._tag_ids
-
-    # Factory methods
-
     @classmethod
     def create(
         cls,
