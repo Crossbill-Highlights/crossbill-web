@@ -5,7 +5,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from src.application.library.use_cases.book_files.book_cover_use_case import BookCoverUseCase
 from src.application.library.use_cases.book_files.ebook_upload_use_case import EbookUploadUseCase
 from src.application.library.use_cases.book_management.create_book_use_case import (
     CreateBookUseCase,
@@ -21,7 +20,6 @@ from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.library.schemas import (
     BookCreate,
-    CoverUploadResponse,
     EpubUploadResponse,
     EreaderBookMetadata,
 )
@@ -36,12 +34,14 @@ router = APIRouter(prefix="/ereader", tags=["ereader"])
     response_model=EreaderBookMetadata,
     status_code=status.HTTP_200_OK,
 )
-def create_book(
+async def create_book(
     book_data: BookCreate,
     current_user: Annotated[User, Depends(get_current_user)],
-    create_use_case: CreateBookUseCase = Depends(inject_use_case(container.create_book_use_case)),
+    create_use_case: CreateBookUseCase = Depends(
+        inject_use_case(container.library.create_book_use_case)
+    ),
     metadata_use_case: GetEreaderMetadataUseCase = Depends(
-        inject_use_case(container.get_ereader_metadata_use_case)
+        inject_use_case(container.library.get_ereader_metadata_use_case)
     ),
 ) -> EreaderBookMetadata:
     """
@@ -59,9 +59,9 @@ def create_book(
         EreaderBookMetadata with book_id, bookname, author, has_cover, has_epub
     """
     try:
-        create_use_case.create_book(book_data, current_user.id.value)
+        await create_use_case.create_book(book_data, current_user.id.value)
 
-        metadata = metadata_use_case.get_metadata_for_ereader(
+        metadata = await metadata_use_case.get_metadata_for_ereader(
             book_data.client_book_id, current_user.id.value
         )
         return EreaderBookMetadata(
@@ -94,11 +94,11 @@ def create_book(
     response_model=EreaderBookMetadata,
     status_code=status.HTTP_200_OK,
 )
-def get_book_metadata(
+async def get_book_metadata(
     client_book_id: str,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetEreaderMetadataUseCase = Depends(
-        inject_use_case(container.get_ereader_metadata_use_case)
+        inject_use_case(container.library.get_ereader_metadata_use_case)
     ),
 ) -> EreaderBookMetadata:
     """
@@ -118,7 +118,7 @@ def get_book_metadata(
         HTTPException: 404 if book is not found
     """
     try:
-        metadata = use_case.get_metadata_for_ereader(client_book_id, current_user.id.value)
+        metadata = await use_case.get_metadata_for_ereader(client_book_id, current_user.id.value)
         return EreaderBookMetadata(
             book_id=metadata.book_id,
             bookname=metadata.title,
@@ -144,61 +144,6 @@ def get_book_metadata(
         ) from e
 
 
-@router.post(
-    "/books/{client_book_id}/cover",
-    response_model=CoverUploadResponse,
-    status_code=status.HTTP_200_OK,
-)
-def upload_book_cover(
-    client_book_id: str,
-    cover: Annotated[UploadFile, File(...)],
-    current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookCoverUseCase = Depends(inject_use_case(container.book_cover_use_case)),
-) -> CoverUploadResponse:
-    """
-    Upload a book cover image using client_book_id.
-
-    This endpoint accepts an uploaded image file and saves it as the book's cover.
-    Used by KOReader which identifies books by client_book_id.
-
-    Args:
-        client_book_id: The client-provided stable book identifier
-        cover: Uploaded image file (JPEG, PNG, or WebP)
-        current_user: Authenticated user
-
-    Returns:
-        CoverUploadResponse with success status and cover URL
-
-    Raises:
-        HTTPException: 404 if book is not found, or if upload fails
-    """
-    try:
-        cover_url = use_case.upload_cover_by_client_book_id(
-            client_book_id, cover, current_user.id.value
-        )
-        return CoverUploadResponse(
-            success=True,
-            message="Cover uploaded successfully",
-            cover_url=cover_url,
-        )
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
-        raise
-    except DomainError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except Exception as e:
-        logger.error(
-            f"Failed to upload cover for client_book_id={client_book_id}: {e!s}",
-            exc_info=True,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
-
-
 # Maximum ebook file size (50MB - epubs and PDFs can be large)
 MAX_EBOOK_SIZE = 50 * 1024 * 1024
 
@@ -208,11 +153,13 @@ MAX_EBOOK_SIZE = 50 * 1024 * 1024
     response_model=EpubUploadResponse,
     status_code=status.HTTP_200_OK,
 )
-def upload_book_epub(
+async def upload_book_epub(
     client_book_id: str,
     epub: Annotated[UploadFile, File(...)],
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: EbookUploadUseCase = Depends(inject_use_case(container.ebook_upload_use_case)),
+    use_case: EbookUploadUseCase = Depends(
+        inject_use_case(container.library.ebook_upload_use_case)
+    ),
 ) -> EpubUploadResponse:
     """
     Upload an ebook file (EPUB) for a book using client_book_id.
@@ -248,7 +195,7 @@ def upload_book_epub(
                 detail=f"File too large (max {MAX_EBOOK_SIZE // (1024 * 1024)}MB)",
             )
 
-        use_case.upload_ebook(
+        await use_case.upload_ebook(
             client_book_id, content, epub.content_type or "", current_user.id.value
         )
 

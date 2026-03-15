@@ -71,19 +71,6 @@ class ReadingSession(AggregateRoot[ReadingSessionId]):
         hash_input = f"{self.book_id}|{self.user_id}|{self.start_time}|{self.device_id or ''}"
         self.content_hash = ContentHash.compute(hash_input)
 
-    @property
-    def duration_minutes(self) -> int:
-        """Calculate session duration in minutes."""
-        delta = self.end_time - self.start_time
-        return int(delta.total_seconds() / 60)
-
-    @property
-    def pages_read(self) -> int:
-        """Calculate number of pages read."""
-        if self.start_page is None or self.end_page is None:
-            return 0
-        return max(0, self.end_page - self.start_page)
-
     def set_ai_summary(self, summary: str) -> None:
         """Set AI-generated summary for this session."""
         self.ai_summary = summary.strip() if summary else None

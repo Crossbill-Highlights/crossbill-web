@@ -1,6 +1,7 @@
 """Database models."""
 
 from datetime import datetime as dt
+from typing import Any
 
 from sqlalchemy import (
     Column,
@@ -147,7 +148,6 @@ class Book(Base):
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     author: Mapped[str | None] = mapped_column(String(500), nullable=True)
     isbn: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    cover: Mapped[str | None] = mapped_column(String(500), nullable=True)
     file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     file_type: Mapped[str | None] = mapped_column(String(10), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -462,7 +462,9 @@ class HighlightTag(Base):
     # Relationships
     user: Mapped["User"] = relationship(back_populates="highlight_tags")
     book: Mapped["Book"] = relationship(back_populates="highlight_tags")
-    tag_group: Mapped["HighlightTagGroup | None"] = relationship(back_populates="highlight_tags")
+    tag_group: Mapped["HighlightTagGroup | None"] = relationship(
+        back_populates="highlight_tags", lazy="selectin"
+    )
     highlights: Mapped[list["Highlight"]] = relationship(
         secondary=highlight_highlight_tags, back_populates="highlight_tags", lazy="selectin"
     )
@@ -640,3 +642,30 @@ class AIUsageRecord(Base):
 
     def __repr__(self) -> str:
         return f"<AIUsageRecord(id={self.id}, task_type={self.task_type}, entity_type={self.entity_type})>"
+
+
+class AIChatSession(Base):
+    """ORM model for AI chat sessions (quiz, discussion, etc.)."""
+
+    __tablename__ = "ai_chat_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    chapter_id: Mapped[int] = mapped_column(
+        ForeignKey("chapters.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    session_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    message_history: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[dt] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    user: Mapped["User"] = relationship()
+    chapter: Mapped["Chapter"] = relationship()
+
+    def __repr__(self) -> str:
+        return (
+            f"<AIChatSession(id={self.id}, type={self.session_type}, chapter_id={self.chapter_id})>"
+        )

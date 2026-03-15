@@ -15,6 +15,7 @@ from src.application.reading.protocols.reading_session_repository import (
     ReadingSessionRepositoryProtocol,
 )
 from src.config import get_settings
+from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects import (
     BookId,
     ReadingSessionId,
@@ -73,7 +74,7 @@ class ReadingSessionUploadUseCase:
         settings = get_settings()
         self.min_duration = settings.MINIMUM_READING_SESSION_DURATION
 
-    def upload_reading_sessions(
+    async def upload_reading_sessions(
         self,
         client_book_id: str,
         sessions: list[ReadingSessionUploadData],
@@ -107,7 +108,7 @@ class ReadingSessionUploadUseCase:
 
         # Get book by client_book_id
         user_id_vo = UserId(user_id)
-        book = self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)
+        book = await self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)
 
         if not book:
             logger.error(
@@ -122,7 +123,7 @@ class ReadingSessionUploadUseCase:
         # Build position index if EPUB
         position_index = None
         if book.file_type == "epub":
-            epub_path = self.file_repository.find_epub(book.id)
+            epub_path = await self.file_repository.find_epub(book.id)
             if epub_path:
                 position_index = self.position_index_service.build_position_index(epub_path)
 
@@ -131,7 +132,7 @@ class ReadingSessionUploadUseCase:
             total = position_index.total_elements
             if total > 0:
                 book.update_end_position(Position(index=total, char_index=0))
-                self.book_repository.save(book)
+                await self.book_repository.save(book)
 
         # Resolve positions for all sessions upfront
         sessions_with_positions: list[
@@ -170,22 +171,39 @@ class ReadingSessionUploadUseCase:
             # Parse XPointRange if both xpoints exist
             xpoint_range = None
             if session.start_xpoint and session.end_xpoint:
-                xpoint_range = XPointRange.parse(session.start_xpoint, session.end_xpoint)
+                try:
+                    xpoint_range = XPointRange.parse(session.start_xpoint, session.end_xpoint)
+                except ValueError:
+                    logger.warning(
+                        "skipping_invalid_xpoint_range",
+                        start_xpoint=session.start_xpoint,
+                        end_xpoint=session.end_xpoint,
+                    )
 
-            domain_session = ReadingSession(
-                id=ReadingSessionId.generate(),
-                user_id=user_id_vo,
-                book_id=book.id,
-                start_time=session.start_time,
-                end_time=session.end_time,
-                start_xpoint=xpoint_range,
-                start_page=session.start_page,
-                end_page=session.end_page,
-                start_position=start_position,
-                end_position=end_position,
-                device_id=session.device_id,
-                ai_summary=None,
-            )
+            try:
+                domain_session = ReadingSession(
+                    id=ReadingSessionId.generate(),
+                    user_id=user_id_vo,
+                    book_id=book.id,
+                    start_time=session.start_time,
+                    end_time=session.end_time,
+                    start_xpoint=xpoint_range,
+                    start_page=session.start_page,
+                    end_page=session.end_page,
+                    start_position=start_position,
+                    end_position=end_position,
+                    device_id=session.device_id,
+                    ai_summary=None,
+                )
+            except DomainError:
+                logger.warning(
+                    "skipping_invalid_session",
+                    start_time=session.start_time,
+                    end_time=session.end_time,
+                    start_page=session.start_page,
+                    end_page=session.end_page,
+                )
+                continue
             domain_sessions.append(domain_session)
 
         logger.debug(
@@ -193,7 +211,7 @@ class ReadingSessionUploadUseCase:
             sessions_to_save=len(domain_sessions),
         )
 
-        result = self.session_repository.bulk_create(user_id_vo, domain_sessions)
+        result = await self.session_repository.bulk_create(user_id_vo, domain_sessions)
         created_count = result.created_count
         skipped_duplicate_count = len(domain_sessions) - created_count
 
@@ -206,7 +224,7 @@ class ReadingSessionUploadUseCase:
         # Link highlights to created reading sessions
         linked_count = 0
         if result.created_sessions:
-            linked_count = self._link_highlights_to_sessions(
+            linked_count = await self._link_highlights_to_sessions(
                 book.id, user_id_vo, result.created_sessions
             )
             logger.info(
@@ -249,7 +267,7 @@ class ReadingSessionUploadUseCase:
             return (start, end)
         return (None, None)
 
-    def _link_highlights_to_sessions(
+    async def _link_highlights_to_sessions(
         self,
         book_id: BookId,
         user_id: UserId,
@@ -270,7 +288,7 @@ class ReadingSessionUploadUseCase:
             Total number of highlight-session links created
         """
         # Get all highlights for this book via repository
-        highlights = self.highlight_repository.find_by_book_id(book_id, user_id)
+        highlights = await self.highlight_repository.find_by_book_id(book_id, user_id)
 
         if not highlights:
             return 0
@@ -287,7 +305,9 @@ class ReadingSessionUploadUseCase:
 
         # Bulk insert links via repository
         if session_highlight_pairs:
-            return self.session_repository.link_highlights_to_sessions(session_highlight_pairs)
+            return await self.session_repository.link_highlights_to_sessions(
+                session_highlight_pairs
+            )
 
         return 0
 

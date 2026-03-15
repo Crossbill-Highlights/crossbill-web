@@ -1,11 +1,11 @@
 """Use case for ebook upload operations."""
 
 import logging
-import re
+from pathlib import Path
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
-from src.application.library.protocols.epub_toc_parser import EpubTocParserProtocol
+from src.application.library.protocols.epub_parser import EpubParserProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.application.library.protocols.position_index_service import PositionIndexServiceProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
@@ -22,32 +22,6 @@ from src.exceptions import InvalidEbookError
 logger = logging.getLogger(__name__)
 
 
-def _sanitize_filename(text: str) -> str:
-    """
-    Sanitize text for use in filename.
-
-    Removes/replaces characters that are invalid in filenames.
-    Limits length to prevent overly long filenames.
-
-    Args:
-        text: Text to sanitize
-
-    Returns:
-        Sanitized text safe for filenames
-    """
-    # Remove invalid filename characters
-    sanitized = re.sub(r'[<>:"/\\|?*]', "", text)
-    # Replace spaces and other whitespace with underscores
-    sanitized = re.sub(r"\s+", "_", sanitized)
-    # Remove leading/trailing underscores and dots
-    sanitized = sanitized.strip("_.")
-    # Limit length (leave room for book_id and extension)
-    max_length = 100
-    if len(sanitized) > max_length:
-        sanitized = sanitized[:max_length]
-    return sanitized
-
-
 class EbookUploadUseCase:
     """Use case for uploading ebook files."""
 
@@ -56,7 +30,7 @@ class EbookUploadUseCase:
         book_repository: BookRepositoryProtocol,
         chapter_repository: ChapterRepositoryProtocol,
         file_repository: FileRepositoryProtocol,
-        epub_toc_parser: EpubTocParserProtocol,
+        epub_parser: EpubParserProtocol,
         position_index_service: PositionIndexServiceProtocol,
         highlight_repository: HighlightRepositoryProtocol,
         session_repository: ReadingSessionRepositoryProtocol,
@@ -68,7 +42,7 @@ class EbookUploadUseCase:
             book_repository: Book repository protocol implementation
             chapter_repository: Chapter repository protocol implementation
             file_repository: File repository protocol implementation
-            epub_toc_parser: EPUB TOC parser service
+            epub_parser: EPUB parser service
             position_index_service: Service for building position indices from EPUBs
             highlight_repository: Repository for highlight persistence
             session_repository: Repository for reading session persistence
@@ -76,12 +50,12 @@ class EbookUploadUseCase:
         self.book_repository = book_repository
         self.chapter_repository = chapter_repository
         self.file_repository = file_repository
-        self.epub_toc_parser = epub_toc_parser
+        self.epub_parser = epub_parser
         self.position_index_service = position_index_service
         self.highlight_repository = highlight_repository
         self.session_repository = session_repository
 
-    def upload_ebook(
+    async def upload_ebook(
         self,
         client_book_id: str,
         content: bytes,
@@ -107,12 +81,12 @@ class EbookUploadUseCase:
         """
         # Route by content type
         if content_type in ["application/epub+zip", "application/epub"]:
-            return self._upload_epub(client_book_id, content, UserId(user_id))
+            return await self._upload_epub(client_book_id, content, UserId(user_id))
         if content_type == "application/pdf":
             raise NotImplementedError("PDF upload not yet implemented")
         raise InvalidEbookError(f"Unsupported content type: {content_type}", ebook_type="UNKNOWN")
 
-    def _upload_epub(
+    async def _upload_epub(
         self,
         client_book_id: str,
         content: bytes,
@@ -143,31 +117,18 @@ class EbookUploadUseCase:
             InvalidEbookError: If epub structure validation fails
         """
         # Find book by client_book_id
-        book = self.book_repository.find_by_client_book_id(client_book_id, user_id)
+        book = await self.book_repository.find_by_client_book_id(client_book_id, user_id)
         if not book:
             raise BookNotFoundError(f"client_book_id={client_book_id}")
 
-        if not self.epub_toc_parser.validate_epub(content):
+        if not self.epub_parser.validate_epub(content):
             raise InvalidEbookError("EPUB structure validation failed", ebook_type="EPUB")
 
-        # TODO: These likely belong to the repository level
-        # Generate filename: sanitized_title_bookid.epub
-        sanitized_title = _sanitize_filename(book.title)
-        epub_filename = f"{sanitized_title}_{book.id.value}.epub"
+        epub_path = await self.file_repository.save_epub(book.id, content, book.title)
+        book.update_file(epub_path.name, "epub")
 
-        # Check if book already has an epub file for deletion
-        old_file_path = None
-        if book.file_path and book.file_type == "epub":
-            old_file_path = book.file_path
-
-        # Delete old epub file if it exists and has different name
-        if old_file_path and old_file_path != epub_filename:
-            self.file_repository.delete_epub(book.id)
-
-        # Save new epub file
-        epub_path = self.file_repository.save_epub(book.id, content, epub_filename)
-        book.update_file(epub_filename, "epub")
-        self.book_repository.save(book)
+        # Extract and save cover if none exists
+        await self._extract_and_save_cover(book.id, epub_path)
 
         # Build position index from EPUB DOM
         position_index = self.position_index_service.build_position_index(epub_path)
@@ -176,10 +137,11 @@ class EbookUploadUseCase:
         total = position_index.total_elements
         if total > 0:
             book.update_end_position(Position(index=total, char_index=0))
-            self.book_repository.save(book)
+
+        await self.book_repository.save(book)
 
         # Parse TOC and sync chapters (with positions)
-        toc_chapters = self.epub_toc_parser.parse_toc(epub_path)
+        toc_chapters = self.epub_parser.parse_toc(epub_path)
         if toc_chapters:
             enriched_chapters = []
             for tc in toc_chapters:
@@ -196,14 +158,30 @@ class EbookUploadUseCase:
                         end_position=end_pos,
                     )
                 )
-            self.chapter_repository.sync_chapters_from_toc(book.id, user_id, enriched_chapters)
+            await self.chapter_repository.sync_chapters_from_toc(
+                book.id, user_id, enriched_chapters
+            )
 
         # Backfill positions for existing entities
-        self._backfill_positions(book.id, user_id, position_index)
+        await self._backfill_positions(book.id, user_id, position_index)
 
-        return epub_filename, str(epub_path)
+        return epub_path.name, str(epub_path)
 
-    def _backfill_positions(
+    async def _extract_and_save_cover(
+        self,
+        book_id: BookId,
+        epub_path: Path,
+    ) -> None:
+        """Extract cover from EPUB and save it, if no cover already exists."""
+        existing_cover = await self.file_repository.find_cover(book_id)
+        if existing_cover:
+            return
+
+        cover_bytes = self.epub_parser.extract_cover(epub_path)
+        if cover_bytes:
+            await self.file_repository.save_cover(book_id, cover_bytes)
+
+    async def _backfill_positions(
         self,
         book_id: BookId,
         user_id: UserId,
@@ -211,7 +189,7 @@ class EbookUploadUseCase:
     ) -> None:
         """Backfill position data for existing highlights and reading sessions."""
         # Backfill highlights
-        highlights = self.highlight_repository.find_by_book_id(book_id, user_id)
+        highlights = await self.highlight_repository.find_by_book_id(book_id, user_id)
         highlight_updates = []
         for h in highlights:
             if h.xpoints and h.xpoints.start:
@@ -219,10 +197,12 @@ class EbookUploadUseCase:
                 if pos:
                     highlight_updates.append((h.id, pos))
         if highlight_updates:
-            self.highlight_repository.bulk_update_positions(highlight_updates)
+            await self.highlight_repository.bulk_update_positions(highlight_updates)
 
         # Backfill reading sessions
-        sessions = self.session_repository.find_by_book_id(book_id, user_id, limit=10000, offset=0)
+        sessions = await self.session_repository.find_by_book_id(
+            book_id, user_id, limit=10000, offset=0
+        )
         session_updates = []
         for s in sessions:
             if s.start_xpoint:
@@ -231,4 +211,4 @@ class EbookUploadUseCase:
                 if start_pos and end_pos:
                     session_updates.append((s.id, start_pos, end_pos))
         if session_updates:
-            self.session_repository.bulk_update_positions(session_updates)
+            await self.session_repository.bulk_update_positions(session_updates)

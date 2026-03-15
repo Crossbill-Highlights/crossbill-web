@@ -52,7 +52,8 @@ export const BookTitle = ({ book }: BookTitleProps) => {
             }}
           >
             <BookCover
-              coverPath={book.cover}
+              bookId={book.id}
+              hasCover={book.has_cover}
               title={book.title}
               height="100%"
               width="100%"

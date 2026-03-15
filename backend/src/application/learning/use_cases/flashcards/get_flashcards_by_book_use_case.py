@@ -36,7 +36,7 @@ class GetFlashcardsByBookUseCase:
         self.highlight_style_repository = highlight_style_repository
         self.highlight_style_resolver = highlight_style_resolver
 
-    def get_flashcards(
+    async def get_flashcards(
         self, book_id: int, user_id: int
     ) -> tuple[list[FlashcardWithHighlight], dict[int, ResolvedLabel]]:
         """
@@ -55,17 +55,17 @@ class GetFlashcardsByBookUseCase:
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
-        flashcards = self.flashcard_repository.find_by_book(book_id_vo, user_id_vo)
+        flashcards = await self.flashcard_repository.find_by_book(book_id_vo, user_id_vo)
 
         highlight_ids = [fc.highlight_id for fc in flashcards if fc.highlight_id is not None]
 
         highlight_map: dict[int, tuple[Highlight, Chapter | None, list[HighlightTag]]] = {}
         if highlight_ids:
-            highlights_data = self.highlight_repository.find_by_ids_with_tags(
+            highlights_data = await self.highlight_repository.find_by_ids_with_tags(
                 highlight_ids, user_id_vo
             )
             highlight_map = {h.id.value: (h, chapter, tags) for h, chapter, tags in highlights_data}
@@ -90,7 +90,9 @@ class GetFlashcardsByBookUseCase:
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}
         if self.highlight_style_repository and self.highlight_style_resolver:
-            all_styles = self.highlight_style_repository.find_for_resolution(user_id_vo, book_id_vo)
+            all_styles = await self.highlight_style_repository.find_for_resolution(
+                user_id_vo, book_id_vo
+            )
             for style in all_styles:
                 if style.is_combination_level() and not style.is_global():
                     resolved = self.highlight_style_resolver.resolve(style, all_styles)

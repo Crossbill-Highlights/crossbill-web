@@ -1,0 +1,3 @@
+paths-ignore:
+  - "backend/alembic/versions/**"
+  - "backend/src/application/**/protocols/**"

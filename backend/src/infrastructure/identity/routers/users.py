@@ -38,7 +38,9 @@ async def register(
     response: Response,
     register_data: UserRegisterRequest,
     db: DatabaseSession,
-    use_case: RegisterUserUseCase = Depends(inject_use_case(container.register_user_use_case)),
+    use_case: RegisterUserUseCase = Depends(
+        inject_use_case(container.identity.register_user_use_case)
+    ),
 ) -> TokenWithRefresh:
     """
     Register a new user account.
@@ -47,8 +49,8 @@ async def register(
     Returns token pair for immediate login after registration.
     """
     try:
-        _, token_pair = use_case.register_user(register_data.email, register_data.password)
-        db.commit()
+        _, token_pair = await use_case.register_user(register_data.email, register_data.password)
+        await db.commit()
         set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
     except RegistrationDisabledError:
@@ -86,7 +88,7 @@ async def update_me(
     current_user: Annotated[User, Depends(get_current_user)],
     db: DatabaseSession,
     update_data: UserUpdateRequest,
-    use_case: UpdateUserUseCase = Depends(inject_use_case(container.update_user_use_case)),
+    use_case: UpdateUserUseCase = Depends(inject_use_case(container.identity.update_user_use_case)),
 ) -> UserDetailsResponse:
     """
     Update the current user's profile.
@@ -95,13 +97,13 @@ async def update_me(
     - To change password: provide both `current_password` and `new_password` fields
     """
     try:
-        user = use_case.update_user(
+        user = await use_case.update_user(
             user_id=current_user.id.value,
             email=update_data.email,
             current_password=update_data.current_password,
             new_password=update_data.new_password,
         )
-        db.commit()
+        await db.commit()
         return UserDetailsResponse(email=user.email, id=user.id.value)
     except PasswordVerificationError:
         raise HTTPException(

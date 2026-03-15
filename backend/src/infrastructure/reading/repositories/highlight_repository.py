@@ -9,7 +9,8 @@ import logging
 from datetime import UTC, datetime
 
 from sqlalchemy import delete, func, select, update
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from src.domain.common.value_objects import (
     BookId,
@@ -40,12 +41,12 @@ logger = logging.getLogger(__name__)
 class HighlightRepository:
     """Repository for Highlight persistence (domain-centric)."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         """
         Initialize repository.
 
         Args:
-            db: SQLAlchemy database session
+            db: SQLAlchemy async database session
         """
         self.db = db
         self.mapper = HighlightMapper()
@@ -54,7 +55,7 @@ class HighlightRepository:
         self.highlight_tag_mapper = HighlightTagMapper()
         self.flashcard_mapper = FlashcardMapper()
 
-    def find_by_id(self, highlight_id: HighlightId, user_id: UserId) -> Highlight | None:
+    async def find_by_id(self, highlight_id: HighlightId, user_id: UserId) -> Highlight | None:
         """
         Load highlight by ID.
 
@@ -70,14 +71,15 @@ class HighlightRepository:
             .where(HighlightORM.id == highlight_id.value)
             .where(HighlightORM.user_id == user_id.value)
         )
-        orm_model = self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        orm_model = result.scalar_one_or_none()
 
         if not orm_model:
             return None
 
         return self.mapper.to_domain(orm_model)
 
-    def find_by_id_with_relations(
+    async def find_by_id_with_relations(
         self, highlight_id: HighlightId, user_id: UserId
     ) -> tuple[Highlight, list[Flashcard], list[HighlightTag]] | None:
         """
@@ -99,7 +101,8 @@ class HighlightRepository:
             .where(HighlightORM.id == highlight_id.value)
             .where(HighlightORM.user_id == user_id.value)
         )
-        orm_model = self.db.execute(stmt).unique().scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        orm_model = result.unique().scalar_one_or_none()
 
         if not orm_model:
             return None
@@ -112,7 +115,7 @@ class HighlightRepository:
 
         return highlight, flashcards, highlight_tags
 
-    def save(self, highlight: Highlight) -> Highlight:
+    async def save(self, highlight: Highlight) -> Highlight:
         """
         Persist highlight to database.
 
@@ -129,21 +132,24 @@ class HighlightRepository:
             # Create new highlight
             orm_model = self.mapper.to_orm(highlight)
             self.db.add(orm_model)
-            self.db.commit()  # Get ID without committing
+            await self.db.commit()
+            await self.db.refresh(orm_model)
 
             # Return domain entity with real ID
             return self.mapper.to_domain(orm_model)
         # Update existing highlight
         stmt = select(HighlightORM).where(HighlightORM.id == highlight.id.value)
-        existing_orm = self.db.execute(stmt).scalar_one()
+        result = await self.db.execute(stmt)
+        existing_orm = result.scalar_one()
 
         # Update ORM model using mapper
         self.mapper.to_orm(highlight, existing_orm)
-        self.db.commit()
+        await self.db.commit()
+        await self.db.refresh(existing_orm)
 
         return self.mapper.to_domain(existing_orm)
 
-    def get_existing_hashes(
+    async def get_existing_hashes(
         self, user_id: UserId, book_id: BookId, hashes: list[ContentHash]
     ) -> set[ContentHash]:
         """
@@ -175,12 +181,13 @@ class HighlightRepository:
             # Include soft-deleted highlights to prevent recreation
         )
 
-        result = self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        existing = result.scalars().all()
 
         # Convert back to value objects
-        return {ContentHash(hash_str) for hash_str in result}
+        return {ContentHash(hash_str) for hash_str in existing}
 
-    def bulk_save(self, highlights: list[Highlight]) -> list[Highlight]:
+    async def bulk_save(self, highlights: list[Highlight]) -> list[Highlight]:
         """
         Bulk save highlights efficiently.
 
@@ -199,13 +206,18 @@ class HighlightRepository:
         orm_models = [self.mapper.to_orm(h) for h in highlights]
 
         # Bulk insert
-        self.db.bulk_save_objects(orm_models, return_defaults=True)
-        self.db.commit()
+        self.db.add_all(orm_models)
+        await self.db.flush()
+        await self.db.commit()
+
+        # Refresh all ORM models to load database-generated attributes
+        for orm in orm_models:
+            await self.db.refresh(orm)
 
         # Convert back to domain entities with real IDs
         return [self.mapper.to_domain(orm) for orm in orm_models]
 
-    def search(
+    async def search(
         self,
         search_text: str,
         user_id: UserId,
@@ -227,7 +239,8 @@ class HighlightRepository:
             List of tuples containing (Highlight, Book, Chapter or None, list[HighlightTag], list[Flashcard])
         """
         # Check database type
-        is_postgresql = self.db.bind is not None and self.db.bind.dialect.name == "postgresql"
+        dialect_name = self.db.bind.dialect.name
+        is_postgresql = dialect_name == "postgresql"
 
         # Build the base query with eager loading of relationships
         stmt = (
@@ -269,7 +282,8 @@ class HighlightRepository:
         stmt = stmt.limit(limit)
 
         # Execute query - use unique() when joining collections
-        results = self.db.execute(stmt).unique().scalars().all()
+        result = await self.db.execute(stmt)
+        results = result.unique().scalars().all()
 
         # Convert ORM models to domain entities
         return [
@@ -288,7 +302,7 @@ class HighlightRepository:
             for highlight_orm in results
         ]
 
-    def bulk_update_positions(
+    async def bulk_update_positions(
         self,
         position_updates: list[tuple[HighlightId, Position]],
     ) -> int:
@@ -297,16 +311,16 @@ class HighlightRepository:
             return 0
 
         for highlight_id, position in position_updates:
-            self.db.execute(
+            await self.db.execute(
                 update(HighlightORM)
                 .where(HighlightORM.id == highlight_id.value)
                 .values(position=position.to_json())
             )
 
-        self.db.commit()
+        await self.db.commit()
         return len(position_updates)
 
-    def soft_delete_by_ids(
+    async def soft_delete_by_ids(
         self,
         highlight_ids: list[HighlightId],
         user_id: UserId,
@@ -344,14 +358,14 @@ class HighlightRepository:
         stmt_delete_bookmarks = delete(BookmarkORM).where(
             BookmarkORM.highlight_id.in_(valid_highlight_ids_subquery)
         )
-        result = self.db.execute(stmt_delete_bookmarks)
+        result = await self.db.execute(stmt_delete_bookmarks)
         bookmarks_deleted = getattr(result, "rowcount", 0) or 0
 
         # Bulk delete all flashcards for valid highlights
         stmt_delete_flashcards = delete(FlashcardORM).where(
             FlashcardORM.highlight_id.in_(valid_highlight_ids_subquery)
         )
-        result = self.db.execute(stmt_delete_flashcards)
+        result = await self.db.execute(stmt_delete_flashcards)
         flashcards_deleted = getattr(result, "rowcount", 0) or 0
 
         # Bulk soft delete all valid highlights in a single query
@@ -365,17 +379,17 @@ class HighlightRepository:
             )
             .values(deleted_at=datetime.now(UTC))
         )
-        result = self.db.execute(stmt_soft_delete)
+        result = await self.db.execute(stmt_soft_delete)
         count = getattr(result, "rowcount", 0) or 0
 
-        self.db.commit()
+        await self.db.commit()
         logger.info(
             f"Soft deleted {count} highlights, {bookmarks_deleted} associated bookmarks, "
             f"and {flashcards_deleted} associated flashcards for book_id={book_id.value}, user_id={user_id.value}"
         )
         return count
 
-    def find_by_ids_with_tags(
+    async def find_by_ids_with_tags(
         self, highlight_ids: list[HighlightId], user_id: UserId
     ) -> list[tuple[Highlight, Chapter | None, list[HighlightTag]]]:
         """
@@ -405,7 +419,8 @@ class HighlightRepository:
                 HighlightORM.deleted_at.is_(None),
             )
         )
-        highlight_orms = list(self.db.execute(stmt).unique().scalars().all())
+        result = await self.db.execute(stmt)
+        highlight_orms = list(result.unique().scalars().all())
 
         # Convert to domain entities
         return [
@@ -417,7 +432,7 @@ class HighlightRepository:
             for h_orm in highlight_orms
         ]
 
-    def find_by_book_id(self, book_id: BookId, user_id: UserId) -> list[Highlight]:
+    async def find_by_book_id(self, book_id: BookId, user_id: UserId) -> list[Highlight]:
         """
         Get all non-deleted highlights for a book.
 
@@ -433,10 +448,11 @@ class HighlightRepository:
             HighlightORM.user_id == user_id.value,
             HighlightORM.deleted_at.is_(None),
         )
-        orms = self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        orms = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orms]
 
-    def count_by_book(self, book_id: BookId, user_id: UserId) -> int:
+    async def count_by_book(self, book_id: BookId, user_id: UserId) -> int:
         """
         Count all non-deleted highlights for a book.
 
@@ -452,9 +468,10 @@ class HighlightRepository:
             HighlightORM.user_id == user_id.value,
             HighlightORM.deleted_at.is_(None),
         )
-        return self.db.execute(stmt).scalar() or 0
+        result = await self.db.execute(stmt)
+        return result.scalar() or 0
 
-    def get_highlights_by_session_ids(
+    async def get_highlights_by_session_ids(
         self,
         session_ids: list[ReadingSessionId],
         user_id: UserId,
@@ -491,7 +508,8 @@ class HighlightRepository:
             )
         )
 
-        results = self.db.execute(stmt).all()
+        result = await self.db.execute(stmt)
+        results = result.all()
 
         # Group results by session_id
         grouped: dict[ReadingSessionId, list[Highlight]] = {sid: [] for sid in session_ids}

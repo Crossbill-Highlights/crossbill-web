@@ -1,4 +1,4 @@
-"""Infrastructure service for parsing EPUB table of contents."""
+"""Infrastructure service for parsing EPUB files."""
 
 # pyright: reportPrivateUsage=false
 
@@ -7,6 +7,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any, cast
 
+import ebooklib
 from ebooklib import epub
 from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -55,8 +56,8 @@ def _extract_toc_hierarchy(
     return chapters
 
 
-class EpubTocParserService:
-    """Infrastructure service for parsing EPUB table of contents and validation."""
+class EpubParserService:
+    """Infrastructure service for parsing EPUB files."""
 
     def validate_epub(self, content: bytes) -> bool:
         """
@@ -141,6 +142,62 @@ class EpubTocParserService:
             logger.error(f"Failed to parse TOC from EPUB at {epub_path}: {e!s}")
             return []
 
+    def extract_cover(self, epub_path: Path) -> bytes | None:
+        """
+        Extract cover image from an EPUB file.
+
+        Tries three strategies in order:
+        1. OPF metadata via get_metadata("OPF", "cover")
+        2. Items with ITEM_COVER type
+        3. Scanning OPF "meta" entries for cover reference (handles namespace issues)
+
+        Returns None if no cover found or on any error.
+        """
+        try:
+            book = epub.read_epub(str(epub_path))
+
+            # Strategy 1: Check OPF metadata for cover item ID
+            cover_meta = book.get_metadata("OPF", "cover")
+            if cover_meta:
+                cover_id = cover_meta[0][1].get("content", "") if cover_meta[0][1] else ""
+                if cover_id:
+                    item = book.get_item_with_id(cover_id)
+                    if item:
+                        content = item.get_content()
+                        if content:
+                            logger.info(f"Extracted cover from OPF metadata for {epub_path}")
+                            return bytes(content)
+
+            # Strategy 2: Fall back to ITEM_COVER type
+            cover_items = list(book.get_items_of_type(ebooklib.ITEM_COVER))
+            if cover_items:
+                content = cover_items[0].get_content()
+                if content:
+                    logger.info(f"Extracted cover from ITEM_COVER for {epub_path}")
+                    return bytes(content)
+
+            # Strategy 3: Scan OPF "meta" entries for cover reference
+            # ebooklib sometimes stores <meta name="cover" content="..."/> under
+            # ("OPF", "meta") instead of ("OPF", "cover") due to XML namespace handling.
+            opf_meta_entries = book.get_metadata("OPF", "meta")
+            for _text, attrs in opf_meta_entries:
+                if attrs.get("name") == "cover":
+                    cover_id = attrs.get("content", "")
+                    if cover_id:
+                        item = book.get_item_with_id(cover_id)
+                        if item:
+                            content = item.get_content()
+                            if content:
+                                logger.info(f"Extracted cover from OPF meta scan for {epub_path}")
+                                return bytes(content)
+
+            logger.info(f"No cover image found in EPUB {epub_path}")
+            return None
+
+        except Exception as e:
+            logger.warning(f"Failed to extract cover from EPUB {epub_path}: {e!s}")
+            return None
+
     @staticmethod
     def _build_href_to_spine_index(book: Any) -> dict[str, int]:  # noqa: ANN401
         """Build a mapping from spine item file names to 1-based spine indices."""
@@ -181,11 +238,9 @@ class EpubTocParserService:
         file_part = parts[0]
         fragment_id = parts[1] if len(parts) > 1 else None
 
-        spine_idx = EpubTocParserService._href_to_spine_index(file_part, spine_mapping)
+        spine_idx = EpubParserService._href_to_spine_index(file_part, spine_mapping)
         if spine_idx is None:
-            spine_idx = EpubTocParserService._href_to_spine_index(
-                href.split("#", 1)[0], spine_mapping
-            )
+            spine_idx = EpubParserService._href_to_spine_index(href.split("#", 1)[0], spine_mapping)
             if spine_idx is None:
                 return None
 

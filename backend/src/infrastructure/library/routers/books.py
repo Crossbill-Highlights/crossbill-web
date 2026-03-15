@@ -167,7 +167,7 @@ def _build_book_details_schema(
         title=agg.book.title,
         author=agg.book.author,
         isbn=agg.book.isbn,
-        cover=agg.book.cover,
+        has_cover=agg.has_cover,
         description=agg.book.description,
         language=agg.book.language,
         page_count=agg.book.page_count,
@@ -228,10 +228,10 @@ def _build_book_details_schema(
 
 
 @router.get("/", response_model=BooksListResponse, status_code=status.HTTP_200_OK)
-def get_books(
+async def get_books(
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetBooksWithCountsUseCase = Depends(
-        inject_use_case(container.get_books_with_counts_use_case)
+        inject_use_case(container.library.get_books_with_counts_use_case)
     ),
     offset: int = Query(0, ge=0, description="Number of books to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of books to return"),
@@ -253,7 +253,7 @@ def get_books(
         HTTPException: If fetching books fails due to server error
     """
     try:
-        results, total = use_case.get_books_with_counts(
+        results, total = await use_case.get_books_with_counts(
             current_user.id.value, offset, limit, only_with_flashcards, search
         )
 
@@ -264,7 +264,7 @@ def get_books(
                 title=book.title,
                 author=book.author,
                 isbn=book.isbn,
-                cover=book.cover,
+                has_cover=has_cover,
                 description=book.description,
                 language=book.language,
                 page_count=book.page_count,
@@ -281,7 +281,7 @@ def get_books(
                 updated_at=book.updated_at,
                 last_viewed=book.last_viewed,
             )
-            for book, highlight_count, flashcard_count, tags in results
+            for book, highlight_count, flashcard_count, tags, has_cover in results
         ]
 
         return BooksListResponse(books=books_list, total=total, offset=offset, limit=limit)
@@ -298,10 +298,10 @@ def get_books(
     response_model=RecentlyViewedBooksResponse,
     status_code=status.HTTP_200_OK,
 )
-def get_recently_viewed_books(
+async def get_recently_viewed_books(
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetRecentlyViewedBooksUseCase = Depends(
-        inject_use_case(container.get_recently_viewed_books_use_case)
+        inject_use_case(container.library.get_recently_viewed_books_use_case)
     ),
     limit: int = Query(10, ge=1, le=50, description="Maximum number of books to return"),
 ) -> RecentlyViewedBooksResponse:
@@ -320,7 +320,7 @@ def get_recently_viewed_books(
         HTTPException: If fetching books fails due to server error
     """
     try:
-        results = use_case.get_recently_viewed(current_user.id.value, limit)
+        results = await use_case.get_recently_viewed(current_user.id.value, limit)
 
         books_list = [
             BookWithHighlightCount(
@@ -329,7 +329,7 @@ def get_recently_viewed_books(
                 title=book.title,
                 author=book.author,
                 isbn=book.isbn,
-                cover=book.cover,
+                has_cover=has_cover,
                 description=book.description,
                 language=book.language,
                 page_count=book.page_count,
@@ -346,7 +346,7 @@ def get_recently_viewed_books(
                 updated_at=book.updated_at,
                 last_viewed=book.last_viewed,
             )
-            for book, highlight_count, flashcard_count, tags in results
+            for book, highlight_count, flashcard_count, tags, has_cover in results
         ]
 
         return RecentlyViewedBooksResponse(books=books_list)
@@ -359,10 +359,12 @@ def get_recently_viewed_books(
 
 
 @router.get("/{book_id}", response_model=BookDetails, status_code=status.HTTP_200_OK)
-def get_book_details(
+async def get_book_details(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: GetBookDetailsUseCase = Depends(inject_use_case(container.get_book_details_use_case)),
+    use_case: GetBookDetailsUseCase = Depends(
+        inject_use_case(container.library.get_book_details_use_case)
+    ),
 ) -> BookDetails:
     """
     Get detailed information about a book including its chapters and highlights.
@@ -377,7 +379,7 @@ def get_book_details(
         HTTPException: If book is not found or fetching fails
     """
     try:
-        agg = use_case.get_book_details(book_id, current_user.id.value)
+        agg = await use_case.get_book_details(book_id, current_user.id.value)
         return _build_book_details_schema(agg, agg.labels)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
@@ -399,11 +401,11 @@ def get_book_details(
     response_model=BookWithHighlightCount,
     status_code=status.HTTP_200_OK,
 )
-def update_book(
+async def update_book(
     book_id: int,
     request: BookUpdateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: UpdateBookUseCase = Depends(inject_use_case(container.update_book_use_case)),
+    use_case: UpdateBookUseCase = Depends(inject_use_case(container.library.update_book_use_case)),
 ) -> BookWithHighlightCount:
     """
     Update book information.
@@ -421,7 +423,7 @@ def update_book(
         HTTPException: If book is not found or update fails
     """
     try:
-        book, highlight_count, flashcard_count, tags = use_case.update_book(
+        book, highlight_count, flashcard_count, tags, has_cover = await use_case.update_book(
             book_id, request, current_user.id.value
         )
         return BookWithHighlightCount(
@@ -430,7 +432,7 @@ def update_book(
             title=book.title,
             author=book.author,
             isbn=book.isbn,
-            cover=book.cover,
+            has_cover=has_cover,
             description=book.description,
             language=book.language,
             page_count=book.page_count,
@@ -463,10 +465,10 @@ def update_book(
 
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_book(
+async def delete_book(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: DeleteBookUseCase = Depends(inject_use_case(container.delete_book_use_case)),
+    use_case: DeleteBookUseCase = Depends(inject_use_case(container.library.delete_book_use_case)),
 ) -> None:
     """
     Delete a book and all its contents (hard delete).
@@ -482,7 +484,7 @@ def delete_book(
         HTTPException: If book is not found or deletion fails
     """
     try:
-        use_case.delete_book(book_id, current_user.id.value)
+        await use_case.delete_book(book_id, current_user.id.value)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -499,10 +501,10 @@ def delete_book(
 
 
 @router.get("/{book_id}/cover", status_code=status.HTTP_200_OK)
-def get_book_cover(
+async def get_book_cover(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookCoverUseCase = Depends(inject_use_case(container.book_cover_use_case)),
+    use_case: BookCoverUseCase = Depends(inject_use_case(container.library.book_cover_use_case)),
 ) -> FileResponse:
     """
     Get the cover image for a book.
@@ -520,5 +522,9 @@ def get_book_cover(
     Raises:
         HTTPException: If book is not found, user doesn't own it, or cover doesn't exist
     """
-    cover_path = use_case.get_cover_path(book_id, current_user.id.value)
+    cover_path = await use_case.get_cover_path(book_id, current_user.id.value)
+
+    if cover_path is None:
+        raise HTTPException(status_code=404, detail="Cover not found")
+
     return FileResponse(cover_path, media_type="image/jpeg")

@@ -23,7 +23,7 @@ class DeleteBookUseCase:
         self.book_repository = book_repository
         self.ebook_deletion_use_case = ebook_deletion_use_case
 
-    def delete_book(self, book_id: int, user_id: int) -> None:
+    async def delete_book(self, book_id: int, user_id: int) -> None:
         """
         Delete a book and all its contents (hard delete).
 
@@ -40,11 +40,11 @@ class DeleteBookUseCase:
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
-        self.ebook_deletion_use_case.delete_ebook(book_id)
-        self.book_repository.delete(book)
+        await self.ebook_deletion_use_case.delete_ebook(book_id)
+        await self.book_repository.delete(book)
 
         logger.info(f"Successfully deleted book {book_id}")

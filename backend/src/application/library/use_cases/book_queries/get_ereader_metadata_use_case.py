@@ -28,7 +28,7 @@ class GetEreaderMetadataUseCase:
     def __init__(self, book_repository: BookRepositoryProtocol) -> None:
         self.book_repository = book_repository
 
-    def get_metadata_for_ereader(self, client_book_id: str, user_id: int) -> EreaderMetadata:
+    async def get_metadata_for_ereader(self, client_book_id: str, user_id: int) -> EreaderMetadata:
         """
         Get basic book metadata for ereader operations.
 
@@ -47,7 +47,7 @@ class GetEreaderMetadataUseCase:
         """
         user_id_vo = UserId(user_id)
 
-        book = self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)
+        book = await self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)
         if not book:
             raise BookNotFoundError(
                 message=f"Book with client_book_id '{client_book_id}' not found"

@@ -71,7 +71,7 @@ class ReadingSessionQueryUseCase:
         self.highlight_style_repository = highlight_style_repository
         self.highlight_style_resolver = highlight_style_resolver
 
-    def get_sessions_for_book(
+    async def get_sessions_for_book(
         self,
         book_id: int,
         user_id: int,
@@ -98,20 +98,22 @@ class ReadingSessionQueryUseCase:
         user_id_vo = UserId(user_id)
 
         # Validate book exists and belongs to user
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
         # Resolve epub path once for the book
         epub_path = None
         if include_content and book.file_path and book.file_type == "epub":
-            epub_path = self.file_repo.find_epub(book.id)
+            epub_path = await self.file_repo.find_epub(book.id)
 
-        sessions = self.session_repository.find_by_book_id(book_id_vo, user_id_vo, limit, offset)
-        total = self.session_repository.count_by_book_id(book_id_vo, user_id_vo)
+        sessions = await self.session_repository.find_by_book_id(
+            book_id_vo, user_id_vo, limit, offset
+        )
+        total = await self.session_repository.count_by_book_id(book_id_vo, user_id_vo)
 
         session_ids = [s.id for s in sessions]
-        highlights_by_session = self.highlight_repository.get_highlights_by_session_ids(
+        highlights_by_session = await self.highlight_repository.get_highlights_by_session_ids(
             session_ids, user_id_vo
         )
 
@@ -149,7 +151,9 @@ class ReadingSessionQueryUseCase:
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}
         if self.highlight_style_repository and self.highlight_style_resolver:
-            all_styles = self.highlight_style_repository.find_for_resolution(user_id_vo, book_id_vo)
+            all_styles = await self.highlight_style_repository.find_for_resolution(
+                user_id_vo, book_id_vo
+            )
             for style in all_styles:
                 if style.is_combination_level() and not style.is_global():
                     resolved = self.highlight_style_resolver.resolve(style, all_styles)

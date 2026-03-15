@@ -41,7 +41,7 @@ class RemoveTagFromHighlightUseCase:
         self.highlight_style_repository = highlight_style_repository
         self.highlight_style_resolver = highlight_style_resolver
 
-    def remove_tag(
+    async def remove_tag(
         self, highlight_id: int, tag_id: int, user_id: int
     ) -> tuple[Highlight, list[Flashcard], list[HighlightTag], dict[int, ResolvedLabel]]:
         """
@@ -63,19 +63,21 @@ class RemoveTagFromHighlightUseCase:
         user_id_vo = UserId(user_id)
 
         # Load highlight
-        highlight = self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
+        highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
             raise NotFoundError(f"Highlight with id {highlight_id} not found")
 
         # Remove association via repository
-        removed = self.tag_repository.remove_tag_from_highlight(
+        removed = await self.tag_repository.remove_tag_from_highlight(
             highlight_id_vo, tag_id_vo, user_id_vo
         )
         if removed:
             logger.info("removed_tag_from_highlight", highlight_id=highlight_id, tag_id=tag_id)
 
         # Reload with relations
-        result = self.highlight_repository.find_by_id_with_relations(highlight_id_vo, user_id_vo)
+        result = await self.highlight_repository.find_by_id_with_relations(
+            highlight_id_vo, user_id_vo
+        )
         if not result:
             raise NotFoundError(f"Highlight with id {highlight_id} not found after reload")
         highlight, flashcards, tags = result
@@ -83,7 +85,7 @@ class RemoveTagFromHighlightUseCase:
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}
         if self.highlight_style_repository and self.highlight_style_resolver:
-            all_styles = self.highlight_style_repository.find_for_resolution(
+            all_styles = await self.highlight_style_repository.find_for_resolution(
                 user_id_vo, highlight.book_id
             )
             for style in all_styles:

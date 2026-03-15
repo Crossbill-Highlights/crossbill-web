@@ -39,12 +39,12 @@ router = APIRouter(prefix="/books", tags=["flashcards"])
     response_model=FlashcardCreateResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_flashcard_for_book(
+async def create_flashcard_for_book(
     book_id: int,
     request: FlashcardCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: CreateFlashcardForBookUseCase = Depends(
-        inject_use_case(container.create_flashcard_for_book_use_case)
+        inject_use_case(container.learning.create_flashcard_for_book_use_case)
     ),
 ) -> FlashcardCreateResponse:
     """
@@ -65,7 +65,7 @@ def create_flashcard_for_book(
         HTTPException: If book not found or creation fails
     """
     try:
-        flashcard_entity = use_case.create_flashcard(
+        flashcard_entity = await use_case.create_flashcard(
             book_id=book_id,
             user_id=current_user.id.value,
             question=request.question,
@@ -104,11 +104,11 @@ def create_flashcard_for_book(
     response_model=FlashcardsWithHighlightsResponse,
     status_code=status.HTTP_200_OK,
 )
-def get_flashcards_for_book(
+async def get_flashcards_for_book(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetFlashcardsByBookUseCase = Depends(
-        inject_use_case(container.get_flashcards_by_book_use_case)
+        inject_use_case(container.learning.get_flashcards_by_book_use_case)
     ),
 ) -> FlashcardsWithHighlightsResponse:
     """
@@ -128,7 +128,9 @@ def get_flashcards_for_book(
     """
     try:
         # Get flashcards with highlights from use case (returns DTOs + labels)
-        flashcards_with_highlights, labels = use_case.get_flashcards(book_id, current_user.id.value)
+        flashcards_with_highlights, labels = await use_case.get_flashcards(
+            book_id, current_user.id.value
+        )
 
         # Convert DTOs to Pydantic schemas
         flashcards = []

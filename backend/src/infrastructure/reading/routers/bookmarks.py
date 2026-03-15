@@ -30,11 +30,13 @@ router = APIRouter(prefix="/books", tags=["bookmarks"])
     response_model=Bookmark,
     status_code=status.HTTP_201_CREATED,
 )
-def create_bookmark(
+async def create_bookmark(
     book_id: int,
     request: BookmarkCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: CreateBookmarkUseCase = Depends(inject_use_case(container.create_bookmark_use_case)),
+    use_case: CreateBookmarkUseCase = Depends(
+        inject_use_case(container.reading.create_bookmark_use_case)
+    ),
 ) -> Bookmark:
     """
     Create a bookmark for a highlight in a book.
@@ -54,7 +56,9 @@ def create_bookmark(
         HTTPException: If book or highlight not found, or creation fails
     """
     try:
-        bookmark = use_case.create_bookmark(book_id, request.highlight_id, current_user.id.value)
+        bookmark = await use_case.create_bookmark(
+            book_id, request.highlight_id, current_user.id.value
+        )
 
         # Manually construct schema from domain entity
         # created_at is always set for persisted bookmarks
@@ -80,11 +84,13 @@ def create_bookmark(
     "/{book_id}/bookmarks/{bookmark_id}",
     status_code=status.HTTP_200_OK,
 )
-def delete_bookmark(
+async def delete_bookmark(
     book_id: int,
     bookmark_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: DeleteBookmarkUseCase = Depends(inject_use_case(container.delete_bookmark_use_case)),
+    use_case: DeleteBookmarkUseCase = Depends(
+        inject_use_case(container.reading.delete_bookmark_use_case)
+    ),
 ) -> None:
     """
     Delete a bookmark from a book.
@@ -101,7 +107,7 @@ def delete_bookmark(
         HTTPException: If book not found or deletion fails
     """
     try:
-        use_case.delete_bookmark(book_id, bookmark_id, current_user.id.value)
+        await use_case.delete_bookmark(book_id, bookmark_id, current_user.id.value)
     except CrossbillError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
@@ -121,10 +127,12 @@ def delete_bookmark(
     response_model=BookmarksResponse,
     status_code=status.HTTP_200_OK,
 )
-def get_bookmarks(
+async def get_bookmarks(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: GetBookmarksUseCase = Depends(inject_use_case(container.get_bookmarks_use_case)),
+    use_case: GetBookmarksUseCase = Depends(
+        inject_use_case(container.reading.get_bookmarks_use_case)
+    ),
 ) -> BookmarksResponse:
     """
     Get all bookmarks for a book.
@@ -142,7 +150,7 @@ def get_bookmarks(
         HTTPException: If book not found or fetching fails
     """
     try:
-        bookmarks = use_case.get_bookmarks_by_book(book_id, current_user.id.value)
+        bookmarks = await use_case.get_bookmarks_by_book(book_id, current_user.id.value)
 
         # Manually construct schemas from domain entities
         # created_at is always set for persisted bookmarks

@@ -78,7 +78,7 @@ class HighlightUploadUseCase:
         self.file_repository = file_repository
         self.highlight_style_repository = highlight_style_repository
 
-    def upload_highlights(
+    async def upload_highlights(
         self,
         client_book_id: str,
         highlight_data_list: list[HighlightUploadData],
@@ -112,7 +112,7 @@ class HighlightUploadUseCase:
         )
 
         user_id_vo = UserId(user_id)
-        book = self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)
+        book = await self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)
 
         if not book:
             logger.error(
@@ -126,7 +126,7 @@ class HighlightUploadUseCase:
         # Build position index if EPUB
         position_index = None
         if book.file_type == "epub":
-            epub_path = self.file_repository.find_epub(book.id)
+            epub_path = await self.file_repository.find_epub(book.id)
             if epub_path:
                 position_index = self.position_index_service.build_position_index(epub_path)
 
@@ -134,7 +134,7 @@ class HighlightUploadUseCase:
         chapter_numbers: set[int] = {
             data.chapter_number for data in highlight_data_list if data.chapter_number is not None
         }
-        chapters_by_number = self.chapter_repository.get_by_numbers(
+        chapters_by_number = await self.chapter_repository.get_by_numbers(
             book.id, chapter_numbers, user_id_vo
         )
 
@@ -174,7 +174,7 @@ class HighlightUploadUseCase:
             elif book.file_type == "pdf" and data.page is not None:
                 position = Position.from_page(data.page)
 
-            highlight_style = self.highlight_style_repository.find_or_create(
+            highlight_style = await self.highlight_style_repository.find_or_create(
                 user_id=user_id_vo,
                 book_id=book_id,
                 device_color=data.color,
@@ -195,7 +195,7 @@ class HighlightUploadUseCase:
             new_highlights.append(highlight)
 
         # Step 4: Deduplication using domain service
-        existing_hashes = self.highlight_repository.get_existing_hashes(
+        existing_hashes = await self.highlight_repository.get_existing_hashes(
             user_id_vo, book_id, [h.content_hash for h in new_highlights]
         )
 
@@ -205,7 +205,7 @@ class HighlightUploadUseCase:
 
         # Step 5: Bulk save unique highlights
         if unique:
-            self.highlight_repository.bulk_save(unique)
+            await self.highlight_repository.bulk_save(unique)
 
         logger.info(
             "upload_complete",

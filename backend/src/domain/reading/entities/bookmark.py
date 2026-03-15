@@ -27,14 +27,6 @@ class Bookmark(Entity[BookmarkId]):
         """Validate invariants."""
         # No additional validation needed - IDs validated by value objects
 
-    def belongs_to_book(self, book_id: BookId) -> bool:
-        """Check if this bookmark belongs to the specified book."""
-        return self.book_id == book_id
-
-    def marks_highlight(self, highlight_id: HighlightId) -> bool:
-        """Check if this bookmark marks the specified highlight."""
-        return self.highlight_id == highlight_id
-
     @classmethod
     def create(cls, book_id: BookId, highlight_id: HighlightId) -> "Bookmark":
         """

@@ -153,7 +153,8 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
           sx={{ mt: 3 }}
         >
           <BookCover
-            coverPath={book.cover}
+            bookId={book.id}
+            hasCover={book.has_cover}
             title={book.title}
             width="120px"
             height="180px"

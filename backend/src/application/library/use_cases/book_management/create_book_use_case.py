@@ -24,7 +24,7 @@ class CreateBookUseCase:
         self.book_repository = book_repository
         self.add_tags_to_book_use_case = add_tags_to_book_use_case
 
-    def create_book(self, book_data: BookCreate, user_id: int) -> tuple[Book, bool]:
+    async def create_book(self, book_data: BookCreate, user_id: int) -> tuple[Book, bool]:
         """
         Get or create a book based on client_book_id.
 
@@ -39,7 +39,9 @@ class CreateBookUseCase:
         user_id_vo = UserId(user_id)
 
         # Primary lookup: client_book_id
-        book = self.book_repository.find_by_client_book_id(book_data.client_book_id, user_id_vo)
+        book = await self.book_repository.find_by_client_book_id(
+            book_data.client_book_id, user_id_vo
+        )
         if book:
             logger.debug(
                 f"Found existing book by client_book_id: {book.title} (id={book.id.value})"
@@ -56,14 +58,15 @@ class CreateBookUseCase:
             description=book_data.description,
             language=book_data.language,
             page_count=book_data.page_count,
-            cover=book_data.cover,
         )
 
         # Save book
-        book = self.book_repository.save(book)
+        book = await self.book_repository.save(book)
 
         # Add tags using use case
         if book_data.keywords:
-            self.add_tags_to_book_use_case.add_tags(book.id.value, book_data.keywords, user_id)
+            await self.add_tags_to_book_use_case.add_tags(
+                book.id.value, book_data.keywords, user_id
+            )
 
         return book, True

@@ -6,5 +6,5 @@
  */
 
 export interface BodyUploadBookEpubApiV1EreaderBooksClientBookIdEpubPost {
-  epub: Blob;
+  epub: string;
 }

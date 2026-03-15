@@ -7,7 +7,7 @@ readme = "README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
   "fastapi>=0.121.1,<0.136.0",
-  "uvicorn[standard]>=0.38.0,<0.40.0",
+  "uvicorn[standard]>=0.38.0,<0.42.0",
   "sqlalchemy>=2.0.44,<3.0.0",
   "alembic>=1.17.1,<2.0.0",
   "psycopg[binary]>=3.2.12,<4.0.0",
@@ -32,6 +32,7 @@ dev = [
   "httpx>=0.28.1",
   "pyright>=1.1.398",
   "lxml-stubs>=0.5.1",
+  "aiosqlite>=0.20.0",
 ]
 
 [build-system]
@@ -110,3 +111,8 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = ["-v", "--strict-markers", "--tb=short"]
+log_level = "WARNING"
+filterwarnings = [
+    "ignore:.*_UnionGenericAlias.*:DeprecationWarning:google.genai",
+    "ignore:.*asyncio.iscoroutinefunction.*:DeprecationWarning:slowapi",
+]

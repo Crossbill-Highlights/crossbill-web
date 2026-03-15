@@ -24,7 +24,7 @@ class CreateHighlightTagUseCase:
         self.tag_repository = tag_repository
         self.book_repository = book_repository
 
-    def create_tag(self, book_id: int, name: str, user_id: int) -> HighlightTag:
+    async def create_tag(self, book_id: int, name: str, user_id: int) -> HighlightTag:
         """
         Create a new tag for a book.
 
@@ -43,11 +43,11 @@ class CreateHighlightTagUseCase:
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise NotFoundError(f"Book with id {book_id} not found")
 
-        existing_tag = self.tag_repository.find_by_book_and_name(
+        existing_tag = await self.tag_repository.find_by_book_and_name(
             book_id_vo, name.strip(), user_id_vo
         )
         if existing_tag:
@@ -59,7 +59,7 @@ class CreateHighlightTagUseCase:
             name=name,
         )
 
-        tag = self.tag_repository.save(tag)
+        tag = await self.tag_repository.save(tag)
 
         logger.info("created_highlight_tag", tag_id=tag.id.value, book_id=book_id)
         return tag

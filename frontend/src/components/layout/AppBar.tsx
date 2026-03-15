@@ -1,7 +1,6 @@
 import { LogoutIcon, MenuIcon, SettingsIcon } from '@/theme/Icons.tsx';
 import {
   Box,
-  Button,
   Container,
   IconButton,
   ListItemIcon,
@@ -79,22 +78,6 @@ export function AppBar() {
               Crossbill
             </Typography>
           </Box>
-
-          {/* Navigation Items */}
-          <Button
-            component={Link}
-            to="/"
-            color="inherit"
-            sx={{
-              fontWeight: 500,
-              color: 'primary.contrastText',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              },
-            }}
-          >
-            Home
-          </Button>
 
           {/* Spacer */}
           <Box sx={{ flexGrow: 1 }} />

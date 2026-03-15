@@ -16,7 +16,8 @@ export interface BookWithHighlightCount {
   title: string;
   author: string | null;
   isbn: string | null;
-  cover: string | null;
+  /** Whether the book has a cover image */
+  has_cover: boolean;
   description?: string | null;
   language?: string | null;
   page_count?: number | null;

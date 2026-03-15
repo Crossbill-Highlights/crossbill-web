@@ -41,7 +41,7 @@ class AddTagToHighlightByNameUseCase:
         self.highlight_style_repository = highlight_style_repository
         self.highlight_style_resolver = highlight_style_resolver
 
-    def add_tag(
+    async def add_tag(
         self, book_id: int, highlight_id: int, tag_name: str, user_id: int
     ) -> tuple[Highlight, list[Flashcard], list[HighlightTag], dict[int, ResolvedLabel]]:
         """
@@ -64,7 +64,7 @@ class AddTagToHighlightByNameUseCase:
         book_id_vo = BookId(book_id)
 
         # Load highlight
-        highlight = self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
+        highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
             raise NotFoundError(f"Highlight with id {highlight_id} not found")
 
@@ -74,7 +74,7 @@ class AddTagToHighlightByNameUseCase:
             raise NotFoundError("Tag name cannot be empty")
 
         # Get or create tag
-        tag = self.tag_repository.find_by_book_and_name(book_id_vo, tag_name, user_id_vo)
+        tag = await self.tag_repository.find_by_book_and_name(book_id_vo, tag_name, user_id_vo)
         if not tag:
             # Create new tag
             tag = HighlightTag.create(
@@ -87,9 +87,11 @@ class AddTagToHighlightByNameUseCase:
         highlight.add_tag(tag)
 
         # Persist association via repository
-        tag = self.tag_repository.save(tag)
+        tag = await self.tag_repository.save(tag)
         tag_id_vo = HighlightTagId(tag.id.value)
-        added = self.tag_repository.add_tag_to_highlight(highlight_id_vo, tag_id_vo, user_id_vo)
+        added = await self.tag_repository.add_tag_to_highlight(
+            highlight_id_vo, tag_id_vo, user_id_vo
+        )
         if added:
             logger.info(
                 "added_tag_to_highlight_by_name",
@@ -99,7 +101,9 @@ class AddTagToHighlightByNameUseCase:
             )
 
         # Reload with relations
-        result = self.highlight_repository.find_by_id_with_relations(highlight_id_vo, user_id_vo)
+        result = await self.highlight_repository.find_by_id_with_relations(
+            highlight_id_vo, user_id_vo
+        )
         if not result:
             raise NotFoundError(f"Highlight with id {highlight_id} not found after reload")
         highlight, flashcards, tags_list = result
@@ -107,7 +111,7 @@ class AddTagToHighlightByNameUseCase:
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}
         if self.highlight_style_repository and self.highlight_style_resolver:
-            all_styles = self.highlight_style_repository.find_for_resolution(
+            all_styles = await self.highlight_style_repository.find_for_resolution(
                 user_id_vo, highlight.book_id
             )
             for style in all_styles:

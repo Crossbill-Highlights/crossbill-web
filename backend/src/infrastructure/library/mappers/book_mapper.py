@@ -21,7 +21,6 @@ class BookMapper:
             description=orm_model.description,
             language=orm_model.language,
             page_count=orm_model.page_count,
-            cover=orm_model.cover,
             file_path=orm_model.file_path,
             file_type=orm_model.file_type,
             last_viewed=orm_model.last_viewed,
@@ -42,7 +41,6 @@ class BookMapper:
             orm_model.description = domain_entity.description
             orm_model.language = domain_entity.language
             orm_model.page_count = domain_entity.page_count
-            orm_model.cover = domain_entity.cover
             orm_model.file_path = domain_entity.file_path
             orm_model.file_type = domain_entity.file_type
             orm_model.last_viewed = domain_entity.last_viewed
@@ -62,7 +60,6 @@ class BookMapper:
             description=domain_entity.description,
             language=domain_entity.language,
             page_count=domain_entity.page_count,
-            cover=domain_entity.cover,
             file_path=domain_entity.file_path,
             file_type=domain_entity.file_type,
             created_at=domain_entity.created_at,

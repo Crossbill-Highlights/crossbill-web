@@ -15,25 +15,27 @@ class BulkCreateResult:
 
 
 class ReadingSessionRepositoryProtocol(Protocol):
-    def bulk_create(self, user_id: UserId, sessions: list[ReadingSession]) -> BulkCreateResult: ...
-    def find_by_book_id(
+    async def bulk_create(
+        self, user_id: UserId, sessions: list[ReadingSession]
+    ) -> BulkCreateResult: ...
+    async def find_by_book_id(
         self, book_id: BookId, user_id: UserId, limit: int, offset: int
     ) -> list[ReadingSession]: ...
 
-    def count_by_book_id(self, book_id: BookId, user_id: UserId) -> int: ...
+    async def count_by_book_id(self, book_id: BookId, user_id: UserId) -> int: ...
 
-    def find_by_id(
+    async def find_by_id(
         self, session_id: ReadingSessionId, user_id: UserId
     ) -> ReadingSession | None: ...
 
-    def save(self, session: ReadingSession) -> ReadingSession: ...
+    async def save(self, session: ReadingSession) -> ReadingSession: ...
 
-    def bulk_update_positions(
+    async def bulk_update_positions(
         self,
         position_updates: list[tuple[ReadingSessionId, Position, Position]],
     ) -> int: ...
 
-    def link_highlights_to_sessions(
+    async def link_highlights_to_sessions(
         self,
         session_highlight_pairs: list[tuple[ReadingSessionId, HighlightId]],
     ) -> int: ...

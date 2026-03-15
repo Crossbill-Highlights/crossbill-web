@@ -23,7 +23,7 @@ class HighlightUpdateNoteUseCase:
         self.highlight_style_repository = highlight_style_repository
         self.highlight_style_resolver = highlight_style_resolver
 
-    def update_note(
+    async def update_note(
         self, highlight_id: int, user_id: int, note: str | None
     ) -> tuple[Highlight, list[Flashcard], list[HighlightTag], dict[int, ResolvedLabel]] | None:
         """
@@ -44,7 +44,7 @@ class HighlightUpdateNoteUseCase:
         user_id_vo = UserId(user_id)
 
         # Load highlight
-        highlight = self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
+        highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
 
         if highlight is None:
             return None
@@ -53,10 +53,12 @@ class HighlightUpdateNoteUseCase:
         highlight.update_note(note)
 
         # Persist changes
-        self.highlight_repository.save(highlight)
+        await self.highlight_repository.save(highlight)
 
         # Load with relations to return complete data
-        result = self.highlight_repository.find_by_id_with_relations(highlight_id_vo, user_id_vo)
+        result = await self.highlight_repository.find_by_id_with_relations(
+            highlight_id_vo, user_id_vo
+        )
 
         if result is None:
             return None
@@ -66,7 +68,7 @@ class HighlightUpdateNoteUseCase:
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}
         if self.highlight_style_repository and self.highlight_style_resolver:
-            all_styles = self.highlight_style_repository.find_for_resolution(
+            all_styles = await self.highlight_style_repository.find_for_resolution(
                 user_id_vo, highlight.book_id
             )
             for style in all_styles:

@@ -9,15 +9,15 @@ from src.domain.library.entities.chapter import Chapter, TocChapter
 class ChapterRepositoryProtocol(Protocol):
     """Protocol for Chapter repository operations in library context."""
 
-    def find_by_id(self, chapter_id: ChapterId, user_id: UserId) -> Chapter | None:
+    async def find_by_id(self, chapter_id: ChapterId, user_id: UserId) -> Chapter | None:
         """Find a chapter by ID with ownership verification."""
         ...
 
-    def find_all_by_book(self, book_id: BookId, user_id: UserId) -> list[Chapter]:
+    async def find_all_by_book(self, book_id: BookId, user_id: UserId) -> list[Chapter]:
         """Find all chapters for a book, ordered by chapter_number."""
         ...
 
-    def sync_chapters_from_toc(
+    async def sync_chapters_from_toc(
         self,
         book_id: BookId,
         user_id: UserId,

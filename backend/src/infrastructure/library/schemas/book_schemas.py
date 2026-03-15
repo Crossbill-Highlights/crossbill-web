@@ -13,7 +13,6 @@ class BookBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500, description="Book title")
     author: str | None = Field(None, max_length=500, description="Book author")
     isbn: str | None = Field(None, max_length=20, description="Book ISBN")
-    cover: str | None = Field(None, max_length=500, description="Book cover image path")
     description: str | None = Field(None, description="Book description from ebook metadata")
     language: str | None = Field(
         None, max_length=10, description="Language code from ebook metadata"
@@ -64,7 +63,7 @@ class BookWithHighlightCount(BaseModel):
     title: str
     author: str | None
     isbn: str | None
-    cover: str | None
+    has_cover: bool = Field(..., description="Whether the book has a cover image")
     description: str | None = None
     language: str | None = None
     page_count: int | None = None
@@ -98,14 +97,6 @@ class RecentlyViewedBooksResponse(BaseModel):
     books: list[BookWithHighlightCount] = Field(
         ..., description="List of recently viewed books with highlight counts"
     )
-
-
-class CoverUploadResponse(BaseModel):
-    """Schema for cover upload response."""
-
-    success: bool = Field(..., description="Whether the upload was successful")
-    message: str = Field(..., description="Response message")
-    cover_url: str = Field(..., description="URL path to the uploaded cover image")
 
 
 class EpubUploadResponse(BaseModel):

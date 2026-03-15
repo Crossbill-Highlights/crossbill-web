@@ -1,5 +1,7 @@
 """Mapper for HighlightTag ORM ↔ Domain conversion."""
 
+from sqlalchemy import inspect
+
 from src.domain.common.value_objects.ids import BookId, HighlightTagId, UserId
 from src.domain.reading.entities.highlight_tag import HighlightTag
 from src.models import HighlightTag as HighlightTagORM
@@ -13,9 +15,10 @@ class HighlightTagMapper:
         # Get tag_group_id from ORM
         tag_group_id = orm_model.tag_group_id
 
-        # Get group name from tag_group relationship if it exists and is loaded
+        # Get group name from tag_group relationship if loaded (avoid lazy load in async)
         group_name = None
-        if hasattr(orm_model, "tag_group") and orm_model.tag_group:
+        insp = inspect(orm_model)
+        if "tag_group" not in insp.unloaded and orm_model.tag_group:
             group_name = orm_model.tag_group.name
 
         return HighlightTag.create_with_id(

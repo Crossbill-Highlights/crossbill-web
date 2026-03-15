@@ -31,7 +31,7 @@ class ReplaceBookTagsUseCase:
         self.tag_repository = tag_repository
         self.book_repository = book_repository
 
-    def replace_tags(self, book_id: int, tag_names: list[str], user_id: int) -> list[Tag]:
+    async def replace_tags(self, book_id: int, tag_names: list[str], user_id: int) -> list[Tag]:
         """
         Replace all tags on a book.
 
@@ -49,14 +49,14 @@ class ReplaceBookTagsUseCase:
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(f"Book with id {book_id} not found")
 
-        tags = self.tag_repository.get_or_create_many(tag_names, user_id_vo)
+        tags = await self.tag_repository.get_or_create_many(tag_names, user_id_vo)
 
         tag_ids = [tag.id for tag in tags]
-        self.tag_repository.replace_book_tags(book_id_vo, tag_ids, user_id_vo)
+        await self.tag_repository.replace_book_tags(book_id_vo, tag_ids, user_id_vo)
 
         logger.info(
             "replaced_book_tags",

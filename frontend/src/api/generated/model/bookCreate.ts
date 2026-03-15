@@ -19,8 +19,6 @@ export interface BookCreate {
   author?: string | null;
   /** Book ISBN */
   isbn?: string | null;
-  /** Book cover image path */
-  cover?: string | null;
   /** Book description from ebook metadata */
   description?: string | null;
   /** Language code from ebook metadata */

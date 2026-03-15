@@ -20,7 +20,7 @@ class DeleteHighlightTagUseCase:
     ) -> None:
         self.tag_repository = tag_repository
 
-    def delete_tag(self, book_id: int, tag_id: int, user_id: int) -> bool:
+    async def delete_tag(self, book_id: int, tag_id: int, user_id: int) -> bool:
         """
         Delete a tag.
 
@@ -38,14 +38,14 @@ class DeleteHighlightTagUseCase:
         tag_id_vo = HighlightTagId(tag_id)
         user_id_vo = UserId(user_id)
 
-        tag = self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
+        tag = await self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
         if not tag:
             return False
 
         if tag.book_id.value != book_id:
             raise NotFoundError(f"Tag {tag_id} does not belong to book {book_id}")
 
-        success = self.tag_repository.delete(tag_id_vo, user_id_vo)
+        success = await self.tag_repository.delete(tag_id_vo, user_id_vo)
         if success:
             logger.info("deleted_highlight_tag", tag_id=tag_id, book_id=book_id)
 

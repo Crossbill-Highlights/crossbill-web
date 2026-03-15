@@ -28,7 +28,7 @@ class UpdateTagGroupAssociationUseCase:
     ) -> None:
         self.tag_repository = tag_repository
 
-    def update_association(
+    async def update_association(
         self, book_id: int, tag_id: int, group_id: int | None, user_id: int
     ) -> HighlightTag:
         """
@@ -51,7 +51,7 @@ class UpdateTagGroupAssociationUseCase:
         book_id_vo = BookId(book_id)
         group_id_vo = HighlightTagGroupId(group_id) if group_id else None
 
-        tag = self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
+        tag = await self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
         if not tag:
             raise NotFoundError(f"Tag with id {tag_id} not found")
 
@@ -61,12 +61,12 @@ class UpdateTagGroupAssociationUseCase:
 
         # Validate group if provided
         if group_id_vo:
-            group = self.tag_repository.find_group_by_id(group_id_vo, book_id_vo)
+            group = await self.tag_repository.find_group_by_id(group_id_vo, book_id_vo)
             if not group:
                 raise NotFoundError(f"Tag group with id {group_id} not found")
 
         tag.update_group(group_id_vo)
-        tag = self.tag_repository.save(tag)
+        tag = await self.tag_repository.save(tag)
 
         logger.info("updated_tag_group_association", tag_id=tag_id, group_id=group_id)
         return tag

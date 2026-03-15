@@ -1,15 +1,19 @@
 from datetime import UTC, datetime
 
 import structlog
+from pydantic_ai import ModelMessagesTypeAdapter
+from pydantic_core import to_jsonable_python
 
 from src.application.ai.ai_usage_context import AIUsageContext
 from src.application.ai.protocols.ai_usage_repository import AIUsageRepositoryProtocol
 from src.application.learning.protocols.ai_flashcard_service import AIFlashcardSuggestion
 from src.application.reading.protocols.ai_prereading_service import PrereadingResult
 from src.domain.ai.entities.ai_usage_record import AIUsageRecord
+from src.domain.common.types import SerializedMessageHistory
 from src.infrastructure.ai.ai_agents import (
     get_flashcard_agent,
     get_prereading_agent,
+    get_quiz_agent,
     get_summary_agent,
 )
 
@@ -20,7 +24,7 @@ class AIService:
     def __init__(self, usage_repository: AIUsageRepositoryProtocol) -> None:
         self.usage_repository = usage_repository
 
-    def _save_usage(
+    async def _save_usage(
         self,
         usage_context: AIUsageContext,
         model_name: str | None,
@@ -37,7 +41,7 @@ class AIService:
             output_tokens=output_tokens,
             created_at=datetime.now(UTC),
         )
-        self.usage_repository.save(record)
+        await self.usage_repository.save(record)
         logger.info(
             "ai_usage_recorded",
             task_type=usage_context.task_type,
@@ -52,7 +56,7 @@ class AIService:
         agent = get_summary_agent()
         result = await agent.run(content)
         usage = result.usage()
-        self._save_usage(
+        await self._save_usage(
             usage_context, result.response.model_name, usage.input_tokens, usage.output_tokens
         )
         return result.output
@@ -63,7 +67,7 @@ class AIService:
         agent = get_prereading_agent()
         result = await agent.run(content[:10000])
         usage = result.usage()
-        self._save_usage(
+        await self._save_usage(
             usage_context, result.response.model_name, usage.input_tokens, usage.output_tokens
         )
         return PrereadingResult(summary=result.output.summary, keypoints=result.output.keypoints)
@@ -74,7 +78,36 @@ class AIService:
         agent = get_flashcard_agent()
         result = await agent.run(content)
         usage = result.usage()
-        self._save_usage(
+        await self._save_usage(
             usage_context, result.response.model_name, usage.input_tokens, usage.output_tokens
         )
         return [AIFlashcardSuggestion(question=s.question, answer=s.answer) for s in result.output]
+
+    async def start_quiz(
+        self, chapter_content: str, question_count: int, usage_context: AIUsageContext
+    ) -> tuple[str, SerializedMessageHistory]:
+        agent = get_quiz_agent()
+        prompt = f"The reader wants to be quizzed on this chapter. Ask {question_count} questions total.\n\n--- CHAPTER CONTENT ---\n{chapter_content}"
+        result = await agent.run(prompt)
+        usage = result.usage()
+        await self._save_usage(
+            usage_context, result.response.model_name, usage.input_tokens, usage.output_tokens
+        )
+        serialized: SerializedMessageHistory = to_jsonable_python(result.all_messages())
+        return result.output, serialized
+
+    async def continue_quiz(
+        self,
+        user_message: str,
+        message_history: SerializedMessageHistory,
+        usage_context: AIUsageContext,
+    ) -> tuple[str, SerializedMessageHistory]:
+        agent = get_quiz_agent()
+        restored = ModelMessagesTypeAdapter.validate_python(message_history)
+        result = await agent.run(user_message, message_history=restored)
+        usage = result.usage()
+        await self._save_usage(
+            usage_context, result.response.model_name, usage.input_tokens, usage.output_tokens
+        )
+        serialized: SerializedMessageHistory = to_jsonable_python(result.all_messages())
+        return result.output, serialized

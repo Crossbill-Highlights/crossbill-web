@@ -27,7 +27,7 @@ class RegisterUserUseCase:
         self.password_service = password_service
         self.token_service = token_service
 
-    def register_user(self, email: str, password: str) -> tuple[User, TokenWithRefresh]:
+    async def register_user(self, email: str, password: str) -> tuple[User, TokenWithRefresh]:
         """
         Register a new user account.
 
@@ -48,7 +48,7 @@ class RegisterUserUseCase:
         hashed_password = self.password_service.hash_password(password)
 
         user = User.create(email=email, hashed_password=hashed_password)
-        user = self.user_repository.save(user)
+        user = await self.user_repository.save(user)
         token_pair = self.token_service.create_token_pair(user.id.value)
 
         logger.info("user_registered", user_id=user.id.value, email=email)

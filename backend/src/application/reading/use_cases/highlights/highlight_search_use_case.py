@@ -35,7 +35,7 @@ class HighlightSearchUseCase:
         self.highlight_style_repository = highlight_style_repository
         self.highlight_style_resolver = highlight_style_resolver
 
-    def search_book_highlights(
+    async def search_book_highlights(
         self, book_id: int, user_id: int, search_text: str, limit: int = 100
     ) -> tuple[list[ChapterWithHighlights], int, dict[int, ResolvedLabel]]:
         """
@@ -61,12 +61,12 @@ class HighlightSearchUseCase:
         user_id_vo = UserId(user_id)
 
         # Verify book exists and belongs to user
-        book = self.book_repository.find_by_id(book_id_vo, user_id_vo)
+        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
         # Search highlights (returns domain entities)
-        highlights_with_context = self.highlight_repository.search(
+        highlights_with_context = await self.highlight_repository.search(
             search_text=search_text,
             user_id=user_id_vo,
             book_id=book_id_vo,
@@ -84,7 +84,9 @@ class HighlightSearchUseCase:
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}
         if self.highlight_style_repository and self.highlight_style_resolver:
-            all_styles = self.highlight_style_repository.find_for_resolution(user_id_vo, book_id_vo)
+            all_styles = await self.highlight_style_repository.find_for_resolution(
+                user_id_vo, book_id_vo
+            )
             for style in all_styles:
                 if style.is_combination_level() and not style.is_global():
                     resolved = self.highlight_style_resolver.resolve(style, all_styles)

@@ -1,6 +1,6 @@
 {
   "name": "crossbill",
-  "version": "0.13.0",
+  "version": "0.14.1",
   "description": "Crossbill - KOReader highlights sync",
   "private": true,
   "workspaces": [
@@ -24,8 +24,8 @@
       "bash -c 'cd frontend && prettier --write \"$0\"'"
     ],
     "backend/**/*.py": [
-      "bash -c 'cd backend && poetry run ruff check --fix \"$0\"'",
-      "bash -c 'cd backend && poetry run pyright \"$0\"'"
+      "bash -c 'cd backend && uv run ruff check --fix \"$0\"'",
+      "bash -c 'cd backend && uv run pyright \"$0\"'"
     ]
   }
 }

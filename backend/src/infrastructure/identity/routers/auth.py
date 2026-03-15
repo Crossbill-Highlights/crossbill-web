@@ -66,12 +66,12 @@ async def login(
     response: Response,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     use_case: AuthenticateUserUseCase = Depends(
-        inject_use_case(container.authenticate_user_use_case)
+        inject_use_case(container.identity.authenticate_user_use_case)
     ),
 ) -> TokenWithRefresh:
     # OAuth2PasswordRequestForm uses 'username' field, but we use it for email
     try:
-        _, token_pair = use_case.authenticate(form_data.username, form_data.password)
+        _, token_pair = await use_case.authenticate(form_data.username, form_data.password)
         set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
     except InvalidCredentialsError:
@@ -90,7 +90,7 @@ async def refresh(
     body: RefreshTokenRequest | None = None,
     refresh_token: Annotated[str | None, Cookie()] = None,
     use_case: RefreshAccessTokenUseCase = Depends(
-        inject_use_case(container.refresh_access_token_use_case)
+        inject_use_case(container.identity.refresh_access_token_use_case)
     ),
 ) -> TokenWithRefresh:
     """
@@ -112,7 +112,7 @@ async def refresh(
         )
 
     try:
-        _, token_pair = use_case.refresh_token(token)
+        _, token_pair = await use_case.refresh_token(token)
         set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
     except InvalidCredentialsError:
