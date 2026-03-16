@@ -17,6 +17,7 @@ import { useMemo, useState } from 'react';
 import { AfterReadingSection } from './AfterReadingSection.tsx';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
 import { HighlightsSection } from './HighlightsSection.tsx';
+import { PrereadingQuestionsSection } from './PrereadingQuestionsSection.tsx';
 import { PrereadingSummarySection } from './PrereadingSummarySection.tsx';
 import { QuizChatDialog } from './QuizChatDialog.tsx';
 
@@ -98,7 +99,13 @@ export const ChapterDetailDialog = ({
       </Tabs>
 
       <Box sx={{ pt: 2, pb: 2 }}>
-        {activeTab === TAB_BEFORE_READING && <Box />}
+        {activeTab === TAB_BEFORE_READING && (
+          <PrereadingQuestionsSection
+            chapterId={chapter.id}
+            bookId={bookId}
+            prereadingSummary={prereadingSummary}
+          />
+        )}
 
         {activeTab === TAB_AFTER_READING && (
           <AfterReadingSection onStartQuiz={() => setQuizOpen(true)} />
