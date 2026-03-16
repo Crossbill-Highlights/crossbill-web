@@ -65,23 +65,25 @@ export const PrereadingQuestionsSection = ({
   const { mutate: saveAnswers } =
     useUpdatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut();
 
+  const saveNow = useCallback(
+    (answersToSave: Record<number, string>) => {
+      const answerList = Object.entries(answersToSave).map(([index, answer]) => ({
+        question_index: Number(index),
+        user_answer: answer,
+      }));
+      saveAnswers({ chapterId, data: { answers: answerList } });
+    },
+    [chapterId, saveAnswers]
+  );
+
   const debouncedSave = useCallback(
     (updatedAnswers: Record<number, string>) => {
       if (debounceTimerRef.current !== null) {
         clearTimeout(debounceTimerRef.current);
       }
-      debounceTimerRef.current = setTimeout(() => {
-        const answerList = Object.entries(updatedAnswers).map(([index, answer]) => ({
-          question_index: Number(index),
-          user_answer: answer,
-        }));
-        saveAnswers({
-          chapterId,
-          data: { answers: answerList },
-        });
-      }, 1000);
+      debounceTimerRef.current = setTimeout(() => saveNow(updatedAnswers), 1000);
     },
-    [chapterId, saveAnswers]
+    [saveNow]
   );
 
   const handleGenerate = () => {
@@ -93,6 +95,14 @@ export const PrereadingQuestionsSection = ({
     setLocalEdits((prev) => ({ ...prev, [chapterId]: updatedChapterEdits }));
     const updatedAnswers = { ...serverAnswers, ...updatedChapterEdits };
     debouncedSave(updatedAnswers);
+  };
+
+  const handleBlur = () => {
+    if (debounceTimerRef.current !== null) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    saveNow(answers);
   };
 
   return (
@@ -131,6 +141,7 @@ export const PrereadingQuestionsSection = ({
                   placeholder="Write your answer..."
                   value={answers[index] ?? ''}
                   onChange={(e) => handleAnswerChange(index, e.target.value)}
+                  onBlur={handleBlur}
                 />
               </Box>
             ))}
