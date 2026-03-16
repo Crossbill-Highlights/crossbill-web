@@ -11,8 +11,9 @@ import { CommonDialogHorizontalNavigation } from '@/components/dialogs/CommonDia
 import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { ProgressBar } from '@/pages/BookPage/Highlights/HighlightViewModal/components/ProgressBar.tsx';
-import { Box, Button } from '@mui/material';
-import { useState } from 'react';
+import { Box, Button, Tab, Tabs } from '@mui/material';
+import { sumBy } from 'lodash';
+import { useMemo, useState } from 'react';
 import { AfterReadingSection } from './AfterReadingSection.tsx';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
 import { HighlightsSection } from './HighlightsSection.tsx';
@@ -33,6 +34,14 @@ interface ChapterDetailDialogProps {
   bookFlashcards?: Flashcard[];
 }
 
+const TAB_BEFORE_READING = 0;
+const TAB_AFTER_READING = 1;
+const TAB_HIGHLIGHTS = 2;
+const TAB_FLASHCARDS = 3;
+
+const formatTabLabel = (label: string, count: number) =>
+  count > 0 ? `${label} (${count})` : label;
+
 export const ChapterDetailDialog = ({
   open,
   onClose,
@@ -47,6 +56,7 @@ export const ChapterDetailDialog = ({
   bookFlashcards,
 }: ChapterDetailDialogProps) => {
   const [quizOpen, setQuizOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState(TAB_BEFORE_READING);
 
   const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext, swipeHandlers } =
     useModalHorizontalNavigation({
@@ -58,6 +68,13 @@ export const ChapterDetailDialog = ({
 
   const prereadingSummary = prereadingByChapterId[chapter.id];
 
+  const highlightCount = chapter.highlights.length;
+  const flashcardCount = useMemo(() => {
+    const fromHighlights = sumBy(chapter.highlights, (h) => h.flashcards.length);
+    const fromChapter = (bookFlashcards ?? []).filter((fc) => fc.chapter_id === chapter.id).length;
+    return fromHighlights + fromChapter;
+  }, [chapter, bookFlashcards]);
+
   const title = <CommonDialogTitle>{chapter.name}</CommonDialogTitle>;
 
   const renderContent = () => (
@@ -68,19 +85,43 @@ export const ChapterDetailDialog = ({
         prereadingSummary={prereadingSummary}
         defaultExpanded={true}
       />
-      <AfterReadingSection onStartQuiz={() => setQuizOpen(true)} />
-      <HighlightsSection
-        chapter={chapter}
-        bookId={bookId}
-        bookmarksByHighlightId={bookmarksByHighlightId}
-        availableTags={availableTags}
-      />
-      <FlashcardsSection
-        chapter={chapter}
-        bookId={bookId}
-        prereadingSummary={prereadingSummary}
-        bookFlashcards={bookFlashcards}
-      />
+
+      <Tabs
+        value={activeTab}
+        onChange={(_, newValue: number) => setActiveTab(newValue)}
+        sx={{ borderBottom: 1, borderColor: 'divider', mt: 1 }}
+      >
+        <Tab label="Before reading" />
+        <Tab label="After reading" />
+        <Tab label={formatTabLabel('Highlights', highlightCount)} />
+        <Tab label={formatTabLabel('Flashcards', flashcardCount)} />
+      </Tabs>
+
+      <Box sx={{ pt: 2, pb: 2 }}>
+        {activeTab === TAB_BEFORE_READING && <Box />}
+
+        {activeTab === TAB_AFTER_READING && (
+          <AfterReadingSection onStartQuiz={() => setQuizOpen(true)} />
+        )}
+
+        {activeTab === TAB_HIGHLIGHTS && (
+          <HighlightsSection
+            chapter={chapter}
+            bookId={bookId}
+            bookmarksByHighlightId={bookmarksByHighlightId}
+            availableTags={availableTags}
+          />
+        )}
+
+        {activeTab === TAB_FLASHCARDS && (
+          <FlashcardsSection
+            chapter={chapter}
+            bookId={bookId}
+            prereadingSummary={prereadingSummary}
+            bookFlashcards={bookFlashcards}
+          />
+        )}
+      </Box>
     </Box>
   );
 
