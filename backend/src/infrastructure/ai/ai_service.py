@@ -7,7 +7,10 @@ from pydantic_core import to_jsonable_python
 from src.application.ai.ai_usage_context import AIUsageContext
 from src.application.ai.protocols.ai_usage_repository import AIUsageRepositoryProtocol
 from src.application.learning.protocols.ai_flashcard_service import AIFlashcardSuggestion
-from src.application.reading.protocols.ai_prereading_service import PrereadingResult
+from src.application.reading.protocols.ai_prereading_service import (
+    PrereadingQuestion,
+    PrereadingResult,
+)
 from src.domain.ai.entities.ai_usage_record import AIUsageRecord
 from src.domain.common.types import SerializedMessageHistory
 from src.infrastructure.ai.ai_agents import (
@@ -70,7 +73,14 @@ class AIService:
         await self._save_usage(
             usage_context, result.response.model_name, usage.input_tokens, usage.output_tokens
         )
-        return PrereadingResult(summary=result.output.summary, keypoints=result.output.keypoints)
+        return PrereadingResult(
+            summary=result.output.summary,
+            keypoints=result.output.keypoints,
+            questions=[
+                PrereadingQuestion(q.question, q.answer)
+                for q in result.output.questions_and_answers
+            ],
+        )
 
     async def generate_flashcard_suggestions(
         self, content: str, usage_context: AIUsageContext

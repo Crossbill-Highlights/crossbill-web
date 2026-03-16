@@ -25,6 +25,7 @@ from src.infrastructure.identity import get_current_user
 from src.infrastructure.reading.schemas.chapter_prereading_schemas import (
     BookPrereadingResponse,
     ChapterPrereadingResponse,
+    PrereadingQuestionResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -59,6 +60,10 @@ async def get_chapter_prereading(
             chapter_id=result.chapter_id.value,
             summary=result.summary,
             keypoints=result.keypoints,
+            questions=[
+                PrereadingQuestionResponse(question=q.question, answer=q.answer)
+                for q in result.questions
+            ],
             generated_at=result.generated_at,
         )
     except DomainError as e:
@@ -90,6 +95,10 @@ async def generate_chapter_prereading(
             chapter_id=result.chapter_id.value,
             summary=result.summary,
             keypoints=result.keypoints,
+            questions=[
+                PrereadingQuestionResponse(question=q.question, answer=q.answer)
+                for q in result.questions
+            ],
             generated_at=result.generated_at,
         )
     except DomainError as e:
@@ -132,6 +141,10 @@ async def get_book_prereading(
                     chapter_id=r.chapter_id.value,
                     summary=r.summary,
                     keypoints=r.keypoints,
+                    questions=[
+                        PrereadingQuestionResponse(question=q.question, answer=q.answer)
+                        for q in r.questions
+                    ],
                     generated_at=r.generated_at,
                 )
                 for r in results

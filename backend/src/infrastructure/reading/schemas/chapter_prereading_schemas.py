@@ -5,6 +5,13 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+class PrereadingQuestionResponse(BaseModel):
+    """Response schema for a pre-reading question/answer pair."""
+
+    question: str
+    answer: str
+
+
 class ChapterPrereadingResponse(BaseModel):
     """Response schema for chapter prereading content."""
 
@@ -12,6 +19,7 @@ class ChapterPrereadingResponse(BaseModel):
     chapter_id: int
     summary: str
     keypoints: list[str]
+    questions: list[PrereadingQuestionResponse]
     generated_at: datetime
 
     model_config = {"from_attributes": True}

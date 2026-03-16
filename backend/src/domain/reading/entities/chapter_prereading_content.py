@@ -6,6 +6,12 @@ from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import ChapterId, PrereadingContentId
 
 
+@dataclass(frozen=True)
+class PrereadingQuestion:
+    question: str
+    answer: str
+
+
 @dataclass
 class ChapterPrereadingContent(Entity[PrereadingContentId]):
     """
@@ -22,6 +28,7 @@ class ChapterPrereadingContent(Entity[PrereadingContentId]):
     # Content
     summary: str
     keypoints: list[str]
+    questions: list[PrereadingQuestion]
 
     # Metadata
     generated_at: datetime
@@ -48,6 +55,7 @@ class ChapterPrereadingContent(Entity[PrereadingContentId]):
         chapter_id: ChapterId,
         summary: str,
         keypoints: list[str],
+        questions: list[PrereadingQuestion],
         generated_at: datetime,
         ai_model: str,
     ) -> "ChapterPrereadingContent":
@@ -57,6 +65,7 @@ class ChapterPrereadingContent(Entity[PrereadingContentId]):
             chapter_id=chapter_id,
             summary=summary.strip(),
             keypoints=[kp.strip() for kp in keypoints],
+            questions=questions,
             generated_at=generated_at,
             ai_model=ai_model.strip(),
         )
@@ -68,6 +77,7 @@ class ChapterPrereadingContent(Entity[PrereadingContentId]):
         chapter_id: ChapterId,
         summary: str,
         keypoints: list[str],
+        questions: list[PrereadingQuestion],
         generated_at: datetime,
         ai_model: str,
     ) -> "ChapterPrereadingContent":
@@ -77,6 +87,7 @@ class ChapterPrereadingContent(Entity[PrereadingContentId]):
             chapter_id=chapter_id,
             summary=summary,
             keypoints=keypoints,
+            questions=questions,
             generated_at=generated_at,
             ai_model=ai_model,
         )

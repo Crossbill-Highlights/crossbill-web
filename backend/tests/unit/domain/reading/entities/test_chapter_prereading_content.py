@@ -7,6 +7,7 @@ from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import ChapterId, PrereadingContentId
 from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
+    PrereadingQuestion,
 )
 
 
@@ -19,6 +20,9 @@ def _create(**overrides: Any) -> ChapterPrereadingContent:  # noqa: ANN401
             "Write tests first",
             "Keep tests simple",
             "Test behavior, not implementation",
+        ],
+        "questions": [
+            PrereadingQuestion(question="What is testing?", answer="Verifying correctness."),
         ],
         "generated_at": datetime.now(UTC),
         "ai_model": "gpt-4",
@@ -53,6 +57,7 @@ def test_create_with_id() -> None:
         chapter_id=ChapterId(1),
         summary="Summary",
         keypoints=["Point 1"],
+        questions=[],
         generated_at=now,
         ai_model="gpt-4",
     )
