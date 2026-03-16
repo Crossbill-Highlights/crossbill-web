@@ -12,6 +12,43 @@ interface UseModalHorizontalNavigationOptions {
   onNavigate?: (newIndex: number) => void;
 }
 
+export const useModalSwipeNavigation = ({
+  currentIndex,
+  totalCount,
+  onNavigate,
+}: Omit<UseModalHorizontalNavigationOptions, 'open'>) => {
+  const hasNavigation = totalCount > 1 && onNavigate;
+  const hasPrevious = hasNavigation && currentIndex > 0;
+  const hasNext = hasNavigation && currentIndex < totalCount - 1;
+
+  const handlePrevious = useCallback(() => {
+    if (hasPrevious) {
+      onNavigate!(currentIndex - 1);
+    }
+  }, [currentIndex, hasPrevious, onNavigate]);
+
+  const handleNext = useCallback(() => {
+    if (hasNext) {
+      onNavigate!(currentIndex + 1);
+    }
+  }, [currentIndex, hasNext, onNavigate]);
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (hasNext) handleNext();
+    },
+    onSwipedRight: () => {
+      if (hasPrevious) handlePrevious();
+    },
+    swipeDuration: 500,
+    preventScrollOnSwipe: false,
+  });
+
+  return {
+    swipeHandlers,
+  };
+};
+
 export const useModalHorizontalNavigation = ({
   open,
   currentIndex,
@@ -80,16 +117,10 @@ export const useModalHorizontalNavigation = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open, hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext]);
 
-  // Swipe navigation
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => {
-      if (hasNext) handleNext();
-    },
-    onSwipedRight: () => {
-      if (hasPrevious) handlePrevious();
-    },
-    swipeDuration: 500,
-    preventScrollOnSwipe: false,
+  const { swipeHandlers } = useModalSwipeNavigation({
+    currentIndex,
+    totalCount,
+    onNavigate,
   });
 
   return {

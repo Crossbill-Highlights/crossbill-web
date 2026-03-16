@@ -9,7 +9,10 @@ import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { CommonDialogHorizontalNavigation } from '@/components/dialogs/CommonDialogHorizontalNavigation.tsx';
 import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
-import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
+import {
+  useModalHorizontalNavigation,
+  useModalSwipeNavigation,
+} from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { ProgressBar } from '@/pages/BookPage/Highlights/HighlightViewModal/components/ProgressBar.tsx';
 import { Box, Button, Tab, Tabs } from '@mui/material';
 import { sumBy } from 'lodash';
@@ -67,6 +70,18 @@ export const ChapterDetailDialog = ({
       onNavigate,
     });
 
+  const { swipeHandlers: summarySwipeHandlers } = useModalSwipeNavigation({
+    currentIndex,
+    totalCount: allLeafChapters.length,
+    onNavigate,
+  });
+
+  const { swipeHandlers: tabSwipeHandlers } = useModalSwipeNavigation({
+    currentIndex,
+    totalCount: allLeafChapters.length,
+    onNavigate,
+  });
+
   const prereadingSummary = prereadingByChapterId[chapter.id];
 
   const highlightCount = chapter.highlights.length;
@@ -80,12 +95,14 @@ export const ChapterDetailDialog = ({
 
   const renderContent = () => (
     <Box>
-      <PrereadingSummarySection
-        chapterId={chapter.id}
-        bookId={bookId}
-        prereadingSummary={prereadingSummary}
-        defaultExpanded={true}
-      />
+      <Box {...summarySwipeHandlers}>
+        <PrereadingSummarySection
+          chapterId={chapter.id}
+          bookId={bookId}
+          prereadingSummary={prereadingSummary}
+          defaultExpanded={true}
+        />
+      </Box>
 
       <Tabs
         value={activeTab}
@@ -103,7 +120,7 @@ export const ChapterDetailDialog = ({
         <Tab label={formatTabLabel('Flashcards', flashcardCount)} />
       </Tabs>
 
-      <Box sx={{ pt: 2, pb: 2 }}>
+      <Box sx={{ pt: 2, pb: 2 }} {...tabSwipeHandlers}>
         {activeTab === TAB_BEFORE_READING && (
           <PrereadingQuestionsSection
             chapterId={chapter.id}
