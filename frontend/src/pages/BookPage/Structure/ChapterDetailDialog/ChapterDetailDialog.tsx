@@ -90,7 +90,12 @@ export const ChapterDetailDialog = ({
       <Tabs
         value={activeTab}
         onChange={(_, newValue: number) => setActiveTab(newValue)}
+        variant="scrollable"
+        scrollButtons="auto"
         sx={{ borderBottom: 1, borderColor: 'divider', mt: 1 }}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
       >
         <Tab label="Before reading" />
         <Tab label="After reading" />
