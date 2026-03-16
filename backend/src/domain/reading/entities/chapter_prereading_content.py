@@ -10,6 +10,7 @@ from src.domain.common.value_objects.ids import ChapterId, PrereadingContentId
 class PrereadingQuestion:
     question: str
     answer: str
+    user_answer: str = ""
 
 
 @dataclass
@@ -47,6 +48,17 @@ class ChapterPrereadingContent(Entity[PrereadingContentId]):
 
         if not self.ai_model or not self.ai_model.strip():
             raise DomainError("AI model cannot be empty")
+
+    def update_user_answers(self, answers: dict[int, str]) -> None:
+        """Update user answers by question index. Mutates in place."""
+        for index, answer_text in answers.items():
+            if 0 <= index < len(self.questions):
+                old_q = self.questions[index]
+                self.questions[index] = PrereadingQuestion(
+                    question=old_q.question,
+                    answer=old_q.answer,
+                    user_answer=answer_text,
+                )
 
     # Factory methods
     @classmethod

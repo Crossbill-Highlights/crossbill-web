@@ -88,3 +88,34 @@ def test_empty_keypoint_string_raises_error() -> None:
 def test_empty_ai_model_raises_error() -> None:
     with pytest.raises(DomainError, match="AI model cannot be empty"):
         _create(ai_model="")
+
+
+def test_prereading_question_default_user_answer() -> None:
+    q = PrereadingQuestion(question="What?", answer="This.")
+    assert q.user_answer == ""
+
+
+def test_prereading_question_with_user_answer() -> None:
+    q = PrereadingQuestion(question="What?", answer="This.", user_answer="My answer")
+    assert q.user_answer == "My answer"
+
+
+def test_update_user_answers() -> None:
+    content = _create(
+        questions=[
+            PrereadingQuestion(question="Q1?", answer="A1"),
+            PrereadingQuestion(question="Q2?", answer="A2"),
+            PrereadingQuestion(question="Q3?", answer="A3"),
+        ]
+    )
+    content.update_user_answers({0: "User A1", 2: "User A3"})
+    assert content.questions[0].user_answer == "User A1"
+    assert content.questions[1].user_answer == ""
+    assert content.questions[2].user_answer == "User A3"
+
+
+def test_update_user_answers_ignores_out_of_range() -> None:
+    content = _create(questions=[PrereadingQuestion(question="Q1?", answer="A1")])
+    content.update_user_answers({0: "Valid", 5: "Invalid", -1: "Also invalid"})
+    assert content.questions[0].user_answer == "Valid"
+    assert len(content.questions) == 1
