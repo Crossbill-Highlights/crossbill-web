@@ -2,12 +2,13 @@ import type { ChapterPrereadingResponse } from '@/api/generated/model';
 import {
   getGetBookPrereadingApiV1BooksBookIdPrereadingGetQueryKey,
   useGenerateChapterPrereadingApiV1ChaptersChapterIdPrereadingGeneratePost,
+  useUpdatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut,
 } from '@/api/generated/prereading/prereading';
 import { AIActionButton } from '@/components/buttons/AIActionButton.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { Box, CircularProgress, Stack, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CollapsibleSection } from './CollapsibleSection.tsx';
 
 interface PrereadingQuestionsSectionProps {
@@ -22,7 +23,33 @@ export const PrereadingQuestionsSection = ({
   prereadingSummary,
 }: PrereadingQuestionsSectionProps) => {
   const queryClient = useQueryClient();
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+
+  // Local edits keyed by chapterId so they reset when switching chapters
+  const [localEdits, setLocalEdits] = useState<Record<number, Record<number, string>>>({});
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Server answers derived from prereadingSummary
+  const serverAnswers = useMemo<Record<number, string>>(() => {
+    if (!prereadingSummary) return {};
+    return Object.fromEntries(
+      prereadingSummary.questions.map((q, index) => [index, q.user_answer])
+    );
+  }, [prereadingSummary]);
+
+  // Merge server answers with local edits for the current chapter
+  const answers: Record<number, string> = {
+    ...serverAnswers,
+    ...(localEdits[chapterId] ?? {}),
+  };
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   const { mutate: generate, isPending } =
     useGenerateChapterPrereadingApiV1ChaptersChapterIdPrereadingGeneratePost({
@@ -35,8 +62,37 @@ export const PrereadingQuestionsSection = ({
       },
     });
 
+  const { mutate: saveAnswers } =
+    useUpdatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut();
+
+  const debouncedSave = useCallback(
+    (updatedAnswers: Record<number, string>) => {
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        const answerList = Object.entries(updatedAnswers).map(([index, answer]) => ({
+          question_index: Number(index),
+          user_answer: answer,
+        }));
+        saveAnswers({
+          chapterId,
+          data: { answers: answerList },
+        });
+      }, 1000);
+    },
+    [chapterId, saveAnswers]
+  );
+
   const handleGenerate = () => {
     generate({ chapterId });
+  };
+
+  const handleAnswerChange = (index: number, value: string) => {
+    const updatedChapterEdits = { ...(localEdits[chapterId] ?? {}), [index]: value };
+    setLocalEdits((prev) => ({ ...prev, [chapterId]: updatedChapterEdits }));
+    const updatedAnswers = { ...serverAnswers, ...updatedChapterEdits };
+    debouncedSave(updatedAnswers);
   };
 
   return (
@@ -74,7 +130,7 @@ export const PrereadingQuestionsSection = ({
                   size="small"
                   placeholder="Write your answer..."
                   value={answers[index] ?? ''}
-                  onChange={(e) => setAnswers((prev) => ({ ...prev, [index]: e.target.value }))}
+                  onChange={(e) => handleAnswerChange(index, e.target.value)}
                 />
               </Box>
             ))}
