@@ -41,7 +41,7 @@ export const PrereadingSummarySection = ({
   };
 
   return (
-    <CollapsibleSection title="Before reading" defaultExpanded={defaultExpanded}>
+    <CollapsibleSection title="Chapter summary" defaultExpanded={defaultExpanded}>
       {prereadingSummary || isPending ? (
         <PrereadingContent content={prereadingSummary} isGenerating={isPending} />
       ) : (
