@@ -10,6 +10,20 @@ class PrereadingQuestionResponse(BaseModel):
 
     question: str
     answer: str
+    user_answer: str
+
+
+class PrereadingAnswerUpdate(BaseModel):
+    """Schema for a single answer update."""
+
+    question_index: int
+    user_answer: str
+
+
+class UpdatePrereadingAnswersRequest(BaseModel):
+    """Request schema for updating prereading answers."""
+
+    answers: list[PrereadingAnswerUpdate]
 
 
 class ChapterPrereadingResponse(BaseModel):

@@ -61,7 +61,9 @@ async def get_chapter_prereading(
             summary=result.summary,
             keypoints=result.keypoints,
             questions=[
-                PrereadingQuestionResponse(question=q.question, answer=q.answer)
+                PrereadingQuestionResponse(
+                    question=q.question, answer=q.answer, user_answer=q.user_answer
+                )
                 for q in result.questions
             ],
             generated_at=result.generated_at,
@@ -96,7 +98,9 @@ async def generate_chapter_prereading(
             summary=result.summary,
             keypoints=result.keypoints,
             questions=[
-                PrereadingQuestionResponse(question=q.question, answer=q.answer)
+                PrereadingQuestionResponse(
+                    question=q.question, answer=q.answer, user_answer=q.user_answer
+                )
                 for q in result.questions
             ],
             generated_at=result.generated_at,
@@ -142,7 +146,9 @@ async def get_book_prereading(
                     summary=r.summary,
                     keypoints=r.keypoints,
                     questions=[
-                        PrereadingQuestionResponse(question=q.question, answer=q.answer)
+                        PrereadingQuestionResponse(
+                            question=q.question, answer=q.answer, user_answer=q.user_answer
+                        )
                         for q in r.questions
                     ],
                     generated_at=r.generated_at,
