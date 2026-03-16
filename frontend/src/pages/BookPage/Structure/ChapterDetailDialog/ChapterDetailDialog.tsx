@@ -59,7 +59,7 @@ export const ChapterDetailDialog = ({
   const [quizOpen, setQuizOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(TAB_BEFORE_READING);
 
-  const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext, swipeHandlers } =
+  const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext } =
     useModalHorizontalNavigation({
       open,
       currentIndex,
@@ -161,7 +161,6 @@ export const ChapterDetailDialog = ({
           hasNext={hasNext}
           onPrevious={handlePrevious}
           onNext={handleNext}
-          swipeHandlers={swipeHandlers}
         >
           <FadeInOut ekey={chapter.id}>{renderContent()}</FadeInOut>
         </CommonDialogHorizontalNavigation>
