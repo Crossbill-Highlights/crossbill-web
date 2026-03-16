@@ -17,7 +17,11 @@ class ChapterPrereadingMapper:
             id=PrereadingContentId(orm.id),
             chapter_id=ChapterId(orm.chapter_id),
             questions=[
-                PrereadingQuestion(question=q["question"], answer=q["answer"])
+                PrereadingQuestion(
+                    question=q["question"],
+                    answer=q["answer"],
+                    user_answer=q.get("user_answer", ""),
+                )
                 for q in orm.questions
             ],
             summary=orm.summary,
@@ -30,7 +34,10 @@ class ChapterPrereadingMapper:
         self, entity: ChapterPrereadingContent, orm: PrereadingContentORM | None = None
     ) -> PrereadingContentORM:
         """Convert domain entity to ORM model."""
-        questions = [{"question": q.question, "answer": q.answer} for q in entity.questions]
+        questions = [
+            {"question": q.question, "answer": q.answer, "user_answer": q.user_answer}
+            for q in entity.questions
+        ]
 
         if orm:
             orm.chapter_id = entity.chapter_id.value
