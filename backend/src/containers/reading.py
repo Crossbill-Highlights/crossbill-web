@@ -21,6 +21,9 @@ from src.application.reading.use_cases.chapter_prereading.get_book_prereading_us
 from src.application.reading.use_cases.chapter_prereading.get_chapter_prereading_use_case import (
     GetChapterPrereadingUseCase,
 )
+from src.application.reading.use_cases.chapter_prereading.update_prereading_answers_use_case import (
+    UpdatePrereadingAnswersUseCase,
+)
 from src.application.reading.use_cases.highlight_labels.create_global_highlight_label_use_case import (
     CreateGlobalHighlightLabelUseCase,
 )
@@ -286,6 +289,11 @@ class ReadingContainer(containers.DeclarativeContainer):
         book_repo=book_repository,
         file_repo=file_repository,
         ai_prereading_service=ai_service,
+    )
+    update_prereading_answers_use_case = providers.Factory(
+        UpdatePrereadingAnswersUseCase,
+        prereading_repo=chapter_prereading_repository,
+        chapter_repo=chapter_repository,
     )
 
     # Chapter content
