@@ -6,10 +6,9 @@
  */
 
 /**
- * Response schema for a pre-reading question/answer pair.
+ * Schema for a single answer update.
  */
-export interface PrereadingQuestionResponse {
-  question: string;
-  answer: string;
+export interface PrereadingAnswerUpdate {
+  question_index: number;
   user_answer: string;
 }

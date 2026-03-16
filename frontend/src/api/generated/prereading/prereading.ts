@@ -24,6 +24,7 @@ import type {
   BookPrereadingResponse,
   ChapterPrereadingResponse,
   HTTPValidationError,
+  UpdatePrereadingAnswersRequest,
 } from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
@@ -274,6 +275,95 @@ export const useGenerateChapterPrereadingApiV1ChaptersChapterIdPrereadingGenerat
     getGenerateChapterPrereadingApiV1ChaptersChapterIdPrereadingGeneratePostMutationOptions(
       options
     ),
+    queryClient
+  );
+};
+/**
+ * Update user answers for prereading questions.
+ * @summary Update Prereading Answers
+ */
+export const updatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut = (
+  chapterId: number,
+  updatePrereadingAnswersRequest: UpdatePrereadingAnswersRequest,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<ChapterPrereadingResponse>({
+    url: `/api/v1/chapters/${chapterId}/prereading/answers`,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    data: updatePrereadingAnswersRequest,
+    signal,
+  });
+};
+
+export const getUpdatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPutMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut>>,
+    TError,
+    { chapterId: number; data: UpdatePrereadingAnswersRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut>>,
+  TError,
+  { chapterId: number; data: UpdatePrereadingAnswersRequest },
+  TContext
+> => {
+  const mutationKey = ['updatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut>>,
+    { chapterId: number; data: UpdatePrereadingAnswersRequest }
+  > = (props) => {
+    const { chapterId, data } = props ?? {};
+
+    return updatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut(chapterId, data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPutMutationResult =
+  NonNullable<
+    Awaited<ReturnType<typeof updatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut>>
+  >;
+export type UpdatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPutMutationBody =
+  UpdatePrereadingAnswersRequest;
+export type UpdatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPutMutationError =
+  HTTPValidationError;
+
+/**
+ * @summary Update Prereading Answers
+ */
+export const useUpdatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut>>,
+      TError,
+      { chapterId: number; data: UpdatePrereadingAnswersRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof updatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut>>,
+  TError,
+  { chapterId: number; data: UpdatePrereadingAnswersRequest },
+  TContext
+> => {
+  return useMutation(
+    getUpdatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPutMutationOptions(options),
     queryClient
   );
 };
