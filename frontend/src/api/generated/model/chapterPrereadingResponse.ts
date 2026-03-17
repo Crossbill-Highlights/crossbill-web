@@ -4,6 +4,7 @@
  * crossbill API
  * OpenAPI spec version: 0.1.0
  */
+import type { PrereadingQuestionResponse } from './prereadingQuestionResponse';
 
 /**
  * Response schema for chapter prereading content.
@@ -13,5 +14,6 @@ export interface ChapterPrereadingResponse {
   chapter_id: number;
   summary: string;
   keypoints: string[];
+  questions: PrereadingQuestionResponse[];
   generated_at: string;
 }

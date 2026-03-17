@@ -15,16 +15,22 @@ from src.application.reading.use_cases.chapter_prereading.get_book_prereading_us
 from src.application.reading.use_cases.chapter_prereading.get_chapter_prereading_use_case import (
     GetChapterPrereadingUseCase,
 )
+from src.application.reading.use_cases.chapter_prereading.update_prereading_answers_use_case import (
+    UpdatePrereadingAnswersUseCase,
+)
 from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.identity import User
+from src.exceptions import NotFoundError
 from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.reading.schemas.chapter_prereading_schemas import (
     BookPrereadingResponse,
     ChapterPrereadingResponse,
+    PrereadingQuestionResponse,
+    UpdatePrereadingAnswersRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -59,6 +65,12 @@ async def get_chapter_prereading(
             chapter_id=result.chapter_id.value,
             summary=result.summary,
             keypoints=result.keypoints,
+            questions=[
+                PrereadingQuestionResponse(
+                    question=q.question, answer=q.answer, user_answer=q.user_answer
+                )
+                for q in result.questions
+            ],
             generated_at=result.generated_at,
         )
     except DomainError as e:
@@ -90,6 +102,12 @@ async def generate_chapter_prereading(
             chapter_id=result.chapter_id.value,
             summary=result.summary,
             keypoints=result.keypoints,
+            questions=[
+                PrereadingQuestionResponse(
+                    question=q.question, answer=q.answer, user_answer=q.user_answer
+                )
+                for q in result.questions
+            ],
             generated_at=result.generated_at,
         )
     except DomainError as e:
@@ -101,6 +119,47 @@ async def generate_chapter_prereading(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate prereading content",
         ) from e
+
+
+@router.put(
+    "/{chapter_id}/prereading/answers",
+    response_model=ChapterPrereadingResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def update_prereading_answers(
+    chapter_id: int,
+    body: UpdatePrereadingAnswersRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: UpdatePrereadingAnswersUseCase = Depends(
+        inject_use_case(container.reading.update_prereading_answers_use_case)
+    ),
+) -> ChapterPrereadingResponse:
+    """Update user answers for prereading questions."""
+    try:
+        answers = {a.question_index: a.user_answer for a in body.answers}
+        result = await use_case.update_answers(
+            chapter_id=ChapterId(chapter_id),
+            user_id=UserId(current_user.id.value),
+            answers=answers,
+        )
+
+        return ChapterPrereadingResponse(
+            id=result.id.value,
+            chapter_id=result.chapter_id.value,
+            summary=result.summary,
+            keypoints=result.keypoints,
+            questions=[
+                PrereadingQuestionResponse(
+                    question=q.question, answer=q.answer, user_answer=q.user_answer
+                )
+                for q in result.questions
+            ],
+            generated_at=result.generated_at,
+        )
+    except (DomainError, NotFoundError) as e:
+        if "not found" in str(e).lower():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 book_prereading_router = APIRouter(prefix="/books", tags=["prereading"])
@@ -132,6 +191,12 @@ async def get_book_prereading(
                     chapter_id=r.chapter_id.value,
                     summary=r.summary,
                     keypoints=r.keypoints,
+                    questions=[
+                        PrereadingQuestionResponse(
+                            question=q.question, answer=q.answer, user_answer=q.user_answer
+                        )
+                        for q in r.questions
+                    ],
                     generated_at=r.generated_at,
                 )
                 for r in results

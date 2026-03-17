@@ -9,7 +9,7 @@ interface CommonDialogHorizontalNavigationProps {
   hasNext: boolean | undefined | ((newIndex: number) => void);
   onPrevious: () => void;
   onNext: () => void;
-  swipeHandlers: SwipeableHandlers;
+  swipeHandlers?: SwipeableHandlers;
   disabled?: boolean;
   children: ReactNode;
 }

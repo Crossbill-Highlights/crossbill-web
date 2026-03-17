@@ -9,6 +9,11 @@
  * Schema for Flashcard response (without embedded highlight).
  */
 export interface Flashcard {
+  id: number;
+  user_id: number;
+  book_id: number;
+  highlight_id: number | null;
+  chapter_id?: number | null;
   /**
    * Question text for the flashcard
    * @minLength 1
@@ -19,9 +24,4 @@ export interface Flashcard {
    * @minLength 1
    */
   answer: string;
-  id: number;
-  user_id: number;
-  book_id: number;
-  highlight_id: number | null;
-  chapter_id?: number | null;
 }

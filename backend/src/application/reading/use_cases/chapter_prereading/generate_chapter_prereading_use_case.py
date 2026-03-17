@@ -116,6 +116,7 @@ class GenerateChapterPrereadingUseCase:
             chapter_id=chapter_id,
             summary=ai_result.summary,
             keypoints=ai_result.keypoints,
+            questions=ai_result.questions,
             generated_at=datetime.now(UTC),
             ai_model="ai-configured-model",
         )

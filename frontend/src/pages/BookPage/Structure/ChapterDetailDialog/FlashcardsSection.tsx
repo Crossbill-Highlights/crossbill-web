@@ -21,7 +21,6 @@ import { Stack } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { flatMap } from 'lodash';
 import { useCallback, useMemo, useState } from 'react';
-import { CollapsibleSection } from './CollapsibleSection.tsx';
 
 interface FlashcardsSectionProps {
   chapter: ChapterWithHighlights;
@@ -182,8 +181,6 @@ export const FlashcardsSection = ({
     return [...highlightFlashcards, ...chapterLinkedFlashcards];
   }, [chapter, bookFlashcards]);
 
-  const count = flashcardsWithContext.length;
-
   const handleEditFlashcard = useCallback((flashcard: FlashcardWithContext) => {
     setEditingFlashcard(flashcard);
   }, []);
@@ -216,47 +213,45 @@ export const FlashcardsSection = ({
 
   return (
     <>
-      <CollapsibleSection title="Flashcards" count={count} defaultExpanded={count > 0}>
-        {flashcardsWithContext.length > 0 && (
-          <Stack component="ul" sx={{ gap: 2, listStyle: 'none', p: 0, m: 0, mb: 2 }}>
-            {flashcardsWithContext.map((flashcard) => (
-              <li key={flashcard.id}>
-                <FlashcardListCard
-                  flashcard={flashcard}
-                  bookId={bookId}
-                  onEdit={() => handleEditFlashcard(flashcard)}
-                  showSourceHighlight={false}
-                />
-              </li>
-            ))}
-          </Stack>
-        )}
+      {flashcardsWithContext.length > 0 && (
+        <Stack component="ul" sx={{ gap: 2, listStyle: 'none', p: 0, m: 0, mb: 2 }}>
+          {flashcardsWithContext.map((flashcard) => (
+            <li key={flashcard.id}>
+              <FlashcardListCard
+                flashcard={flashcard}
+                bookId={bookId}
+                onEdit={() => handleEditFlashcard(flashcard)}
+                showSourceHighlight={false}
+              />
+            </li>
+          ))}
+        </Stack>
+      )}
 
-        <CreateFlashcardForm
-          question={question}
-          answer={answer}
-          onQuestionChange={setQuestion}
-          onAnswerChange={setAnswer}
-          editingFlashcardId={editingFlashcardId}
-          isDisabled={isProcessing}
-          isProcessing={isProcessing}
-          onSave={handleSave}
-          onCancelEdit={handleCancelEdit}
-        />
+      <CreateFlashcardForm
+        question={question}
+        answer={answer}
+        onQuestionChange={setQuestion}
+        onAnswerChange={setAnswer}
+        editingFlashcardId={editingFlashcardId}
+        isDisabled={isProcessing}
+        isProcessing={isProcessing}
+        onSave={handleSave}
+        onCancelEdit={handleCancelEdit}
+      />
 
-        {prereadingSummary && (
-          <AIFeature>
-            <FlashcardSuggestions
-              suggestions={suggestions}
-              isLoading={isLoading}
-              disabled={false}
-              onFetchSuggestions={fetchSuggestions}
-              onAcceptSuggestion={handleAcceptSuggestion}
-              onRejectSuggestion={removeSuggestion}
-            />
-          </AIFeature>
-        )}
-      </CollapsibleSection>
+      {prereadingSummary && (
+        <AIFeature>
+          <FlashcardSuggestions
+            suggestions={suggestions}
+            isLoading={isLoading}
+            disabled={false}
+            onFetchSuggestions={fetchSuggestions}
+            onAcceptSuggestion={handleAcceptSuggestion}
+            onRejectSuggestion={removeSuggestion}
+          />
+        </AIFeature>
+      )}
 
       {editingFlashcard && (
         <FlashcardEditDialog

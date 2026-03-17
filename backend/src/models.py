@@ -608,6 +608,9 @@ class ChapterPrereadingContent(Base):
     keypoints: Mapped[list[str]] = mapped_column(
         JSON().with_variant(PG_JSONB, "postgresql"), nullable=False
     )
+    questions: Mapped[list[dict[str, str]]] = mapped_column(
+        JSON().with_variant(PG_JSONB, "postgresql"), nullable=False, server_default="[]"
+    )
     generated_at: Mapped[dt] = mapped_column(DateTime(timezone=True), nullable=False)
     ai_model: Mapped[str] = mapped_column(String(100), nullable=False)
 

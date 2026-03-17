@@ -21,10 +21,8 @@ import type {
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
-  BodyUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost,
   BodyUploadBookEpubApiV1EreaderBooksClientBookIdEpubPost,
   BookCreate,
-  CoverUploadResponse,
   EpubUploadResponse,
   EreaderBookMetadata,
   HTTPValidationError,
@@ -289,111 +287,6 @@ export function useGetBookMetadataApiV1EreaderBooksClientBookIdGet<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
-/**
- * Upload a book cover image using client_book_id.
-
-This endpoint accepts an uploaded image file and saves it as the book's cover.
-Used by KOReader which identifies books by client_book_id.
-
-Args:
-    client_book_id: The client-provided stable book identifier
-    cover: Uploaded image file (JPEG, PNG, or WebP)
-    current_user: Authenticated user
-
-Returns:
-    CoverUploadResponse with success status and cover URL
-
-Raises:
-    HTTPException: 404 if book is not found, or if upload fails
- * @summary Upload Book Cover
- */
-export const uploadBookCoverApiV1EreaderBooksClientBookIdCoverPost = (
-  clientBookId: string,
-  bodyUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost: BodyUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost,
-  signal?: AbortSignal
-) => {
-  const formData = new FormData();
-  formData.append(`cover`, bodyUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost.cover);
-
-  return axiosInstance<CoverUploadResponse>({
-    url: `/api/v1/ereader/books/${clientBookId}/cover`,
-    method: 'POST',
-    headers: { 'Content-Type': 'multipart/form-data' },
-    data: formData,
-    signal,
-  });
-};
-
-export const getUploadBookCoverApiV1EreaderBooksClientBookIdCoverPostMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof uploadBookCoverApiV1EreaderBooksClientBookIdCoverPost>>,
-    TError,
-    { clientBookId: string; data: BodyUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost },
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof uploadBookCoverApiV1EreaderBooksClientBookIdCoverPost>>,
-  TError,
-  { clientBookId: string; data: BodyUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost },
-  TContext
-> => {
-  const mutationKey = ['uploadBookCoverApiV1EreaderBooksClientBookIdCoverPost'];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof uploadBookCoverApiV1EreaderBooksClientBookIdCoverPost>>,
-    { clientBookId: string; data: BodyUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost }
-  > = (props) => {
-    const { clientBookId, data } = props ?? {};
-
-    return uploadBookCoverApiV1EreaderBooksClientBookIdCoverPost(clientBookId, data);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type UploadBookCoverApiV1EreaderBooksClientBookIdCoverPostMutationResult = NonNullable<
-  Awaited<ReturnType<typeof uploadBookCoverApiV1EreaderBooksClientBookIdCoverPost>>
->;
-export type UploadBookCoverApiV1EreaderBooksClientBookIdCoverPostMutationBody =
-  BodyUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost;
-export type UploadBookCoverApiV1EreaderBooksClientBookIdCoverPostMutationError =
-  HTTPValidationError;
-
-/**
- * @summary Upload Book Cover
- */
-export const useUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof uploadBookCoverApiV1EreaderBooksClientBookIdCoverPost>>,
-      TError,
-      { clientBookId: string; data: BodyUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost },
-      TContext
-    >;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof uploadBookCoverApiV1EreaderBooksClientBookIdCoverPost>>,
-  TError,
-  { clientBookId: string; data: BodyUploadBookCoverApiV1EreaderBooksClientBookIdCoverPost },
-  TContext
-> => {
-  return useMutation(
-    getUploadBookCoverApiV1EreaderBooksClientBookIdCoverPostMutationOptions(options),
-    queryClient
-  );
-};
 /**
  * Upload an ebook file (EPUB) for a book using client_book_id.
 
