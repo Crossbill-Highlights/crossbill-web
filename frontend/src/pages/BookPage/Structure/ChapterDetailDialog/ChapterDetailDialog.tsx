@@ -18,6 +18,7 @@ import { Box, Button, Tab, Tabs } from '@mui/material';
 import { sumBy } from 'lodash';
 import { useMemo, useState } from 'react';
 import { AfterReadingSection } from './AfterReadingSection.tsx';
+import { ChapterToolbar } from './ChapterToolbar.tsx';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
 import { HighlightsSection } from './HighlightsSection.tsx';
 import { PrereadingQuestionsSection } from './PrereadingQuestionsSection.tsx';
@@ -96,13 +97,10 @@ export const ChapterDetailDialog = ({
   const renderContent = () => (
     <Box>
       <Box {...summarySwipeHandlers}>
-        <PrereadingSummarySection
-          chapterId={chapter.id}
-          bookId={bookId}
-          prereadingSummary={prereadingSummary}
-          defaultExpanded={true}
-        />
+        <PrereadingSummarySection prereadingSummary={prereadingSummary} defaultExpanded={true} />
       </Box>
+
+      <ChapterToolbar chapterId={chapter.id} bookId={bookId} hasSummary={!!prereadingSummary} />
 
       <Tabs
         value={activeTab}
