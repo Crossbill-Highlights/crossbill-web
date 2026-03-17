@@ -1,4 +1,4 @@
-import type { ChapterPrereadingResponse } from '@/api/generated/model';
+import type { BookPrereadingResponse, ChapterPrereadingResponse } from '@/api/generated/model';
 import {
   getGetBookPrereadingApiV1BooksBookIdPrereadingGetQueryKey,
   useGenerateChapterPrereadingApiV1ChaptersChapterIdPrereadingGeneratePost,
@@ -62,8 +62,29 @@ export const PrereadingQuestionsSection = ({
       },
     });
 
+  const queryKey = getGetBookPrereadingApiV1BooksBookIdPrereadingGetQueryKey(bookId);
+
   const { mutate: saveAnswers } =
-    useUpdatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut();
+    useUpdatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut({
+      mutation: {
+        onSuccess: (updatedChapter) => {
+          queryClient.setQueryData<BookPrereadingResponse>(queryKey, (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              items: old.items.map((item) =>
+                item.chapter_id === updatedChapter.chapter_id
+                  ? { ...item, questions: updatedChapter.questions }
+                  : item
+              ),
+            };
+          });
+          setLocalEdits((prev) =>
+            Object.fromEntries(Object.entries(prev).filter(([key]) => Number(key) !== chapterId))
+          );
+        },
+      },
+    });
 
   const saveNow = useCallback(
     (answersToSave: Record<number, string>) => {
