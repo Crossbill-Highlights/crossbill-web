@@ -46,7 +46,7 @@ def get_prereading_agent() -> Agent[None, PrereadingContent]:
         2. 3-5 key points or concepts the reader should watch for in markdown format. Bold the key point name. Do not use bullet points or list markers.
         3. Questions about the concepts and key topics in text which reader should find the answers from the text as they read it.
            Questions should help user to engage with the text by making them to think about the content and write about it by their own words.
-           Generate also example answers to be compared with the user's answers. Generate 3-5 questions which should not repeat themselves.
+           Generate also example answers to be compared with the user's answers. Generate 3 questions which should not repeat themselves. Questions should be clear and concise.
 
         Focus on helping the reader understand what to expect from the chapter.
         Be concise and specific.
