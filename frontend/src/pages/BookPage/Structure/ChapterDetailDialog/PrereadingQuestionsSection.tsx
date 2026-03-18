@@ -8,7 +8,7 @@ import { AIActionButton } from '@/components/buttons/AIActionButton.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { Box, CircularProgress, Stack, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { CollapsibleSection } from './CollapsibleSection.tsx';
 
 interface PrereadingQuestionsSectionProps {
@@ -26,8 +26,6 @@ export const PrereadingQuestionsSection = ({
 
   // Local edits keyed by chapterId so they reset when switching chapters
   const [localEdits, setLocalEdits] = useState<Record<number, Record<number, string>>>({});
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // Server answers derived from prereadingSummary
   const serverAnswers = useMemo<Record<number, string>>(() => {
     if (!prereadingSummary) return {};
@@ -41,15 +39,6 @@ export const PrereadingQuestionsSection = ({
     ...serverAnswers,
     ...(localEdits[chapterId] ?? {}),
   };
-
-  // Cleanup debounce timer on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current !== null) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, []);
 
   const { mutate: generate, isPending } =
     useGenerateChapterPrereadingApiV1ChaptersChapterIdPrereadingGeneratePost({
@@ -97,32 +86,18 @@ export const PrereadingQuestionsSection = ({
     [chapterId, saveAnswers]
   );
 
-  const debouncedSave = useCallback(
-    (updatedAnswers: Record<number, string>) => {
-      if (debounceTimerRef.current !== null) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      debounceTimerRef.current = setTimeout(() => saveNow(updatedAnswers), 1000);
-    },
-    [saveNow]
-  );
-
   const handleGenerate = () => {
     generate({ chapterId });
   };
 
   const handleAnswerChange = (index: number, value: string) => {
-    const updatedChapterEdits = { ...(localEdits[chapterId] ?? {}), [index]: value };
-    setLocalEdits((prev) => ({ ...prev, [chapterId]: updatedChapterEdits }));
-    const updatedAnswers = { ...serverAnswers, ...updatedChapterEdits };
-    debouncedSave(updatedAnswers);
+    setLocalEdits((prev) => ({
+      ...prev,
+      [chapterId]: { ...(prev[chapterId] ?? {}), [index]: value },
+    }));
   };
 
   const handleBlur = () => {
-    if (debounceTimerRef.current !== null) {
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
-    }
     saveNow(answers);
   };
 
