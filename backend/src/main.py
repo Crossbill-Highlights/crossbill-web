@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from starlette import status
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from src.config import configure_logging, get_settings
@@ -242,11 +243,11 @@ async def crossbill_exception_handler(request: Request, exc: CrossbillError) -> 
     """Handle all custom Crossbill exceptions."""
     logger.error("crossbill_exception", message=str(exc), exception_type=type(exc).__name__)
     # Use generic message to avoid leaking internal details
-    if exc.status_code >= 500:
+    if exc.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
         message = "An unexpected error occurred. Please try again later."
-    elif exc.status_code == 404:
+    elif exc.status_code == status.HTTP_404_NOT_FOUND:
         message = "The requested resource was not found."
-    elif exc.status_code == 409:
+    elif exc.status_code == status.HTTP_409_CONFLICT:
         message = "The resource already exists or conflicts with the current state."
     else:
         message = "The request could not be processed."
