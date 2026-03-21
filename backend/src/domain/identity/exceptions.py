@@ -32,6 +32,17 @@ class PasswordVerificationError(DomainError):
         super().__init__("Current password is incorrect")
 
 
+class RefreshTokenReuseError(DomainError):
+    """Raised when a revoked refresh token is presented, indicating potential token theft."""
+
+    def __init__(self, family_id: str) -> None:
+        super().__init__(
+            "Refresh token reuse detected — possible token theft",
+            {"family_id": family_id},
+        )
+        self.family_id = family_id
+
+
 class RegistrationDisabledError(DomainError):
     """Raised when user registration is disabled via feature flag."""
 
