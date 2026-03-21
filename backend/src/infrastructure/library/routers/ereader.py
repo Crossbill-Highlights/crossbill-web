@@ -72,13 +72,9 @@ async def create_book(
             has_cover=metadata.has_cover,
             has_ebook=metadata.has_ebook,
         )
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
+    except (CrossbillError, DomainError):
+        # Re-raise - handled by global exception handlers
         raise
-    except DomainError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error(
             f"Failed to create book: {e!s}",
@@ -127,13 +123,9 @@ async def get_book_metadata(
             has_cover=metadata.has_cover,
             has_ebook=metadata.has_ebook,
         )
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
+    except (CrossbillError, DomainError):
+        # Re-raise - handled by global exception handlers
         raise
-    except DomainError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error(
             f"Failed to get book metadata for client_book_id={client_book_id}: {e!s}",

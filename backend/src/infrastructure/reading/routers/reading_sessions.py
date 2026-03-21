@@ -260,20 +260,16 @@ async def get_reading_session_ai_summary(
     try:
         summary = await use_case.get_or_generate_summary(reading_session_id, current_user.id.value)
         return ReadingSessionAISummaryResponse(summary=summary)
-    except ReadingSessionNotFoundError as e:
+    except ReadingSessionNotFoundError:
         logger.warning(
             f"Reading session {reading_session_id} not found for user {current_user.id.value}"
         )
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        ) from e
-    except ValidationError as e:
-        logger.warning(f"Validation error for AI summary (session {reading_session_id}): {e!s}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+        # Re-raise - handled by global exception handlers
+        raise
+    except ValidationError:
+        logger.warning(f"Validation error for AI summary (session {reading_session_id})")
+        # Re-raise - handled by global exception handlers
+        raise
     except Exception as e:
         logger.error(
             f"Failed to get AI summary for reading session: {e!s}",

@@ -49,15 +49,12 @@ async def get_chapter_content(
             book_id=book_id,
             content=content,
         )
-    except DomainError as e:
-        if "not found" in str(e).lower():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except CrossbillError:
+    except (DomainError, CrossbillError):
+        # Re-raise - handled by global exception handlers
         raise
     except Exception as e:
         logger.error(f"Failed to get chapter content: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to extract chapter content",
+            detail="An unexpected error occurred. Please try again later.",
         ) from e
