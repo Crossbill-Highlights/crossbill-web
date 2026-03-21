@@ -27,7 +27,7 @@ class TokenWithRefresh(BaseModel):
 
 def create_access_token(user_id: int) -> str:
     """Create an access token for a user."""
-    expire = datetime.now(UTC) + timedelta(days=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode = {"sub": str(user_id), "exp": expire, "type": "access"}
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
