@@ -136,6 +136,29 @@ class User(Base):
         return f"<User(id={self.id}, email='{self.email}')>"
 
 
+class RefreshTokenRecord(Base):
+    """Server-side refresh token record for rotation and reuse detection."""
+
+    __tablename__ = "refresh_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    family_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    expires_at: Mapped[dt] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[dt | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[dt] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (Index("ix_refresh_tokens_family_revoked", "family_id", "revoked_at"),)
+
+    def __repr__(self) -> str:
+        return f"<RefreshTokenRecord(id={self.id}, user_id={self.user_id}, family_id='{self.family_id}')>"
+
+
 class Book(Base):
     """Book model for storing book metadata."""
 
