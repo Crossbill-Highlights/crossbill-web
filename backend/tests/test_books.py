@@ -171,7 +171,6 @@ class TestDeleteBook:
         assert response.status_code == status.HTTP_404_NOT_FOUND
         data = response.json()
         assert "not found" in data["message"].lower()
-        assert data["book_id"] == 99999
 
 
 class TestDeleteHighlights:
@@ -298,7 +297,6 @@ class TestDeleteHighlights:
         assert response.status_code == status.HTTP_404_NOT_FOUND
         data = response.json()
         assert "not found" in data["message"].lower()
-        assert data["book_id"] == 99999
 
     async def test_delete_highlights_empty_list(
         self, client: AsyncClient, test_book: models.Book

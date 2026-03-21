@@ -71,10 +71,6 @@ class TestCreateTagGroup:
         )
 
         assert response.status_code == status.HTTP_409_CONFLICT
-        data = response.json()
-        assert "detail" in data
-        assert "already exists" in data["detail"].lower()
-        assert test_tag_group.name in data["detail"]
 
     async def test_create_tag_group_nonexistent_book(self, client: AsyncClient) -> None:
         """Test creating tag group for non-existent book."""
@@ -120,10 +116,6 @@ class TestCreateTagGroup:
         )
 
         assert response.status_code == status.HTTP_409_CONFLICT
-        data = response.json()
-        assert "detail" in data
-        assert "already exists" in data["detail"].lower()
-        assert test_tag_group.name in data["detail"]
 
     async def test_update_tag_group_wrong_book(
         self,

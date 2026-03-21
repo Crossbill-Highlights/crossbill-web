@@ -73,8 +73,9 @@ async def get_chapter_prereading(
             ],
             generated_at=result.generated_at,
         )
-    except DomainError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except DomainError:
+        # Re-raise - handled by global exception handlers
+        raise
 
 
 @router.post(
@@ -110,14 +111,14 @@ async def generate_chapter_prereading(
             ],
             generated_at=result.generated_at,
         )
-    except DomainError as e:
-        if "not found" in str(e).lower():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-        if "position data" in str(e).lower() or "too short" in str(e).lower():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+    except DomainError:
+        # Re-raise - handled by global exception handlers
+        raise
+    except Exception as e:
+        logger.error(f"Failed to generate prereading content: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate prereading content",
+            detail="An unexpected error occurred. Please try again later.",
         ) from e
 
 
@@ -156,10 +157,9 @@ async def update_prereading_answers(
             ],
             generated_at=result.generated_at,
         )
-    except (DomainError, NotFoundError) as e:
-        if "not found" in str(e).lower():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+    except (DomainError, NotFoundError):
+        # Re-raise - handled by global exception handlers
+        raise
 
 
 book_prereading_router = APIRouter(prefix="/books", tags=["prereading"])
@@ -202,5 +202,6 @@ async def get_book_prereading(
                 for r in results
             ]
         )
-    except DomainError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except DomainError:
+        # Re-raise - handled by global exception handlers
+        raise

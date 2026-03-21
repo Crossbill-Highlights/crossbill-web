@@ -381,13 +381,9 @@ async def get_book_details(
     try:
         agg = await use_case.get_book_details(book_id, current_user.id.value)
         return _build_book_details_schema(agg, agg.labels)
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
+    except (CrossbillError, DomainError):
+        # Re-raise - handled by global exception handlers
         raise
-    except DomainError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Failed to fetch book details for book_id={book_id}: {e!s}", exc_info=True)
         raise HTTPException(
@@ -449,13 +445,9 @@ async def update_book(
             updated_at=book.updated_at,
             last_viewed=book.last_viewed,
         )
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
+    except (CrossbillError, DomainError):
+        # Re-raise - handled by global exception handlers
         raise
-    except DomainError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Failed to update book {book_id}: {e!s}", exc_info=True)
         raise HTTPException(
@@ -485,13 +477,9 @@ async def delete_book(
     """
     try:
         await use_case.delete_book(book_id, current_user.id.value)
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
+    except (CrossbillError, DomainError):
+        # Re-raise - handled by global exception handlers
         raise
-    except DomainError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Failed to delete book {book_id}: {e!s}", exc_info=True)
         raise HTTPException(
