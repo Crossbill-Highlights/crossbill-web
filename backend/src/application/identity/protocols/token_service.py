@@ -1,9 +1,11 @@
+"""Protocol for token service."""
+
 from typing import Protocol
 
-from src.infrastructure.identity.services.token_service import TokenWithRefresh
+from src.application.identity.dtos import RefreshTokenClaims, TokenPairWithMetadata
 
 
 class TokenServiceProtocol(Protocol):
-    def create_token_pair(self, user_id: int) -> TokenWithRefresh: ...
+    def create_token_pair(self, user_id: int, family_id: str) -> TokenPairWithMetadata: ...
 
-    def verify_refresh_token(self, token: str) -> int | None: ...
+    def verify_refresh_token(self, token: str) -> RefreshTokenClaims | None: ...
