@@ -1,11 +1,13 @@
 """Token creation and verification service."""
 
+import uuid
 from datetime import UTC, datetime, timedelta
 
 import jwt
 from jwt import InvalidTokenError
 from pydantic import BaseModel
 
+from src.application.identity.dtos import RefreshTokenClaims, TokenPairWithMetadata
 from src.config import get_settings
 
 settings = get_settings()
@@ -17,7 +19,7 @@ REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
 
 class TokenWithRefresh(BaseModel):
-    """DTO for token pair with access and refresh tokens."""
+    """Pydantic response model for HTTP API responses."""
 
     access_token: str
     refresh_token: str
@@ -32,10 +34,10 @@ def create_access_token(user_id: int) -> str:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def create_refresh_token(user_id: int) -> str:
-    """Create a refresh token for a user."""
+def create_refresh_token(user_id: int, jti: str) -> str:
+    """Create a refresh token for a user with a jti claim."""
     expire = datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode = {"sub": str(user_id), "exp": expire, "type": "refresh"}
+    to_encode = {"sub": str(user_id), "exp": expire, "type": "refresh", "jti": jti}
     return jwt.encode(to_encode, REFRESH_TOKEN_SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -43,7 +45,6 @@ def verify_access_token(token: str) -> int | None:
     """Verify an access token and return the user_id if valid."""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        # Reject refresh tokens - they should only be used at the /refresh endpoint
         if payload.get("type") == "refresh":
             return None
         user_id = payload.get("sub")
@@ -54,27 +55,33 @@ def verify_access_token(token: str) -> int | None:
         return None
 
 
-def verify_refresh_token(token: str) -> int | None:
-    """Verify a refresh token and return the user_id if valid."""
+def verify_refresh_token(token: str) -> RefreshTokenClaims | None:
+    """Verify a refresh token and return claims if valid."""
     try:
         payload = jwt.decode(token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM])
         if payload.get("type") != "refresh":
             return None
         user_id = payload.get("sub")
-        if user_id is None:
+        jti = payload.get("jti")
+        if user_id is None or jti is None:
             return None
-        return int(user_id)
+        return RefreshTokenClaims(user_id=int(user_id), jti=jti)
     except (InvalidTokenError, ValueError):
         return None
 
 
-def create_token_pair(user_id: int) -> TokenWithRefresh:
+def create_token_pair(user_id: int, family_id: str) -> TokenPairWithMetadata:
     """Create a token pair (access + refresh) for a user."""
+    jti = str(uuid.uuid4())
     access_token = create_access_token(user_id)
-    refresh_token = create_refresh_token(user_id)
-    return TokenWithRefresh(
+    refresh_token_expires_at = datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    refresh_token = create_refresh_token(user_id, jti)
+    return TokenPairWithMetadata(
         access_token=access_token,
         refresh_token=refresh_token,
         token_type="bearer",  # noqa: S106
-        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Convert to seconds
+        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        jti=jti,
+        family_id=family_id,
+        refresh_token_expires_at=refresh_token_expires_at,
     )
