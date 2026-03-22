@@ -18,7 +18,7 @@ from src.domain.identity.exceptions import (
 from src.exceptions import CrossbillError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
-from src.infrastructure.identity.routers.auth import set_refresh_cookie
+from src.infrastructure.identity.routers.auth import set_refresh_cookie, token_pair_to_response
 from src.infrastructure.identity.schemas import (
     UserDetailsResponse,
     UserRegisterRequest,
@@ -37,7 +37,6 @@ async def register(
     request: Request,
     response: Response,
     register_data: UserRegisterRequest,
-    db: DatabaseSession,
     use_case: RegisterUserUseCase = Depends(
         inject_use_case(container.identity.register_user_use_case)
     ),
@@ -50,9 +49,8 @@ async def register(
     """
     try:
         _, token_pair = await use_case.register_user(register_data.email, register_data.password)
-        await db.commit()
         set_refresh_cookie(response, token_pair.refresh_token)
-        return token_pair
+        return token_pair_to_response(token_pair)
     except RegistrationDisabledError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

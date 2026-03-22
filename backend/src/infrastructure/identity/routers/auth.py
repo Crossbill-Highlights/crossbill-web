@@ -39,7 +39,7 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str | None = None
 
 
-def _to_response(token_pair: TokenPairWithMetadata) -> TokenWithRefresh:
+def token_pair_to_response(token_pair: TokenPairWithMetadata) -> TokenWithRefresh:
     """Convert TokenPairWithMetadata to HTTP response model."""
     return TokenWithRefresh(
         access_token=token_pair.access_token,
@@ -86,7 +86,7 @@ async def login(
     try:
         _, token_pair = await use_case.authenticate(form_data.username, form_data.password)
         set_refresh_cookie(response, token_pair.refresh_token)
-        return _to_response(token_pair)
+        return token_pair_to_response(token_pair)
     except InvalidCredentialsError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -119,7 +119,7 @@ async def refresh(
     try:
         _, token_pair = await use_case.refresh_token(token)
         set_refresh_cookie(response, token_pair.refresh_token)
-        return _to_response(token_pair)
+        return token_pair_to_response(token_pair)
     except InvalidCredentialsError:
         _clear_refresh_cookie(response)
         raise HTTPException(
