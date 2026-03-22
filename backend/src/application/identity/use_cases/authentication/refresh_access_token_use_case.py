@@ -58,8 +58,7 @@ class RefreshAccessTokenUseCase:
             raise InvalidCredentialsError
 
         # 5. Revoke current token
-        existing_token.revoke()
-        await self.refresh_token_repository.save(existing_token)
+        await self.refresh_token_repository.revoke(existing_token)
 
         # 6. Create new token pair in same family
         token_pair = self.token_service.create_token_pair(

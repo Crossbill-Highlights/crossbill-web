@@ -25,21 +25,21 @@ class RefreshTokenRepository:
         return self.mapper.to_domain(orm_model) if orm_model else None
 
     async def save(self, token: RefreshToken) -> RefreshToken:
-        if token.id.value == 0:
-            # New token
-            orm_model = self.mapper.to_orm(token)
-            self.db.add(orm_model)
-            await self.db.commit()
-            await self.db.refresh(orm_model)
-            return self.mapper.to_domain(orm_model)
-        # Update existing (e.g., revoking)
-        stmt = select(RefreshTokenORM).where(RefreshTokenORM.id == token.id.value)
-        result = await self.db.execute(stmt)
-        orm_model = result.scalar_one()
-        orm_model.revoked_at = token.revoked_at
+        orm_model = self.mapper.to_orm(token)
+        self.db.add(orm_model)
         await self.db.commit()
         await self.db.refresh(orm_model)
         return self.mapper.to_domain(orm_model)
+
+    async def revoke(self, token: RefreshToken) -> None:
+        """Revoke a single refresh token by ID."""
+        stmt = (
+            update(RefreshTokenORM)
+            .where(RefreshTokenORM.id == token.id.value)
+            .values(revoked_at=datetime.now(UTC))
+        )
+        await self.db.execute(stmt)
+        await self.db.commit()
 
     async def revoke_family(self, family_id: str) -> None:
         stmt = (

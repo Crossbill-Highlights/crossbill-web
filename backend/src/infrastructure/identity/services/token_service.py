@@ -34,10 +34,9 @@ def create_access_token(user_id: int) -> str:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def create_refresh_token(user_id: int, jti: str) -> str:
+def create_refresh_token(user_id: int, jti: str, expires_at: datetime) -> str:
     """Create a refresh token for a user with a jti claim."""
-    expire = datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode = {"sub": str(user_id), "exp": expire, "type": "refresh", "jti": jti}
+    to_encode = {"sub": str(user_id), "exp": expires_at, "type": "refresh", "jti": jti}
     return jwt.encode(to_encode, REFRESH_TOKEN_SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -75,7 +74,7 @@ def create_token_pair(user_id: int, family_id: str) -> TokenPairWithMetadata:
     jti = str(uuid.uuid4())
     access_token = create_access_token(user_id)
     refresh_token_expires_at = datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    refresh_token = create_refresh_token(user_id, jti)
+    refresh_token = create_refresh_token(user_id, jti, refresh_token_expires_at)
     return TokenPairWithMetadata(
         access_token=access_token,
         refresh_token=refresh_token,
