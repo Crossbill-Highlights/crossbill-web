@@ -1,14 +1,13 @@
 """Tests for RefreshToken domain entity."""
 
 from datetime import UTC, datetime, timedelta
-
-import pytest
+from typing import Any
 
 from src.domain.common.value_objects.ids import RefreshTokenId, UserId
 from src.domain.identity.entities.refresh_token import RefreshToken
 
 
-def _create(**overrides):
+def _create(**overrides: Any) -> RefreshToken:
     defaults = {
         "jti": "550e8400-e29b-41d4-a716-446655440000",
         "user_id": UserId(1),
@@ -16,7 +15,7 @@ def _create(**overrides):
         "expires_at": datetime.now(UTC) + timedelta(days=30),
     }
     defaults.update(overrides)
-    return RefreshToken.create(**defaults)
+    return RefreshToken.create(**defaults)  # type: ignore[arg-type]
 
 
 class TestRefreshTokenCreate:

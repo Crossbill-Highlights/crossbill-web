@@ -11,7 +11,6 @@ from src.application.identity.use_cases.authentication.authenticate_user_use_cas
 )
 from src.domain.common.value_objects.ids import UserId
 from src.domain.identity.entities.user import User
-from src.domain.identity.exceptions import InvalidCredentialsError
 
 
 def _make_user(user_id: int = 1) -> User:
@@ -55,7 +54,11 @@ class TestAuthenticateUserUseCase:
 
     @pytest.fixture
     def use_case(
-        self, user_repository, password_service, token_service, refresh_token_repository
+        self,
+        user_repository: AsyncMock,
+        password_service: MagicMock,
+        token_service: MagicMock,
+        refresh_token_repository: AsyncMock,
     ) -> AuthenticateUserUseCase:
         return AuthenticateUserUseCase(
             user_repository=user_repository,
@@ -64,17 +67,33 @@ class TestAuthenticateUserUseCase:
             refresh_token_repository=refresh_token_repository,
         )
 
-    async def test_authenticate_persists_refresh_token(
-        self, use_case, user_repository, password_service, token_service, refresh_token_repository
-    ) -> None:
+    @pytest.fixture
+    def _successful_auth_setup(
+        self,
+        user_repository: AsyncMock,
+        password_service: MagicMock,
+        token_service: MagicMock,
+        refresh_token_repository: AsyncMock,
+    ) -> TokenPairWithMetadata:
         user = _make_user()
         user_repository.find_by_email.return_value = user
         password_service.verify_password.return_value = True
         token_pair = _make_token_pair()
         token_service.create_token_pair.return_value = token_pair
         refresh_token_repository.save.return_value = MagicMock()
+        return token_pair
 
+    async def test_authenticate_persists_refresh_token(
+        self,
+        use_case: AuthenticateUserUseCase,
+        token_service: MagicMock,
+        refresh_token_repository: AsyncMock,
+        _successful_auth_setup: TokenPairWithMetadata,
+    ) -> None:
         _, result = await use_case.authenticate("test@example.com", "password")
+
+        assert result.access_token == "access"
+        assert result.jti == "test-jti"
 
         token_service.create_token_pair.assert_called_once()
         call_args = token_service.create_token_pair.call_args
@@ -85,18 +104,3 @@ class TestAuthenticateUserUseCase:
         assert saved_token.jti == "test-jti"
         assert saved_token.family_id == "test-family"
         assert saved_token.user_id == UserId(1)
-
-    async def test_authenticate_returns_token_pair_with_metadata(
-        self, use_case, user_repository, password_service, token_service, refresh_token_repository
-    ) -> None:
-        user = _make_user()
-        user_repository.find_by_email.return_value = user
-        password_service.verify_password.return_value = True
-        token_pair = _make_token_pair()
-        token_service.create_token_pair.return_value = token_pair
-        refresh_token_repository.save.return_value = MagicMock()
-
-        _, result = await use_case.authenticate("test@example.com", "password")
-
-        assert result.access_token == "access"
-        assert result.jti == "test-jti"

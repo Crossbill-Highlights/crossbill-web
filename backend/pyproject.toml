@@ -89,7 +89,11 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [
   "S101",    # Use of assert in tests
+  "S105",    # Possible hardcoded password in comparison
+  "S106",    # Possible hardcoded password in argument
+  "ANN001",  # Missing type annotation for function argument
   "PLR2004", # Magic value in comparison
+  "PT019",   # Fixture without value injected as parameter
 ]
 "tests/test_epub_toc_chapters.py" = [
   "ANN001", # Missing type annotation for function argument

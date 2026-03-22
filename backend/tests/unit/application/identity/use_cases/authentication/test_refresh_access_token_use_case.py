@@ -68,7 +68,10 @@ class TestRefreshAccessTokenUseCase:
 
     @pytest.fixture
     def use_case(
-        self, user_repository, token_service, refresh_token_repository
+        self,
+        user_repository: AsyncMock,
+        token_service: MagicMock,
+        refresh_token_repository: AsyncMock,
     ) -> RefreshAccessTokenUseCase:
         return RefreshAccessTokenUseCase(
             user_repository=user_repository,
@@ -77,7 +80,11 @@ class TestRefreshAccessTokenUseCase:
         )
 
     async def test_successful_rotation(
-        self, use_case, user_repository, token_service, refresh_token_repository
+        self,
+        use_case: RefreshAccessTokenUseCase,
+        user_repository: AsyncMock,
+        token_service: MagicMock,
+        refresh_token_repository: AsyncMock,
     ) -> None:
         claims = RefreshTokenClaims(user_id=1, jti="old-jti")
         token_service.verify_refresh_token.return_value = claims
@@ -93,21 +100,25 @@ class TestRefreshAccessTokenUseCase:
 
         assert result.access_token == "new-access"
         refresh_token_repository.revoke_family.assert_not_called()
-        # save is called twice: once for revoking old, once for new
-        assert refresh_token_repository.save.call_count == 2
-        new_saved = refresh_token_repository.save.call_args_list[1][0][0]
+        # revoke called for old token, save called for new token
+        refresh_token_repository.revoke.assert_called_once_with(existing_token)
+        refresh_token_repository.save.assert_called_once()
+        new_saved = refresh_token_repository.save.call_args[0][0]
         assert new_saved.jti == "new-jti"
         assert new_saved.family_id == "family-1"
 
     async def test_invalid_jwt_raises_error(
-        self, use_case, token_service
+        self, use_case: RefreshAccessTokenUseCase, token_service: MagicMock
     ) -> None:
         token_service.verify_refresh_token.return_value = None
         with pytest.raises(InvalidCredentialsError):
             await use_case.refresh_token("bad-token")
 
     async def test_unknown_jti_raises_error(
-        self, use_case, token_service, refresh_token_repository
+        self,
+        use_case: RefreshAccessTokenUseCase,
+        token_service: MagicMock,
+        refresh_token_repository: AsyncMock,
     ) -> None:
         claims = RefreshTokenClaims(user_id=1, jti="unknown")
         token_service.verify_refresh_token.return_value = claims
@@ -116,7 +127,10 @@ class TestRefreshAccessTokenUseCase:
             await use_case.refresh_token("some-token")
 
     async def test_revoked_token_triggers_family_revocation(
-        self, use_case, token_service, refresh_token_repository
+        self,
+        use_case: RefreshAccessTokenUseCase,
+        token_service: MagicMock,
+        refresh_token_repository: AsyncMock,
     ) -> None:
         claims = RefreshTokenClaims(user_id=1, jti="revoked-jti")
         token_service.verify_refresh_token.return_value = claims
@@ -127,7 +141,11 @@ class TestRefreshAccessTokenUseCase:
         refresh_token_repository.revoke_family.assert_called_once_with("family-1")
 
     async def test_user_not_found_raises_error(
-        self, use_case, token_service, refresh_token_repository, user_repository
+        self,
+        use_case: RefreshAccessTokenUseCase,
+        token_service: MagicMock,
+        refresh_token_repository: AsyncMock,
+        user_repository: AsyncMock,
     ) -> None:
         claims = RefreshTokenClaims(user_id=1, jti="old-jti")
         token_service.verify_refresh_token.return_value = claims
@@ -137,7 +155,11 @@ class TestRefreshAccessTokenUseCase:
             await use_case.refresh_token("some-token")
 
     async def test_lazy_cleanup_called(
-        self, use_case, user_repository, token_service, refresh_token_repository
+        self,
+        use_case: RefreshAccessTokenUseCase,
+        user_repository: AsyncMock,
+        token_service: MagicMock,
+        refresh_token_repository: AsyncMock,
     ) -> None:
         claims = RefreshTokenClaims(user_id=1, jti="old-jti")
         token_service.verify_refresh_token.return_value = claims
