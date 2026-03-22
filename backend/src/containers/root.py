@@ -20,6 +20,7 @@ class RootContainer(containers.DeclarativeContainer):
         user_repository=shared.user_repository,
         password_service=shared.password_service,
         token_service=shared.token_service,
+        refresh_token_repository=shared.refresh_token_repository,
     )
 
     reading = providers.Container(

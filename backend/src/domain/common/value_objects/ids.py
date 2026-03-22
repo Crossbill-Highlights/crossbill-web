@@ -160,6 +160,21 @@ class PrereadingContentId(EntityId):
 
 
 @dataclass(frozen=True)
+class RefreshTokenId(EntityId):
+    """Strongly-typed refresh token identifier."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("RefreshTokenId must be non-negative")
+
+    @classmethod
+    def generate(cls) -> "RefreshTokenId":
+        return cls(0)  # Database assigns real ID
+
+
+@dataclass(frozen=True)
 class AIUsageRecordId(EntityId):
     """Strongly-typed AI usage record identifier."""
 

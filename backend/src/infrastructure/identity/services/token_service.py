@@ -1,5 +1,6 @@
 """Token creation and verification service."""
 
+import hashlib
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -23,6 +24,16 @@ class TokenWithRefresh(BaseModel):
     refresh_token: str
     token_type: str
     expires_in: int
+
+
+def hash_token(token: str) -> str:
+    """Compute SHA-256 hash of a token for server-side storage."""
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def get_refresh_token_expiry() -> datetime:
+    """Return the expiry datetime for a new refresh token."""
+    return datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
 
 
 def create_access_token(user_id: int) -> str:

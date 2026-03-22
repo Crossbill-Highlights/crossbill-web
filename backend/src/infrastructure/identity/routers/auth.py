@@ -11,12 +11,13 @@ from starlette import status
 from src.application.identity.use_cases.authentication.authenticate_user_use_case import (
     AuthenticateUserUseCase,
 )
+from src.application.identity.use_cases.authentication.logout_use_case import LogoutUseCase
 from src.application.identity.use_cases.authentication.refresh_access_token_use_case import (
     RefreshAccessTokenUseCase,
 )
 from src.config import get_settings
 from src.core import container
-from src.domain.identity.exceptions import InvalidCredentialsError
+from src.domain.identity.exceptions import InvalidCredentialsError, RefreshTokenReuseError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.services.token_service import (
     REFRESH_TOKEN_EXPIRE_DAYS,
@@ -115,6 +116,13 @@ async def refresh(
         _, token_pair = await use_case.refresh_token(token)
         set_refresh_cookie(response, token_pair.refresh_token)
         return token_pair
+    except RefreshTokenReuseError:
+        _clear_refresh_cookie(response)
+        logger.warning("Refresh token reuse detected — all family tokens revoked")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token reuse detected. Please log in again.",
+        ) from None
     except InvalidCredentialsError:
         _clear_refresh_cookie(response)
         raise HTTPException(
@@ -124,13 +132,19 @@ async def refresh(
 
 
 @router.post("/logout")
-async def logout(response: Response) -> dict[str, str]:
-    """
-    Log out by clearing the refresh token cookie.
+async def logout(
+    response: Response,
+    refresh_token: Annotated[str | None, Cookie()] = None,
+    body: RefreshTokenRequest | None = None,
+    use_case: LogoutUseCase = Depends(inject_use_case(container.identity.logout_use_case)),
+) -> dict[str, str]:
+    """Log out by revoking the refresh token family and clearing the cookie."""
+    token = refresh_token
+    if not token and body and body.refresh_token:
+        token = body.refresh_token
 
-    Note: This only clears the cookie. The access token will remain valid
-    until it expires. For immediate invalidation, consider implementing
-    a token blacklist.
-    """
+    if token:
+        await use_case.logout(token)
+
     _clear_refresh_cookie(response)
     return {"message": "Logged out successfully"}
