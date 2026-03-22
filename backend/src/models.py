@@ -130,10 +130,36 @@ class User(Base):
     reading_sessions: Mapped[list["ReadingSession"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         """String representation of User."""
         return f"<User(id={self.id}, email='{self.email}')>"
+
+
+class RefreshToken(Base):
+    """Refresh token for token rotation and replay detection."""
+
+    __tablename__ = "refresh_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    jti: Mapped[str] = mapped_column(String(36), nullable=False, unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    family_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    revoked_at: Mapped[dt | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[dt] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[dt] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    user: Mapped["User"] = relationship(back_populates="refresh_tokens")
+
+    def __repr__(self) -> str:
+        return f"<RefreshToken(id={self.id}, jti='{self.jti}', user_id={self.user_id})>"
 
 
 class Book(Base):
