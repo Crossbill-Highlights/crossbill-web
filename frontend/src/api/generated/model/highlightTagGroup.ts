@@ -9,12 +9,12 @@
  * Schema for HighlightTagGroup response.
  */
 export interface HighlightTagGroup {
+  id: number;
+  book_id: number;
   /**
    * Tag group name
    * @minLength 1
    * @maxLength 100
    */
   name: string;
-  id: number;
-  book_id: number;
 }

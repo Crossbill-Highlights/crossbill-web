@@ -50,7 +50,6 @@ class ChapterPrereadingRepository:
 
     async def save(self, content: ChapterPrereadingContent) -> ChapterPrereadingContent:
         """Save or update prereading content."""
-        # Check if exists by chapter_id (unique constraint)
         existing = None
         if content.id.value != 0:
             existing = await self.db.get(PrereadingContentORM, content.id.value)

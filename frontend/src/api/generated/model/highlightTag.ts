@@ -9,13 +9,13 @@
  * Schema for HighlightTag response.
  */
 export interface HighlightTag {
+  id: number;
+  book_id: number;
+  tag_group_id?: number | null;
   /**
    * Tag name
    * @minLength 1
    * @maxLength 100
    */
   name: string;
-  id: number;
-  book_id: number;
-  tag_group_id?: number | null;
 }

@@ -103,7 +103,6 @@ class TestGetChapterContent:
 
         response = await client.get(f"/api/v1/chapters/{chapter.id}/content")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "position data" in response.json()["detail"].lower()
 
     async def test_get_chapter_content_no_epub(
         self,

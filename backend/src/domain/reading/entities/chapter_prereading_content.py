@@ -6,6 +6,13 @@ from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import ChapterId, PrereadingContentId
 
 
+@dataclass(frozen=True)
+class PrereadingQuestion:
+    question: str
+    answer: str
+    user_answer: str = ""
+
+
 @dataclass
 class ChapterPrereadingContent(Entity[PrereadingContentId]):
     """
@@ -22,6 +29,7 @@ class ChapterPrereadingContent(Entity[PrereadingContentId]):
     # Content
     summary: str
     keypoints: list[str]
+    questions: list[PrereadingQuestion]
 
     # Metadata
     generated_at: datetime
@@ -41,6 +49,17 @@ class ChapterPrereadingContent(Entity[PrereadingContentId]):
         if not self.ai_model or not self.ai_model.strip():
             raise DomainError("AI model cannot be empty")
 
+    def update_user_answers(self, answers: dict[int, str]) -> None:
+        """Update user answers by question index. Mutates in place."""
+        for index, answer_text in answers.items():
+            if 0 <= index < len(self.questions):
+                old_q = self.questions[index]
+                self.questions[index] = PrereadingQuestion(
+                    question=old_q.question,
+                    answer=old_q.answer,
+                    user_answer=answer_text,
+                )
+
     # Factory methods
     @classmethod
     def create(
@@ -48,6 +67,7 @@ class ChapterPrereadingContent(Entity[PrereadingContentId]):
         chapter_id: ChapterId,
         summary: str,
         keypoints: list[str],
+        questions: list[PrereadingQuestion],
         generated_at: datetime,
         ai_model: str,
     ) -> "ChapterPrereadingContent":
@@ -57,6 +77,7 @@ class ChapterPrereadingContent(Entity[PrereadingContentId]):
             chapter_id=chapter_id,
             summary=summary.strip(),
             keypoints=[kp.strip() for kp in keypoints],
+            questions=questions,
             generated_at=generated_at,
             ai_model=ai_model.strip(),
         )
@@ -68,6 +89,7 @@ class ChapterPrereadingContent(Entity[PrereadingContentId]):
         chapter_id: ChapterId,
         summary: str,
         keypoints: list[str],
+        questions: list[PrereadingQuestion],
         generated_at: datetime,
         ai_model: str,
     ) -> "ChapterPrereadingContent":
@@ -77,6 +99,7 @@ class ChapterPrereadingContent(Entity[PrereadingContentId]):
             chapter_id=chapter_id,
             summary=summary,
             keypoints=keypoints,
+            questions=questions,
             generated_at=generated_at,
             ai_model=ai_model,
         )

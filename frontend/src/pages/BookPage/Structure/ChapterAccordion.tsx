@@ -155,7 +155,7 @@ export const ChapterAccordion = ({
 }: ChapterAccordionProps) => {
   const readStatus: ReadStatus | undefined =
     readingPosition == null ? undefined : isCurrent ? 'current' : isRead ? 'read' : 'unread';
-  const [expanded, setExpanded] = useState(readStatus !== 'read' || preExpanded);
+  const [expanded, setExpanded] = useState(isCurrent || readingPosition == null || preExpanded);
 
   const childChapters = childrenByParentId.get(chapter.id) ?? [];
   const isLeaf = childChapters.length === 0;

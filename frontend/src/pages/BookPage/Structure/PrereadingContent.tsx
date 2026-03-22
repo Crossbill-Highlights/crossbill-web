@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown';
 
 interface PrereadingContentProps {
   content?: ChapterPrereadingResponse | null;
-  isGenerating: boolean;
+  isGenerating?: boolean;
 }
 
 const MarkdownList = styled('ul')(({ theme }) => ({

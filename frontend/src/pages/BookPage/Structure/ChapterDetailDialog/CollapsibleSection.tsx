@@ -25,7 +25,6 @@ export const CollapsibleSection = ({
         '&:before': { display: 'none' },
         '&.Mui-expanded': { m: 0 },
         bgcolor: 'transparent',
-        borderBottom: '1px solid',
         borderColor: 'divider',
         '&:last-of-type': { borderBottom: 'none', borderRadius: 0 },
       }}

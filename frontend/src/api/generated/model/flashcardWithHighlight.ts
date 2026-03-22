@@ -10,6 +10,11 @@ import type { HighlightResponseBase } from './highlightResponseBase';
  * Flashcard response schema with embedded highlight data.
  */
 export interface FlashcardWithHighlight {
+  id: number;
+  user_id: number;
+  book_id: number;
+  highlight_id: number | null;
+  chapter_id?: number | null;
   /**
    * Question text for the flashcard
    * @minLength 1
@@ -20,11 +25,6 @@ export interface FlashcardWithHighlight {
    * @minLength 1
    */
   answer: string;
-  id: number;
-  user_id: number;
-  book_id: number;
-  highlight_id: number | null;
-  chapter_id?: number | null;
   /** Associated highlight data with tags (if any) */
   highlight?: HighlightResponseBase | null;
 }

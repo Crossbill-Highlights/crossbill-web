@@ -2,8 +2,7 @@ import type { Bookmark, ChapterWithHighlights, HighlightTagInBook } from '@/api/
 import { HighlightCard } from '@/pages/BookPage/Highlights/HighlightCard.tsx';
 import { HighlightViewModal } from '@/pages/BookPage/Highlights/HighlightViewModal/HighlightViewModal.tsx';
 import { useHighlightModal } from '@/pages/BookPage/Highlights/hooks/useHighlightModal.ts';
-import { Stack } from '@mui/material';
-import { CollapsibleSection } from './CollapsibleSection.tsx';
+import { Stack, Typography } from '@mui/material';
 
 interface HighlightsSectionProps {
   chapter: ChapterWithHighlights;
@@ -19,7 +18,6 @@ export const HighlightsSection = ({
   availableTags,
 }: HighlightsSectionProps) => {
   const highlights = chapter.highlights;
-  const count = highlights.length;
 
   const {
     currentHighlight,
@@ -29,21 +27,27 @@ export const HighlightsSection = ({
     handleModalNavigate,
   } = useHighlightModal({ allHighlights: highlights, isMobile: false, syncToUrl: false });
 
+  if (highlights.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary">
+        No highlights in this chapter yet.
+      </Typography>
+    );
+  }
+
   return (
     <>
-      <CollapsibleSection title="Highlights" count={count} defaultExpanded={count > 0}>
-        <Stack component="ul" sx={{ gap: 2, listStyle: 'none', p: 0, m: 0 }}>
-          {highlights.map((highlight) => (
-            <li key={highlight.id}>
-              <HighlightCard
-                highlight={highlight}
-                bookmark={bookmarksByHighlightId[highlight.id]}
-                onOpenModal={handleOpenHighlight}
-              />
-            </li>
-          ))}
-        </Stack>
-      </CollapsibleSection>
+      <Stack component="ul" sx={{ gap: 2, listStyle: 'none', p: 0, m: 0 }}>
+        {highlights.map((highlight) => (
+          <li key={highlight.id}>
+            <HighlightCard
+              highlight={highlight}
+              bookmark={bookmarksByHighlightId[highlight.id]}
+              onOpenModal={handleOpenHighlight}
+            />
+          </li>
+        ))}
+      </Stack>
 
       {currentHighlight && (
         <HighlightViewModal

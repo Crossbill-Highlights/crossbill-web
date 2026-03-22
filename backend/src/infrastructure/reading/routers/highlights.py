@@ -321,27 +321,9 @@ async def create_or_update_tag_group(
             book_id=tag_group.book_id.value,
             name=tag_group.name,
         )
-    except (CrossbillError, DomainError) as e:
-        if isinstance(e, CrossbillError):
-            raise HTTPException(
-                status_code=e.status_code,
-                detail=str(e),
-            ) from e
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
-    except ValueError as e:
-        # Check if it's a "not found" error or a validation error
-        error_msg = str(e)
-        if "not found" in error_msg.lower():
-            status_code = status.HTTP_404_NOT_FOUND
-        else:
-            status_code = status.HTTP_400_BAD_REQUEST
-        raise HTTPException(
-            status_code=status_code,
-            detail=error_msg,
-        ) from e
+    except (CrossbillError, DomainError):
+        # Re-raise - handled by global exception handlers
+        raise
     except Exception as e:
         logger.error(f"Failed to create/update tag group: {e!s}", exc_info=True)
         raise HTTPException(
@@ -574,15 +556,11 @@ async def search_book_highlights(
             chapters=_map_chapters_to_schemas(chapters_grouped, labels),
             total=total,
         )
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
+    except (CrossbillError, DomainError):
+        # Re-raise - handled by global exception handlers
         raise
-    except DomainError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
-        logger.error(f"Failed to fetch book details for book_id={book_id}: {e!s}", exc_info=True)
+        logger.error(f"Failed to search highlights for book_id={book_id}: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again later.",
@@ -629,13 +607,9 @@ async def delete_highlights(
             message=f"Successfully deleted {deleted_count} highlight(s)",
             deleted_count=deleted_count,
         )
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
+    except (CrossbillError, DomainError):
+        # Re-raise - handled by global exception handlers
         raise
-    except DomainError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Failed to delete highlights for book {book_id}: {e!s}", exc_info=True)
         raise HTTPException(
@@ -681,13 +655,14 @@ async def get_highlight_tags(
                 for tag in tags
             ]
         )
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
+    except (CrossbillError, DomainError):
+        # Re-raise - handled by global exception handlers
         raise
-    except ValueError as e:
+    except Exception as e:
+        logger.error(f"Failed to get highlight tags for book {book_id}: {e!s}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred. Please try again later.",
         ) from e
 
 
@@ -726,13 +701,8 @@ async def create_highlight_tag(
             tag_group_id=tag.tag_group_id,
         )
     except (CrossbillError, DomainError):
-        # Re-raise custom exceptions - handled by exception handlers
+        # Re-raise - handled by global exception handlers
         raise
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
     except Exception as e:
         logger.error(f"Failed to create highlight tag for book {book_id}: {e!s}", exc_info=True)
         raise HTTPException(
@@ -772,16 +742,10 @@ async def delete_highlight_tag(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Highlight tag {tag_id} not found",
             )
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
+    except (CrossbillError, DomainError):
+        # Re-raise - handled by global exception handlers
         raise
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
     except HTTPException:
-        # Re-raise HTTPException
         raise
     except Exception as e:
         logger.error(
@@ -862,21 +826,9 @@ async def update_highlight_tag(
             name=tag.name,
             tag_group_id=tag.tag_group_id,
         )
-    except (CrossbillError, DomainError) as e:
-        if isinstance(e, CrossbillError):
-            raise HTTPException(
-                status_code=e.status_code,
-                detail=str(e),
-            ) from e
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    except (CrossbillError, DomainError):
+        # Re-raise - handled by global exception handlers
+        raise
     except HTTPException:
         raise
     except Exception as e:
@@ -987,15 +939,9 @@ async def add_tag_to_highlight(
             updated_at=highlight.updated_at,
         )
     except (CrossbillError, DomainError):
-        # Re-raise custom exceptions - handled by exception handlers
+        # Re-raise - handled by global exception handlers
         raise
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
     except HTTPException:
-        # Re-raise HTTPException
         raise
     except Exception as e:
         logger.error(f"Failed to add tag to highlight {highlight_id}: {e!s}", exc_info=True)
@@ -1085,15 +1031,9 @@ async def remove_tag_from_highlight(
             updated_at=highlight.updated_at,
         )
     except (CrossbillError, DomainError):
-        # Re-raise custom exceptions - handled by exception handlers
+        # Re-raise - handled by global exception handlers
         raise
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
     except HTTPException:
-        # Re-raise HTTPException
         raise
     except Exception as e:
         logger.error(f"Failed to remove tag from highlight {highlight_id}: {e!s}", exc_info=True)

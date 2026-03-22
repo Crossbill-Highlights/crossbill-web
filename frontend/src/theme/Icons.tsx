@@ -39,6 +39,7 @@ export {
   Delete as DeleteIcon,
   Edit as EditIcon,
   Link as LinkIcon,
+  Refresh as RegenerateIcon,
   SwapVert as SortIcon,
 } from '@mui/icons-material';
 
