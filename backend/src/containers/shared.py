@@ -6,6 +6,7 @@ from src.domain.reading.services.highlight_grouping_service import HighlightGrou
 from src.domain.reading.services.highlight_style_resolver import HighlightStyleResolver
 from src.infrastructure.ai.ai_service import AIService
 from src.infrastructure.ai.repositories.ai_usage_repository import AIUsageRepository
+from src.infrastructure.identity.repositories.refresh_token_repository import RefreshTokenRepository
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.services.password_service_adapter import PasswordServiceAdapter
 from src.infrastructure.identity.services.token_service_adapter import TokenServiceAdapter
@@ -70,6 +71,7 @@ class SharedContainer(containers.DeclarativeContainer):
     user_repository = providers.Factory(UserRepository, db=db)
     password_service = providers.Singleton(PasswordServiceAdapter)
     token_service = providers.Singleton(TokenServiceAdapter)
+    refresh_token_repository = providers.Factory(RefreshTokenRepository, db=db)
 
     # Domain services
     highlight_deduplication_service = providers.Factory(HighlightDeduplicationService)

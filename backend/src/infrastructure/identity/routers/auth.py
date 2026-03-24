@@ -1,3 +1,5 @@
+"""Authentication routes."""
+
 import logging
 from typing import Annotated
 
@@ -8,9 +10,11 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from starlette import status
 
+from src.application.identity.dtos import TokenPairWithMetadata
 from src.application.identity.use_cases.authentication.authenticate_user_use_case import (
     AuthenticateUserUseCase,
 )
+from src.application.identity.use_cases.authentication.logout_use_case import LogoutUseCase
 from src.application.identity.use_cases.authentication.refresh_access_token_use_case import (
     RefreshAccessTokenUseCase,
 )
@@ -35,6 +39,16 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str | None = None
 
 
+def token_pair_to_response(token_pair: TokenPairWithMetadata) -> TokenWithRefresh:
+    """Convert TokenPairWithMetadata to HTTP response model."""
+    return TokenWithRefresh(
+        access_token=token_pair.access_token,
+        refresh_token=token_pair.refresh_token,
+        token_type=token_pair.token_type,
+        expires_in=token_pair.expires_in,
+    )
+
+
 def set_refresh_cookie(response: Response, refresh_token: str) -> None:
     """Set the refresh token as an httpOnly cookie."""
     response.set_cookie(
@@ -44,7 +58,7 @@ def set_refresh_cookie(response: Response, refresh_token: str) -> None:
         secure=settings.COOKIE_SECURE,
         samesite="strict",
         path="/api/v1/auth",
-        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,  # Convert days to seconds
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
     )
 
 
@@ -69,11 +83,10 @@ async def login(
         inject_use_case(container.identity.authenticate_user_use_case)
     ),
 ) -> TokenWithRefresh:
-    # OAuth2PasswordRequestForm uses 'username' field, but we use it for email
     try:
         _, token_pair = await use_case.authenticate(form_data.username, form_data.password)
         set_refresh_cookie(response, token_pair.refresh_token)
-        return token_pair
+        return token_pair_to_response(token_pair)
     except InvalidCredentialsError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -93,14 +106,6 @@ async def refresh(
         inject_use_case(container.identity.refresh_access_token_use_case)
     ),
 ) -> TokenWithRefresh:
-    """
-    Refresh the access token using a refresh token.
-
-    The refresh token can be provided either:
-    - In an httpOnly cookie (for web clients)
-    - In the request body (for plugin clients)
-    """
-    # Try cookie first, then body
     token = refresh_token
     if not token and body and body.refresh_token:
         token = body.refresh_token
@@ -114,7 +119,7 @@ async def refresh(
     try:
         _, token_pair = await use_case.refresh_token(token)
         set_refresh_cookie(response, token_pair.refresh_token)
-        return token_pair
+        return token_pair_to_response(token_pair)
     except InvalidCredentialsError:
         _clear_refresh_cookie(response)
         raise HTTPException(
@@ -124,13 +129,11 @@ async def refresh(
 
 
 @router.post("/logout")
-async def logout(response: Response) -> dict[str, str]:
-    """
-    Log out by clearing the refresh token cookie.
-
-    Note: This only clears the cookie. The access token will remain valid
-    until it expires. For immediate invalidation, consider implementing
-    a token blacklist.
-    """
+async def logout(
+    response: Response,
+    refresh_token: Annotated[str | None, Cookie()] = None,
+    use_case: LogoutUseCase = Depends(inject_use_case(container.identity.logout_use_case)),
+) -> dict[str, str]:
+    await use_case.logout(refresh_token)
     _clear_refresh_cookie(response)
     return {"message": "Logged out successfully"}
