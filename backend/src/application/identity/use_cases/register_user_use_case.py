@@ -34,9 +34,7 @@ class RegisterUserUseCase:
         self.token_service = token_service
         self.refresh_token_repository = refresh_token_repository
 
-    async def register_user(
-        self, email: str, password: str
-    ) -> tuple[User, TokenPairWithMetadata]:
+    async def register_user(self, email: str, password: str) -> tuple[User, TokenPairWithMetadata]:
         if not is_user_registrations_enabled():
             raise RegistrationDisabledError
 

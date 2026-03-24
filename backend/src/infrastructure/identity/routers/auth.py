@@ -132,9 +132,7 @@ async def refresh(
 async def logout(
     response: Response,
     refresh_token: Annotated[str | None, Cookie()] = None,
-    use_case: LogoutUseCase = Depends(
-        inject_use_case(container.identity.logout_use_case)
-    ),
+    use_case: LogoutUseCase = Depends(inject_use_case(container.identity.logout_use_case)),
 ) -> dict[str, str]:
     await use_case.logout(refresh_token)
     _clear_refresh_cookie(response)

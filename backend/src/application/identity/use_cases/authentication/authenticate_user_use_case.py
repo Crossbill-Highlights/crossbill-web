@@ -33,9 +33,7 @@ class AuthenticateUserUseCase:
         self.token_service = token_service
         self.refresh_token_repository = refresh_token_repository
 
-    async def authenticate(
-        self, email: str, password: str
-    ) -> tuple[User, TokenPairWithMetadata]:
+    async def authenticate(self, email: str, password: str) -> tuple[User, TokenPairWithMetadata]:
         user = await self.user_repository.find_by_email(email)
 
         if not user:

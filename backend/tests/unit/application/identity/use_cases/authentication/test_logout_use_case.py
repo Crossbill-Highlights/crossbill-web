@@ -21,14 +21,19 @@ class TestLogoutUseCase:
         return AsyncMock()
 
     @pytest.fixture
-    def use_case(self, token_service, refresh_token_repository) -> LogoutUseCase:
+    def use_case(
+        self, token_service: MagicMock, refresh_token_repository: AsyncMock
+    ) -> LogoutUseCase:
         return LogoutUseCase(
             token_service=token_service,
             refresh_token_repository=refresh_token_repository,
         )
 
     async def test_logout_revokes_family(
-        self, use_case, token_service, refresh_token_repository
+        self,
+        use_case: LogoutUseCase,
+        token_service: MagicMock,
+        refresh_token_repository: AsyncMock,
     ) -> None:
         claims = RefreshTokenClaims(user_id=1, jti="test-jti")
         token_service.verify_refresh_token.return_value = claims
@@ -46,21 +51,30 @@ class TestLogoutUseCase:
         refresh_token_repository.revoke_family.assert_called_once_with("family-1")
 
     async def test_logout_with_invalid_token_succeeds_silently(
-        self, use_case, token_service, refresh_token_repository
+        self,
+        use_case: LogoutUseCase,
+        token_service: MagicMock,
+        refresh_token_repository: AsyncMock,
     ) -> None:
         token_service.verify_refresh_token.return_value = None
         await use_case.logout("bad-token")
         refresh_token_repository.revoke_family.assert_not_called()
 
     async def test_logout_with_none_token_succeeds_silently(
-        self, use_case, token_service, refresh_token_repository
+        self,
+        use_case: LogoutUseCase,
+        token_service: MagicMock,
+        refresh_token_repository: AsyncMock,
     ) -> None:
         await use_case.logout(None)
         token_service.verify_refresh_token.assert_not_called()
         refresh_token_repository.revoke_family.assert_not_called()
 
     async def test_logout_with_unknown_jti_succeeds_silently(
-        self, use_case, token_service, refresh_token_repository
+        self,
+        use_case: LogoutUseCase,
+        token_service: MagicMock,
+        refresh_token_repository: AsyncMock,
     ) -> None:
         claims = RefreshTokenClaims(user_id=1, jti="unknown")
         token_service.verify_refresh_token.return_value = claims

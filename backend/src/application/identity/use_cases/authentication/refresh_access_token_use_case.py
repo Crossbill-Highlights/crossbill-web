@@ -29,9 +29,7 @@ class RefreshAccessTokenUseCase:
         self.token_service = token_service
         self.refresh_token_repository = refresh_token_repository
 
-    async def refresh_token(
-        self, refresh_token: str
-    ) -> tuple[User, TokenPairWithMetadata]:
+    async def refresh_token(self, refresh_token: str) -> tuple[User, TokenPairWithMetadata]:
         # 1. Verify JWT and extract claims
         claims = self.token_service.verify_refresh_token(refresh_token)
         if claims is None:
@@ -61,9 +59,7 @@ class RefreshAccessTokenUseCase:
         await self.refresh_token_repository.revoke(existing_token)
 
         # 6. Create new token pair in same family
-        token_pair = self.token_service.create_token_pair(
-            user.id.value, existing_token.family_id
-        )
+        token_pair = self.token_service.create_token_pair(user.id.value, existing_token.family_id)
 
         # 7. Persist new refresh token
         new_token = RefreshToken.create(

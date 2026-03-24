@@ -81,7 +81,10 @@ class TestRegisterUserUseCase:
         refresh_token_repository.save.return_value = MagicMock()
         return token_pair
 
-    @patch("src.application.identity.use_cases.register_user_use_case.is_user_registrations_enabled", return_value=True)
+    @patch(
+        "src.application.identity.use_cases.register_user_use_case.is_user_registrations_enabled",
+        return_value=True,
+    )
     async def test_register_persists_refresh_token(
         self,
         _mock_flag: MagicMock,
