@@ -16,7 +16,8 @@ from src.application.reading.protocols.ebook_text_extraction_service import (
 from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import ChapterId, UserId
 from src.domain.learning.entities.ai_chat_session import AIChatSession
-from src.exceptions import BookNotFoundError, NotFoundError
+from src.domain.common.exceptions import EntityNotFoundError
+from src.domain.reading.exceptions import BookNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -52,7 +53,7 @@ class StartQuizSessionUseCase:
         # 1. Verify chapter exists and user owns it
         chapter = await self.chapter_repo.find_by_id(chapter_id_vo, user_id_vo)
         if not chapter:
-            raise NotFoundError(f"Chapter {chapter_id} not found")
+            raise EntityNotFoundError("Chapter", chapter_id)
 
         # 2. Extract chapter content
         if not chapter.start_xpoint:

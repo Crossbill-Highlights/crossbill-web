@@ -4,7 +4,7 @@ import structlog
 
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.domain.common.value_objects.ids import FlashcardId, UserId
-from src.exceptions import NotFoundError
+from src.domain.learning.exceptions import FlashcardNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -35,6 +35,6 @@ class DeleteFlashcardUseCase:
 
         deleted = await self.flashcard_repository.delete(flashcard_id_vo, user_id_vo)
         if not deleted:
-            raise NotFoundError(f"Flashcard with id {flashcard_id} not found")
+            raise FlashcardNotFoundError(flashcard_id)
 
         logger.info("deleted_flashcard", flashcard_id=flashcard_id)

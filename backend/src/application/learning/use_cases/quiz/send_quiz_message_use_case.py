@@ -6,7 +6,7 @@ from src.application.learning.protocols.ai_chat_session_repository import (
 )
 from src.application.learning.protocols.ai_quiz_service import AIQuizServiceProtocol
 from src.domain.common.value_objects.ids import AIChatSessionId, UserId
-from src.exceptions import NotFoundError
+from src.domain.common.exceptions import EntityNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -32,7 +32,7 @@ class SendQuizMessageUseCase:
         # 1. Load session
         session = await self.ai_chat_session_repo.find_by_id(session_id_vo, user_id_vo)
         if not session:
-            raise NotFoundError(f"Quiz session {session_id} not found")
+            raise EntityNotFoundError("QuizSession", session_id)
 
         # 2. Run AI with message history
         usage_context = AIUsageContext(

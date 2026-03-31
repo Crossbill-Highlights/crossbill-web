@@ -3,10 +3,10 @@
 import structlog
 
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
-from src.application.learning.use_cases.exceptions import FlashcardNotFoundError
+from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects.ids import FlashcardId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
-from src.exceptions import ValidationError
+from src.domain.learning.exceptions import FlashcardNotFoundError
 
 logger = structlog.get_logger(__name__)
 

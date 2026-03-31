@@ -5,9 +5,10 @@ import structlog
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
+from src.domain.common.exceptions import EntityNotFoundError, ValidationError
 from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
-from src.exceptions import BookNotFoundError, NotFoundError, ValidationError
+from src.domain.reading.exceptions import BookNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -67,7 +68,7 @@ class CreateFlashcardForBookUseCase:
             chapter_id_vo = ChapterId(chapter_id)
             chapter = await self.chapter_repository.find_by_id(chapter_id_vo, user_id_vo)
             if not chapter:
-                raise NotFoundError(f"Chapter with id {chapter_id} not found")
+                raise EntityNotFoundError("Chapter", chapter_id)
             if chapter.book_id != book_id_vo:
                 raise ValidationError("Chapter does not belong to this book")
 
