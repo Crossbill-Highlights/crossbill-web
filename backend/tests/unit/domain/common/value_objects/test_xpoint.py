@@ -3,7 +3,7 @@
 import pytest
 
 from src.domain.common.value_objects.xpoint import XPoint, XPointRange
-from src.exceptions import XPointParseError
+from src.domain.library.exceptions import XPointParseError
 
 
 class TestXPoint:
