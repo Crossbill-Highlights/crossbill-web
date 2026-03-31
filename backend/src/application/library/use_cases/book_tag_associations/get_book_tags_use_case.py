@@ -50,6 +50,6 @@ class GetBookTagsUseCase:
 
         book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
-            raise BookNotFoundError(f"Book with id {book_id} not found")
+            raise BookNotFoundError(book_id)
 
         return await self.tag_repository.find_tags_for_book(book_id_vo, user_id_vo)

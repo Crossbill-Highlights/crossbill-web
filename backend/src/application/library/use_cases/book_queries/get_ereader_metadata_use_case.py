@@ -5,7 +5,7 @@ from pathlib import Path
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.domain.common.value_objects import UserId
-from src.exceptions import BookNotFoundError
+from src.domain.reading.exceptions import BookNotFoundError
 
 # Directory for book cover images
 COVERS_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "book-files" / "book-covers"

@@ -51,7 +51,7 @@ class ReplaceBookTagsUseCase:
 
         book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
-            raise BookNotFoundError(f"Book with id {book_id} not found")
+            raise BookNotFoundError(book_id)
 
         tags = await self.tag_repository.get_or_create_many(tag_names, user_id_vo)
 

@@ -16,8 +16,8 @@ from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.common.value_objects.position import Position
 from src.domain.common.value_objects.position_index import PositionIndex
 from src.domain.library.entities.chapter import TocChapter
+from src.domain.library.exceptions import InvalidEbookError
 from src.domain.reading.exceptions import BookNotFoundError
-from src.exceptions import InvalidEbookError
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,7 @@ class EbookUploadUseCase:
         # Find book by client_book_id
         book = await self.book_repository.find_by_client_book_id(client_book_id, user_id)
         if not book:
-            raise BookNotFoundError(f"client_book_id={client_book_id}")
+            raise BookNotFoundError(client_book_id)
 
         if not self.epub_parser.validate_epub(content):
             raise InvalidEbookError("EPUB structure validation failed", ebook_type="EPUB")
