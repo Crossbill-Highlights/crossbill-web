@@ -7,9 +7,9 @@ from fastapi.security import OAuth2PasswordBearer
 
 from src.core import container
 from src.database import DatabaseSession
+from src.domain.common.exceptions import AuthenticationError
 from src.domain.identity.entities.user import User
 from src.domain.identity.exceptions import UserNotFoundError
-from src.exceptions import CredentialsException
 from src.infrastructure.identity.services.token_service import verify_access_token
 
 if TYPE_CHECKING:
@@ -32,18 +32,18 @@ async def get_current_user(
         User domain entity
 
     Raises:
-        CredentialsException: If token is invalid or user not found
+        AuthenticationError: If token is invalid or user not found
     """
     user_id = verify_access_token(token)
     if user_id is None:
-        raise CredentialsException
+        raise AuthenticationError("Could not validate credentials")
 
     try:
         container.db.override(db)
         use_case = container.identity.get_user_by_id_use_case()
         return await use_case.get_user(user_id)
     except UserNotFoundError:
-        raise CredentialsException from None
+        raise AuthenticationError("Could not validate credentials") from None
     finally:
         # Reset override after request completes
         container.db.reset_override()
