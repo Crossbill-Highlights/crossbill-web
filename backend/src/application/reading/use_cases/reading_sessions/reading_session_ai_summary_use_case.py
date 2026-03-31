@@ -15,7 +15,8 @@ from src.application.reading.protocols.reading_session_repository import (
     ReadingSessionRepositoryProtocol,
 )
 from src.domain.common.value_objects import ReadingSessionId, UserId
-from src.exceptions import BookNotFoundError, ReadingSessionNotFoundError, ValidationError
+from src.domain.common.exceptions import ValidationError
+from src.domain.reading.exceptions import BookNotFoundError, ReadingSessionNotFoundError
 
 logger = structlog.get_logger(__name__)
 

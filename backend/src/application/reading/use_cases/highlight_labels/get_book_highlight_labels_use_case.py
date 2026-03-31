@@ -10,7 +10,7 @@ from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
     ResolvedLabel,
 )
-from src.exceptions import NotFoundError
+from src.domain.reading.exceptions import BookNotFoundError
 
 
 class GetBookHighlightLabelsUseCase:
@@ -35,7 +35,7 @@ class GetBookHighlightLabelsUseCase:
 
         book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
-            raise NotFoundError(f"Book {book_id} not found")
+            raise BookNotFoundError(book_id)
 
         all_styles = await self.highlight_style_repository.find_for_resolution(
             user_id_vo, book_id_vo

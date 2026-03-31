@@ -10,7 +10,7 @@ from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
 )
-from src.exceptions import NotFoundError
+from src.domain.reading.exceptions import BookNotFoundError
 
 
 class GetBookPrereadingUseCase:
@@ -30,6 +30,6 @@ class GetBookPrereadingUseCase:
         """Get all prereading content for chapters in a book."""
         chapters = await self.chapter_repo.find_all_by_book(book_id, user_id)
         if not chapters:
-            raise NotFoundError(f"Book {book_id.value} not found or has no chapters")
+            raise BookNotFoundError(book_id.value)
 
         return await self.prereading_repo.find_all_by_book_id(book_id)

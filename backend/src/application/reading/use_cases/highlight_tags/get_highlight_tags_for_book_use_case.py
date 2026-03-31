@@ -6,7 +6,7 @@ from src.application.reading.protocols.highlight_tag_repository import (
 )
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.reading.entities.highlight_tag import HighlightTag
-from src.exceptions import NotFoundError
+from src.domain.reading.exceptions import BookNotFoundError
 
 
 class GetHighlightTagsForBookUseCase:
@@ -39,6 +39,6 @@ class GetHighlightTagsForBookUseCase:
 
         book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
-            raise NotFoundError(f"Book with id {book_id} not found")
+            raise BookNotFoundError(book_id)
 
         return await self.tag_repository.find_by_book(book_id_vo, user_id_vo)

@@ -26,7 +26,7 @@ from src.domain.common.value_objects.position import Position
 from src.domain.common.value_objects.position_index import PositionIndex
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.reading_session import ReadingSession
-from src.exceptions import BookNotFoundError
+from src.domain.reading.exceptions import BookNotFoundError
 
 logger = structlog.get_logger(__name__)
 

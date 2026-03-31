@@ -6,7 +6,7 @@ from src.application.reading.protocols.highlight_tag_repository import (
     HighlightTagRepositoryProtocol,
 )
 from src.domain.common.value_objects.ids import HighlightTagId, UserId
-from src.exceptions import NotFoundError
+from src.domain.reading.exceptions import HighlightTagNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -43,7 +43,7 @@ class DeleteHighlightTagUseCase:
             return False
 
         if tag.book_id.value != book_id:
-            raise NotFoundError(f"Tag {tag_id} does not belong to book {book_id}")
+            raise HighlightTagNotFoundError(tag_id)
 
         success = await self.tag_repository.delete(tag_id_vo, user_id_vo)
         if success:

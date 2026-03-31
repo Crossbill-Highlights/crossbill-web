@@ -14,7 +14,8 @@ from src.domain.common.value_objects.ids import (
     UserId,
 )
 from src.domain.reading.entities.highlight_tag import HighlightTag
-from src.exceptions import NotFoundError, ValidationError
+from src.domain.common.exceptions import ValidationError
+from src.domain.reading.exceptions import HighlightTagGroupNotFoundError, HighlightTagNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -53,7 +54,7 @@ class UpdateTagGroupAssociationUseCase:
 
         tag = await self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
         if not tag:
-            raise NotFoundError(f"Tag with id {tag_id} not found")
+            raise HighlightTagNotFoundError(tag_id)
 
         # Verify belongs to book
         if tag.book_id != book_id_vo:
@@ -63,7 +64,7 @@ class UpdateTagGroupAssociationUseCase:
         if group_id_vo:
             group = await self.tag_repository.find_group_by_id(group_id_vo, book_id_vo)
             if not group:
-                raise NotFoundError(f"Tag group with id {group_id} not found")
+                raise HighlightTagGroupNotFoundError(group_id_vo.value)
 
         tag.update_group(group_id_vo)
         tag = await self.tag_repository.save(tag)

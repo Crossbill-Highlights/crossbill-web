@@ -21,7 +21,7 @@ from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
     ResolvedLabel,
 )
-from src.exceptions import NotFoundError
+from src.domain.reading.exceptions import HighlightNotFoundError, HighlightTagNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -65,11 +65,11 @@ class AddTagToHighlightByIdUseCase:
         # Load entities
         highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
-            raise NotFoundError(f"Highlight with id {highlight_id} not found")
+            raise HighlightNotFoundError(highlight_id)
 
         tag = await self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
         if not tag:
-            raise NotFoundError(f"Tag with id {tag_id} not found")
+            raise HighlightTagNotFoundError(tag_id)
 
         # Use domain entity to validate
         highlight.add_tag(tag)
@@ -86,7 +86,7 @@ class AddTagToHighlightByIdUseCase:
             highlight_id_vo, user_id_vo
         )
         if not result:
-            raise NotFoundError(f"Highlight with id {highlight_id} not found after reload")
+            raise HighlightNotFoundError(highlight_id)
         highlight, flashcards, tags = result
 
         # Resolve labels

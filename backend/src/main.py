@@ -263,6 +263,8 @@ async def crossbill_exception_handler(request: Request, exc: CrossbillError) -> 
 @app.exception_handler(DomainError)
 async def domain_error_handler(request: Request, exc: DomainError) -> JSONResponse:
     """Handle all domain layer exceptions with safe, generic messages."""
+    from src.domain.common.exceptions import ConflictError
+
     exception_name = type(exc).__name__
 
     if "NotFound" in exception_name:
@@ -272,6 +274,16 @@ async def domain_error_handler(request: Request, exc: DomainError) -> JSONRespon
             content={
                 "error": "not_found",
                 "message": "The requested resource was not found.",
+            },
+        )
+
+    if isinstance(exc, ConflictError) or "Duplicate" in exception_name or "Conflict" in exception_name:
+        logger.warning("domain_conflict", exception_type=exception_name, message=str(exc))
+        return JSONResponse(
+            status_code=409,
+            content={
+                "error": "conflict",
+                "message": "The resource already exists or conflicts with the current state.",
             },
         )
 

@@ -10,7 +10,7 @@ from src.application.reading.protocols.highlight_tag_repository import (
 )
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.reading.entities.highlight_tag_group import HighlightTagGroup
-from src.exceptions import CrossbillError, NotFoundError
+from src.domain.reading.exceptions import BookNotFoundError, DuplicateTagGroupNameError
 
 logger = structlog.get_logger(__name__)
 
@@ -48,14 +48,12 @@ class CreateHighlightTagGroupUseCase:
         # Validate book exists
         book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
-            raise NotFoundError(f"Book with id {book_id} not found")
+            raise BookNotFoundError(book_id)
 
         # Check for duplicate name
         existing = await self.tag_repository.find_group_by_name(book_id_vo, name.strip())
         if existing:
-            raise CrossbillError(
-                f"Tag group '{name}' already exists for this book", status_code=409
-            )
+            raise DuplicateTagGroupNameError(name)
 
         group = HighlightTagGroup.create(book_id=book_id_vo, name=name)
         group = await self.tag_repository.save_group(group)

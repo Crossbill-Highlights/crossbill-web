@@ -21,7 +21,8 @@ from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
     ResolvedLabel,
 )
-from src.exceptions import NotFoundError
+from src.domain.common.exceptions import ValidationError
+from src.domain.reading.exceptions import HighlightNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -66,12 +67,12 @@ class AddTagToHighlightByNameUseCase:
         # Load highlight
         highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
-            raise NotFoundError(f"Highlight with id {highlight_id} not found")
+            raise HighlightNotFoundError(highlight_id)
 
         # Validate tag name
         tag_name = tag_name.strip()
         if not tag_name:
-            raise NotFoundError("Tag name cannot be empty")
+            raise ValidationError("Tag name cannot be empty")
 
         # Get or create tag
         tag = await self.tag_repository.find_by_book_and_name(book_id_vo, tag_name, user_id_vo)
@@ -105,7 +106,7 @@ class AddTagToHighlightByNameUseCase:
             highlight_id_vo, user_id_vo
         )
         if not result:
-            raise NotFoundError(f"Highlight with id {highlight_id} not found after reload")
+            raise HighlightNotFoundError(highlight_id)
         highlight, flashcards, tags_list = result
 
         # Resolve labels
