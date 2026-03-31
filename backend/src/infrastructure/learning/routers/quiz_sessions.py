@@ -14,7 +14,7 @@ from src.application.learning.use_cases.quiz.start_quiz_session_use_case import 
 from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
-from src.exceptions import CrossbillError, ValidationError
+from src.domain.common.exceptions import ValidationError
 from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
@@ -46,7 +46,7 @@ async def create_quiz_session(
     try:
         session_id, first_question = await use_case.start(chapter_id, current_user.id.value)
         return CreateQuizSessionResponse(session_id=session_id, message=first_question)
-    except (CrossbillError, DomainError, ValidationError):
+    except (DomainError, ValidationError):
         raise
     except Exception as e:
         logger.error(
@@ -79,7 +79,7 @@ async def send_quiz_message(
     try:
         ai_response = await use_case.send(session_id, body.message, current_user.id.value)
         return SendQuizMessageResponse(message=ai_response)
-    except (CrossbillError, DomainError, ValidationError):
+    except (DomainError, ValidationError):
         raise
     except Exception as e:
         logger.error(

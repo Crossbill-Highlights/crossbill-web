@@ -16,7 +16,6 @@ from src.application.reading.use_cases.bookmarks.get_bookmarks_use_case import (
 from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.identity import User
-from src.exceptions import CrossbillError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.reading.schemas import Bookmark, BookmarkCreateRequest, BookmarksResponse
@@ -70,7 +69,7 @@ async def create_bookmark(
             highlight_id=bookmark.highlight_id.value,
             created_at=bookmark.created_at,
         )
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
     except Exception as e:
@@ -109,7 +108,7 @@ async def delete_bookmark(
     """
     try:
         await use_case.delete_bookmark(book_id, bookmark_id, current_user.id.value)
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
     except Exception as e:
@@ -167,7 +166,7 @@ async def get_bookmarks(
                 )
             )
         return BookmarksResponse(bookmarks=bookmark_schemas)
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise custom exceptions - handled by exception handlers
         raise
     except Exception as e:

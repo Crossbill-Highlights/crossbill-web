@@ -11,9 +11,8 @@ from src.application.learning.use_cases.flashcards.get_flashcards_by_book_use_ca
     GetFlashcardsByBookUseCase,
 )
 from src.core import container
-from src.domain.common import DomainError
+from src.domain.common import DomainError, ValidationError
 from src.domain.identity import User
-from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.learning.schemas import (
@@ -89,7 +88,7 @@ async def create_flashcard_for_book(
             message="Flashcard created successfully",
             flashcard=flashcard,
         )
-    except (CrossbillError, DomainError, ValidationError):
+    except (DomainError, ValidationError):
         raise
     except Exception as e:
         logger.error(f"Failed to create flashcard for book {book_id}: {e!s}", exc_info=True)
@@ -194,7 +193,7 @@ async def get_flashcards_for_book(
             flashcards.append(flashcard_schema)
 
         return FlashcardsWithHighlightsResponse(flashcards=flashcards)
-    except (CrossbillError, DomainError, ValidationError):
+    except (DomainError, ValidationError):
         raise
     except Exception as e:
         logger.error(f"Failed to get flashcards for book {book_id}: {e!s}", exc_info=True)

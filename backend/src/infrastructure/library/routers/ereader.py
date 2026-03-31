@@ -15,8 +15,7 @@ from src.application.library.use_cases.book_queries.get_ereader_metadata_use_cas
 from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
-from src.domain.reading.exceptions import BookNotFoundError as DomainBookNotFoundError
-from src.exceptions import BookNotFoundError, CrossbillError
+from src.domain.reading.exceptions import BookNotFoundError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.library.schemas import (
@@ -72,7 +71,7 @@ async def create_book(
             has_cover=metadata.has_cover,
             has_ebook=metadata.has_ebook,
         )
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except Exception as e:
@@ -123,7 +122,7 @@ async def get_book_metadata(
             has_cover=metadata.has_cover,
             has_ebook=metadata.has_ebook,
         )
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except Exception as e:
@@ -196,16 +195,10 @@ async def upload_book_epub(
             success=True,
             message="Ebook uploaded successfully",
         )
-    except DomainBookNotFoundError as e:
+    except BookNotFoundError:
         logger.warning(
             f"Book not found for epub upload: client_book_id={client_book_id}",
         )
-        raise BookNotFoundError(
-            message=f"Book with client_book_id={client_book_id} not found. "
-            "Please create the book before uploading an EPUB file.",
-        ) from e
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
         raise
     except Exception as e:
         logger.error(

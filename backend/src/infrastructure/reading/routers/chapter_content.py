@@ -12,7 +12,6 @@ from src.application.reading.use_cases.chapter_content_use_case import (
 from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.identity import User
-from src.exceptions import CrossbillError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.reading.schemas.chapter_content_schemas import (
@@ -49,7 +48,7 @@ async def get_chapter_content(
             book_id=book_id,
             content=content,
         )
-    except (DomainError, CrossbillError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except Exception as e:

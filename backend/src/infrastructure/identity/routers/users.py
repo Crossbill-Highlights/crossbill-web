@@ -15,7 +15,6 @@ from src.domain.identity.exceptions import (
     PasswordVerificationError,
     RegistrationDisabledError,
 )
-from src.exceptions import CrossbillError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.identity.routers.auth import set_refresh_cookie, token_pair_to_response
@@ -61,9 +60,6 @@ async def register(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         ) from None
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
-        raise
     except HTTPException:
         # Re-raise HTTPException
         raise
@@ -108,9 +104,6 @@ async def update_me(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect",
         ) from None
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
-        raise
     except HTTPException:
         # Re-raise HTTPException
         raise

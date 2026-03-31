@@ -22,7 +22,6 @@ from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.identity import User
-from src.exceptions import NotFoundError
 from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
@@ -157,7 +156,7 @@ async def update_prereading_answers(
             ],
             generated_at=result.generated_at,
         )
-    except (DomainError, NotFoundError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
 

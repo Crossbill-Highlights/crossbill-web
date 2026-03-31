@@ -28,7 +28,6 @@ from src.domain.identity import User
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
 from src.domain.reading.services import ChapterWithHighlights as DomainChapterWithHighlights
 from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
-from src.exceptions import CrossbillError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.common.schemas.position_schemas import PositionResponse
 from src.infrastructure.identity import get_current_user
@@ -381,7 +380,7 @@ async def get_book_details(
     try:
         agg = await use_case.get_book_details(book_id, current_user.id.value)
         return _build_book_details_schema(agg, agg.labels)
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except Exception as e:
@@ -445,7 +444,7 @@ async def update_book(
             updated_at=book.updated_at,
             last_viewed=book.last_viewed,
         )
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except Exception as e:
@@ -477,7 +476,7 @@ async def delete_book(
     """
     try:
         await use_case.delete_book(book_id, current_user.id.value)
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except Exception as e:

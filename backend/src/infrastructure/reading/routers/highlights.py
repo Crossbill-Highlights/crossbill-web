@@ -57,7 +57,7 @@ from src.application.reading.use_cases.highlights.update_highlight_note_use_case
 )
 from src.core import container
 from src.database import DatabaseSession
-from src.domain.common.exceptions import DomainError
+from src.domain.common.exceptions import DomainError, ValidationError
 from src.domain.common.value_objects import HighlightTagId, UserId
 from src.domain.identity.entities.user import User
 from src.domain.reading.exceptions import BookNotFoundError
@@ -65,7 +65,6 @@ from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights as ChapterWithHighlightsDomain,
 )
 from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
-from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.learning.schemas import (
@@ -321,7 +320,7 @@ async def create_or_update_tag_group(
             book_id=tag_group.book_id.value,
             name=tag_group.name,
         )
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except Exception as e:
@@ -422,7 +421,7 @@ async def create_flashcard_for_highlight(
             message="Flashcard created successfully",
             flashcard=flashcard,
         )
-    except (CrossbillError, DomainError, ValidationError):
+    except (DomainError, ValidationError):
         raise
     except Exception as e:
         logger.error(
@@ -556,7 +555,7 @@ async def search_book_highlights(
             chapters=_map_chapters_to_schemas(chapters_grouped, labels),
             total=total,
         )
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except Exception as e:
@@ -607,7 +606,7 @@ async def delete_highlights(
             message=f"Successfully deleted {deleted_count} highlight(s)",
             deleted_count=deleted_count,
         )
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except Exception as e:
@@ -655,7 +654,7 @@ async def get_highlight_tags(
                 for tag in tags
             ]
         )
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except Exception as e:
@@ -700,7 +699,7 @@ async def create_highlight_tag(
             name=tag.name,
             tag_group_id=tag.tag_group_id,
         )
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except Exception as e:
@@ -742,7 +741,7 @@ async def delete_highlight_tag(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Highlight tag {tag_id} not found",
             )
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except HTTPException:
@@ -826,7 +825,7 @@ async def update_highlight_tag(
             name=tag.name,
             tag_group_id=tag.tag_group_id,
         )
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except HTTPException:
@@ -938,7 +937,7 @@ async def add_tag_to_highlight(
             created_at=highlight.created_at,
             updated_at=highlight.updated_at,
         )
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except HTTPException:
@@ -1030,7 +1029,7 @@ async def remove_tag_from_highlight(
             created_at=highlight.created_at,
             updated_at=highlight.updated_at,
         )
-    except (CrossbillError, DomainError):
+    except DomainError:
         # Re-raise - handled by global exception handlers
         raise
     except HTTPException:

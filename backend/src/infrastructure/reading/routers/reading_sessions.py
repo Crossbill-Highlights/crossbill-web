@@ -18,7 +18,8 @@ from src.application.reading.use_cases.reading_sessions.reading_session_upload_u
 from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
-from src.exceptions import CrossbillError, ReadingSessionNotFoundError, ValidationError
+from src.domain.common.exceptions import ValidationError
+from src.domain.reading.exceptions import ReadingSessionNotFoundError
 from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
@@ -216,7 +217,7 @@ async def get_book_reading_sessions(
             offset=result.offset,
             limit=result.limit,
         )
-    except (CrossbillError, DomainError):
+    except DomainError:
         raise
     except Exception as e:
         logger.error(f"Failed to get reading sessions for book {book_id}: {e!s}", exc_info=True)

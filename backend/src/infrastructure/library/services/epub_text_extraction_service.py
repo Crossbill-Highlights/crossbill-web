@@ -14,7 +14,7 @@ from ebooklib import epub
 from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
 
 from src.domain.common.value_objects.xpoint import XPoint
-from src.exceptions import XPointNavigationError
+from src.domain.library.exceptions import XPointNavigationError
 
 logger = logging.getLogger(__name__)
 

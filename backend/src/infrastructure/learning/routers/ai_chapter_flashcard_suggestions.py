@@ -11,7 +11,7 @@ from src.application.learning.use_cases.flashcards.get_chapter_flashcard_suggest
 from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
-from src.exceptions import CrossbillError, ValidationError
+from src.domain.common.exceptions import ValidationError
 from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
@@ -51,7 +51,7 @@ async def get_chapter_flashcard_suggestions(
         ]
 
         return HighlightFlashcardSuggestionsResponse(suggestions=suggestions)
-    except (CrossbillError, DomainError, ValidationError):
+    except (DomainError, ValidationError):
         raise
     except Exception as e:
         logger.error(

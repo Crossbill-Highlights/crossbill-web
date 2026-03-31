@@ -14,7 +14,7 @@ from src.application.learning.use_cases.flashcards.update_flashcard_use_case imp
 from src.core import container
 from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
-from src.exceptions import CrossbillError, ValidationError
+from src.domain.common.exceptions import ValidationError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.learning.schemas import (
@@ -79,7 +79,7 @@ async def update_flashcard(
             message="Flashcard updated successfully",
             flashcard=flashcard,
         )
-    except (CrossbillError, DomainError, ValidationError):
+    except (DomainError, ValidationError):
         raise
     except Exception as e:
         logger.error(f"Failed to update flashcard {flashcard_id}: {e!s}", exc_info=True)
@@ -120,7 +120,7 @@ async def delete_flashcard(
             success=True,
             message="Flashcard deleted successfully",
         )
-    except (CrossbillError, DomainError, ValidationError):
+    except (DomainError, ValidationError):
         raise
     except Exception as e:
         logger.error(f"Failed to delete flashcard {flashcard_id}: {e!s}", exc_info=True)
