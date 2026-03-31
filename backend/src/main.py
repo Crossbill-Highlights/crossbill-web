@@ -16,13 +16,19 @@ from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from starlette import status
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from src.config import configure_logging, get_settings
 from src.database import dispose_engine, get_session_factory, initialize_database
-from src.domain.common.exceptions import DomainError
-from src.exceptions import BookNotFoundError, CrossbillError, NotFoundError
+from src.domain.common.exceptions import (
+    AuthenticationError,
+    AuthorizationError,
+    BusinessRuleViolationError,
+    ConflictError,
+    DomainError,
+    EntityNotFoundError,
+    ValidationError,
+)
 from src.infrastructure.common.routers import settings as settings_router
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.routers import auth, users
@@ -211,89 +217,55 @@ app.add_middleware(
 )
 
 
+DOMAIN_ERROR_STATUS_MAP: list[tuple[type[DomainError], int, str]] = [
+    (EntityNotFoundError, 404, "not_found"),
+    (ValidationError, 400, "bad_request"),
+    (ConflictError, 409, "conflict"),
+    (AuthenticationError, 401, "authentication_error"),
+    (AuthorizationError, 403, "authorization_error"),
+    (BusinessRuleViolationError, 400, "bad_request"),
+]
+
+SAFE_MESSAGES: dict[int, str] = {
+    404: "The requested resource was not found.",
+    400: "The request could not be processed.",
+    401: "Authentication failed.",
+    403: "You do not have permission to perform this action.",
+    409: "The resource already exists or conflicts with current state.",
+    500: "An unexpected error occurred.",
+}
+
+
 # Exception handlers
-@app.exception_handler(BookNotFoundError)
-async def book_not_found_handler(request: Request, exc: BookNotFoundError) -> JSONResponse:
-    """Handle book not found errors."""
-    logger.warning("book_not_found", book_id=exc.book_id)
-    return JSONResponse(
-        status_code=404,
-        content={
-            "error": "not_found",
-            "message": "The requested book was not found.",
-        },
-    )
-
-
-@app.exception_handler(NotFoundError)
-async def not_found_handler(request: Request, exc: NotFoundError) -> JSONResponse:
-    """Handle generic not found errors."""
-    logger.warning("not_found_error", message=str(exc))
-    return JSONResponse(
-        status_code=404,
-        content={
-            "error": "not_found",
-            "message": "The requested resource was not found.",
-        },
-    )
-
-
-@app.exception_handler(CrossbillError)
-async def crossbill_exception_handler(request: Request, exc: CrossbillError) -> JSONResponse:
-    """Handle all custom Crossbill exceptions."""
-    logger.error("crossbill_exception", message=str(exc), exception_type=type(exc).__name__)
-    # Use generic message to avoid leaking internal details
-    if exc.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
-        message = "An unexpected error occurred. Please try again later."
-    elif exc.status_code == status.HTTP_404_NOT_FOUND:
-        message = "The requested resource was not found."
-    elif exc.status_code == status.HTTP_409_CONFLICT:
-        message = "The resource already exists or conflicts with the current state."
-    else:
-        message = "The request could not be processed."
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "error": "crossbill_error",
-            "message": message,
-        },
-    )
-
-
 @app.exception_handler(DomainError)
 async def domain_error_handler(request: Request, exc: DomainError) -> JSONResponse:
-    """Handle all domain layer exceptions with safe, generic messages."""
-    from src.domain.common.exceptions import ConflictError
+    """Handle all domain exceptions with safe, generic messages."""
+    status_code = 500
+    error_key = "internal_error"
+    for exc_type, code, key in DOMAIN_ERROR_STATUS_MAP:
+        if isinstance(exc, exc_type):
+            status_code = code
+            error_key = key
+            break
 
-    exception_name = type(exc).__name__
+    logger.warning(
+        "domain_error",
+        error_type=type(exc).__name__,
+        status_code=status_code,
+        detail=exc.message,
+    )
 
-    if "NotFound" in exception_name:
-        logger.warning("domain_not_found", exception_type=exception_name, message=str(exc))
-        return JSONResponse(
-            status_code=404,
-            content={
-                "error": "not_found",
-                "message": "The requested resource was not found.",
-            },
-        )
+    headers: dict[str, str] = {}
+    if isinstance(exc, AuthenticationError):
+        headers["WWW-Authenticate"] = "Bearer"
 
-    if isinstance(exc, ConflictError) or "Duplicate" in exception_name or "Conflict" in exception_name:
-        logger.warning("domain_conflict", exception_type=exception_name, message=str(exc))
-        return JSONResponse(
-            status_code=409,
-            content={
-                "error": "conflict",
-                "message": "The resource already exists or conflicts with the current state.",
-            },
-        )
-
-    logger.warning("domain_error", exception_type=exception_name, message=str(exc))
     return JSONResponse(
-        status_code=400,
+        status_code=status_code,
         content={
-            "error": "bad_request",
-            "message": "The request could not be processed.",
+            "error": error_key,
+            "message": SAFE_MESSAGES[status_code],
         },
+        headers=headers or None,
     )
 
 
