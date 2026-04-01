@@ -39,8 +39,8 @@ class CreateHighlightTagGroupUseCase:
             Created group entity
 
         Raises:
-            ValueError: If book not found
-            CrossbillError: If group with same name already exists
+            BookNotFoundError: If book not found
+            DuplicateTagGroupNameError: If group with same name already exists
         """
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)

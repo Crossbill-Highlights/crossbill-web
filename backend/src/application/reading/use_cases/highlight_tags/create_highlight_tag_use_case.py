@@ -37,8 +37,8 @@ class CreateHighlightTagUseCase:
             Created tag entity
 
         Raises:
-            NotFoundError: If book not found
-            CrossbillError: If tag with same name already exists
+            BookNotFoundError: If book not found
+            DuplicateTagNameError: If tag with same name already exists
         """
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)

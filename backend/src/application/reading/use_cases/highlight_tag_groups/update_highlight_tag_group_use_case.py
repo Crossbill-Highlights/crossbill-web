@@ -46,8 +46,9 @@ class UpdateHighlightTagGroupUseCase:
             Updated group entity
 
         Raises:
-            ValueError: If group or book not found
-            CrossbillError: If new name already exists
+            BookNotFoundError: If book not found
+            HighlightTagGroupNotFoundError: If group not found
+            DuplicateTagGroupNameError: If new name already exists
         """
         group_id_vo = HighlightTagGroupId(group_id)
         book_id_vo = BookId(book_id)

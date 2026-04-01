@@ -38,9 +38,9 @@ class UpdateHighlightTagNameUseCase:
             Updated tag entity
 
         Raises:
-            NotFoundError: If tag not found
+            HighlightTagNotFoundError: If tag not found
             ValidationError: If tag doesn't belong to book
-            CrossbillError: If new name already exists
+            DuplicateTagNameError: If new name already exists
         """
         tag_id_vo = HighlightTagId(tag_id)
         user_id_vo = UserId(user_id)
