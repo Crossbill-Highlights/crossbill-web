@@ -8,7 +8,7 @@ from src.application.library.protocols.file_repository import FileRepositoryProt
 from src.application.reading.protocols.ebook_text_extraction_service import (
     EbookTextExtractionServiceProtocol,
 )
-from src.domain.common.exceptions import DomainError, EntityNotFoundError
+from src.domain.common.exceptions import DomainError, EntityNotFoundError, ValidationError
 from src.domain.common.value_objects.ids import ChapterId, UserId
 from src.domain.reading.exceptions import BookNotFoundError
 
@@ -54,7 +54,7 @@ class ChapterContentUseCase:
 
         # 2. Check chapter has XPoint data
         if not chapter.start_xpoint:
-            raise DomainError(
+            raise ValidationError(
                 "Chapter does not have position data. EPUB must be uploaded with chapter positions."
             )
 

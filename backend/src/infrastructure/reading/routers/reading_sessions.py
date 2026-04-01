@@ -1,9 +1,8 @@
 """API routes for reading sessions management."""
 
-import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from src.application.reading.use_cases.reading_sessions.reading_session_ai_summary_use_case import (
     ReadingSessionAISummaryUseCase,
@@ -16,10 +15,7 @@ from src.application.reading.use_cases.reading_sessions.reading_session_upload_u
     ReadingSessionUploadUseCase,
 )
 from src.core import container
-from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
-from src.domain.common.exceptions import ValidationError
-from src.domain.reading.exceptions import ReadingSessionNotFoundError
 from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
@@ -32,8 +28,6 @@ from src.infrastructure.reading.schemas import (
     ReadingSessionUploadRequest,
     ReadingSessionUploadResponse,
 )
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="", tags=["reading_sessions"])
 
@@ -61,52 +55,45 @@ async def upload_reading_sessions(
     Returns:
         ReadingSessionUploadResponse with upload statistics
     """
-    try:
-        # Convert Pydantic schemas to DTOs
-        upload_data = [
-            ReadingSessionUploadData(
-                start_time=s.start_time,
-                end_time=s.end_time,
-                start_xpoint=s.start_xpoint,
-                end_xpoint=s.end_xpoint,
-                start_page=s.start_page,
-                end_page=s.end_page,
-                device_id=s.device_id,
-            )
-            for s in request.sessions
-        ]
-
-        # Call use case
-        result = await use_case.upload_reading_sessions(
-            client_book_id=request.client_book_id,
-            sessions=upload_data,
-            user_id=current_user.id.value,
+    # Convert Pydantic schemas to DTOs
+    upload_data = [
+        ReadingSessionUploadData(
+            start_time=s.start_time,
+            end_time=s.end_time,
+            start_xpoint=s.start_xpoint,
+            end_xpoint=s.end_xpoint,
+            start_page=s.start_page,
+            end_page=s.end_page,
+            device_id=s.device_id,
         )
+        for s in request.sessions
+    ]
 
-        # Build Pydantic response
-        message_parts = []
-        if result.created_count > 0:
-            message_parts.append(
-                f"Created {result.created_count} session{'s' if result.created_count != 1 else ''}"
-            )
-        if result.skipped_duplicate_count > 0:
-            message_parts.append(f"{result.skipped_duplicate_count} skipped (duplicate)")
+    # Call use case
+    result = await use_case.upload_reading_sessions(
+        client_book_id=request.client_book_id,
+        sessions=upload_data,
+        user_id=current_user.id.value,
+    )
 
-        message = ". ".join(message_parts) + "." if message_parts else "No sessions to process"
-
-        return ReadingSessionUploadResponse(
-            success=True,
-            message=message,
-            book_id=result.book_id.value,  # Extract .value from BookId
-            created_count=result.created_count,
-            skipped_duplicate_count=result.skipped_duplicate_count,
+    # Build Pydantic response
+    message_parts = []
+    if result.created_count > 0:
+        message_parts.append(
+            f"Created {result.created_count} session{'s' if result.created_count != 1 else ''}"
         )
-    except Exception as e:
-        logger.error(f"Failed to upload reading sessions: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    if result.skipped_duplicate_count > 0:
+        message_parts.append(f"{result.skipped_duplicate_count} skipped (duplicate)")
+
+    message = ". ".join(message_parts) + "." if message_parts else "No sessions to process"
+
+    return ReadingSessionUploadResponse(
+        success=True,
+        message=message,
+        book_id=result.book_id.value,  # Extract .value from BookId
+        created_count=result.created_count,
+        skipped_duplicate_count=result.skipped_duplicate_count,
+    )
 
 
 @router.get(
@@ -136,95 +123,86 @@ async def get_book_reading_sessions(
     Returns:
         ReadingSessionsResponse with sessions list
     """
-    try:
-        # Call use case
-        result = await use_case.get_sessions_for_book(
-            book_id=book_id,
-            user_id=current_user.id.value,
-            limit=limit,
-            offset=offset,
-            include_content=True,
-        )
+    # Call use case
+    result = await use_case.get_sessions_for_book(
+        book_id=book_id,
+        user_id=current_user.id.value,
+        limit=limit,
+        offset=offset,
+        include_content=True,
+    )
 
-        labels = result.labels
+    labels = result.labels
 
-        # Manually construct Pydantic schemas
-        sessions_schemas = []
-        for session_with_highlights in result.sessions_with_highlights:
-            session = session_with_highlights.session
+    # Manually construct Pydantic schemas
+    sessions_schemas = []
+    for session_with_highlights in result.sessions_with_highlights:
+        session = session_with_highlights.session
 
-            # Convert highlights to schemas
-            # Note: We don't have chapter/tags/flashcards loaded, so use minimal schema
-            highlight_schemas = []
-            for highlight in session_with_highlights.highlights:
-                resolved = (
-                    labels.get(highlight.highlight_style_id.value)
-                    if highlight.highlight_style_id
-                    else None
-                )
-                # Construct Highlight schema directly with named parameters
-                highlight_schemas.append(
-                    Highlight(
-                        id=highlight.id.value,
-                        book_id=highlight.book_id.value,
-                        chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
-                        text=highlight.text,
-                        page=highlight.page,
-                        note=highlight.note,
-                        datetime=highlight.datetime,
-                        created_at=highlight.created_at,
-                        updated_at=highlight.updated_at,
-                        label=HighlightLabel(
-                            highlight_style_id=highlight.highlight_style_id.value
-                            if highlight.highlight_style_id
-                            else None,
-                            text=resolved.label if resolved else None,
-                            ui_color=resolved.ui_color if resolved else None,
-                        )
+        # Convert highlights to schemas
+        # Note: We don't have chapter/tags/flashcards loaded, so use minimal schema
+        highlight_schemas = []
+        for highlight in session_with_highlights.highlights:
+            resolved = (
+                labels.get(highlight.highlight_style_id.value)
+                if highlight.highlight_style_id
+                else None
+            )
+            # Construct Highlight schema directly with named parameters
+            highlight_schemas.append(
+                Highlight(
+                    id=highlight.id.value,
+                    book_id=highlight.book_id.value,
+                    chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
+                    text=highlight.text,
+                    page=highlight.page,
+                    note=highlight.note,
+                    datetime=highlight.datetime,
+                    created_at=highlight.created_at,
+                    updated_at=highlight.updated_at,
+                    label=HighlightLabel(
+                        highlight_style_id=highlight.highlight_style_id.value
                         if highlight.highlight_style_id
                         else None,
-                        chapter=None,  # Not loaded in this context
-                        chapter_number=None,  # Not loaded in this context
-                        highlight_tags=[],  # Not loaded in this context
-                        flashcards=[],  # Not loaded in this context
+                        text=resolved.label if resolved else None,
+                        ui_color=resolved.ui_color if resolved else None,
                     )
-                )
-
-            # Build ReadingSession schema
-            # Assert created_at is not None (always present for persisted entities)
-            assert session.created_at is not None, "Persisted session must have created_at"
-
-            sessions_schemas.append(
-                ReadingSession(
-                    id=session.id.value,
-                    book_id=session.book_id.value,
-                    device_id=session.device_id,
-                    content_hash=session.content_hash.value,
-                    start_time=session.start_time,
-                    end_time=session.end_time,
-                    start_page=session.start_page,
-                    end_page=session.end_page,
-                    content=session_with_highlights.extracted_content,
-                    ai_summary=session.ai_summary,
-                    created_at=session.created_at,
-                    highlights=highlight_schemas,
+                    if highlight.highlight_style_id
+                    else None,
+                    chapter=None,  # Not loaded in this context
+                    chapter_number=None,  # Not loaded in this context
+                    highlight_tags=[],  # Not loaded in this context
+                    flashcards=[],  # Not loaded in this context
                 )
             )
 
-        return ReadingSessionsResponse(
-            sessions=sessions_schemas,
-            total=result.total,
-            offset=result.offset,
-            limit=result.limit,
+        # Build ReadingSession schema
+        # Assert created_at is not None (always present for persisted entities)
+        assert session.created_at is not None, "Persisted session must have created_at"
+
+        sessions_schemas.append(
+            ReadingSession(
+                id=session.id.value,
+                book_id=session.book_id.value,
+                device_id=session.device_id,
+                content_hash=session.content_hash.value,
+                start_time=session.start_time,
+                end_time=session.end_time,
+                start_page=session.start_page,
+                end_page=session.end_page,
+                content=session_with_highlights.extracted_content,
+                ai_summary=session.ai_summary,
+                created_at=session.created_at,
+                highlights=highlight_schemas,
+            )
         )
-    except DomainError:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to get reading sessions for book {book_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+
+    return ReadingSessionsResponse(
+        sessions=sessions_schemas,
+        total=result.total,
+        offset=result.offset,
+        limit=result.limit,
+    )
 
 
 @router.get(
@@ -259,25 +237,5 @@ async def get_reading_session_ai_summary(
         HTTPException 500: For unexpected errors
     """
 
-    try:
-        summary = await use_case.get_or_generate_summary(reading_session_id, current_user.id.value)
-        return ReadingSessionAISummaryResponse(summary=summary)
-    except ReadingSessionNotFoundError:
-        logger.warning(
-            f"Reading session {reading_session_id} not found for user {current_user.id.value}"
-        )
-        # Re-raise - handled by global exception handlers
-        raise
-    except ValidationError:
-        logger.warning(f"Validation error for AI summary (session {reading_session_id})")
-        # Re-raise - handled by global exception handlers
-        raise
-    except Exception as e:
-        logger.error(
-            f"Failed to get AI summary for reading session: {e!s}",
-            exc_info=True,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    summary = await use_case.get_or_generate_summary(reading_session_id, current_user.id.value)
+    return ReadingSessionAISummaryResponse(summary=summary)

@@ -1,6 +1,5 @@
 """API routes for ereader operations."""
 
-import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -13,9 +12,7 @@ from src.application.library.use_cases.book_queries.get_ereader_metadata_use_cas
     GetEreaderMetadataUseCase,
 )
 from src.core import container
-from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
-from src.domain.reading.exceptions import BookNotFoundError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.library.schemas import (
@@ -23,8 +20,6 @@ from src.infrastructure.library.schemas import (
     EpubUploadResponse,
     EreaderBookMetadata,
 )
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ereader", tags=["ereader"])
 
@@ -58,31 +53,18 @@ async def create_book(
     Returns:
         EreaderBookMetadata with book_id, bookname, author, has_cover, has_epub
     """
-    try:
-        await create_use_case.create_book(book_data, current_user.id.value)
+    await create_use_case.create_book(book_data, current_user.id.value)
 
-        metadata = await metadata_use_case.get_metadata_for_ereader(
-            book_data.client_book_id, current_user.id.value
-        )
-        return EreaderBookMetadata(
-            book_id=metadata.book_id,
-            bookname=metadata.title,
-            author=metadata.author,
-            has_cover=metadata.has_cover,
-            has_ebook=metadata.has_ebook,
-        )
-    except DomainError:
-        # Re-raise - handled by global exception handlers
-        raise
-    except Exception as e:
-        logger.error(
-            f"Failed to create book: {e!s}",
-            exc_info=True,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    metadata = await metadata_use_case.get_metadata_for_ereader(
+        book_data.client_book_id, current_user.id.value
+    )
+    return EreaderBookMetadata(
+        book_id=metadata.book_id,
+        bookname=metadata.title,
+        author=metadata.author,
+        has_cover=metadata.has_cover,
+        has_ebook=metadata.has_ebook,
+    )
 
 
 @router.get(
@@ -113,27 +95,14 @@ async def get_book_metadata(
     Raises:
         HTTPException: 404 if book is not found
     """
-    try:
-        metadata = await use_case.get_metadata_for_ereader(client_book_id, current_user.id.value)
-        return EreaderBookMetadata(
-            book_id=metadata.book_id,
-            bookname=metadata.title,
-            author=metadata.author,
-            has_cover=metadata.has_cover,
-            has_ebook=metadata.has_ebook,
-        )
-    except DomainError:
-        # Re-raise - handled by global exception handlers
-        raise
-    except Exception as e:
-        logger.error(
-            f"Failed to get book metadata for client_book_id={client_book_id}: {e!s}",
-            exc_info=True,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    metadata = await use_case.get_metadata_for_ereader(client_book_id, current_user.id.value)
+    return EreaderBookMetadata(
+        book_id=metadata.book_id,
+        bookname=metadata.title,
+        author=metadata.author,
+        has_cover=metadata.has_cover,
+        has_ebook=metadata.has_ebook,
+    )
 
 
 # Maximum ebook file size (50MB - epubs and PDFs can be large)
@@ -170,42 +139,27 @@ async def upload_book_epub(
     Raises:
         HTTPException: 400 for invalid file, 404 if book is not found
     """
-    try:
-        # Validate content-type
-        allowed_types = {"application/epub+zip"}
-        if epub.content_type not in allowed_types:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Only EPUB and PDF files are allowed",
-            )
-
-        # Read file with size limit
-        content = epub.file.read(MAX_EBOOK_SIZE + 1)
-        if len(content) > MAX_EBOOK_SIZE:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"File too large (max {MAX_EBOOK_SIZE // (1024 * 1024)}MB)",
-            )
-
-        await use_case.upload_ebook(
-            client_book_id, content, epub.content_type or "", current_user.id.value
-        )
-
-        return EpubUploadResponse(
-            success=True,
-            message="Ebook uploaded successfully",
-        )
-    except BookNotFoundError:
-        logger.warning(
-            f"Book not found for epub upload: client_book_id={client_book_id}",
-        )
-        raise
-    except Exception as e:
-        logger.error(
-            f"Failed to upload ebook for client_book_id={client_book_id}: {e!s}",
-            exc_info=True,
-        )
+    # Validate content-type
+    allowed_types = {"application/epub+zip"}
+    if epub.content_type not in allowed_types:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only EPUB and PDF files are allowed",
+        )
+
+    # Read file with size limit
+    content = epub.file.read(MAX_EBOOK_SIZE + 1)
+    if len(content) > MAX_EBOOK_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File too large (max {MAX_EBOOK_SIZE // (1024 * 1024)}MB)",
+        )
+
+    await use_case.upload_ebook(
+        client_book_id, content, epub.content_type or "", current_user.id.value
+    )
+
+    return EpubUploadResponse(
+        success=True,
+        message="Ebook uploaded successfully",
+    )
