@@ -7,6 +7,7 @@ import structlog
 from src.application.reading.protocols.highlight_tag_repository import (
     HighlightTagRepositoryProtocol,
 )
+from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects.ids import (
     BookId,
     HighlightTagGroupId,
@@ -14,7 +15,6 @@ from src.domain.common.value_objects.ids import (
     UserId,
 )
 from src.domain.reading.entities.highlight_tag import HighlightTag
-from src.domain.common.exceptions import ValidationError
 from src.domain.reading.exceptions import HighlightTagGroupNotFoundError, HighlightTagNotFoundError
 
 logger = structlog.get_logger(__name__)

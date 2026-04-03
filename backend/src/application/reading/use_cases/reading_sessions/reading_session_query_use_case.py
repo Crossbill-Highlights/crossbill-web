@@ -21,11 +21,11 @@ from src.application.reading.protocols.reading_session_repository import (
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.reading_session import ReadingSession
+from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
     ResolvedLabel,
 )
-from src.domain.reading.exceptions import BookNotFoundError
 
 logger = structlog.get_logger(__name__)
 

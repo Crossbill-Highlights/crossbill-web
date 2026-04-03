@@ -22,8 +22,8 @@ from src.application.reading.protocols.highlight_style_repository import (
 from src.domain.common.value_objects import ChapterId, UserId, XPointRange
 from src.domain.common.value_objects.position import Position
 from src.domain.reading.entities.highlight import Highlight
-from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
 from src.domain.reading.exceptions import BookNotFoundError
+from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
 
 logger = structlog.get_logger(__name__)
 

@@ -6,11 +6,11 @@ from src.application.library.protocols.chapter_repository import (
 from src.application.reading.protocols.chapter_prereading_repository import (
     ChapterPrereadingRepositoryProtocol,
 )
-from src.domain.reading.exceptions import ChapterNotFoundError
 from src.domain.common.value_objects.ids import ChapterId, UserId
 from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
 )
+from src.domain.reading.exceptions import ChapterNotFoundError
 
 
 class GetChapterPrereadingUseCase:

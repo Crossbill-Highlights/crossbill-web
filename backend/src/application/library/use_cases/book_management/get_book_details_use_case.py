@@ -25,6 +25,7 @@ from src.application.reading.use_cases.highlight_tags.get_highlight_tags_for_boo
 )
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
+from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights,
     HighlightGroupingService,
@@ -33,7 +34,6 @@ from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
     ResolvedLabel,
 )
-from src.domain.reading.exceptions import BookNotFoundError
 
 logger = logging.getLogger(__name__)
 

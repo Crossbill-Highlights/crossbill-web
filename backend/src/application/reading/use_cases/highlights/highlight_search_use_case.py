@@ -10,6 +10,7 @@ from src.application.reading.protocols.highlight_style_repository import (
     HighlightStyleRepositoryProtocol,
 )
 from src.domain.common.value_objects import BookId, UserId
+from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights,
     HighlightGroupingService,
@@ -18,7 +19,6 @@ from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
     ResolvedLabel,
 )
-from src.domain.reading.exceptions import BookNotFoundError
 
 
 class HighlightSearchUseCase:

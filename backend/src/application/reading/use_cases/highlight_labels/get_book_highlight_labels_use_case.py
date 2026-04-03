@@ -6,11 +6,11 @@ from src.application.reading.protocols.highlight_style_repository import (
 )
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.reading.entities.highlight_style import HighlightStyle
+from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
     ResolvedLabel,
 )
-from src.domain.reading.exceptions import BookNotFoundError
 
 
 class GetBookHighlightLabelsUseCase:

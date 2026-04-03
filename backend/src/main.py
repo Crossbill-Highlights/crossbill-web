@@ -248,7 +248,7 @@ async def domain_error_handler(request: Request, exc: DomainError) -> JSONRespon
             error_key = key
             break
 
-    if status_code >= 500:
+    if status_code >= 500:  # noqa: PLR2004
         logger.error(
             "domain_error",
             error_type=type(exc).__name__,

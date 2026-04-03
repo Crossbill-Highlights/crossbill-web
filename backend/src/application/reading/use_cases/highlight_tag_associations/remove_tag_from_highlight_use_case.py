@@ -17,11 +17,11 @@ from src.domain.common.value_objects.ids import HighlightId, HighlightTagId, Use
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.domain.reading.exceptions import HighlightNotFoundError
 from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
     ResolvedLabel,
 )
-from src.domain.reading.exceptions import HighlightNotFoundError
 
 logger = structlog.get_logger(__name__)
 

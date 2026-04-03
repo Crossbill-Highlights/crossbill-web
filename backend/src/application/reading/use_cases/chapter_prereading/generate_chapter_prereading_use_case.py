@@ -24,12 +24,11 @@ from src.application.reading.protocols.ebook_text_extraction_service import (
     EbookTextExtractionServiceProtocol,
 )
 from src.domain.common.exceptions import DomainError
-from src.domain.reading.exceptions import ChapterNotFoundError
 from src.domain.common.value_objects.ids import ChapterId, UserId
 from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
 )
-from src.domain.reading.exceptions import BookNotFoundError
+from src.domain.reading.exceptions import BookNotFoundError, ChapterNotFoundError
 
 logger = structlog.get_logger(__name__)
 
