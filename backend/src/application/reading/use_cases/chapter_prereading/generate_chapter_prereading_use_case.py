@@ -71,13 +71,11 @@ class GenerateChapterPrereadingUseCase:
         # 3. Resolve epub path
         book = await self.book_repo.find_by_id(chapter.book_id, user_id)
         if not book or not book.file_path or book.file_type != "epub":
-            raise BookNotFoundError(
-                chapter.book_id.value, message="EPUB file not found for this book"
-            )
+            raise BookNotFoundError(chapter.book_id.value)
 
         epub_path = await self.file_repo.find_epub(book.id)
         if not epub_path or not epub_path.exists():
-            raise BookNotFoundError(chapter.book_id.value, message="EPUB file not found on disk")
+            raise BookNotFoundError(chapter.book_id.value)
 
         # 4. Extract chapter text
         try:

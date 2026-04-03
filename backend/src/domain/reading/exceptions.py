@@ -10,21 +10,15 @@ from src.domain.common.exceptions import (
 class BookNotFoundError(EntityNotFoundError):
     """Raised when a book cannot be found."""
 
-    def __init__(self, book_id: int | str | None = None, *, message: str | None = None) -> None:
-        if book_id is not None:
-            super().__init__("Book", book_id)
-        else:
-            super().__init__("Book", "unknown")
-        if message:
-            self.message = message
+    def __init__(self, book_id: int | str) -> None:
+        super().__init__("Book", book_id)
 
 
 class ReadingSessionNotFoundError(EntityNotFoundError):
     """Raised when a reading session cannot be found."""
 
-    def __init__(self, session_id: int | None = None) -> None:
-        super().__init__("ReadingSession", session_id or "unknown")
-        self.session_id = session_id
+    def __init__(self, session_id: int) -> None:
+        super().__init__("ReadingSession", session_id)
 
 
 class HighlightNotFoundError(EntityNotFoundError):

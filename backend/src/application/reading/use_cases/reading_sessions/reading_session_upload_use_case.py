@@ -115,10 +115,7 @@ class ReadingSessionUploadUseCase:
                 "book_not_found_for_reading_session_upload",
                 client_book_id=client_book_id,
             )
-            raise BookNotFoundError(
-                message=f"Book with client_book_id '{client_book_id}' not found. "
-                "Please create the book first"
-            )
+            raise BookNotFoundError(client_book_id)
 
         # Build position index if EPUB
         position_index = None

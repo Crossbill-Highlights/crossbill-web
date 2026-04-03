@@ -13,10 +13,9 @@ from src.application.library.protocols.file_repository import FileRepositoryProt
 from src.application.reading.protocols.ebook_text_extraction_service import (
     EbookTextExtractionServiceProtocol,
 )
-from src.domain.common.exceptions import DomainError
+from src.domain.common.exceptions import DomainError, EntityNotFoundError
 from src.domain.common.value_objects.ids import ChapterId, UserId
 from src.domain.learning.entities.ai_chat_session import AIChatSession
-from src.domain.common.exceptions import EntityNotFoundError
 from src.domain.reading.exceptions import BookNotFoundError
 
 logger = structlog.get_logger(__name__)
@@ -63,13 +62,11 @@ class StartQuizSessionUseCase:
 
         book = await self.book_repo.find_by_id(chapter.book_id, user_id_vo)
         if not book or not book.file_path or book.file_type != "epub":
-            raise BookNotFoundError(
-                chapter.book_id.value, message="EPUB file not found for this book"
-            )
+            raise BookNotFoundError(chapter.book_id.value)
 
         epub_path = await self.file_repo.find_epub(book.id)
         if not epub_path or not epub_path.exists():
-            raise BookNotFoundError(chapter.book_id.value, message="EPUB file not found on disk")
+            raise BookNotFoundError(chapter.book_id.value)
 
         content = self.text_extraction.extract_chapter_text(
             epub_path=epub_path,

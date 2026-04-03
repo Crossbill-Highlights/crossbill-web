@@ -248,12 +248,21 @@ async def domain_error_handler(request: Request, exc: DomainError) -> JSONRespon
             error_key = key
             break
 
-    logger.warning(
-        "domain_error",
-        error_type=type(exc).__name__,
-        status_code=status_code,
-        detail=exc.message,
-    )
+    if status_code >= 500:
+        logger.error(
+            "domain_error",
+            error_type=type(exc).__name__,
+            status_code=status_code,
+            detail=exc.message,
+            exc_info=True,
+        )
+    else:
+        logger.warning(
+            "domain_error",
+            error_type=type(exc).__name__,
+            status_code=status_code,
+            detail=exc.message,
+        )
 
     headers: dict[str, str] = {}
     if isinstance(exc, AuthenticationError):
@@ -283,7 +292,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
         status_code=500,
         content={
             "error": "internal_error",
-            "message": "An unexpected error occurred. Please try again later.",
+            "message": SAFE_MESSAGES[500],
         },
     )
 
