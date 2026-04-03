@@ -99,6 +99,19 @@ This backend follows DDD (Domain-Driven Design) with hexagonal architecture and 
    - Domain services live in the domain layer, NOT the application layer
    - They encapsulate domain logic that doesn't belong to a single entity
 
+6. **Domain Exceptions**
+   - Base exceptions live in `backend/src/domain/common/exceptions.py` (`DomainError`, `EntityNotFoundError`, `ValidationError`, etc.)
+   - Each subdomain defines specific subclasses in its own `exceptions.py` (e.g., `domain/reading/exceptions.py`, `domain/learning/exceptions.py`)
+   - **Always use specific NotFound subclasses** (e.g., `BookNotFoundError`, `ChapterNotFoundError`) instead of raising `EntityNotFoundError` directly with a string entity type
+   - When adding a new entity that can be "not found", create a dedicated subclass:
+     ```python
+     # ✗ WRONG
+     raise EntityNotFoundError("Chapter", chapter_id)
+
+     # ✓ CORRECT
+     raise ChapterNotFoundError(chapter_id)
+     ```
+
 ## Refactoring and Migration Rules
 
 ### Before ANY file deletion or module move:
@@ -154,6 +167,7 @@ Based on past migrations, watch out for:
 4. **Missing .unique()**: Forgetting `.unique()` on SQLAlchemy queries with joinedload
 5. **Domain Services in Wrong Layer**: Placing domain services in application layer instead of domain layer
 6. **Incorrect Return Types**: Application services returning Pydantic schemas instead of domain entities
+7. **Generic EntityNotFoundError**: Using `EntityNotFoundError("TypeName", id)` instead of a specific subclass like `ChapterNotFoundError(id)`
 
 ## Pre-Commit Validation
 
