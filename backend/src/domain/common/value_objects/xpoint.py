@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, TypedDict
 if TYPE_CHECKING:
     from typing import Self
 
-from src.exceptions import XPointParseError
+from src.domain.library.exceptions import XPointParseError
 
 
 class XPointDict(TypedDict):

@@ -14,8 +14,9 @@ from src.application.reading.protocols.ebook_text_extraction_service import (
 from src.application.reading.protocols.reading_session_repository import (
     ReadingSessionRepositoryProtocol,
 )
+from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects import ReadingSessionId, UserId
-from src.exceptions import BookNotFoundError, ReadingSessionNotFoundError, ValidationError
+from src.domain.reading.exceptions import BookNotFoundError, ReadingSessionNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -82,15 +83,11 @@ class ReadingSessionAISummaryUseCase:
             # Resolve epub path
             book = await self.book_repo.find_by_id(session.book_id, user_id_vo)
             if not book or not book.file_path or book.file_type != "epub":
-                raise BookNotFoundError(
-                    session.book_id.value, message="EPUB file not found for this book"
-                )
+                raise BookNotFoundError(session.book_id.value)
 
             epub_path = await self.file_repo.find_epub(book.id)
             if not epub_path or not epub_path.exists():
-                raise BookNotFoundError(
-                    session.book_id.value, message="EPUB file not found on disk"
-                )
+                raise BookNotFoundError(session.book_id.value)
 
             content = self.text_extraction_service.extract_text(
                 epub_path=epub_path,

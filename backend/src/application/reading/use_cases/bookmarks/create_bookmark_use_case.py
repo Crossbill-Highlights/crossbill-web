@@ -5,9 +5,10 @@ import structlog
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
+from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects.ids import BookId, HighlightId, UserId
 from src.domain.reading.entities.bookmark import Bookmark
-from src.exceptions import BookNotFoundError, ValidationError
+from src.domain.reading.exceptions import BookNotFoundError, HighlightNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -52,13 +53,12 @@ class CreateBookmarkUseCase:
         # Validate highlight exists and belongs to user
         highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
-            raise ValidationError(f"Highlight with id {highlight_id} not found", status_code=404)
+            raise HighlightNotFoundError(highlight_id)
 
         # Validate highlight belongs to the book
         if highlight.book_id != book_id_vo:
             raise ValidationError(
                 f"Highlight {highlight_id} does not belong to book {book_id}",
-                status_code=400,
             )
 
         # Check if bookmark already exists (idempotent)

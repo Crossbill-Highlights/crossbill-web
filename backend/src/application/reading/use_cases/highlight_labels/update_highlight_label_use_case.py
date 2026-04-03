@@ -5,7 +5,7 @@ from src.application.reading.protocols.highlight_style_repository import (
 )
 from src.domain.common.value_objects import HighlightStyleId, UserId
 from src.domain.reading.entities.highlight_style import HighlightStyle
-from src.exceptions import NotFoundError
+from src.domain.reading.exceptions import HighlightStyleNotFoundError
 
 
 class UpdateHighlightLabelUseCase:
@@ -29,7 +29,7 @@ class UpdateHighlightLabelUseCase:
             HighlightStyleId(style_id), UserId(user_id)
         )
         if not style:
-            raise NotFoundError(f"Highlight style {style_id} not found")
+            raise HighlightStyleNotFoundError(style_id)
 
         if label is not None:
             style.update_label(label)

@@ -5,7 +5,7 @@ import structlog
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
 from src.domain.common.value_objects.ids import BookId, BookmarkId, UserId
-from src.exceptions import BookNotFoundError
+from src.domain.reading.exceptions import BookNotFoundError
 
 logger = structlog.get_logger(__name__)
 

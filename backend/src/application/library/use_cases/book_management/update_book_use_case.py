@@ -12,7 +12,7 @@ from src.application.reading.protocols.highlight_repository import HighlightRepo
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.tag import Tag
-from src.exceptions import BookNotFoundError
+from src.domain.reading.exceptions import BookNotFoundError
 from src.infrastructure.library.schemas import BookUpdateRequest
 
 logger = logging.getLogger(__name__)

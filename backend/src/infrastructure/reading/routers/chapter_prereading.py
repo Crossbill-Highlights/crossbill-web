@@ -1,9 +1,8 @@
 """API router for chapter prereading content."""
 
-import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from starlette import status
 
 from src.application.reading.use_cases.chapter_prereading.generate_chapter_prereading_use_case import (
@@ -19,10 +18,8 @@ from src.application.reading.use_cases.chapter_prereading.update_prereading_answ
     UpdatePrereadingAnswersUseCase,
 )
 from src.core import container
-from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.identity import User
-from src.exceptions import NotFoundError
 from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
@@ -32,8 +29,6 @@ from src.infrastructure.reading.schemas.chapter_prereading_schemas import (
     PrereadingQuestionResponse,
     UpdatePrereadingAnswersRequest,
 )
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chapters", tags=["prereading"])
 
@@ -51,31 +46,27 @@ async def get_chapter_prereading(
     ),
 ) -> ChapterPrereadingResponse | None:
     """Get existing prereading content for a chapter."""
-    try:
-        result = await use_case.get_prereading_content(
-            chapter_id=ChapterId(chapter_id),
-            user_id=UserId(current_user.id.value),
-        )
+    result = await use_case.get_prereading_content(
+        chapter_id=ChapterId(chapter_id),
+        user_id=UserId(current_user.id.value),
+    )
 
-        if not result:
-            return None
+    if not result:
+        return None
 
-        return ChapterPrereadingResponse(
-            id=result.id.value,
-            chapter_id=result.chapter_id.value,
-            summary=result.summary,
-            keypoints=result.keypoints,
-            questions=[
-                PrereadingQuestionResponse(
-                    question=q.question, answer=q.answer, user_answer=q.user_answer
-                )
-                for q in result.questions
-            ],
-            generated_at=result.generated_at,
-        )
-    except DomainError:
-        # Re-raise - handled by global exception handlers
-        raise
+    return ChapterPrereadingResponse(
+        id=result.id.value,
+        chapter_id=result.chapter_id.value,
+        summary=result.summary,
+        keypoints=result.keypoints,
+        questions=[
+            PrereadingQuestionResponse(
+                question=q.question, answer=q.answer, user_answer=q.user_answer
+            )
+            for q in result.questions
+        ],
+        generated_at=result.generated_at,
+    )
 
 
 @router.post(
@@ -92,34 +83,24 @@ async def generate_chapter_prereading(
     ),
 ) -> ChapterPrereadingResponse:
     """Generate prereading content for a chapter."""
-    try:
-        result = await use_case.generate_prereading_content(
-            chapter_id=ChapterId(chapter_id),
-            user_id=UserId(current_user.id.value),
-        )
+    result = await use_case.generate_prereading_content(
+        chapter_id=ChapterId(chapter_id),
+        user_id=UserId(current_user.id.value),
+    )
 
-        return ChapterPrereadingResponse(
-            id=result.id.value,
-            chapter_id=result.chapter_id.value,
-            summary=result.summary,
-            keypoints=result.keypoints,
-            questions=[
-                PrereadingQuestionResponse(
-                    question=q.question, answer=q.answer, user_answer=q.user_answer
-                )
-                for q in result.questions
-            ],
-            generated_at=result.generated_at,
-        )
-    except DomainError:
-        # Re-raise - handled by global exception handlers
-        raise
-    except Exception as e:
-        logger.error(f"Failed to generate prereading content: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    return ChapterPrereadingResponse(
+        id=result.id.value,
+        chapter_id=result.chapter_id.value,
+        summary=result.summary,
+        keypoints=result.keypoints,
+        questions=[
+            PrereadingQuestionResponse(
+                question=q.question, answer=q.answer, user_answer=q.user_answer
+            )
+            for q in result.questions
+        ],
+        generated_at=result.generated_at,
+    )
 
 
 @router.put(
@@ -136,30 +117,26 @@ async def update_prereading_answers(
     ),
 ) -> ChapterPrereadingResponse:
     """Update user answers for prereading questions."""
-    try:
-        answers = {a.question_index: a.user_answer for a in body.answers}
-        result = await use_case.update_answers(
-            chapter_id=ChapterId(chapter_id),
-            user_id=UserId(current_user.id.value),
-            answers=answers,
-        )
+    answers = {a.question_index: a.user_answer for a in body.answers}
+    result = await use_case.update_answers(
+        chapter_id=ChapterId(chapter_id),
+        user_id=UserId(current_user.id.value),
+        answers=answers,
+    )
 
-        return ChapterPrereadingResponse(
-            id=result.id.value,
-            chapter_id=result.chapter_id.value,
-            summary=result.summary,
-            keypoints=result.keypoints,
-            questions=[
-                PrereadingQuestionResponse(
-                    question=q.question, answer=q.answer, user_answer=q.user_answer
-                )
-                for q in result.questions
-            ],
-            generated_at=result.generated_at,
-        )
-    except (DomainError, NotFoundError):
-        # Re-raise - handled by global exception handlers
-        raise
+    return ChapterPrereadingResponse(
+        id=result.id.value,
+        chapter_id=result.chapter_id.value,
+        summary=result.summary,
+        keypoints=result.keypoints,
+        questions=[
+            PrereadingQuestionResponse(
+                question=q.question, answer=q.answer, user_answer=q.user_answer
+            )
+            for q in result.questions
+        ],
+        generated_at=result.generated_at,
+    )
 
 
 book_prereading_router = APIRouter(prefix="/books", tags=["prereading"])
@@ -178,30 +155,26 @@ async def get_book_prereading(
     ),
 ) -> BookPrereadingResponse:
     """Get all prereading content for chapters in a book."""
-    try:
-        results = await use_case.get_all_prereading_for_book(
-            book_id=BookId(book_id),
-            user_id=UserId(current_user.id.value),
-        )
+    results = await use_case.get_all_prereading_for_book(
+        book_id=BookId(book_id),
+        user_id=UserId(current_user.id.value),
+    )
 
-        return BookPrereadingResponse(
-            items=[
-                ChapterPrereadingResponse(
-                    id=r.id.value,
-                    chapter_id=r.chapter_id.value,
-                    summary=r.summary,
-                    keypoints=r.keypoints,
-                    questions=[
-                        PrereadingQuestionResponse(
-                            question=q.question, answer=q.answer, user_answer=q.user_answer
-                        )
-                        for q in r.questions
-                    ],
-                    generated_at=r.generated_at,
-                )
-                for r in results
-            ]
-        )
-    except DomainError:
-        # Re-raise - handled by global exception handlers
-        raise
+    return BookPrereadingResponse(
+        items=[
+            ChapterPrereadingResponse(
+                id=r.id.value,
+                chapter_id=r.chapter_id.value,
+                summary=r.summary,
+                keypoints=r.keypoints,
+                questions=[
+                    PrereadingQuestionResponse(
+                        question=q.question, answer=q.answer, user_answer=q.user_answer
+                    )
+                    for q in r.questions
+                ],
+                generated_at=r.generated_at,
+            )
+            for r in results
+        ]
+    )

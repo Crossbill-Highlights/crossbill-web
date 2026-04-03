@@ -1,6 +1,5 @@
 """API routes for highlights management."""
 
-import logging
 from datetime import UTC, datetime
 from typing import Annotated
 
@@ -57,15 +56,12 @@ from src.application.reading.use_cases.highlights.update_highlight_note_use_case
 )
 from src.core import container
 from src.database import DatabaseSession
-from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects import HighlightTagId, UserId
 from src.domain.identity.entities.user import User
-from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights as ChapterWithHighlightsDomain,
 )
 from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
-from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.learning.schemas import (
@@ -95,8 +91,6 @@ from src.infrastructure.reading.schemas import (
     HighlightUploadResponse,
     PositionResponse,
 )
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="", tags=["highlights"])
 
@@ -128,47 +122,34 @@ async def upload_highlights(
     Raises:
         HTTPException: If upload fails due to server error
     """
-    try:
-        highlight_data_list = [
-            HighlightUploadData(
-                text=h.text,
-                chapter_number=h.chapter_number,
-                chapter=h.chapter,
-                start_xpoint=h.start_xpoint,
-                end_xpoint=h.end_xpoint,
-                page=h.page,
-                note=h.note,
-                color=h.color,
-                drawer=h.drawer,
-            )
-            for h in request.highlights
-        ]
-
-        created, skipped = await use_case.upload_highlights(
-            client_book_id=request.client_book_id,
-            highlight_data_list=highlight_data_list,
-            user_id=current_user.id.value,
+    highlight_data_list = [
+        HighlightUploadData(
+            text=h.text,
+            chapter_number=h.chapter_number,
+            chapter=h.chapter,
+            start_xpoint=h.start_xpoint,
+            end_xpoint=h.end_xpoint,
+            page=h.page,
+            note=h.note,
+            color=h.color,
+            drawer=h.drawer,
         )
+        for h in request.highlights
+    ]
 
-        return HighlightUploadResponse(
-            success=True,
-            message="Successfully synced highlights",
-            book_id=0,  # TODO: Return actual book_id from service if needed
-            highlights_created=created,
-            highlights_skipped=skipped,
-        )
-    except BookNotFoundError as e:
-        logger.error(f"Failed to upload highlights for non existent book: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Book could not be found",
-        ) from e
-    except Exception as e:
-        logger.error(f"Failed to upload highlights: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    created, skipped = await use_case.upload_highlights(
+        client_book_id=request.client_book_id,
+        highlight_data_list=highlight_data_list,
+        user_id=current_user.id.value,
+    )
+
+    return HighlightUploadResponse(
+        success=True,
+        message="Successfully synced highlights",
+        book_id=0,  # TODO: Return actual book_id from service if needed
+        highlights_created=created,
+        highlights_skipped=skipped,
+    )
 
 
 @router.post(
@@ -197,77 +178,68 @@ async def update_highlight_note(
     Raises:
         HTTPException: If highlight not found or update fails
     """
-    try:
-        result = await use_case.update_note(highlight_id, current_user.id.value, request.note)
+    result = await use_case.update_note(highlight_id, current_user.id.value, request.note)
 
-        if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Highlight with id {highlight_id} not found",
-            )
-
-        highlight, flashcards, highlight_tags, labels = result
-
-        resolved = (
-            labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Highlight with id {highlight_id} not found",
         )
 
-        # Build response from domain entities
-        highlight_schema = Highlight(
-            id=highlight.id.value,
-            book_id=highlight.book_id.value,
-            chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
-            text=highlight.text,
-            chapter=None,  # We don't have chapter name loaded
-            chapter_number=None,
-            page=highlight.page,
-            note=highlight.note,
-            datetime=highlight.datetime,
-            label=HighlightLabel(
-                highlight_style_id=highlight.highlight_style_id.value
-                if highlight.highlight_style_id
-                else None,
-                text=resolved.label if resolved else None,
-                ui_color=resolved.ui_color if resolved else None,
-            )
+    highlight, flashcards, highlight_tags, labels = result
+
+    resolved = (
+        labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+    )
+
+    # Build response from domain entities
+    highlight_schema = Highlight(
+        id=highlight.id.value,
+        book_id=highlight.book_id.value,
+        chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
+        text=highlight.text,
+        chapter=None,  # We don't have chapter name loaded
+        chapter_number=None,
+        page=highlight.page,
+        note=highlight.note,
+        datetime=highlight.datetime,
+        label=HighlightLabel(
+            highlight_style_id=highlight.highlight_style_id.value
             if highlight.highlight_style_id
             else None,
-            highlight_tags=[
-                HighlightTagInBook(
-                    id=tag.id.value,
-                    name=tag.name,
-                    tag_group_id=tag.tag_group_id,
-                )
-                for tag in highlight_tags
-            ],
-            flashcards=[
-                Flashcard(
-                    id=fc.id.value,
-                    user_id=fc.user_id.value,
-                    book_id=fc.book_id.value,
-                    highlight_id=fc.highlight_id.value if fc.highlight_id else None,
-                    question=fc.question,
-                    answer=fc.answer,
-                )
-                for fc in flashcards
-            ],
-            created_at=highlight.created_at,
-            updated_at=highlight.updated_at,
+            text=resolved.label if resolved else None,
+            ui_color=resolved.ui_color if resolved else None,
         )
+        if highlight.highlight_style_id
+        else None,
+        highlight_tags=[
+            HighlightTagInBook(
+                id=tag.id.value,
+                name=tag.name,
+                tag_group_id=tag.tag_group_id,
+            )
+            for tag in highlight_tags
+        ],
+        flashcards=[
+            Flashcard(
+                id=fc.id.value,
+                user_id=fc.user_id.value,
+                book_id=fc.book_id.value,
+                highlight_id=fc.highlight_id.value if fc.highlight_id else None,
+                question=fc.question,
+                answer=fc.answer,
+            )
+            for fc in flashcards
+        ],
+        created_at=highlight.created_at,
+        updated_at=highlight.updated_at,
+    )
 
-        return HighlightNoteUpdateResponse(
-            success=True,
-            message="Note updated successfully",
-            highlight=highlight_schema,
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to update highlight note: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    return HighlightNoteUpdateResponse(
+        success=True,
+        message="Note updated successfully",
+        highlight=highlight_schema,
+    )
 
 
 @router.post(
@@ -297,39 +269,29 @@ async def create_or_update_tag_group(
     Raises:
         HTTPException: If creation/update fails
     """
-    try:
-        # Create or update based on whether ID is provided
-        if request.id is not None:
-            # Update existing
-            tag_group = await update_use_case.update_group(
-                group_id=request.id,
-                book_id=request.book_id,
-                new_name=request.name,
-                user_id=current_user.id.value,
-            )
-        else:
-            # Create new
-            tag_group = await create_use_case.create_group(
-                book_id=request.book_id,
-                name=request.name,
-                user_id=current_user.id.value,
-            )
-
-        # Manually construct response to handle value objects
-        return HighlightTagGroup(
-            id=tag_group.id.value,
-            book_id=tag_group.book_id.value,
-            name=tag_group.name,
+    # Create or update based on whether ID is provided
+    if request.id is not None:
+        # Update existing
+        tag_group = await update_use_case.update_group(
+            group_id=request.id,
+            book_id=request.book_id,
+            new_name=request.name,
+            user_id=current_user.id.value,
         )
-    except (CrossbillError, DomainError):
-        # Re-raise - handled by global exception handlers
-        raise
-    except Exception as e:
-        logger.error(f"Failed to create/update tag group: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    else:
+        # Create new
+        tag_group = await create_use_case.create_group(
+            book_id=request.book_id,
+            name=request.name,
+            user_id=current_user.id.value,
+        )
+
+    # Manually construct response to handle value objects
+    return HighlightTagGroup(
+        id=tag_group.id.value,
+        book_id=tag_group.book_id.value,
+        name=tag_group.name,
+    )
 
 
 @router.delete(
@@ -352,21 +314,12 @@ async def delete_tag_group(
     Raises:
         HTTPException: If tag group not found or deletion fails
     """
-    try:
-        success = await use_case.delete_group(tag_group_id, current_user.id.value)
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Tag group with id {tag_group_id} not found",
-            )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to delete tag group: {e!s}", exc_info=True)
+    success = await use_case.delete_group(tag_group_id, current_user.id.value)
+    if not success:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tag group with id {tag_group_id} not found",
+        )
 
 
 @router.post(
@@ -399,40 +352,26 @@ async def create_flashcard_for_highlight(
     Raises:
         HTTPException: If highlight not found or creation fails
     """
-    try:
-        flashcard_entity = await use_case.create_flashcard(
-            highlight_id=highlight_id,
-            user_id=current_user.id.value,
-            question=request.question,
-            answer=request.answer,
-        )
-        # Manually construct Pydantic schema from domain entity
-        flashcard = Flashcard(
-            id=flashcard_entity.id.value,
-            user_id=flashcard_entity.user_id.value,
-            book_id=flashcard_entity.book_id.value,
-            highlight_id=flashcard_entity.highlight_id.value
-            if flashcard_entity.highlight_id
-            else None,
-            question=flashcard_entity.question,
-            answer=flashcard_entity.answer,
-        )
-        return FlashcardCreateResponse(
-            success=True,
-            message="Flashcard created successfully",
-            flashcard=flashcard,
-        )
-    except (CrossbillError, DomainError, ValidationError):
-        raise
-    except Exception as e:
-        logger.error(
-            f"Failed to create flashcard for highlight {highlight_id}: {e!s}",
-            exc_info=True,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    flashcard_entity = await use_case.create_flashcard(
+        highlight_id=highlight_id,
+        user_id=current_user.id.value,
+        question=request.question,
+        answer=request.answer,
+    )
+    # Manually construct Pydantic schema from domain entity
+    flashcard = Flashcard(
+        id=flashcard_entity.id.value,
+        user_id=flashcard_entity.user_id.value,
+        book_id=flashcard_entity.book_id.value,
+        highlight_id=flashcard_entity.highlight_id.value if flashcard_entity.highlight_id else None,
+        question=flashcard_entity.question,
+        answer=flashcard_entity.answer,
+    )
+    return FlashcardCreateResponse(
+        success=True,
+        message="Flashcard created successfully",
+        flashcard=flashcard,
+    )
 
 
 def _map_chapters_to_schemas(
@@ -548,23 +487,13 @@ async def search_book_highlights(
     Searches across all highlight text using PostgreSQL full-text search.
     Results are ranked by relevance and excludes soft-deleted highlights.
     """
-    try:
-        chapters_grouped, total, labels = await use_case.search_book_highlights(
-            book_id, current_user.id.value, search_text
-        )
-        return BookHighlightSearchResponse(
-            chapters=_map_chapters_to_schemas(chapters_grouped, labels),
-            total=total,
-        )
-    except (CrossbillError, DomainError):
-        # Re-raise - handled by global exception handlers
-        raise
-    except Exception as e:
-        logger.error(f"Failed to search highlights for book_id={book_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    chapters_grouped, total, labels = await use_case.search_book_highlights(
+        book_id, current_user.id.value, search_text
+    )
+    return BookHighlightSearchResponse(
+        chapters=_map_chapters_to_schemas(chapters_grouped, labels),
+        total=total,
+    )
 
 
 @router.delete(
@@ -598,24 +527,14 @@ async def delete_highlights(
         HTTPException: If book is not found or deletion fails
         :param use_case:
     """
-    try:
-        deleted_count = await use_case.delete_highlights(
-            book_id, request.highlight_ids, current_user.id.value
-        )
-        return HighlightDeleteResponse(
-            success=True,
-            message=f"Successfully deleted {deleted_count} highlight(s)",
-            deleted_count=deleted_count,
-        )
-    except (CrossbillError, DomainError):
-        # Re-raise - handled by global exception handlers
-        raise
-    except Exception as e:
-        logger.error(f"Failed to delete highlights for book {book_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    deleted_count = await use_case.delete_highlights(
+        book_id, request.highlight_ids, current_user.id.value
+    )
+    return HighlightDeleteResponse(
+        success=True,
+        message=f"Successfully deleted {deleted_count} highlight(s)",
+        deleted_count=deleted_count,
+    )
 
 
 @router.get(
@@ -642,28 +561,18 @@ async def get_highlight_tags(
     Raises:
         HTTPException: If book is not found
     """
-    try:
-        tags = await use_case.get_tags(book_id, current_user.id.value)
-        return HighlightTagsResponse(
-            tags=[
-                HighlightTag(
-                    id=tag.id.value,
-                    book_id=tag.book_id.value,
-                    name=tag.name,
-                    tag_group_id=tag.tag_group_id,
-                )
-                for tag in tags
-            ]
-        )
-    except (CrossbillError, DomainError):
-        # Re-raise - handled by global exception handlers
-        raise
-    except Exception as e:
-        logger.error(f"Failed to get highlight tags for book {book_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    tags = await use_case.get_tags(book_id, current_user.id.value)
+    return HighlightTagsResponse(
+        tags=[
+            HighlightTag(
+                id=tag.id.value,
+                book_id=tag.book_id.value,
+                name=tag.name,
+                tag_group_id=tag.tag_group_id,
+            )
+            for tag in tags
+        ]
+    )
 
 
 @router.post(
@@ -692,23 +601,13 @@ async def create_highlight_tag(
     Raises:
         HTTPException: If book is not found, tag already exists, or creation fails
     """
-    try:
-        tag = await use_case.create_tag(book_id, request.name, user_id=current_user.id.value)
-        return HighlightTag(
-            id=tag.id.value,
-            book_id=tag.book_id.value,
-            name=tag.name,
-            tag_group_id=tag.tag_group_id,
-        )
-    except (CrossbillError, DomainError):
-        # Re-raise - handled by global exception handlers
-        raise
-    except Exception as e:
-        logger.error(f"Failed to create highlight tag for book {book_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    tag = await use_case.create_tag(book_id, request.name, user_id=current_user.id.value)
+    return HighlightTag(
+        id=tag.id.value,
+        book_id=tag.book_id.value,
+        name=tag.name,
+        tag_group_id=tag.tag_group_id,
+    )
 
 
 @router.delete(
@@ -735,27 +634,12 @@ async def delete_highlight_tag(
     Raises:
         HTTPException: If tag is not found, doesn't belong to book, or deletion fails
     """
-    try:
-        deleted = await use_case.delete_tag(book_id, tag_id, current_user.id.value)
-        if not deleted:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Highlight tag {tag_id} not found",
-            )
-    except (CrossbillError, DomainError):
-        # Re-raise - handled by global exception handlers
-        raise
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(
-            f"Failed to delete highlight tag {tag_id} for book {book_id}: {e!s}",
-            exc_info=True,
-        )
+    deleted = await use_case.delete_tag(book_id, tag_id, current_user.id.value)
+    if not deleted:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Highlight tag {tag_id} not found",
+        )
 
 
 @router.post(
@@ -790,56 +674,41 @@ async def update_highlight_tag(
     Raises:
         HTTPException: If tag not found, doesn't belong to book, or update fails
     """
-    try:
-        # Update name if provided
-        if request.name is not None:
-            tag = await tag_use_case.update_tag_name(
-                book_id=book_id,
-                tag_id=tag_id,
-                new_name=request.name,
-                user_id=current_user.id.value,
-            )
-        else:
-            # TODO: Fix this direct repository call. It is apparently done just so that tag is not
-            # undefined before we return from this route.
-            # Load tag for group update
-            tag_repo = HighlightTagRepository(db)
-            tag = await tag_repo.find_by_id(HighlightTagId(tag_id), UserId(current_user.id.value))
-            if not tag:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Tag {tag_id} not found",
-                )
-
-        # Update group association if provided (including None to clear)
-        if hasattr(request, "tag_group_id"):
-            tag = await group_use_case.update_association(
-                book_id=book_id,
-                tag_id=tag_id,
-                group_id=request.tag_group_id,
-                user_id=current_user.id.value,
+    # Update name if provided
+    if request.name is not None:
+        tag = await tag_use_case.update_tag_name(
+            book_id=book_id,
+            tag_id=tag_id,
+            new_name=request.name,
+            user_id=current_user.id.value,
+        )
+    else:
+        # TODO: Fix this direct repository call. It is apparently done just so that tag is not
+        # undefined before we return from this route.
+        # Load tag for group update
+        tag_repo = HighlightTagRepository(db)
+        tag = await tag_repo.find_by_id(HighlightTagId(tag_id), UserId(current_user.id.value))
+        if not tag:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Tag {tag_id} not found",
             )
 
-        return HighlightTag(
-            id=tag.id.value,
-            book_id=tag.book_id.value,
-            name=tag.name,
-            tag_group_id=tag.tag_group_id,
+    # Update group association if provided (including None to clear)
+    if hasattr(request, "tag_group_id"):
+        tag = await group_use_case.update_association(
+            book_id=book_id,
+            tag_id=tag_id,
+            group_id=request.tag_group_id,
+            user_id=current_user.id.value,
         )
-    except (CrossbillError, DomainError):
-        # Re-raise - handled by global exception handlers
-        raise
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(
-            f"Failed to update highlight tag {tag_id} for book {book_id}: {e!s}",
-            exc_info=True,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+
+    return HighlightTag(
+        id=tag.id.value,
+        book_id=tag.book_id.value,
+        name=tag.name,
+        tag_group_id=tag.tag_group_id,
+    )
 
 
 @router.post(
@@ -876,79 +745,67 @@ async def add_tag_to_highlight(
     Raises:
         HTTPException: If highlight or tag not found, or association fails
     """
-    try:
-        # Add tag by ID or by name (with get_or_create)
-        if request.tag_id is not None:
-            highlight, flashcards, highlight_tags, labels = await add_by_id_use_case.add_tag(
-                highlight_id, request.tag_id, current_user.id.value
-            )
-        elif request.name is not None:
-            highlight, flashcards, highlight_tags, labels = await add_by_name_use_case.add_tag(
-                book_id, highlight_id, request.name, current_user.id.value
-            )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Either tag_id or name must be provided",
-            )
-
-        resolved = (
-            labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+    # Add tag by ID or by name (with get_or_create)
+    if request.tag_id is not None:
+        highlight, flashcards, highlight_tags, labels = await add_by_id_use_case.add_tag(
+            highlight_id, request.tag_id, current_user.id.value
+        )
+    elif request.name is not None:
+        highlight, flashcards, highlight_tags, labels = await add_by_name_use_case.add_tag(
+            book_id, highlight_id, request.name, current_user.id.value
+        )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Either tag_id or name must be provided",
         )
 
-        # Manually construct schema from domain entities
-        return Highlight(
-            id=highlight.id.value,
-            book_id=highlight.book_id.value,
-            chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
-            text=highlight.text,
-            chapter=None,
-            chapter_number=None,
-            page=highlight.page,
-            note=highlight.note,
-            datetime=highlight.datetime,
-            label=HighlightLabel(
-                highlight_style_id=highlight.highlight_style_id.value
-                if highlight.highlight_style_id
-                else None,
-                text=resolved.label if resolved else None,
-                ui_color=resolved.ui_color if resolved else None,
-            )
+    resolved = (
+        labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+    )
+
+    # Manually construct schema from domain entities
+    return Highlight(
+        id=highlight.id.value,
+        book_id=highlight.book_id.value,
+        chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
+        text=highlight.text,
+        chapter=None,
+        chapter_number=None,
+        page=highlight.page,
+        note=highlight.note,
+        datetime=highlight.datetime,
+        label=HighlightLabel(
+            highlight_style_id=highlight.highlight_style_id.value
             if highlight.highlight_style_id
             else None,
-            highlight_tags=[
-                HighlightTagInBook(
-                    id=tag.id.value,
-                    name=tag.name,
-                    tag_group_id=tag.tag_group_id,
-                )
-                for tag in highlight_tags
-            ],
-            flashcards=[
-                Flashcard(
-                    id=fc.id.value,
-                    user_id=fc.user_id.value,
-                    book_id=fc.book_id.value,
-                    highlight_id=fc.highlight_id.value if fc.highlight_id else None,
-                    question=fc.question,
-                    answer=fc.answer,
-                )
-                for fc in flashcards
-            ],
-            created_at=highlight.created_at,
-            updated_at=highlight.updated_at,
+            text=resolved.label if resolved else None,
+            ui_color=resolved.ui_color if resolved else None,
         )
-    except (CrossbillError, DomainError):
-        # Re-raise - handled by global exception handlers
-        raise
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to add tag to highlight {highlight_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+        if highlight.highlight_style_id
+        else None,
+        highlight_tags=[
+            HighlightTagInBook(
+                id=tag.id.value,
+                name=tag.name,
+                tag_group_id=tag.tag_group_id,
+            )
+            for tag in highlight_tags
+        ],
+        flashcards=[
+            Flashcard(
+                id=fc.id.value,
+                user_id=fc.user_id.value,
+                book_id=fc.book_id.value,
+                highlight_id=fc.highlight_id.value if fc.highlight_id else None,
+                question=fc.question,
+                answer=fc.answer,
+            )
+            for fc in flashcards
+        ],
+        created_at=highlight.created_at,
+        updated_at=highlight.updated_at,
+    )
 
 
 @router.delete(
@@ -979,65 +836,53 @@ async def remove_tag_from_highlight(
     Raises:
         HTTPException: If highlight not found or removal fails
     """
-    try:
-        highlight, flashcards, highlight_tags, labels = await use_case.remove_tag(
-            highlight_id, tag_id, current_user.id.value
-        )
+    highlight, flashcards, highlight_tags, labels = await use_case.remove_tag(
+        highlight_id, tag_id, current_user.id.value
+    )
 
-        resolved = (
-            labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
-        )
+    resolved = (
+        labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
+    )
 
-        # Manually construct schema from domain entities
-        return Highlight(
-            id=highlight.id.value,
-            book_id=highlight.book_id.value,
-            chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
-            text=highlight.text,
-            chapter=None,
-            chapter_number=None,
-            page=highlight.page,
-            note=highlight.note,
-            datetime=highlight.datetime,
-            label=HighlightLabel(
-                highlight_style_id=highlight.highlight_style_id.value
-                if highlight.highlight_style_id
-                else None,
-                text=resolved.label if resolved else None,
-                ui_color=resolved.ui_color if resolved else None,
-            )
+    # Manually construct schema from domain entities
+    return Highlight(
+        id=highlight.id.value,
+        book_id=highlight.book_id.value,
+        chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
+        text=highlight.text,
+        chapter=None,
+        chapter_number=None,
+        page=highlight.page,
+        note=highlight.note,
+        datetime=highlight.datetime,
+        label=HighlightLabel(
+            highlight_style_id=highlight.highlight_style_id.value
             if highlight.highlight_style_id
             else None,
-            highlight_tags=[
-                HighlightTagInBook(
-                    id=tag.id.value,
-                    name=tag.name,
-                    tag_group_id=tag.tag_group_id,
-                )
-                for tag in highlight_tags
-            ],
-            flashcards=[
-                Flashcard(
-                    id=fc.id.value,
-                    user_id=fc.user_id.value,
-                    book_id=fc.book_id.value,
-                    highlight_id=fc.highlight_id.value if fc.highlight_id else None,
-                    question=fc.question,
-                    answer=fc.answer,
-                )
-                for fc in flashcards
-            ],
-            created_at=highlight.created_at,
-            updated_at=highlight.updated_at,
+            text=resolved.label if resolved else None,
+            ui_color=resolved.ui_color if resolved else None,
         )
-    except (CrossbillError, DomainError):
-        # Re-raise - handled by global exception handlers
-        raise
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to remove tag from highlight {highlight_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+        if highlight.highlight_style_id
+        else None,
+        highlight_tags=[
+            HighlightTagInBook(
+                id=tag.id.value,
+                name=tag.name,
+                tag_group_id=tag.tag_group_id,
+            )
+            for tag in highlight_tags
+        ],
+        flashcards=[
+            Flashcard(
+                id=fc.id.value,
+                user_id=fc.user_id.value,
+                book_id=fc.book_id.value,
+                highlight_id=fc.highlight_id.value if fc.highlight_id else None,
+                question=fc.question,
+                answer=fc.answer,
+            )
+            for fc in flashcards
+        ],
+        created_at=highlight.created_at,
+        updated_at=highlight.updated_at,
+    )

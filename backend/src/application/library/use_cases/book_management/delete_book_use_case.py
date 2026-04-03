@@ -7,7 +7,7 @@ from src.application.library.use_cases.book_files.ebook_deletion_use_case import
     EbookDeletionUseCase,
 )
 from src.domain.common.value_objects import BookId, UserId
-from src.exceptions import BookNotFoundError
+from src.domain.reading.exceptions import BookNotFoundError
 
 logger = logging.getLogger(__name__)
 

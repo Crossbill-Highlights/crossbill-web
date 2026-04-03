@@ -10,7 +10,7 @@ from pathlib import Path
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.domain.common.value_objects import BookId, UserId
-from src.exceptions import BookNotFoundError
+from src.domain.reading.exceptions import BookNotFoundError
 
 logger = logging.getLogger(__name__)
 

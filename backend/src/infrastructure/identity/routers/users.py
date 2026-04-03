@@ -1,7 +1,6 @@
-import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, Request, Response
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -10,12 +9,6 @@ from src.application.identity.use_cases.update_user_use_case import UpdateUserUs
 from src.core import container
 from src.database import DatabaseSession
 from src.domain.identity.entities.user import User
-from src.domain.identity.exceptions import (
-    EmailAlreadyExistsError,
-    PasswordVerificationError,
-    RegistrationDisabledError,
-)
-from src.exceptions import CrossbillError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.identity.routers.auth import set_refresh_cookie, token_pair_to_response
@@ -26,7 +19,6 @@ from src.infrastructure.identity.schemas import (
 )
 from src.infrastructure.identity.services.token_service import TokenWithRefresh
 
-logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/users", tags=["users"])
 limiter = Limiter(key_func=get_remote_address)
 
@@ -47,32 +39,9 @@ async def register(
     Creates a new user with the provided email and password.
     Returns token pair for immediate login after registration.
     """
-    try:
-        _, token_pair = await use_case.register_user(register_data.email, register_data.password)
-        set_refresh_cookie(response, token_pair.refresh_token)
-        return token_pair_to_response(token_pair)
-    except RegistrationDisabledError:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User registration is currently disabled",
-        ) from None
-    except EmailAlreadyExistsError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered",
-        ) from None
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
-        raise
-    except HTTPException:
-        # Re-raise HTTPException
-        raise
-    except Exception as e:
-        logger.error(f"Failed to register user: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    _, token_pair = await use_case.register_user(register_data.email, register_data.password)
+    set_refresh_cookie(response, token_pair.refresh_token)
+    return token_pair_to_response(token_pair)
 
 
 @router.get("/me")
@@ -94,29 +63,11 @@ async def update_me(
     - To change email: provide `email` field
     - To change password: provide both `current_password` and `new_password` fields
     """
-    try:
-        user = await use_case.update_user(
-            user_id=current_user.id.value,
-            email=update_data.email,
-            current_password=update_data.current_password,
-            new_password=update_data.new_password,
-        )
-        await db.commit()
-        return UserDetailsResponse(email=user.email, id=user.id.value)
-    except PasswordVerificationError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect",
-        ) from None
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
-        raise
-    except HTTPException:
-        # Re-raise HTTPException
-        raise
-    except Exception as e:
-        logger.error(f"Failed to update user {current_user.id.value}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    user = await use_case.update_user(
+        user_id=current_user.id.value,
+        email=update_data.email,
+        current_password=update_data.current_password,
+        new_password=update_data.new_password,
+    )
+    await db.commit()
+    return UserDetailsResponse(email=user.email, id=user.id.value)

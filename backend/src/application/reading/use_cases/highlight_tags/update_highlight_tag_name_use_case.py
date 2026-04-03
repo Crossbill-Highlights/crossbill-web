@@ -8,7 +8,7 @@ from src.application.reading.protocols.highlight_tag_repository import (
 from src.domain.common import ValidationError
 from src.domain.common.value_objects.ids import BookId, HighlightTagId, UserId
 from src.domain.reading.entities.highlight_tag import HighlightTag
-from src.exceptions import CrossbillError, NotFoundError
+from src.domain.reading.exceptions import DuplicateTagNameError, HighlightTagNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -38,9 +38,9 @@ class UpdateHighlightTagNameUseCase:
             Updated tag entity
 
         Raises:
-            NotFoundError: If tag not found
+            HighlightTagNotFoundError: If tag not found
             ValidationError: If tag doesn't belong to book
-            CrossbillError: If new name already exists
+            DuplicateTagNameError: If new name already exists
         """
         tag_id_vo = HighlightTagId(tag_id)
         user_id_vo = UserId(user_id)
@@ -48,7 +48,7 @@ class UpdateHighlightTagNameUseCase:
 
         tag = await self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
         if not tag:
-            raise NotFoundError(f"Tag with id {tag_id} not found")
+            raise HighlightTagNotFoundError(tag_id)
 
         if tag.book_id != book_id_vo:
             raise ValidationError(f"Tag {tag_id} does not belong to book {book_id}")
@@ -58,9 +58,7 @@ class UpdateHighlightTagNameUseCase:
                 book_id_vo, new_name.strip(), user_id_vo
             )
             if existing:
-                raise CrossbillError(
-                    f"Tag '{new_name}' already exists for this book", status_code=409
-                )
+                raise DuplicateTagNameError(new_name)
 
         tag.rename(new_name)
         tag = await self.tag_repository.save(tag)

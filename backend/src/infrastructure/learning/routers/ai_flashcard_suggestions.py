@@ -3,15 +3,13 @@
 from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
 from src.application.learning.use_cases.flashcards.get_flashcard_suggestions_use_case import (
     GetFlashcardSuggestionsUseCase,
 )
 from src.core import container
-from src.domain.common.exceptions import DomainError
 from src.domain.identity.entities.user import User
-from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
@@ -51,27 +49,12 @@ async def get_highlight_flashcard_suggestions(
 
     Raises:
         HTTPException 404: If highlight not found or not owned by user
-        HTTPException 500: For unexpected errors
     """
-    try:
-        suggestions_data = await use_case.get_suggestions(highlight_id, current_user.id.value)
+    suggestions_data = await use_case.get_suggestions(highlight_id, current_user.id.value)
 
-        # Convert data classes to Pydantic schemas
-        suggestions = [
-            FlashcardSuggestionItem(question=s.question, answer=s.answer) for s in suggestions_data
-        ]
+    # Convert data classes to Pydantic schemas
+    suggestions = [
+        FlashcardSuggestionItem(question=s.question, answer=s.answer) for s in suggestions_data
+    ]
 
-        return HighlightFlashcardSuggestionsResponse(suggestions=suggestions)
-    except (CrossbillError, DomainError, ValidationError):
-        raise
-    except Exception as e:
-        logger.error(
-            "failed_to_generate_flashcard_suggestions",
-            highlight_id=highlight_id,
-            error=str(e),
-            exc_info=True,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    return HighlightFlashcardSuggestionsResponse(suggestions=suggestions)

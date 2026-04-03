@@ -6,7 +6,7 @@ from src.application.learning.protocols.flashcard_repository import FlashcardRep
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.domain.common.value_objects.ids import HighlightId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
-from src.exceptions import NotFoundError
+from src.domain.reading.exceptions import HighlightNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -46,7 +46,7 @@ class CreateFlashcardForHighlightUseCase:
 
         highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
-            raise NotFoundError(f"Highlight with id {highlight_id} not found")
+            raise HighlightNotFoundError(highlight_id)
 
         flashcard = Flashcard.create(
             user_id=user_id_vo,

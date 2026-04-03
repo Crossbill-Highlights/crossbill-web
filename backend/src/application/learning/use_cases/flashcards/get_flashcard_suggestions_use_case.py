@@ -9,7 +9,7 @@ from src.application.learning.protocols.ai_flashcard_service import (
 from src.application.learning.use_cases.dtos import FlashcardSuggestion
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.domain.common.value_objects.ids import HighlightId, UserId
-from src.exceptions import NotFoundError
+from src.domain.reading.exceptions import HighlightNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -45,7 +45,7 @@ class GetFlashcardSuggestionsUseCase:
 
         highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
-            raise NotFoundError(f"Highlight with id {highlight_id} not found")
+            raise HighlightNotFoundError(highlight_id)
 
         usage_context = AIUsageContext(
             user_id=user_id_vo,

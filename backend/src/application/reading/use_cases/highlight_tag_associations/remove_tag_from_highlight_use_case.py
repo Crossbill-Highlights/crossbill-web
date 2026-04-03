@@ -17,11 +17,11 @@ from src.domain.common.value_objects.ids import HighlightId, HighlightTagId, Use
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.domain.reading.exceptions import HighlightNotFoundError
 from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
     ResolvedLabel,
 )
-from src.exceptions import NotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -65,7 +65,7 @@ class RemoveTagFromHighlightUseCase:
         # Load highlight
         highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
-            raise NotFoundError(f"Highlight with id {highlight_id} not found")
+            raise HighlightNotFoundError(highlight_id)
 
         # Remove association via repository
         removed = await self.tag_repository.remove_tag_from_highlight(
@@ -79,7 +79,7 @@ class RemoveTagFromHighlightUseCase:
             highlight_id_vo, user_id_vo
         )
         if not result:
-            raise NotFoundError(f"Highlight with id {highlight_id} not found after reload")
+            raise HighlightNotFoundError(highlight_id)
         highlight, flashcards, tags = result
 
         # Resolve labels

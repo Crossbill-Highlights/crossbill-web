@@ -10,7 +10,11 @@ from src.application.reading.protocols.highlight_tag_repository import (
 )
 from src.domain.common.value_objects.ids import BookId, HighlightTagGroupId, UserId
 from src.domain.reading.entities.highlight_tag_group import HighlightTagGroup
-from src.exceptions import CrossbillError, NotFoundError
+from src.domain.reading.exceptions import (
+    BookNotFoundError,
+    DuplicateTagGroupNameError,
+    HighlightTagGroupNotFoundError,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -42,8 +46,9 @@ class UpdateHighlightTagGroupUseCase:
             Updated group entity
 
         Raises:
-            ValueError: If group or book not found
-            CrossbillError: If new name already exists
+            BookNotFoundError: If book not found
+            HighlightTagGroupNotFoundError: If group not found
+            DuplicateTagGroupNameError: If new name already exists
         """
         group_id_vo = HighlightTagGroupId(group_id)
         book_id_vo = BookId(book_id)
@@ -51,21 +56,18 @@ class UpdateHighlightTagGroupUseCase:
 
         book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
-            raise NotFoundError(f"Book with id {book_id} not found")
+            raise BookNotFoundError(book_id)
 
         # Load group and verify it belongs to the correct book
         group = await self.tag_repository.find_group_by_id(group_id_vo, book_id_vo)
         if not group:
-            raise NotFoundError(f"Tag group with id {group_id} not found")
+            raise HighlightTagGroupNotFoundError(group_id)
 
         # Check for duplicate (if name changed)
         if new_name.strip() != group.name:
             existing = await self.tag_repository.find_group_by_name(book_id_vo, new_name.strip())
             if existing:
-                raise CrossbillError(
-                    f"Tag group '{new_name}' already exists for this book",
-                    status_code=409,
-                )
+                raise DuplicateTagGroupNameError(new_name)
 
         group.rename(new_name)
         group = await self.tag_repository.save_group(group)

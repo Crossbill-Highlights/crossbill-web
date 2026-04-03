@@ -4,7 +4,7 @@ from src.application.reading.protocols.book_repository import BookRepositoryProt
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.reading.entities.bookmark import Bookmark
-from src.exceptions import BookNotFoundError
+from src.domain.reading.exceptions import BookNotFoundError
 
 
 class GetBookmarksUseCase:

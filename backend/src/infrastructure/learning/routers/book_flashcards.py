@@ -1,7 +1,6 @@
-import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from starlette import status
 
 from src.application.learning.use_cases.flashcards.create_flashcard_for_book_use_case import (
@@ -11,9 +10,7 @@ from src.application.learning.use_cases.flashcards.get_flashcards_by_book_use_ca
     GetFlashcardsByBookUseCase,
 )
 from src.core import container
-from src.domain.common import DomainError
 from src.domain.identity import User
-from src.exceptions import CrossbillError, ValidationError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.learning.schemas import (
@@ -28,8 +25,6 @@ from src.infrastructure.reading.schemas import (
     HighlightResponseBase,
     HighlightTagInBook,
 )
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/books", tags=["flashcards"])
 
@@ -64,39 +59,28 @@ async def create_flashcard_for_book(
     Raises:
         HTTPException: If book not found or creation fails
     """
-    try:
-        flashcard_entity = await use_case.create_flashcard(
-            book_id=book_id,
-            user_id=current_user.id.value,
-            question=request.question,
-            answer=request.answer,
-            chapter_id=request.chapter_id,
-        )
-        # Manually construct Pydantic schema from domain entity
-        flashcard = Flashcard(
-            id=flashcard_entity.id.value,
-            user_id=flashcard_entity.user_id.value,
-            book_id=flashcard_entity.book_id.value,
-            highlight_id=flashcard_entity.highlight_id.value
-            if flashcard_entity.highlight_id
-            else None,
-            chapter_id=flashcard_entity.chapter_id.value if flashcard_entity.chapter_id else None,
-            question=flashcard_entity.question,
-            answer=flashcard_entity.answer,
-        )
-        return FlashcardCreateResponse(
-            success=True,
-            message="Flashcard created successfully",
-            flashcard=flashcard,
-        )
-    except (CrossbillError, DomainError, ValidationError):
-        raise
-    except Exception as e:
-        logger.error(f"Failed to create flashcard for book {book_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    flashcard_entity = await use_case.create_flashcard(
+        book_id=book_id,
+        user_id=current_user.id.value,
+        question=request.question,
+        answer=request.answer,
+        chapter_id=request.chapter_id,
+    )
+    # Manually construct Pydantic schema from domain entity
+    flashcard = Flashcard(
+        id=flashcard_entity.id.value,
+        user_id=flashcard_entity.user_id.value,
+        book_id=flashcard_entity.book_id.value,
+        highlight_id=flashcard_entity.highlight_id.value if flashcard_entity.highlight_id else None,
+        chapter_id=flashcard_entity.chapter_id.value if flashcard_entity.chapter_id else None,
+        question=flashcard_entity.question,
+        answer=flashcard_entity.answer,
+    )
+    return FlashcardCreateResponse(
+        success=True,
+        message="Flashcard created successfully",
+        flashcard=flashcard,
+    )
 
 
 @router.get(
@@ -126,79 +110,70 @@ async def get_flashcards_for_book(
     Raises:
         HTTPException: If book not found or fetching fails
     """
-    try:
-        # Get flashcards with highlights from use case (returns DTOs + labels)
-        flashcards_with_highlights, labels = await use_case.get_flashcards(
-            book_id, current_user.id.value
-        )
+    # Get flashcards with highlights from use case (returns DTOs + labels)
+    flashcards_with_highlights, labels = await use_case.get_flashcards(
+        book_id, current_user.id.value
+    )
 
-        # Convert DTOs to Pydantic schemas
-        flashcards = []
-        for dto in flashcards_with_highlights:
-            fc = dto.flashcard
-            highlight = dto.highlight
-            chapter = dto.chapter
-            tags = dto.highlight_tags
+    # Convert DTOs to Pydantic schemas
+    flashcards = []
+    for dto in flashcards_with_highlights:
+        fc = dto.flashcard
+        highlight = dto.highlight
+        chapter = dto.chapter
+        tags = dto.highlight_tags
 
-            # Convert highlight to Pydantic schema if present
-            highlight_schema = None
-            if highlight:
-                resolved = (
-                    labels.get(highlight.highlight_style_id.value)
-                    if highlight.highlight_style_id
-                    else None
-                )
-                # Manually construct highlight schema
-                highlight_schema = HighlightResponseBase(
-                    id=highlight.id.value,
-                    book_id=highlight.book_id.value,
-                    chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
-                    text=highlight.text,
-                    note=highlight.note,
-                    page=highlight.page,
-                    datetime=highlight.datetime,
-                    chapter=chapter.name if chapter else None,
-                    chapter_number=chapter.chapter_number if chapter else None,
-                    label=HighlightLabel(
-                        highlight_style_id=highlight.highlight_style_id.value
-                        if highlight.highlight_style_id
-                        else None,
-                        text=resolved.label if resolved else None,
-                        ui_color=resolved.ui_color if resolved else None,
-                    )
+        # Convert highlight to Pydantic schema if present
+        highlight_schema = None
+        if highlight:
+            resolved = (
+                labels.get(highlight.highlight_style_id.value)
+                if highlight.highlight_style_id
+                else None
+            )
+            # Manually construct highlight schema
+            highlight_schema = HighlightResponseBase(
+                id=highlight.id.value,
+                book_id=highlight.book_id.value,
+                chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
+                text=highlight.text,
+                note=highlight.note,
+                page=highlight.page,
+                datetime=highlight.datetime,
+                chapter=chapter.name if chapter else None,
+                chapter_number=chapter.chapter_number if chapter else None,
+                label=HighlightLabel(
+                    highlight_style_id=highlight.highlight_style_id.value
                     if highlight.highlight_style_id
                     else None,
-                    created_at=highlight.created_at,
-                    updated_at=highlight.updated_at,
-                    highlight_tags=[
-                        HighlightTagInBook(
-                            id=tag.id.value,
-                            name=tag.name,
-                            tag_group_id=tag.tag_group_id,
-                        )
-                        for tag in tags
-                    ],
+                    text=resolved.label if resolved else None,
+                    ui_color=resolved.ui_color if resolved else None,
                 )
-
-            # Construct flashcard schema with highlight
-            flashcard_schema = FlashcardWithHighlight(
-                id=fc.id.value,
-                user_id=fc.user_id.value,
-                book_id=fc.book_id.value,
-                highlight_id=fc.highlight_id.value if fc.highlight_id else None,
-                chapter_id=fc.chapter_id.value if fc.chapter_id else None,
-                question=fc.question,
-                answer=fc.answer,
-                highlight=highlight_schema,
+                if highlight.highlight_style_id
+                else None,
+                created_at=highlight.created_at,
+                updated_at=highlight.updated_at,
+                highlight_tags=[
+                    HighlightTagInBook(
+                        id=tag.id.value,
+                        name=tag.name,
+                        tag_group_id=tag.tag_group_id,
+                    )
+                    for tag in tags
+                ],
             )
-            flashcards.append(flashcard_schema)
 
-        return FlashcardsWithHighlightsResponse(flashcards=flashcards)
-    except (CrossbillError, DomainError, ValidationError):
-        raise
-    except Exception as e:
-        logger.error(f"Failed to get flashcards for book {book_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+        # Construct flashcard schema with highlight
+        flashcard_schema = FlashcardWithHighlight(
+            id=fc.id.value,
+            user_id=fc.user_id.value,
+            book_id=fc.book_id.value,
+            highlight_id=fc.highlight_id.value if fc.highlight_id else None,
+            chapter_id=fc.chapter_id.value if fc.chapter_id else None,
+            question=fc.question,
+            answer=fc.answer,
+            highlight=highlight_schema,
+        )
+        flashcards.append(flashcard_schema)
+
+    return FlashcardsWithHighlightsResponse(flashcards=flashcards)

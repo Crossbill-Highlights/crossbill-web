@@ -8,9 +8,9 @@ from src.application.library.protocols.file_repository import FileRepositoryProt
 from src.application.reading.protocols.ebook_text_extraction_service import (
     EbookTextExtractionServiceProtocol,
 )
-from src.domain.common.exceptions import DomainError
+from src.domain.common.exceptions import DomainError, ValidationError
 from src.domain.common.value_objects.ids import ChapterId, UserId
-from src.exceptions import BookNotFoundError, NotFoundError
+from src.domain.reading.exceptions import BookNotFoundError, ChapterNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -50,24 +50,22 @@ class ChapterContentUseCase:
         # 1. Verify chapter exists and user owns it
         chapter = await self.chapter_repo.find_by_id(chapter_id_vo, user_id_vo)
         if not chapter:
-            raise NotFoundError(f"Chapter {chapter_id} not found")
+            raise ChapterNotFoundError(chapter_id)
 
         # 2. Check chapter has XPoint data
         if not chapter.start_xpoint:
-            raise DomainError(
+            raise ValidationError(
                 "Chapter does not have position data. EPUB must be uploaded with chapter positions."
             )
 
         # 3. Resolve epub path
         book = await self.book_repo.find_by_id(chapter.book_id, user_id_vo)
         if not book or not book.file_path or book.file_type != "epub":
-            raise BookNotFoundError(
-                chapter.book_id.value, message="EPUB file not found for this book"
-            )
+            raise BookNotFoundError(chapter.book_id.value)
 
         epub_path = await self.file_repo.find_epub(book.id)
         if not epub_path or not epub_path.exists():
-            raise BookNotFoundError(chapter.book_id.value, message="EPUB file not found on disk")
+            raise BookNotFoundError(chapter.book_id.value)
 
         # 4. Extract chapter text
         try:

@@ -72,7 +72,40 @@ class BusinessRuleViolationError(DomainError):
         self.rule = rule
 
 
-class InvariantViolationError(DomainError):
+class ConflictError(DomainError):
+    """
+    Raised when an operation conflicts with existing state.
+
+    Example: Duplicate email, duplicate highlight, etc.
+    """
+
+    def __init__(self, message: str, details: dict[str, object] | None = None) -> None:
+        super().__init__(message, details)
+
+
+class AuthenticationError(DomainError):
+    """
+    Raised when authentication fails.
+
+    Example: Invalid credentials, expired token, etc.
+    """
+
+    def __init__(self, message: str, details: dict[str, object] | None = None) -> None:
+        super().__init__(message, details)
+
+
+class AuthorizationError(DomainError):
+    """
+    Raised when a user lacks permission for an action.
+
+    Example: Feature disabled, insufficient role, etc.
+    """
+
+    def __init__(self, message: str, details: dict[str, object] | None = None) -> None:
+        super().__init__(message, details)
+
+
+class InvariantViolationError(BusinessRuleViolationError):
     """
     Raised when an aggregate invariant is violated.
 
@@ -84,6 +117,6 @@ class InvariantViolationError(DomainError):
 
     def __init__(self, aggregate: str, invariant: str) -> None:
         message = f"Invariant violation in {aggregate}: {invariant}"
-        super().__init__(message, {"aggregate": aggregate, "invariant": invariant})
+        super().__init__(rule=f"{aggregate}.{invariant}", message=message)
         self.aggregate = aggregate
         self.invariant = invariant

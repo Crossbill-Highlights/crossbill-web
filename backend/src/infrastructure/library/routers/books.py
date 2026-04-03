@@ -1,4 +1,3 @@
-import logging
 from datetime import UTC, datetime
 from typing import Annotated
 
@@ -23,12 +22,10 @@ from src.application.library.use_cases.book_queries.get_recently_viewed_books_us
     GetRecentlyViewedBooksUseCase,
 )
 from src.core import container
-from src.domain.common import DomainError
 from src.domain.identity import User
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
 from src.domain.reading.services import ChapterWithHighlights as DomainChapterWithHighlights
 from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
-from src.exceptions import CrossbillError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.common.schemas.position_schemas import PositionResponse
 from src.infrastructure.identity import get_current_user
@@ -51,8 +48,6 @@ from src.infrastructure.reading.schemas import (
 from src.infrastructure.reading.schemas import (
     ChapterWithHighlights as ChapterWithHighlightsSchema,
 )
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -252,45 +247,38 @@ async def get_books(
     Raises:
         HTTPException: If fetching books fails due to server error
     """
-    try:
-        results, total = await use_case.get_books_with_counts(
-            current_user.id.value, offset, limit, only_with_flashcards, search
-        )
+    results, total = await use_case.get_books_with_counts(
+        current_user.id.value, offset, limit, only_with_flashcards, search
+    )
 
-        books_list = [
-            BookWithHighlightCount(
-                id=book.id.value,
-                client_book_id=book.client_book_id,
-                title=book.title,
-                author=book.author,
-                isbn=book.isbn,
-                has_cover=has_cover,
-                description=book.description,
-                language=book.language,
-                page_count=book.page_count,
-                highlight_count=highlight_count,
-                flashcard_count=flashcard_count,
-                tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
-                end_position=PositionResponse(
-                    index=book.end_position.index,
-                    char_index=book.end_position.char_index,
-                )
-                if book.end_position
-                else None,
-                created_at=book.created_at,
-                updated_at=book.updated_at,
-                last_viewed=book.last_viewed,
+    books_list = [
+        BookWithHighlightCount(
+            id=book.id.value,
+            client_book_id=book.client_book_id,
+            title=book.title,
+            author=book.author,
+            isbn=book.isbn,
+            has_cover=has_cover,
+            description=book.description,
+            language=book.language,
+            page_count=book.page_count,
+            highlight_count=highlight_count,
+            flashcard_count=flashcard_count,
+            tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
+            end_position=PositionResponse(
+                index=book.end_position.index,
+                char_index=book.end_position.char_index,
             )
-            for book, highlight_count, flashcard_count, tags, has_cover in results
-        ]
+            if book.end_position
+            else None,
+            created_at=book.created_at,
+            updated_at=book.updated_at,
+            last_viewed=book.last_viewed,
+        )
+        for book, highlight_count, flashcard_count, tags, has_cover in results
+    ]
 
-        return BooksListResponse(books=books_list, total=total, offset=offset, limit=limit)
-    except Exception as e:
-        logger.error(f"Failed to fetch books: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    return BooksListResponse(books=books_list, total=total, offset=offset, limit=limit)
 
 
 @router.get(
@@ -319,43 +307,36 @@ async def get_recently_viewed_books(
     Raises:
         HTTPException: If fetching books fails due to server error
     """
-    try:
-        results = await use_case.get_recently_viewed(current_user.id.value, limit)
+    results = await use_case.get_recently_viewed(current_user.id.value, limit)
 
-        books_list = [
-            BookWithHighlightCount(
-                id=book.id.value,
-                client_book_id=book.client_book_id,
-                title=book.title,
-                author=book.author,
-                isbn=book.isbn,
-                has_cover=has_cover,
-                description=book.description,
-                language=book.language,
-                page_count=book.page_count,
-                highlight_count=highlight_count,
-                flashcard_count=flashcard_count,
-                tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
-                end_position=PositionResponse(
-                    index=book.end_position.index,
-                    char_index=book.end_position.char_index,
-                )
-                if book.end_position
-                else None,
-                created_at=book.created_at,
-                updated_at=book.updated_at,
-                last_viewed=book.last_viewed,
+    books_list = [
+        BookWithHighlightCount(
+            id=book.id.value,
+            client_book_id=book.client_book_id,
+            title=book.title,
+            author=book.author,
+            isbn=book.isbn,
+            has_cover=has_cover,
+            description=book.description,
+            language=book.language,
+            page_count=book.page_count,
+            highlight_count=highlight_count,
+            flashcard_count=flashcard_count,
+            tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
+            end_position=PositionResponse(
+                index=book.end_position.index,
+                char_index=book.end_position.char_index,
             )
-            for book, highlight_count, flashcard_count, tags, has_cover in results
-        ]
+            if book.end_position
+            else None,
+            created_at=book.created_at,
+            updated_at=book.updated_at,
+            last_viewed=book.last_viewed,
+        )
+        for book, highlight_count, flashcard_count, tags, has_cover in results
+    ]
 
-        return RecentlyViewedBooksResponse(books=books_list)
-    except Exception as e:
-        logger.error(f"Failed to fetch recently viewed books: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    return RecentlyViewedBooksResponse(books=books_list)
 
 
 @router.get("/{book_id}", response_model=BookDetails, status_code=status.HTTP_200_OK)
@@ -378,18 +359,8 @@ async def get_book_details(
     Raises:
         HTTPException: If book is not found or fetching fails
     """
-    try:
-        agg = await use_case.get_book_details(book_id, current_user.id.value)
-        return _build_book_details_schema(agg, agg.labels)
-    except (CrossbillError, DomainError):
-        # Re-raise - handled by global exception handlers
-        raise
-    except Exception as e:
-        logger.error(f"Failed to fetch book details for book_id={book_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    agg = await use_case.get_book_details(book_id, current_user.id.value)
+    return _build_book_details_schema(agg, agg.labels)
 
 
 @router.post(
@@ -418,42 +389,32 @@ async def update_book(
     Raises:
         HTTPException: If book is not found or update fails
     """
-    try:
-        book, highlight_count, flashcard_count, tags, has_cover = await use_case.update_book(
-            book_id, request, current_user.id.value
+    book, highlight_count, flashcard_count, tags, has_cover = await use_case.update_book(
+        book_id, request, current_user.id.value
+    )
+    return BookWithHighlightCount(
+        id=book.id.value,
+        client_book_id=book.client_book_id,
+        title=book.title,
+        author=book.author,
+        isbn=book.isbn,
+        has_cover=has_cover,
+        description=book.description,
+        language=book.language,
+        page_count=book.page_count,
+        highlight_count=highlight_count,
+        flashcard_count=flashcard_count,
+        tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
+        end_position=PositionResponse(
+            index=book.end_position.index,
+            char_index=book.end_position.char_index,
         )
-        return BookWithHighlightCount(
-            id=book.id.value,
-            client_book_id=book.client_book_id,
-            title=book.title,
-            author=book.author,
-            isbn=book.isbn,
-            has_cover=has_cover,
-            description=book.description,
-            language=book.language,
-            page_count=book.page_count,
-            highlight_count=highlight_count,
-            flashcard_count=flashcard_count,
-            tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
-            end_position=PositionResponse(
-                index=book.end_position.index,
-                char_index=book.end_position.char_index,
-            )
-            if book.end_position
-            else None,
-            created_at=book.created_at,
-            updated_at=book.updated_at,
-            last_viewed=book.last_viewed,
-        )
-    except (CrossbillError, DomainError):
-        # Re-raise - handled by global exception handlers
-        raise
-    except Exception as e:
-        logger.error(f"Failed to update book {book_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+        if book.end_position
+        else None,
+        created_at=book.created_at,
+        updated_at=book.updated_at,
+        last_viewed=book.last_viewed,
+    )
 
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -475,17 +436,7 @@ async def delete_book(
     Raises:
         HTTPException: If book is not found or deletion fails
     """
-    try:
-        await use_case.delete_book(book_id, current_user.id.value)
-    except (CrossbillError, DomainError):
-        # Re-raise - handled by global exception handlers
-        raise
-    except Exception as e:
-        logger.error(f"Failed to delete book {book_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    await use_case.delete_book(book_id, current_user.id.value)
 
 
 @router.get("/{book_id}/cover", status_code=status.HTTP_200_OK)

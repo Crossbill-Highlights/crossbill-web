@@ -1,7 +1,6 @@
-import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from starlette import status
 
 from src.application.reading.use_cases.bookmarks.create_bookmark_use_case import (
@@ -15,12 +14,9 @@ from src.application.reading.use_cases.bookmarks.get_bookmarks_use_case import (
 )
 from src.core import container
 from src.domain.identity import User
-from src.exceptions import CrossbillError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.reading.schemas import Bookmark, BookmarkCreateRequest, BookmarksResponse
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/books", tags=["bookmarks"])
 
@@ -55,29 +51,17 @@ async def create_bookmark(
     Raises:
         HTTPException: If book or highlight not found, or creation fails
     """
-    try:
-        bookmark = await use_case.create_bookmark(
-            book_id, request.highlight_id, current_user.id.value
-        )
+    bookmark = await use_case.create_bookmark(book_id, request.highlight_id, current_user.id.value)
 
-        # Manually construct schema from domain entity
-        # created_at is always set for persisted bookmarks
-        assert bookmark.created_at is not None
-        return Bookmark(
-            id=bookmark.id.value,
-            book_id=bookmark.book_id.value,
-            highlight_id=bookmark.highlight_id.value,
-            created_at=bookmark.created_at,
-        )
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
-        raise
-    except Exception as e:
-        logger.error(f"Failed to create bookmark for book {book_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    # Manually construct schema from domain entity
+    # created_at is always set for persisted bookmarks
+    assert bookmark.created_at is not None
+    return Bookmark(
+        id=bookmark.id.value,
+        book_id=bookmark.book_id.value,
+        highlight_id=bookmark.highlight_id.value,
+        created_at=bookmark.created_at,
+    )
 
 
 @router.delete(
@@ -106,20 +90,7 @@ async def delete_bookmark(
     Raises:
         HTTPException: If book not found or deletion fails
     """
-    try:
-        await use_case.delete_bookmark(book_id, bookmark_id, current_user.id.value)
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
-        raise
-    except Exception as e:
-        logger.error(
-            f"Failed to delete bookmark {bookmark_id} for book {book_id}: {e!s}",
-            exc_info=True,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+    await use_case.delete_bookmark(book_id, bookmark_id, current_user.id.value)
 
 
 @router.get(
@@ -149,29 +120,19 @@ async def get_bookmarks(
     Raises:
         HTTPException: If book not found or fetching fails
     """
-    try:
-        bookmarks = await use_case.get_bookmarks_by_book(book_id, current_user.id.value)
+    bookmarks = await use_case.get_bookmarks_by_book(book_id, current_user.id.value)
 
-        # Manually construct schemas from domain entities
-        # created_at is always set for persisted bookmarks
-        bookmark_schemas = []
-        for b in bookmarks:
-            assert b.created_at is not None
-            bookmark_schemas.append(
-                Bookmark(
-                    id=b.id.value,
-                    book_id=b.book_id.value,
-                    highlight_id=b.highlight_id.value,
-                    created_at=b.created_at,
-                )
+    # Manually construct schemas from domain entities
+    # created_at is always set for persisted bookmarks
+    bookmark_schemas = []
+    for b in bookmarks:
+        assert b.created_at is not None
+        bookmark_schemas.append(
+            Bookmark(
+                id=b.id.value,
+                book_id=b.book_id.value,
+                highlight_id=b.highlight_id.value,
+                created_at=b.created_at,
             )
-        return BookmarksResponse(bookmarks=bookmark_schemas)
-    except CrossbillError:
-        # Re-raise custom exceptions - handled by exception handlers
-        raise
-    except Exception as e:
-        logger.error(f"Failed to get bookmarks for book {book_id}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again later.",
-        ) from e
+        )
+    return BookmarksResponse(bookmarks=bookmark_schemas)

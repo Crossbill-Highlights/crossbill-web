@@ -26,7 +26,7 @@ from src.domain.common.value_objects.position import Position
 from src.domain.common.value_objects.position_index import PositionIndex
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.reading_session import ReadingSession
-from src.exceptions import BookNotFoundError
+from src.domain.reading.exceptions import BookNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -115,10 +115,7 @@ class ReadingSessionUploadUseCase:
                 "book_not_found_for_reading_session_upload",
                 client_book_id=client_book_id,
             )
-            raise BookNotFoundError(
-                message=f"Book with client_book_id '{client_book_id}' not found. "
-                "Please create the book first"
-            )
+            raise BookNotFoundError(client_book_id)
 
         # Build position index if EPUB
         position_index = None
