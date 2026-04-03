@@ -363,9 +363,7 @@ async def create_flashcard_for_highlight(
         id=flashcard_entity.id.value,
         user_id=flashcard_entity.user_id.value,
         book_id=flashcard_entity.book_id.value,
-        highlight_id=flashcard_entity.highlight_id.value
-        if flashcard_entity.highlight_id
-        else None,
+        highlight_id=flashcard_entity.highlight_id.value if flashcard_entity.highlight_id else None,
         question=flashcard_entity.question,
         answer=flashcard_entity.answer,
     )

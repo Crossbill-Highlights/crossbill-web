@@ -51,9 +51,7 @@ async def create_bookmark(
     Raises:
         HTTPException: If book or highlight not found, or creation fails
     """
-    bookmark = await use_case.create_bookmark(
-        book_id, request.highlight_id, current_user.id.value
-    )
+    bookmark = await use_case.create_bookmark(book_id, request.highlight_id, current_user.id.value)
 
     # Manually construct schema from domain entity
     # created_at is always set for persisted bookmarks
