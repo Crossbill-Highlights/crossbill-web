@@ -6,7 +6,7 @@ from src.application.library.protocols.chapter_repository import (
 from src.application.reading.protocols.chapter_prereading_repository import (
     ChapterPrereadingRepositoryProtocol,
 )
-from src.domain.common.exceptions import EntityNotFoundError
+from src.domain.reading.exceptions import ChapterNotFoundError, ChapterPrereadingNotFoundError
 from src.domain.common.value_objects.ids import ChapterId, UserId
 from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
@@ -34,12 +34,12 @@ class UpdatePrereadingAnswersUseCase:
         # Verify chapter exists and user owns it
         chapter = await self.chapter_repo.find_by_id(chapter_id, user_id)
         if not chapter:
-            raise EntityNotFoundError("Chapter", chapter_id.value)
+            raise ChapterNotFoundError(chapter_id.value)
 
         # Load existing prereading content
         content = await self.prereading_repo.find_by_chapter_id(chapter_id)
         if not content:
-            raise EntityNotFoundError("ChapterPrereading", chapter_id.value)
+            raise ChapterPrereadingNotFoundError(chapter_id.value)
 
         # Update answers and save
         content.update_user_answers(answers)

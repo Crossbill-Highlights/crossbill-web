@@ -8,9 +8,9 @@ from src.application.library.protocols.file_repository import FileRepositoryProt
 from src.application.reading.protocols.ebook_text_extraction_service import (
     EbookTextExtractionServiceProtocol,
 )
-from src.domain.common.exceptions import DomainError, EntityNotFoundError, ValidationError
+from src.domain.common.exceptions import DomainError, ValidationError
 from src.domain.common.value_objects.ids import ChapterId, UserId
-from src.domain.reading.exceptions import BookNotFoundError
+from src.domain.reading.exceptions import BookNotFoundError, ChapterNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -50,7 +50,7 @@ class ChapterContentUseCase:
         # 1. Verify chapter exists and user owns it
         chapter = await self.chapter_repo.find_by_id(chapter_id_vo, user_id_vo)
         if not chapter:
-            raise EntityNotFoundError("Chapter", chapter_id)
+            raise ChapterNotFoundError(chapter_id)
 
         # 2. Check chapter has XPoint data
         if not chapter.start_xpoint:

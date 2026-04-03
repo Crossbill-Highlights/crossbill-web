@@ -38,6 +38,27 @@ class HighlightAlreadyDeletedError(BusinessRuleViolationError):
         )
 
 
+class ChapterNotFoundError(EntityNotFoundError):
+    """Raised when a chapter cannot be found."""
+
+    def __init__(self, chapter_id: int) -> None:
+        super().__init__("Chapter", chapter_id)
+
+
+class ChapterPrereadingNotFoundError(EntityNotFoundError):
+    """Raised when prereading content for a chapter cannot be found."""
+
+    def __init__(self, chapter_id: int) -> None:
+        super().__init__("ChapterPrereading", chapter_id)
+
+
+class HighlightStyleNotFoundError(EntityNotFoundError):
+    """Raised when a highlight style cannot be found."""
+
+    def __init__(self, style_id: int) -> None:
+        super().__init__("HighlightStyle", style_id)
+
+
 class DuplicateHighlightError(ConflictError):
     """Raised when attempting to create a duplicate highlight."""
 

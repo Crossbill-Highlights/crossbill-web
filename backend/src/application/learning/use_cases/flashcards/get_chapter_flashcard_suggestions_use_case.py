@@ -11,7 +11,7 @@ from src.application.reading.protocols.chapter_prereading_repository import (
     ChapterPrereadingRepositoryProtocol,
 )
 from src.domain.common.value_objects.ids import ChapterId, UserId
-from src.domain.common.exceptions import EntityNotFoundError
+from src.domain.reading.exceptions import ChapterPrereadingNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -44,7 +44,7 @@ class GetChapterFlashcardSuggestionsUseCase:
 
         prereading = await self.chapter_prereading_repository.find_by_chapter_id(chapter_id_vo)
         if not prereading:
-            raise EntityNotFoundError("ChapterPrereading", chapter_id)
+            raise ChapterPrereadingNotFoundError(chapter_id)
 
         # Combine summary and keypoints into a single text block
         content_parts = [prereading.summary]

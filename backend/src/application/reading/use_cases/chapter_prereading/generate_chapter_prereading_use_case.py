@@ -23,7 +23,8 @@ from src.application.reading.protocols.chapter_prereading_repository import (
 from src.application.reading.protocols.ebook_text_extraction_service import (
     EbookTextExtractionServiceProtocol,
 )
-from src.domain.common.exceptions import DomainError, EntityNotFoundError
+from src.domain.common.exceptions import DomainError
+from src.domain.reading.exceptions import ChapterNotFoundError
 from src.domain.common.value_objects.ids import ChapterId, UserId
 from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
@@ -59,7 +60,7 @@ class GenerateChapterPrereadingUseCase:
         # 1. Verify chapter exists and user owns it
         chapter = await self.chapter_repo.find_by_id(chapter_id, user_id)
         if not chapter:
-            raise EntityNotFoundError("Chapter", chapter_id.value)
+            raise ChapterNotFoundError(chapter_id.value)
 
         # 2. Check if chapter has XPoint data
         if not chapter.start_xpoint:
