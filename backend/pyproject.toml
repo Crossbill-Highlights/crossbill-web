@@ -50,6 +50,7 @@ reportMissingTypeStubs = false
 reportUnknownMemberType = false
 reportUnknownArgumentType = false
 reportUnknownVariableType = false
+reportUnknownLambdaType = false
 
 [tool.ruff]
 line-length = 100
