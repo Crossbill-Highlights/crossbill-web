@@ -700,4 +700,6 @@ class AIChatSession(Base):
         )
 
 
-from src.infrastructure.jobs.orm.job_batch_model import JobBatchModel  # noqa: F401
+from src.infrastructure.jobs.orm.job_batch_model import (  # noqa: E402
+    JobBatchModel,  # noqa: F401  # pyright: ignore[reportUnusedImport]
+)

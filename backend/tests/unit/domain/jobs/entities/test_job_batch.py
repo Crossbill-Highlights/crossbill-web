@@ -105,7 +105,7 @@ class TestJobBatchCancel:
     def test_cancel_already_completed_raises(self) -> None:
         batch = _create(total_jobs=1)
         batch.mark_job_completed()
-        with pytest.raises(DomainError, match="Cannot cancel.*COMPLETED"):
+        with pytest.raises(DomainError, match=r"Cannot cancel.*COMPLETED"):
             batch.cancel()
 
 
