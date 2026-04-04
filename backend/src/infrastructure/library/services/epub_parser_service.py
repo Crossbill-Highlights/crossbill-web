@@ -6,6 +6,7 @@ import logging
 from io import BytesIO
 from pathlib import Path
 from typing import Any, cast
+from urllib.parse import unquote
 
 import ebooklib
 from ebooklib import epub
@@ -200,7 +201,11 @@ class EpubParserService:
 
     @staticmethod
     def _build_href_to_spine_index(book: Any) -> dict[str, int]:  # noqa: ANN401
-        """Build a mapping from spine item file names to 1-based spine indices."""
+        """Build a mapping from spine item file names to 1-based spine indices.
+
+        Stores multiple forms of each file name (full path, basename, and
+        URL-encoded variants) to maximize matching against TOC hrefs.
+        """
         mapping: dict[str, int] = {}
         spine_items = book.spine
         items_by_id = {item.id: item for item in book.get_items()}
@@ -217,14 +222,34 @@ class EpubParserService:
 
     @staticmethod
     def _href_to_spine_index(href: str, mapping: dict[str, int]) -> int | None:
-        """Resolve a TOC href to a spine index using the mapping."""
+        """Resolve a TOC href to a spine index using the mapping.
+
+        Tries multiple strategies: exact match, URL-decoded match, and basename match.
+        ebooklib URL-decodes manifest hrefs (item.file_name) but leaves NCX content
+        src attributes raw, so we need to try the decoded form too.
+        """
         file_part = href.split("#", 1)[0]
 
+        # Try exact match
         if file_part in mapping:
             return mapping[file_part]
 
+        # Try URL-decoded match (NCX hrefs may be URL-encoded while file_name is decoded)
+        decoded = unquote(file_part)
+        if decoded != file_part and decoded in mapping:
+            return mapping[decoded]
+
+        # Try basename match
         basename = file_part.rsplit("/", 1)[-1] if "/" in file_part else file_part
-        return mapping.get(basename)
+        if basename in mapping:
+            return mapping[basename]
+
+        # Try URL-decoded basename
+        decoded_basename = unquote(basename)
+        if decoded_basename != basename:
+            return mapping.get(decoded_basename)
+
+        return None
 
     @staticmethod
     def _resolve_href_to_xpoint(
