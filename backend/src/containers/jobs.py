@@ -6,6 +6,9 @@ from src.application.jobs.use_cases.cancel_job_batch_use_case import CancelJobBa
 from src.application.jobs.use_cases.enqueue_book_prereading_use_case import (
     EnqueueBookPrereadingUseCase,
 )
+from src.application.jobs.use_cases.get_active_book_batch_use_case import (
+    GetActiveBookBatchUseCase,
+)
 from src.application.jobs.use_cases.get_job_batch_use_case import GetJobBatchUseCase
 
 
@@ -36,4 +39,9 @@ class JobsContainer(containers.DeclarativeContainer):
         CancelJobBatchUseCase,
         batch_repo=job_batch_repository,
         queue_service=job_queue_service,
+    )
+
+    get_active_book_batch_use_case = providers.Factory(
+        GetActiveBookBatchUseCase,
+        batch_repo=job_batch_repository,
     )

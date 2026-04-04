@@ -1,6 +1,8 @@
 import {
+  getGetActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGetQueryKey,
   useCancelJobBatchApiV1JobsBatchesBatchIdDelete,
   useEnqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost,
+  useGetActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGet,
   useGetJobBatchApiV1JobsBatchesBatchIdGet,
 } from '@/api/generated/jobs/jobs';
 import type { JobBatchResponse } from '@/api/generated/model';
@@ -46,6 +48,20 @@ export const BatchPrereadingToolbar = ({ bookId }: BatchPrereadingToolbarProps) 
   const [batchId, setBatchId] = useState<number | null>(null);
   const handledTerminalRef = useRef<number | null>(null);
 
+  // Check for an already-active batch on mount (survives page refresh)
+  useGetActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGet(bookId, {
+    query: {
+      select: (response: JobBatchResponse | null) => {
+        if (response && !isTerminal(response.status) && batchId === null) {
+          queueMicrotask(() => {
+            setBatchId(response.id);
+          });
+        }
+        return response;
+      },
+    },
+  });
+
   const { mutate: enqueue, isPending: isEnqueuing } =
     useEnqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost({
       mutation: {
@@ -68,17 +84,19 @@ export const BatchPrereadingToolbar = ({ bookId }: BatchPrereadingToolbarProps) 
         return POLL_INTERVAL;
       },
       select: (response: JobBatchResponse) => {
-        // Handle terminal status transition without setState in effect
         if (isTerminal(response.status) && handledTerminalRef.current !== response.id) {
           handledTerminalRef.current = response.id;
 
           void queryClient.invalidateQueries({
             queryKey: getGetBookPrereadingApiV1BooksBookIdPrereadingGetQueryKey(bookId),
           });
+          void queryClient.invalidateQueries({
+            queryKey:
+              getGetActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGetQueryKey(bookId),
+          });
 
           showCompletionMessage(response, showSnackbar);
 
-          // Schedule clearing batchId outside of render via microtask
           queueMicrotask(() => {
             setBatchId(null);
           });
@@ -92,6 +110,10 @@ export const BatchPrereadingToolbar = ({ bookId }: BatchPrereadingToolbarProps) 
     mutation: {
       onSuccess: () => {
         showSnackbar('Batch generation cancelled.', 'info');
+        void queryClient.invalidateQueries({
+          queryKey:
+            getGetActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGetQueryKey(bookId),
+        });
         setBatchId(null);
       },
       onError: () => {
