@@ -50,17 +50,26 @@ def queue_service() -> AsyncMock:
 
 
 @pytest.fixture
+def prereading_repo() -> AsyncMock:
+    repo = AsyncMock()
+    repo.find_all_by_book_id.return_value = []
+    return repo
+
+
+@pytest.fixture
 def use_case(
     chapter_repo: AsyncMock,
     book_repo: AsyncMock,
     batch_repo: AsyncMock,
     queue_service: AsyncMock,
+    prereading_repo: AsyncMock,
 ) -> EnqueueBookPrereadingUseCase:
     return EnqueueBookPrereadingUseCase(
         chapter_repo=chapter_repo,
         book_repo=book_repo,
         batch_repo=batch_repo,
         queue_service=queue_service,
+        prereading_repo=prereading_repo,
     )
 
 
@@ -106,6 +115,28 @@ class TestEnqueueBookPrereading:
 
         assert batch.total_jobs == 1
         assert queue_service.enqueue.call_count == 1
+
+    async def test_skips_chapters_with_existing_prereading(
+        self,
+        use_case: EnqueueBookPrereadingUseCase,
+        chapter_repo: AsyncMock,
+        book_repo: AsyncMock,
+        prereading_repo: AsyncMock,
+        queue_service: AsyncMock,
+    ) -> None:
+        chapters = [_make_chapter(1), _make_chapter(2), _make_chapter(3)]
+        chapter_repo.find_all_by_book.return_value = chapters
+        book_repo.find_by_id.return_value = MagicMock()
+
+        # Chapter 2 already has prereading
+        existing = MagicMock()
+        existing.chapter_id = ChapterId(2)
+        prereading_repo.find_all_by_book_id.return_value = [existing]
+
+        batch = await use_case.execute(BookId(1), UserId(1))
+
+        assert batch.total_jobs == 2
+        assert queue_service.enqueue.call_count == 2
 
     async def test_raises_when_book_not_found(
         self,

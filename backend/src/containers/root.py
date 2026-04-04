@@ -84,4 +84,5 @@ class RootContainer(containers.DeclarativeContainer):
         job_queue_service=job_queue_service,
         chapter_repository=shared.chapter_repository,
         book_repository=shared.book_repository,
+        chapter_prereading_repository=shared.chapter_prereading_repository,
     )

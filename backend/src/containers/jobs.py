@@ -16,6 +16,7 @@ class JobsContainer(containers.DeclarativeContainer):
     job_queue_service = providers.Dependency()
     chapter_repository = providers.Dependency()
     book_repository = providers.Dependency()
+    chapter_prereading_repository = providers.Dependency()
 
     enqueue_book_prereading_use_case = providers.Factory(
         EnqueueBookPrereadingUseCase,
@@ -23,6 +24,7 @@ class JobsContainer(containers.DeclarativeContainer):
         book_repo=book_repository,
         batch_repo=job_batch_repository,
         queue_service=job_queue_service,
+        prereading_repo=chapter_prereading_repository,
     )
 
     get_job_batch_use_case = providers.Factory(
