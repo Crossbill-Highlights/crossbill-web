@@ -698,3 +698,6 @@ class AIChatSession(Base):
         return (
             f"<AIChatSession(id={self.id}, type={self.session_type}, chapter_id={self.chapter_id})>"
         )
+
+
+from src.infrastructure.jobs.orm.job_batch_model import JobBatchModel  # noqa: F401
