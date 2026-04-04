@@ -19,7 +19,6 @@ from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from src.config import configure_logging, get_settings
-from src.core import container
 from src.database import dispose_engine, get_session_factory, initialize_database
 from src.domain.common.exceptions import (
     AuthenticationError,
@@ -119,6 +118,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await _initialize_admin_password()
 
     # Initialize SAQ queue for job enqueueing
+    from src.core import container  # noqa: PLC0415
+
     saq_queue = create_queue(settings.DATABASE_URL)
     await saq_queue.connect()
     queue_service = SaqJobQueueService(saq_queue)
