@@ -85,4 +85,6 @@ class RootContainer(containers.DeclarativeContainer):
         chapter_repository=shared.chapter_repository,
         book_repository=shared.book_repository,
         chapter_prereading_repository=shared.chapter_prereading_repository,
+        file_repository=shared.file_repository,
+        ebook_text_extraction_service=shared.ebook_text_extraction_service,
     )
