@@ -34,18 +34,12 @@ class JobBatchRepository:
         """Atomically increment failed_jobs and recompute status in SQL."""
         return await self._atomic_increment(batch_id, "failed")
 
-    async def _atomic_increment(
-        self, batch_id: JobBatchId, field: str
-    ) -> JobBatch | None:
+    async def _atomic_increment(self, batch_id: JobBatchId, field: str) -> JobBatch | None:
         increment_col = (
             JobBatchModel.completed_jobs if field == "completed" else JobBatchModel.failed_jobs
         )
-        new_completed = (
-            JobBatchModel.completed_jobs + (1 if field == "completed" else 0)
-        )
-        new_failed = (
-            JobBatchModel.failed_jobs + (1 if field == "failed" else 0)
-        )
+        new_completed = JobBatchModel.completed_jobs + (1 if field == "completed" else 0)
+        new_failed = JobBatchModel.failed_jobs + (1 if field == "failed" else 0)
         new_finished = new_completed + new_failed
 
         new_status = case(

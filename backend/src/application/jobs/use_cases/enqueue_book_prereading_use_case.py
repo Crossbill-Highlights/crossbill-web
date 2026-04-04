@@ -42,10 +42,7 @@ class EnqueueBookPrereadingUseCase:
         existing = await self._prereading_repo.find_all_by_book_id(book_id)
         already_generated = {p.chapter_id for p in existing}
 
-        eligible = [
-            ch for ch in chapters
-            if ch.start_xpoint and ch.id not in already_generated
-        ]
+        eligible = [ch for ch in chapters if ch.start_xpoint and ch.id not in already_generated]
 
         if not eligible:
             raise DomainError("No eligible chapters found for prereading generation")

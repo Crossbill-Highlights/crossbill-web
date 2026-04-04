@@ -72,7 +72,11 @@ class JobBatch(Entity[JobBatchId]):
         self._recompute_status()
 
     def cancel(self) -> None:
-        terminal = {JobBatchStatus.COMPLETED, JobBatchStatus.FAILED, JobBatchStatus.COMPLETED_WITH_ERRORS}
+        terminal = {
+            JobBatchStatus.COMPLETED,
+            JobBatchStatus.FAILED,
+            JobBatchStatus.COMPLETED_WITH_ERRORS,
+        }
         if self.status in terminal:
             raise DomainError(f"Cannot cancel batch in {self.status.upper()} status")
         self.status = JobBatchStatus.CANCELLED

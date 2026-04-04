@@ -89,9 +89,7 @@ async def get_active_book_prereading_batch(
 async def get_job_batch(
     batch_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: GetJobBatchUseCase = Depends(
-        inject_use_case(container.jobs.get_job_batch_use_case)
-    ),
+    use_case: GetJobBatchUseCase = Depends(inject_use_case(container.jobs.get_job_batch_use_case)),
 ) -> JobBatchResponse:
     """Get job batch status."""
     batch = await use_case.execute(

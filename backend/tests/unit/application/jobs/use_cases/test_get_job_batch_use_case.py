@@ -39,9 +39,7 @@ def use_case(batch_repo: AsyncMock) -> GetJobBatchUseCase:
 
 
 class TestGetJobBatch:
-    async def test_returns_batch(
-        self, use_case: GetJobBatchUseCase, batch_repo: AsyncMock
-    ) -> None:
+    async def test_returns_batch(self, use_case: GetJobBatchUseCase, batch_repo: AsyncMock) -> None:
         batch_repo.find_by_id.return_value = _make_batch(1)
         result = await use_case.execute(JobBatchId(1), UserId(1))
         assert result.id == JobBatchId(1)
