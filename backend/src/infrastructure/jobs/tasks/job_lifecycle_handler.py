@@ -2,6 +2,7 @@
 
 import structlog
 from saq import Job
+from saq.types import Context
 
 from src.application.jobs.protocols.job_batch_repository import JobBatchRepositoryProtocol
 from src.domain.common.value_objects.ids import JobBatchId
@@ -17,7 +18,10 @@ class JobLifecycleHandler:
     def __init__(self, batch_repo: JobBatchRepositoryProtocol) -> None:
         self._batch_repo = batch_repo
 
-    async def after_process(self, _ctx: dict[str, object], job: Job) -> None:
+    async def after_process(self, ctx: Context) -> None:
+        job: Job | None = ctx.get("job")  # type: ignore[assignment]
+        if job is None:
+            return
         batch_id = (job.kwargs or {}).get("batch_id")
         if batch_id is None:
             return

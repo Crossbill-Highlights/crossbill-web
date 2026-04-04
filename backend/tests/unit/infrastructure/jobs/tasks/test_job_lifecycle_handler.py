@@ -49,7 +49,7 @@ class TestAfterProcess:
         job.status = "complete"
         job.kwargs = {"batch_id": 1}
 
-        await handler.after_process({}, job)
+        await handler.after_process({"job": job})  # type: ignore[typeddict-unknown-key]
 
         assert batch.completed_jobs == 1
         batch_repo.save.assert_called_once()
@@ -65,7 +65,7 @@ class TestAfterProcess:
         job.status = "failed"
         job.kwargs = {"batch_id": 1}
 
-        await handler.after_process({}, job)
+        await handler.after_process({"job": job})  # type: ignore[typeddict-unknown-key]
 
         assert batch.failed_jobs == 1
         batch_repo.save.assert_called_once()
@@ -76,7 +76,7 @@ class TestAfterProcess:
         job = MagicMock()
         job.kwargs = {"some_other_key": "value"}
 
-        await handler.after_process({}, job)
+        await handler.after_process({"job": job})  # type: ignore[typeddict-unknown-key]
 
         batch_repo.find_by_id_internal.assert_not_called()
 
@@ -87,6 +87,6 @@ class TestAfterProcess:
         job.status = "active"
         job.kwargs = {"batch_id": 1}
 
-        await handler.after_process({}, job)
+        await handler.after_process({"job": job})  # type: ignore[typeddict-unknown-key]
 
         batch_repo.find_by_id_internal.assert_not_called()

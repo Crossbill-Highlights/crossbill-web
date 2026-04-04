@@ -1,6 +1,7 @@
 """SAQ task handler for chapter prereading generation."""
 
 import structlog
+from saq.types import Context
 
 from src.application.reading.use_cases.chapter_prereading.generate_chapter_prereading_use_case import (
     GenerateChapterPrereadingUseCase,
@@ -19,7 +20,7 @@ class PrereadingTaskHandler:
 
     async def generate(
         self,
-        _ctx: dict[str, object],
+        _ctx: Context,
         *,
         batch_id: int,
         book_id: int,
