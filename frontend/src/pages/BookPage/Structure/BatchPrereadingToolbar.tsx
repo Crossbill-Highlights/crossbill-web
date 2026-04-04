@@ -1,0 +1,147 @@
+import {
+  useCancelJobBatchApiV1JobsBatchesBatchIdDelete,
+  useEnqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost,
+  useGetJobBatchApiV1JobsBatchesBatchIdGet,
+} from '@/api/generated/jobs/jobs';
+import type { JobBatchResponse } from '@/api/generated/model';
+import { getGetBookPrereadingApiV1BooksBookIdPrereadingGetQueryKey } from '@/api/generated/prereading/prereading';
+import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip';
+import { AIFeature } from '@/components/features/AIFeature';
+import { useSnackbar } from '@/context/SnackbarContext';
+import { AIIcon, CloseIcon } from '@/theme/Icons';
+import { Box, CircularProgress, Typography } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useRef, useState } from 'react';
+
+interface BatchPrereadingToolbarProps {
+  bookId: number;
+}
+
+const TERMINAL_STATUSES = ['completed', 'completed_with_errors', 'failed', 'cancelled'];
+const POLL_INTERVAL = 3000;
+
+function isTerminal(status: string | undefined): boolean {
+  return !!status && TERMINAL_STATUSES.includes(status);
+}
+
+function showCompletionMessage(
+  batch: JobBatchResponse,
+  showSnackbar: (msg: string, severity: 'error' | 'warning' | 'info' | 'success') => void
+) {
+  if (batch.status === 'completed') {
+    showSnackbar('All chapter summaries generated.', 'success');
+  } else if (batch.status === 'completed_with_errors') {
+    showSnackbar(
+      `Generated ${batch.completed_jobs}/${batch.total_jobs} summaries. Some chapters failed.`,
+      'warning'
+    );
+  } else if (batch.status === 'failed') {
+    showSnackbar('Batch generation failed.', 'error');
+  }
+}
+
+export const BatchPrereadingToolbar = ({ bookId }: BatchPrereadingToolbarProps) => {
+  const queryClient = useQueryClient();
+  const { showSnackbar } = useSnackbar();
+  const [batchId, setBatchId] = useState<number | null>(null);
+  const handledTerminalRef = useRef<number | null>(null);
+
+  const { mutate: enqueue, isPending: isEnqueuing } =
+    useEnqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost({
+      mutation: {
+        onSuccess: (response) => {
+          handledTerminalRef.current = null;
+          setBatchId(response.id);
+        },
+        onError: () => {
+          showSnackbar('Failed to start batch generation.', 'error');
+        },
+      },
+    });
+
+  const { data: batch } = useGetJobBatchApiV1JobsBatchesBatchIdGet(batchId ?? 0, {
+    query: {
+      enabled: batchId !== null,
+      refetchInterval: (query) => {
+        const status = query.state.data?.status;
+        if (isTerminal(status)) return false;
+        return POLL_INTERVAL;
+      },
+      select: (response: JobBatchResponse) => {
+        // Handle terminal status transition without setState in effect
+        if (isTerminal(response.status) && handledTerminalRef.current !== response.id) {
+          handledTerminalRef.current = response.id;
+
+          void queryClient.invalidateQueries({
+            queryKey: getGetBookPrereadingApiV1BooksBookIdPrereadingGetQueryKey(bookId),
+          });
+
+          showCompletionMessage(response, showSnackbar);
+
+          // Schedule clearing batchId outside of render via microtask
+          queueMicrotask(() => {
+            setBatchId(null);
+          });
+        }
+        return response;
+      },
+    },
+  });
+
+  const { mutate: cancelBatch } = useCancelJobBatchApiV1JobsBatchesBatchIdDelete({
+    mutation: {
+      onSuccess: () => {
+        showSnackbar('Batch generation cancelled.', 'info');
+        setBatchId(null);
+      },
+      onError: () => {
+        showSnackbar('Failed to cancel batch.', 'error');
+      },
+    },
+  });
+
+  const isActive = batchId !== null && (!batch || !isTerminal(batch.status));
+
+  const handleEnqueue = useCallback(() => {
+    enqueue({ bookId });
+  }, [enqueue, bookId]);
+
+  const handleCancel = useCallback(() => {
+    if (batchId) {
+      cancelBatch({ batchId });
+    }
+  }, [cancelBatch, batchId]);
+
+  if (isEnqueuing || isActive) {
+    const completed = batch ? batch.completed_jobs + batch.failed_jobs : 0;
+    const total = batch?.total_jobs ?? 0;
+
+    return (
+      <AIFeature>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <CircularProgress size={20} />
+          <Typography variant="body2" color="text.secondary">
+            Generating summaries{total > 0 ? ` (${completed}/${total})` : '...'}
+          </Typography>
+          <IconButtonWithTooltip
+            title="Cancel generation"
+            onClick={handleCancel}
+            ariaLabel="Cancel batch generation"
+            icon={<CloseIcon />}
+          />
+        </Box>
+      </AIFeature>
+    );
+  }
+
+  return (
+    <AIFeature>
+      <IconButtonWithTooltip
+        title="Generate summaries for all chapters"
+        onClick={handleEnqueue}
+        ariaLabel="Generate summaries for all chapters"
+        icon={<AIIcon />}
+      />
+    </AIFeature>
+  );
+};
