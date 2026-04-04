@@ -38,14 +38,14 @@ def book_repo() -> AsyncMock:
 @pytest.fixture
 def batch_repo() -> AsyncMock:
     repo = AsyncMock()
-    repo.save.side_effect = lambda b: b
+    repo.save.side_effect = lambda b: b  # pyright: ignore[reportUnknownLambdaType]
     return repo
 
 
 @pytest.fixture
 def queue_service() -> AsyncMock:
     service = AsyncMock()
-    service.enqueue = AsyncMock(side_effect=lambda fn, **kw: f"saq:job:{kw.get('chapter_id', 0)}")
+    service.enqueue = AsyncMock(side_effect=lambda fn, **kw: f"saq:job:{kw.get('chapter_id', 0)}")  # pyright: ignore[reportUnknownLambdaType]
     return service
 
 

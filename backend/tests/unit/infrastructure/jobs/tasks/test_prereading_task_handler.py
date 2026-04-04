@@ -22,7 +22,7 @@ class TestPrereadingTaskHandler:
         self, handler: PrereadingTaskHandler, generate_use_case: AsyncMock
     ) -> None:
         ctx: dict[str, object] = {}
-        await handler.generate(ctx, batch_id=1, book_id=42, chapter_id=7, user_id=1)
+        await handler.generate(ctx, batch_id=1, book_id=42, chapter_id=7, user_id=1)  # pyright: ignore[reportArgumentType]
 
         generate_use_case.generate_prereading_content.assert_called_once()
         call_args = generate_use_case.generate_prereading_content.call_args

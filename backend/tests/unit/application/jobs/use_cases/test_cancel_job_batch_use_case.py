@@ -35,7 +35,7 @@ def _make_batch(
 @pytest.fixture
 def batch_repo() -> AsyncMock:
     repo = AsyncMock()
-    repo.save.side_effect = lambda b: b
+    repo.save.side_effect = lambda b: b  # pyright: ignore[reportUnknownLambdaType]
     return repo
 
 
