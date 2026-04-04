@@ -22,6 +22,10 @@ When converting between domain entities and Pydantic schemas, ensure domain valu
 
 Always run the full test suite (`pytest`) after completing any migration or refactoring. Do not declare work complete until all tests pass. If tests fail, fix them before stopping.
 
+## Background Worker
+
+The backend includes a SAQ-based background worker (`src/worker.py`) for async job processing. Run with `uv run saq src.worker.worker_settings`. The worker uses per-task DB sessions and atomic SQL increments for batch progress. See the root CLAUDE.md for full details.
+
 ## Working Style section
 
 When the user provides a migration plan document, follow it precisely. Do not redesign the architecture or create a broader plan unless explicitly asked. If something in the plan seems wrong, ask before deviating.
