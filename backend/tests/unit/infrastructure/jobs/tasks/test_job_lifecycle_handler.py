@@ -10,7 +10,7 @@ from src.domain.jobs.entities.job_batch import JobBatch, JobBatchStatus, JobBatc
 from src.infrastructure.jobs.tasks.job_lifecycle_handler import JobLifecycleHandler
 
 
-def _make_batch(batch_id: int = 1, total: int = 3) -> JobBatch:
+def _make_batch(batch_id: int = 1, total: int = 3, completed: int = 0) -> JobBatch:
     now = datetime.now(UTC)
     return JobBatch.create_with_id(
         id=JobBatchId(batch_id),
@@ -18,13 +18,20 @@ def _make_batch(batch_id: int = 1, total: int = 3) -> JobBatch:
         batch_type=JobBatchType.CHAPTER_PREREADING,
         reference_id="42",
         total_jobs=total,
-        completed_jobs=0,
+        completed_jobs=completed,
         failed_jobs=0,
         status=JobBatchStatus.PENDING,
         job_keys=[],
         created_at=now,
         updated_at=now,
     )
+
+
+def _make_ctx_with_job(status: str, batch_id: int | None = 1) -> dict[str, object]:
+    job = MagicMock()
+    job.status = status
+    job.kwargs = {"batch_id": batch_id} if batch_id is not None else {"some_key": "value"}
+    return {"job": job}
 
 
 @pytest.fixture
@@ -38,55 +45,59 @@ def handler(batch_repo: AsyncMock) -> JobLifecycleHandler:
 
 
 class TestAfterProcess:
-    async def test_marks_completed_on_success(
+    async def test_calls_atomic_increment_completed_on_success(
         self, handler: JobLifecycleHandler, batch_repo: AsyncMock
     ) -> None:
-        batch = _make_batch()
-        batch_repo.find_by_id_internal.return_value = batch
-        batch_repo.save.side_effect = lambda b: b
+        batch_repo.atomic_increment_completed.return_value = _make_batch(completed=1)
+        ctx = _make_ctx_with_job("complete")
 
-        job = MagicMock()
-        job.status = "complete"
-        job.kwargs = {"batch_id": 1}
+        await handler.after_process(ctx)  # type: ignore[arg-type]
 
-        await handler.after_process({"job": job})  # type: ignore[typeddict-unknown-key]
+        batch_repo.atomic_increment_completed.assert_called_once_with(JobBatchId(1))
 
-        assert batch.completed_jobs == 1
-        batch_repo.save.assert_called_once()
-
-    async def test_marks_failed_on_failure(
+    async def test_calls_atomic_increment_failed_on_failure(
         self, handler: JobLifecycleHandler, batch_repo: AsyncMock
     ) -> None:
-        batch = _make_batch()
-        batch_repo.find_by_id_internal.return_value = batch
-        batch_repo.save.side_effect = lambda b: b
+        batch_repo.atomic_increment_failed.return_value = _make_batch()
+        ctx = _make_ctx_with_job("failed")
 
-        job = MagicMock()
-        job.status = "failed"
-        job.kwargs = {"batch_id": 1}
+        await handler.after_process(ctx)  # type: ignore[arg-type]
 
-        await handler.after_process({"job": job})  # type: ignore[typeddict-unknown-key]
+        batch_repo.atomic_increment_failed.assert_called_once_with(JobBatchId(1))
 
-        assert batch.failed_jobs == 1
-        batch_repo.save.assert_called_once()
+    async def test_calls_atomic_increment_failed_on_aborted(
+        self, handler: JobLifecycleHandler, batch_repo: AsyncMock
+    ) -> None:
+        batch_repo.atomic_increment_failed.return_value = _make_batch()
+        ctx = _make_ctx_with_job("aborted")
+
+        await handler.after_process(ctx)  # type: ignore[arg-type]
+
+        batch_repo.atomic_increment_failed.assert_called_once_with(JobBatchId(1))
 
     async def test_skips_jobs_without_batch_id(
         self, handler: JobLifecycleHandler, batch_repo: AsyncMock
     ) -> None:
-        job = MagicMock()
-        job.kwargs = {"some_other_key": "value"}
+        ctx = _make_ctx_with_job("complete", batch_id=None)
 
-        await handler.after_process({"job": job})  # type: ignore[typeddict-unknown-key]
+        await handler.after_process(ctx)  # type: ignore[arg-type]
 
-        batch_repo.find_by_id_internal.assert_not_called()
+        batch_repo.atomic_increment_completed.assert_not_called()
+        batch_repo.atomic_increment_failed.assert_not_called()
 
     async def test_skips_non_terminal_status(
         self, handler: JobLifecycleHandler, batch_repo: AsyncMock
     ) -> None:
-        job = MagicMock()
-        job.status = "active"
-        job.kwargs = {"batch_id": 1}
+        ctx = _make_ctx_with_job("active")
 
-        await handler.after_process({"job": job})  # type: ignore[typeddict-unknown-key]
+        await handler.after_process(ctx)  # type: ignore[arg-type]
 
-        batch_repo.find_by_id_internal.assert_not_called()
+        batch_repo.atomic_increment_completed.assert_not_called()
+        batch_repo.atomic_increment_failed.assert_not_called()
+
+    async def test_skips_when_no_job_in_context(
+        self, handler: JobLifecycleHandler, batch_repo: AsyncMock
+    ) -> None:
+        await handler.after_process({})  # type: ignore[arg-type]
+
+        batch_repo.atomic_increment_completed.assert_not_called()

@@ -82,6 +82,20 @@ class TestJobBatchMarkJobFailed:
         assert batch.status == JobBatchStatus.FAILED
 
 
+class TestJobBatchCancelledStaysCanelled:
+    def test_completed_after_cancel_stays_cancelled(self) -> None:
+        batch = _create(total_jobs=3)
+        batch.cancel()
+        batch.mark_job_completed()
+        assert batch.status == JobBatchStatus.CANCELLED
+
+    def test_failed_after_cancel_stays_cancelled(self) -> None:
+        batch = _create(total_jobs=3)
+        batch.cancel()
+        batch.mark_job_failed()
+        assert batch.status == JobBatchStatus.CANCELLED
+
+
 class TestJobBatchCancel:
     def test_cancel_sets_cancelled(self) -> None:
         batch = _create(total_jobs=3)

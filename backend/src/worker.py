@@ -7,11 +7,8 @@ import os
 
 import structlog
 from saq.types import Context, SettingsDict
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.application.reading.use_cases.chapter_prereading.generate_chapter_prereading_use_case import (
-    GenerateChapterPrereadingUseCase,
-)
 from src.config import get_settings
 from src.database import get_session_factory, initialize_database
 from src.infrastructure.ai.ai_service import AIService
@@ -35,8 +32,24 @@ logger = structlog.get_logger(__name__)
 app_settings = get_settings()
 queue = create_queue(app_settings.DATABASE_URL)
 
-_prereading_handler: PrereadingTaskHandler | None = None
-_lifecycle_handler: JobLifecycleHandler | None = None
+_session_factory: async_sessionmaker[AsyncSession] | None = None
+
+
+def _build_prereading_handler(db: AsyncSession) -> PrereadingTaskHandler:
+    """Build a PrereadingTaskHandler with a fresh session."""
+    from src.application.reading.use_cases.chapter_prereading.generate_chapter_prereading_use_case import (  # noqa: PLC0415
+        GenerateChapterPrereadingUseCase,
+    )
+
+    use_case = GenerateChapterPrereadingUseCase(
+        prereading_repo=ChapterPrereadingRepository(db=db),
+        chapter_repo=ChapterRepository(db=db),
+        text_extraction_service=EpubTextExtractionService(),
+        book_repo=BookRepository(db=db),
+        file_repo=FileRepository(),
+        ai_prereading_service=AIService(usage_repository=AIUsageRepository(db=db)),
+    )
+    return PrereadingTaskHandler(generate_prereading_use_case=use_case)
 
 
 async def startup(ctx: Context) -> None:
@@ -44,31 +57,8 @@ async def startup(ctx: Context) -> None:
     logger.info("worker_starting")
     initialize_database(app_settings)
 
-    session_factory = get_session_factory(app_settings)
-    db = session_factory()
-    ctx["db"] = db  # type: ignore[typeddict-unknown-key]
-
-    ai_usage_repo = AIUsageRepository(db=db)
-    ai_service = AIService(usage_repository=ai_usage_repo)
-    book_repo = BookRepository(db=db)
-    chapter_repo = ChapterRepository(db=db)
-    prereading_repo = ChapterPrereadingRepository(db=db)
-    file_repo = FileRepository()
-    text_extraction = EpubTextExtractionService()
-    batch_repo = JobBatchRepository(db=db)
-
-    use_case = GenerateChapterPrereadingUseCase(
-        prereading_repo=prereading_repo,
-        chapter_repo=chapter_repo,
-        text_extraction_service=text_extraction,
-        book_repo=book_repo,
-        file_repo=file_repo,
-        ai_prereading_service=ai_service,
-    )
-
-    global _prereading_handler, _lifecycle_handler  # noqa: PLW0603
-    _prereading_handler = PrereadingTaskHandler(generate_prereading_use_case=use_case)
-    _lifecycle_handler = JobLifecycleHandler(batch_repo=batch_repo)
+    global _session_factory  # noqa: PLW0603
+    _session_factory = get_session_factory(app_settings)
 
     logger.info("worker_started")
 
@@ -76,26 +66,38 @@ async def startup(ctx: Context) -> None:
 async def shutdown(ctx: Context) -> None:
     """Cleanup worker resources."""
     logger.info("worker_shutting_down")
-    db: AsyncSession | None = ctx.get("db")  # type: ignore[assignment]
-    if db:
-        await db.close()
     logger.info("worker_stopped")
 
 
 async def generate_chapter_prereading(
     ctx: Context, *, batch_id: int, book_id: int, chapter_id: int, user_id: int
 ) -> None:
-    """SAQ task: generate prereading for a single chapter."""
-    assert _prereading_handler is not None, "Worker not initialized"
-    await _prereading_handler.generate(
-        ctx, batch_id=batch_id, book_id=book_id, chapter_id=chapter_id, user_id=user_id
-    )
+    """SAQ task: generate prereading for a single chapter.
+
+    Creates a fresh DB session per task invocation to avoid sharing
+    sessions across concurrent coroutines.
+    """
+    if _session_factory is None:
+        raise RuntimeError("Worker not initialized")
+
+    async with _session_factory() as db:
+        handler = _build_prereading_handler(db)
+        await handler.generate(
+            ctx, batch_id=batch_id, book_id=book_id, chapter_id=chapter_id, user_id=user_id
+        )
 
 
 async def after_process(ctx: Context) -> None:
-    """SAQ after_process hook: update batch progress."""
-    assert _lifecycle_handler is not None, "Worker not initialized"
-    await _lifecycle_handler.after_process(ctx)
+    """SAQ after_process hook: update batch progress.
+
+    Creates a fresh DB session to avoid sharing with task coroutines.
+    """
+    if _session_factory is None:
+        raise RuntimeError("Worker not initialized")
+
+    async with _session_factory() as db:
+        handler = JobLifecycleHandler(batch_repo=JobBatchRepository(db=db))
+        await handler.after_process(ctx)
 
 
 worker_settings: SettingsDict[Context] = {

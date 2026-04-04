@@ -30,17 +30,16 @@ class JobLifecycleHandler:
         if status not in (_TERMINAL_COMPLETE, _TERMINAL_FAILED, _TERMINAL_ABORTED):
             return
 
-        batch = await self._batch_repo.find_by_id_internal(JobBatchId(batch_id))
+        bid = JobBatchId(batch_id)
+        if status == _TERMINAL_COMPLETE:
+            batch = await self._batch_repo.atomic_increment_completed(bid)
+        else:
+            batch = await self._batch_repo.atomic_increment_failed(bid)
+
         if not batch:
             logger.warning("batch_not_found_in_after_process", batch_id=batch_id)
             return
 
-        if status == _TERMINAL_COMPLETE:
-            batch.mark_job_completed()
-        else:
-            batch.mark_job_failed()
-
-        await self._batch_repo.save(batch)
         logger.info(
             "batch_progress_updated",
             batch_id=batch_id,

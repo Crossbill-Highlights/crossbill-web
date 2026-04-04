@@ -49,6 +49,8 @@ class JobBatch(Entity[JobBatchId]):
             raise DomainError("reference_id cannot be empty")
 
     def _recompute_status(self) -> None:
+        if self.status == JobBatchStatus.CANCELLED:
+            return
         finished = self.completed_jobs + self.failed_jobs
         if finished >= self.total_jobs:
             if self.failed_jobs == self.total_jobs:

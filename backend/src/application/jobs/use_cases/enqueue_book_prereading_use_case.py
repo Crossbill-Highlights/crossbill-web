@@ -47,16 +47,31 @@ class EnqueueBookPrereadingUseCase:
         batch = await self._batch_repo.save(batch)
 
         for chapter in eligible:
-            job_key = await self._queue_service.enqueue(
-                "generate_chapter_prereading",
-                retries=3,
-                timeout_seconds=300,
-                batch_id=batch.id.value,
-                book_id=book_id.value,
-                chapter_id=chapter.id.value,
-                user_id=user_id.value,
-            )
-            batch.add_job_key(job_key)
+            try:
+                job_key = await self._queue_service.enqueue(
+                    "generate_chapter_prereading",
+                    retries=3,
+                    timeout_seconds=300,
+                    batch_id=batch.id.value,
+                    book_id=book_id.value,
+                    chapter_id=chapter.id.value,
+                    user_id=user_id.value,
+                )
+                batch.add_job_key(job_key)
+            except Exception:
+                logger.exception(
+                    "failed_to_enqueue_job",
+                    chapter_id=chapter.id.value,
+                    batch_id=batch.id.value,
+                )
+                break
+
+        if not batch.job_keys:
+            batch.cancel()
+            await self._batch_repo.save(batch)
+            raise DomainError("Failed to enqueue any jobs for prereading generation")
+
+        batch.total_jobs = min(batch.total_jobs, len(batch.job_keys))
 
         await self._batch_repo.save(batch)
 
