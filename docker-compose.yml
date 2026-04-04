@@ -49,6 +49,32 @@ services:
     networks:
       - crossbill-network
 
+  worker:
+    image: tumetsu/crossbill:latest
+    container_name: crossbill-worker
+    restart: unless-stopped
+    pull_policy: always
+    command: ["saq", "src.worker.worker_settings"]
+    environment:
+      DATABASE_URL: postgresql://crossbill:${POSTGRES_PASSWORD:-crossbill_secure_password}@postgres:5432/crossbill
+      ENVIRONMENT: production
+      AI_PROVIDER: ${AI_PROVIDER:-}
+      AI_MODEL_NAME: ${AI_MODEL_NAME:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-5}
+    volumes:
+      - type: bind
+        source: /path/on/host/for/crossbill/book-files
+        target: /app/book-files
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - crossbill-network
+
 volumes:
   postgres_data:
     driver: local
