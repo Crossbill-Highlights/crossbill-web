@@ -4,6 +4,7 @@ import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { Box, Typography } from '@mui/material';
 import { keyBy } from 'lodash';
 import { useMemo } from 'react';
+import { BatchPrereadingToolbar } from './BatchPrereadingToolbar';
 import { ChapterAccordion } from './ChapterAccordion';
 import { ChapterDetailDialog } from './ChapterDetailDialog/ChapterDetailDialog.tsx';
 import { useChapterDetailsModal } from './hooks/useChapterDetailsModal.ts';
@@ -87,6 +88,9 @@ export const StructurePage = () => {
 
   return (
     <>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: 1, pt: 1 }}>
+        <BatchPrereadingToolbar bookId={book.id} />
+      </Box>
       {topLevelChapters.map((chapter, index) => {
         const chapterIsRead = isChapterRead(chapter.start_position);
         const isLastChapter = index === topLevelChapters.length - 1;

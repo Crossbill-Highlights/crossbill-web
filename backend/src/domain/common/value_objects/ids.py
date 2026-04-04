@@ -202,3 +202,18 @@ class RefreshTokenId(EntityId):
     @classmethod
     def generate(cls) -> "RefreshTokenId":
         return cls(0)  # Database assigns real ID
+
+
+@dataclass(frozen=True)
+class JobBatchId(EntityId):
+    """Strongly-typed job batch identifier."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("JobBatchId must be non-negative")
+
+    @classmethod
+    def generate(cls) -> "JobBatchId":
+        return cls(0)  # Database assigns real ID

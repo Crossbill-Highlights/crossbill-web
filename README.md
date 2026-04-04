@@ -42,6 +42,18 @@ Easiest way to install and run Crossbill is by using sample `docker-compose.yml`
 
 Then install the Koreader [plugin on your e-reader](clients/koreader-plugin/crossbill.koplugin/README.md).
 
+### Background Worker
+
+The `docker-compose.yml` includes an optional `worker` service that processes background jobs (e.g., batch AI prereading generation for book chapters). It uses the same Docker image as the main app with a different entrypoint.
+
+The worker requires AI provider configuration (`AI_PROVIDER`, API keys) to process AI-related tasks. You can adjust concurrency via `WORKER_CONCURRENCY` (default: 5).
+
+For development, run the worker separately:
+
+```bash
+cd backend && uv run saq src.worker.worker_settings
+```
+
 ## Development
 
 Each component has its own installation instructions for development:

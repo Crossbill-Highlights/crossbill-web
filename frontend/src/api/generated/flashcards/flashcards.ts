@@ -500,7 +500,6 @@ Returns:
 
 Raises:
     HTTPException 404: If highlight not found or not owned by user
-    HTTPException 500: For unexpected errors
  * @summary Get Highlight Flashcard Suggestions
  */
 export const getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet = (

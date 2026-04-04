@@ -2,6 +2,7 @@ from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.containers.identity import IdentityContainer
+from src.containers.jobs import JobsContainer
 from src.containers.learning import LearningContainer
 from src.containers.library import LibraryContainer
 from src.containers.reading import ReadingContainer
@@ -73,4 +74,17 @@ class RootContainer(containers.DeclarativeContainer):
         ebook_text_extraction_service=shared.ebook_text_extraction_service,
         ai_service=shared.ai_service,
         ai_chat_session_repository=shared.ai_chat_session_repository,
+    )
+
+    job_queue_service = providers.Dependency()
+
+    jobs = providers.Container(
+        JobsContainer,
+        job_batch_repository=shared.job_batch_repository,
+        job_queue_service=job_queue_service,
+        chapter_repository=shared.chapter_repository,
+        book_repository=shared.book_repository,
+        chapter_prereading_repository=shared.chapter_prereading_repository,
+        file_repository=shared.file_repository,
+        ebook_text_extraction_service=shared.ebook_text_extraction_service,
     )

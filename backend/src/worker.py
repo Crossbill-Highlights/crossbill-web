@@ -1,0 +1,97 @@
+"""SAQ worker entrypoint.
+
+Start with: saq src.worker.worker_settings
+"""
+
+import os
+
+import structlog
+from saq.types import Context, SettingsDict
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from src.config import get_settings
+from src.database import get_session_factory, initialize_database
+from src.infrastructure.ai.ai_service import AIService
+from src.infrastructure.ai.repositories.ai_usage_repository import AIUsageRepository
+from src.infrastructure.jobs.repositories.job_batch_repository import JobBatchRepository
+from src.infrastructure.jobs.saq_queue import create_queue
+from src.infrastructure.jobs.tasks.job_lifecycle_handler import JobLifecycleHandler
+from src.infrastructure.jobs.tasks.prereading_task_handler import PrereadingTaskHandler
+from src.infrastructure.reading.repositories.chapter_prereading_repository import (
+    ChapterPrereadingRepository,
+)
+
+logger = structlog.get_logger(__name__)
+
+app_settings = get_settings()
+queue = create_queue(app_settings.DATABASE_URL)
+
+_session_factory: async_sessionmaker[AsyncSession] | None = None
+
+
+def _build_prereading_handler(db: AsyncSession) -> PrereadingTaskHandler:
+    """Build a PrereadingTaskHandler with a fresh session."""
+    from src.application.reading.use_cases.chapter_prereading.generate_prereading_from_text_use_case import (  # noqa: PLC0415
+        GeneratePrereadingFromTextUseCase,
+    )
+
+    use_case = GeneratePrereadingFromTextUseCase(
+        prereading_repo=ChapterPrereadingRepository(db=db),
+        ai_prereading_service=AIService(usage_repository=AIUsageRepository(db=db)),
+    )
+    return PrereadingTaskHandler(generate_from_text_use_case=use_case)
+
+
+async def startup(ctx: Context) -> None:
+    """Initialize worker resources."""
+    logger.info("worker_starting")
+    initialize_database(app_settings)
+
+    global _session_factory  # noqa: PLW0603
+    _session_factory = get_session_factory(app_settings)
+
+    logger.info("worker_started")
+
+
+async def shutdown(ctx: Context) -> None:
+    """Cleanup worker resources."""
+    logger.info("worker_shutting_down")
+    logger.info("worker_stopped")
+
+
+async def generate_chapter_prereading(
+    ctx: Context, *, batch_id: int, chapter_id: int, user_id: int, chapter_text: str
+) -> None:
+    """SAQ task: generate prereading from pre-extracted chapter text."""
+    if _session_factory is None:
+        raise RuntimeError("Worker not initialized")
+
+    async with _session_factory() as db:
+        handler = _build_prereading_handler(db)
+        await handler.generate(
+            ctx,
+            batch_id=batch_id,
+            chapter_id=chapter_id,
+            user_id=user_id,
+            chapter_text=chapter_text,
+        )
+
+
+async def after_process(ctx: Context) -> None:
+    """SAQ after_process hook: update batch progress."""
+    if _session_factory is None:
+        raise RuntimeError("Worker not initialized")
+
+    async with _session_factory() as db:
+        handler = JobLifecycleHandler(batch_repo=JobBatchRepository(db=db))
+        await handler.after_process(ctx)
+
+
+worker_settings: SettingsDict[Context] = {
+    "queue": queue,
+    "functions": [generate_chapter_prereading],
+    "concurrency": int(os.getenv("WORKER_CONCURRENCY", "5")),
+    "startup": startup,
+    "shutdown": shutdown,
+    "after_process": after_process,
+}

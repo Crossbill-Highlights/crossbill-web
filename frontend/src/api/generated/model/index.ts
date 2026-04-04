@@ -63,6 +63,7 @@ export * from './highlightTagUpdateRequest';
 export * from './highlightUploadRequest';
 export * from './highlightUploadResponse';
 export * from './hTTPValidationError';
+export * from './jobBatchResponse';
 export * from './logoutApiV1AuthLogoutPost200';
 export * from './positionResponse';
 export * from './prereadingAnswerUpdate';
