@@ -59,7 +59,12 @@ class Settings(BaseSettings):
 
     # AI configuration
     AI_PROVIDER: (
-        Literal["ollama"] | Literal["openai"] | Literal["anthropic"] | Literal["google"] | None
+        Literal["ollama"]
+        | Literal["openai"]
+        | Literal["anthropic"]
+        | Literal["google"]
+        | Literal["openrouter"]
+        | None
     ) = None
     AI_MODEL_NAME: str | None = None
 
@@ -71,6 +76,8 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str | None = None
     # google
     GEMINI_API_KEY: str | None = None
+    # openrouter
+    OPENROUTER_API_KEY: str | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -102,6 +109,9 @@ class Settings(BaseSettings):
             raise ValueError(msg)
         if self.AI_PROVIDER == "google" and not self.GEMINI_API_KEY:
             msg = "GEMINI_API_KEY is required when AI_PROVIDER is 'google'"
+            raise ValueError(msg)
+        if self.AI_PROVIDER == "openrouter" and not self.OPENROUTER_API_KEY:
+            msg = "OPENROUTER_API_KEY is required when AI_PROVIDER is 'openrouter'"
             raise ValueError(msg)
         return self
 
