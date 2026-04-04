@@ -6,7 +6,7 @@
  */
 
 /**
- * DTO for token pair with access and refresh tokens.
+ * Pydantic response model for HTTP API responses.
  */
 export interface TokenWithRefresh {
   access_token: string;

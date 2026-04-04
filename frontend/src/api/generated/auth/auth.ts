@@ -126,11 +126,6 @@ export const useLoginApiV1AuthLoginPost = <TError = HTTPValidationError, TContex
   return useMutation(getLoginApiV1AuthLoginPostMutationOptions(options), queryClient);
 };
 /**
- * Refresh the access token using a refresh token.
-
-The refresh token can be provided either:
-- In an httpOnly cookie (for web clients)
-- In the request body (for plugin clients)
  * @summary Refresh
  */
 export const refreshApiV1AuthRefreshPost = (
@@ -209,11 +204,6 @@ export const useRefreshApiV1AuthRefreshPost = <TError = HTTPValidationError, TCo
   return useMutation(getRefreshApiV1AuthRefreshPostMutationOptions(options), queryClient);
 };
 /**
- * Log out by clearing the refresh token cookie.
-
-Note: This only clears the cookie. The access token will remain valid
-until it expires. For immediate invalidation, consider implementing
-a token blacklist.
  * @summary Logout
  */
 export const logoutApiV1AuthLogoutPost = (signal?: AbortSignal) => {
@@ -225,7 +215,7 @@ export const logoutApiV1AuthLogoutPost = (signal?: AbortSignal) => {
 };
 
 export const getLogoutApiV1AuthLogoutPostMutationOptions = <
-  TError = unknown,
+  TError = HTTPValidationError,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -261,12 +251,12 @@ export type LogoutApiV1AuthLogoutPostMutationResult = NonNullable<
   Awaited<ReturnType<typeof logoutApiV1AuthLogoutPost>>
 >;
 
-export type LogoutApiV1AuthLogoutPostMutationError = unknown;
+export type LogoutApiV1AuthLogoutPostMutationError = HTTPValidationError;
 
 /**
  * @summary Logout
  */
-export const useLogoutApiV1AuthLogoutPost = <TError = unknown, TContext = unknown>(
+export const useLogoutApiV1AuthLogoutPost = <TError = HTTPValidationError, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof logoutApiV1AuthLogoutPost>>,
