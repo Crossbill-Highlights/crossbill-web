@@ -1,0 +1,47 @@
+"""SAQ lifecycle handler for updating JobBatch progress."""
+
+import structlog
+from saq import Job
+
+from src.application.jobs.protocols.job_batch_repository import JobBatchRepositoryProtocol
+from src.domain.common.value_objects.ids import JobBatchId
+
+logger = structlog.get_logger(__name__)
+
+_TERMINAL_COMPLETE = "complete"
+_TERMINAL_FAILED = "failed"
+_TERMINAL_ABORTED = "aborted"
+
+
+class JobLifecycleHandler:
+    def __init__(self, batch_repo: JobBatchRepositoryProtocol) -> None:
+        self._batch_repo = batch_repo
+
+    async def after_process(self, _ctx: dict[str, object], job: Job) -> None:
+        batch_id = (job.kwargs or {}).get("batch_id")
+        if batch_id is None:
+            return
+
+        status = job.status
+        if status not in (_TERMINAL_COMPLETE, _TERMINAL_FAILED, _TERMINAL_ABORTED):
+            return
+
+        batch = await self._batch_repo.find_by_id_internal(JobBatchId(batch_id))
+        if not batch:
+            logger.warning("batch_not_found_in_after_process", batch_id=batch_id)
+            return
+
+        if status == _TERMINAL_COMPLETE:
+            batch.mark_job_completed()
+        else:
+            batch.mark_job_failed()
+
+        await self._batch_repo.save(batch)
+        logger.info(
+            "batch_progress_updated",
+            batch_id=batch_id,
+            completed=batch.completed_jobs,
+            failed=batch.failed_jobs,
+            total=batch.total_jobs,
+            status=batch.status,
+        )
