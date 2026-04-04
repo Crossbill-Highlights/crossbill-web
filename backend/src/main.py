@@ -19,6 +19,7 @@ from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from src.config import configure_logging, get_settings
+from src.core import container
 from src.database import dispose_engine, get_session_factory, initialize_database
 from src.domain.common.exceptions import (
     AuthenticationError,
@@ -33,6 +34,9 @@ from src.infrastructure.common.routers import settings as settings_router
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.routers import auth, users
 from src.infrastructure.identity.services.password_service import hash_password
+from src.infrastructure.jobs.routers import job_batches
+from src.infrastructure.jobs.saq_job_queue_service import SaqJobQueueService
+from src.infrastructure.jobs.saq_queue import create_queue
 from src.infrastructure.learning.routers import (
     ai_chapter_flashcard_suggestions,
     ai_flashcard_suggestions,
@@ -114,7 +118,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if not os.getenv("TESTING"):
         await _initialize_admin_password()
 
+    # Initialize SAQ queue for job enqueueing
+    saq_queue = create_queue(settings.DATABASE_URL)
+    await saq_queue.connect()
+    queue_service = SaqJobQueueService(saq_queue)
+    container.job_queue_service.override(queue_service)
+
     yield
+
+    await saq_queue.disconnect()
+    container.job_queue_service.reset_override()
 
     # Cleanup on shutdown
     await dispose_engine()
@@ -322,6 +335,9 @@ app.include_router(quiz_sessions.router, prefix=settings.API_V1_PREFIX)
 # Identity
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(users.router, prefix=settings.API_V1_PREFIX)
+
+# Jobs
+app.include_router(job_batches.router, prefix=settings.API_V1_PREFIX)
 
 # Common
 app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)
