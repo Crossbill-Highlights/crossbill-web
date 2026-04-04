@@ -49,6 +49,8 @@ services:
     networks:
       - crossbill-network
 
+  # Background job worker (SAQ) — processes async tasks like batch AI prereading generation.
+  # Uses the same image as the app with a different entrypoint. Requires AI_PROVIDER config for AI tasks.
   worker:
     image: tumetsu/crossbill:latest
     container_name: crossbill-worker
