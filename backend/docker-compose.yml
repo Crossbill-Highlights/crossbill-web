@@ -17,6 +17,21 @@ services:
       timeout: 5s
       retries: 5
 
+  garage:
+    image: dxflrs/garage:v2.2.0
+    container_name: crossbill-garage
+    restart: unless-stopped
+    ports:
+      - "3900:3900"  # S3 API
+      - "3901:3901"  # RPC (for garage CLI)
+      - "3902:3902"  # Admin API
+    volumes:
+      - ../garage.toml:/etc/garage.toml:ro
+      - garage_data:/var/lib/garage/data
+      - garage_meta:/var/lib/garage/meta
+
 volumes:
   postgres_data:
     driver: local
+  garage_data:
+  garage_meta:

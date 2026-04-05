@@ -54,6 +54,43 @@ For development, run the worker separately:
 cd backend && uv run saq src.worker.worker_settings
 ```
 
+### S3-Compatible Storage (Optional)
+
+By default, Crossbill stores ebook files and covers on the local filesystem. For multi-container deployments (e.g., Railway) where the app and worker containers cannot share a filesystem, you can configure S3-compatible storage so both containers access the same files.
+
+Set these environment variables to enable S3 storage:
+
+```
+S3_ENDPOINT_URL=https://your-s3-endpoint.example.com
+S3_ACCESS_KEY_ID=your-access-key
+S3_SECRET_ACCESS_KEY=your-secret-key
+S3_BUCKET_NAME=crossbill-files
+S3_REGION=us-east-1
+```
+
+When these are set, Crossbill automatically uses S3 instead of local disk. When they are not set, local file storage is used (the `book-files` volume mount).
+
+For local development, you can use [Garage](https://garagehq.deuxfleurs.fr/) as an S3-compatible server. The `docker-compose.yml` includes an optional `garage` service. After starting it, run the one-time setup:
+
+```bash
+# Start Garage
+docker compose up -d garage
+
+# Get the node ID and assign storage layout
+NODE_ID=$(docker exec crossbill-garage garage node id -q | cut -c1-16)
+docker exec crossbill-garage garage layout assign -z dc1 -c 1G "$NODE_ID"
+docker exec crossbill-garage garage layout apply --version 1
+
+# Create a bucket and API key
+docker exec crossbill-garage garage bucket create crossbill-files
+docker exec crossbill-garage garage key create crossbill-key
+
+# Grant the key access to the bucket
+docker exec crossbill-garage garage bucket allow --read --write --owner crossbill-files --key crossbill-key
+```
+
+The `key create` command prints the access key ID and secret. Use those along with `S3_ENDPOINT_URL=http://localhost:3900` and `S3_BUCKET_NAME=crossbill-files` in your `.env`.
+
 ## Development
 
 Each component has its own installation instructions for development:
