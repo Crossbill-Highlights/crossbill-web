@@ -60,7 +60,7 @@ class EbookUploadUseCase:
         content: bytes,
         content_type: str,
         user_id: int,
-    ) -> tuple[str, str]:
+    ) -> None:
         """
         Upload and save an ebook file (EPUB or PDF).
 
@@ -70,9 +70,6 @@ class EbookUploadUseCase:
             content_type: MIME type of the file
             user_id: ID of the user uploading the file
 
-        Returns:
-            tuple[str, str]: (file_path_for_db, absolute_file_path)
-
         Raises:
             EntityNotFoundError: If book not found for the given client_book_id
             InvalidEbookError: If file validation fails
@@ -80,7 +77,7 @@ class EbookUploadUseCase:
         """
         # Route by content type
         if content_type in ["application/epub+zip", "application/epub"]:
-            return await self._upload_epub(client_book_id, content, UserId(user_id))
+            await self._upload_epub(client_book_id, content, UserId(user_id))
         if content_type == "application/pdf":
             raise NotImplementedError("PDF upload not yet implemented")
         raise InvalidEbookError(f"Unsupported content type: {content_type}", ebook_type="UNKNOWN")
@@ -90,26 +87,21 @@ class EbookUploadUseCase:
         client_book_id: str,
         content: bytes,
         user_id: UserId,
-    ) -> tuple[str, str]:
+    ) -> None:
         """
         Upload and validate an EPUB file for a book.
 
         This method:
         1. Validates the book exists and belongs to user
         2. Validates epub structure using ebooklib
-        3. Generates sanitized filename from book title and ID
-        4. Saves file to epubs directory
-        5. Removes old epub file if filename differs
-        6. Updates book.file_path and book.file_type in database
-        7. Parses TOC and saves chapters
+        3. Saves file via file repository
+        4. Updates book.file_path and book.file_type in database
+        5. Parses TOC and saves chapters
 
         Args:
             client_book_id: Client-provided book identifier
             content: The epub file content as bytes
             user_id: ID of the user uploading the epub
-
-        Returns:
-            tuple[str, str]: (epub_path_for_db, absolute_file_path)
 
         Raises:
             EntityNotFoundError: If book not found or doesn't belong to user
@@ -164,7 +156,6 @@ class EbookUploadUseCase:
         # Backfill positions for existing entities
         await self._backfill_positions(book.id, user_id, position_index)
 
-        return epub_filename, epub_filename
 
     async def _extract_and_save_cover(
         self,
