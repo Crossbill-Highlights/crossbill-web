@@ -147,4 +147,5 @@ class LibraryContainer(containers.DeclarativeContainer):
     get_ereader_metadata_use_case = providers.Factory(
         GetEreaderMetadataUseCase,
         book_repository=book_repository,
+        file_repository=file_repository,
     )
