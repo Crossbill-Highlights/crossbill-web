@@ -50,8 +50,8 @@ class EnqueueBookPrereadingUseCase:
         if not book.file_path or book.file_type != "epub":
             raise DomainError("Book must be an EPUB with an uploaded file")
 
-        epub_path = await self._file_repo.find_epub(book.id)
-        if not epub_path or not epub_path.exists():
+        epub_content = await self._file_repo.get_epub(book.id)
+        if not epub_content:
             raise BookNotFoundError(book_id.value)
 
         chapters = await self._chapter_repo.find_all_by_book(book_id, user_id)
@@ -67,7 +67,7 @@ class EnqueueBookPrereadingUseCase:
                 continue
             try:
                 text = self._text_extraction.extract_chapter_text(
-                    epub_path=epub_path,
+                    epub_content=epub_content,
                     start_xpoint=ch.start_xpoint,
                     end_xpoint=ch.end_xpoint,
                 )

@@ -55,7 +55,7 @@ class GetBooksWithCountsUseCase:
                 h_count,
                 f_count,
                 tags,
-                await self.file_repository.find_cover(book.id) is not None,
+                await self.file_repository.has_cover(book.id),
             )
             for book, h_count, f_count, tags in results
         ]

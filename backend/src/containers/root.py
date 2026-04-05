@@ -1,6 +1,7 @@
 from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import get_settings
 from src.containers.identity import IdentityContainer
 from src.containers.jobs import JobsContainer
 from src.containers.learning import LearningContainer
@@ -14,7 +15,9 @@ class RootContainer(containers.DeclarativeContainer):
 
     db = providers.Dependency(instance_of=AsyncSession)
 
-    shared = providers.Container(SharedContainer, db=db)
+    settings = providers.Object(get_settings())
+
+    shared = providers.Container(SharedContainer, db=db, settings=settings)
 
     identity = providers.Container(
         IdentityContainer,

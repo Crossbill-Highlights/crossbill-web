@@ -63,14 +63,14 @@ class ChapterContentUseCase:
         if not book or not book.file_path or book.file_type != "epub":
             raise BookNotFoundError(chapter.book_id.value)
 
-        epub_path = await self.file_repo.find_epub(book.id)
-        if not epub_path or not epub_path.exists():
+        epub_content = await self.file_repo.get_epub(book.id)
+        if not epub_content:
             raise BookNotFoundError(chapter.book_id.value)
 
         # 4. Extract chapter text
         try:
             content = self.text_extraction.extract_chapter_text(
-                epub_path=epub_path,
+                epub_content=epub_content,
                 start_xpoint=chapter.start_xpoint,
                 end_xpoint=chapter.end_xpoint,
             )

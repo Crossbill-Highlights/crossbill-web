@@ -85,12 +85,12 @@ class ReadingSessionAISummaryUseCase:
             if not book or not book.file_path or book.file_type != "epub":
                 raise BookNotFoundError(session.book_id.value)
 
-            epub_path = await self.file_repo.find_epub(book.id)
-            if not epub_path or not epub_path.exists():
+            epub_content = await self.file_repo.get_epub(book.id)
+            if not epub_content:
                 raise BookNotFoundError(session.book_id.value)
 
             content = self.text_extraction_service.extract_text(
-                epub_path=epub_path,
+                epub_content=epub_content,
                 start_xpoint=session.start_xpoint.start.to_string(),
                 end_xpoint=session.start_xpoint.end.to_string(),
             )

@@ -1,7 +1,6 @@
 """Use case for ebook upload operations."""
 
 import logging
-from pathlib import Path
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
@@ -61,7 +60,7 @@ class EbookUploadUseCase:
         content: bytes,
         content_type: str,
         user_id: int,
-    ) -> tuple[str, str]:
+    ) -> None:
         """
         Upload and save an ebook file (EPUB or PDF).
 
@@ -71,9 +70,6 @@ class EbookUploadUseCase:
             content_type: MIME type of the file
             user_id: ID of the user uploading the file
 
-        Returns:
-            tuple[str, str]: (file_path_for_db, absolute_file_path)
-
         Raises:
             EntityNotFoundError: If book not found for the given client_book_id
             InvalidEbookError: If file validation fails
@@ -81,7 +77,8 @@ class EbookUploadUseCase:
         """
         # Route by content type
         if content_type in ["application/epub+zip", "application/epub"]:
-            return await self._upload_epub(client_book_id, content, UserId(user_id))
+            await self._upload_epub(client_book_id, content, UserId(user_id))
+            return
         if content_type == "application/pdf":
             raise NotImplementedError("PDF upload not yet implemented")
         raise InvalidEbookError(f"Unsupported content type: {content_type}", ebook_type="UNKNOWN")
@@ -91,26 +88,21 @@ class EbookUploadUseCase:
         client_book_id: str,
         content: bytes,
         user_id: UserId,
-    ) -> tuple[str, str]:
+    ) -> None:
         """
         Upload and validate an EPUB file for a book.
 
         This method:
         1. Validates the book exists and belongs to user
         2. Validates epub structure using ebooklib
-        3. Generates sanitized filename from book title and ID
-        4. Saves file to epubs directory
-        5. Removes old epub file if filename differs
-        6. Updates book.file_path and book.file_type in database
-        7. Parses TOC and saves chapters
+        3. Saves file via file repository
+        4. Updates book.file_path and book.file_type in database
+        5. Parses TOC and saves chapters
 
         Args:
             client_book_id: Client-provided book identifier
             content: The epub file content as bytes
             user_id: ID of the user uploading the epub
-
-        Returns:
-            tuple[str, str]: (epub_path_for_db, absolute_file_path)
 
         Raises:
             EntityNotFoundError: If book not found or doesn't belong to user
@@ -124,14 +116,14 @@ class EbookUploadUseCase:
         if not self.epub_parser.validate_epub(content):
             raise InvalidEbookError("EPUB structure validation failed", ebook_type="EPUB")
 
-        epub_path = await self.file_repository.save_epub(book.id, content, book.title)
-        book.update_file(epub_path.name, "epub")
+        epub_filename = await self.file_repository.save_epub(book.id, content, book.title)
+        book.update_file(epub_filename, "epub")
 
         # Extract and save cover if none exists
-        await self._extract_and_save_cover(book.id, epub_path)
+        await self._extract_and_save_cover(book.id, content)
 
         # Build position index from EPUB DOM
-        position_index = self.position_index_service.build_position_index(epub_path)
+        position_index = self.position_index_service.build_position_index(content)
 
         # Set end_position on book from total element count
         total = position_index.total_elements
@@ -141,7 +133,7 @@ class EbookUploadUseCase:
         await self.book_repository.save(book)
 
         # Parse TOC and sync chapters (with positions)
-        toc_chapters = self.epub_parser.parse_toc(epub_path)
+        toc_chapters = self.epub_parser.parse_toc(content)
         if toc_chapters:
             enriched_chapters = []
             for tc in toc_chapters:
@@ -165,19 +157,17 @@ class EbookUploadUseCase:
         # Backfill positions for existing entities
         await self._backfill_positions(book.id, user_id, position_index)
 
-        return epub_path.name, str(epub_path)
-
     async def _extract_and_save_cover(
         self,
         book_id: BookId,
-        epub_path: Path,
+        epub_content: bytes,
     ) -> None:
         """Extract cover from EPUB and save it, if no cover already exists."""
-        existing_cover = await self.file_repository.find_cover(book_id)
+        existing_cover = await self.file_repository.has_cover(book_id)
         if existing_cover:
             return
 
-        cover_bytes = self.epub_parser.extract_cover(epub_path)
+        cover_bytes = self.epub_parser.extract_cover(epub_content)
         if cover_bytes:
             await self.file_repository.save_cover(book_id, cover_bytes)
 
