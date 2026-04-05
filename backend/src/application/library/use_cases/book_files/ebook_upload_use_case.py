@@ -78,6 +78,7 @@ class EbookUploadUseCase:
         # Route by content type
         if content_type in ["application/epub+zip", "application/epub"]:
             await self._upload_epub(client_book_id, content, UserId(user_id))
+            return
         if content_type == "application/pdf":
             raise NotImplementedError("PDF upload not yet implemented")
         raise InvalidEbookError(f"Unsupported content type: {content_type}", ebook_type="UNKNOWN")
@@ -155,7 +156,6 @@ class EbookUploadUseCase:
 
         # Backfill positions for existing entities
         await self._backfill_positions(book.id, user_id, position_index)
-
 
     async def _extract_and_save_cover(
         self,

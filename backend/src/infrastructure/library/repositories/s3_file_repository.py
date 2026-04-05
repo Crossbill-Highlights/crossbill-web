@@ -49,9 +49,7 @@ class S3FileRepository:
         response = self._client.list_objects_v2(Bucket=self._bucket, Prefix=prefix)
         contents = response.get("Contents", [])
         return [
-            obj["Key"]
-            for obj in contents
-            if fnmatch.fnmatch(obj["Key"].split("/")[-1], pattern)
+            obj["Key"] for obj in contents if fnmatch.fnmatch(obj["Key"].split("/")[-1], pattern)
         ]
 
     async def _async_find_keys(self, prefix: str, pattern: str) -> list[str]:
@@ -64,9 +62,7 @@ class S3FileRepository:
             return False
         key = keys[0]
         try:
-            await asyncio.to_thread(
-                self._client.delete_object, Bucket=self._bucket, Key=key
-            )
+            await asyncio.to_thread(self._client.delete_object, Bucket=self._bucket, Key=key)
             logger.info(f"Deleted S3 object: {key}")
             return True
         except Exception as e:
@@ -109,9 +105,7 @@ class S3FileRepository:
         sanitized_title = _sanitize_title(title)
         filename = f"{sanitized_title}_{book_id.value}.epub"
         key = f"epubs/{filename}"
-        await asyncio.to_thread(
-            self._client.put_object, Bucket=self._bucket, Key=key, Body=content
-        )
+        await asyncio.to_thread(self._client.put_object, Bucket=self._bucket, Key=key, Body=content)
         logger.info(f"Uploaded EPUB to S3: {key}")
         return filename
 
@@ -130,9 +124,7 @@ class S3FileRepository:
         sanitized_title = _sanitize_title(title)
         filename = f"{sanitized_title}_{book_id.value}.pdf"
         key = f"pdfs/{filename}"
-        await asyncio.to_thread(
-            self._client.put_object, Bucket=self._bucket, Key=key, Body=content
-        )
+        await asyncio.to_thread(self._client.put_object, Bucket=self._bucket, Key=key, Body=content)
         logger.info(f"Uploaded PDF to S3: {key}")
         return filename
 
@@ -149,9 +141,7 @@ class S3FileRepository:
         """
         filename = f"{book_id.value}.jpg"
         key = f"book-covers/{filename}"
-        await asyncio.to_thread(
-            self._client.put_object, Bucket=self._bucket, Key=key, Body=content
-        )
+        await asyncio.to_thread(self._client.put_object, Bucket=self._bucket, Key=key, Body=content)
         logger.info(f"Uploaded cover to S3: {key}")
         return filename
 

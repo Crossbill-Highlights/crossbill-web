@@ -1,5 +1,6 @@
 from typing import Any
 
+import boto3
 from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,8 +47,6 @@ from src.infrastructure.reading.services.highlight_label_resolver import Highlig
 
 def _create_s3_file_repository(settings: Any) -> S3FileRepository:  # noqa: ANN401
     """Create an S3FileRepository with a configured boto3 client."""
-    import boto3
-
     client = boto3.client(
         "s3",
         endpoint_url=settings.S3_ENDPOINT_URL,
@@ -76,7 +75,9 @@ class SharedContainer(containers.DeclarativeContainer):
     chapter_prereading_repository = providers.Factory(ChapterPrereadingRepository, db=db)
     highlight_style_repository = providers.Factory(HighlightStyleRepository, db=db)
     file_repository = providers.Selector(
-        providers.Callable(lambda settings: "s3" if settings.s3_enabled else "local", settings=settings),
+        providers.Callable(
+            lambda settings: "s3" if settings.s3_enabled else "local", settings=settings
+        ),
         s3=providers.Singleton(
             _create_s3_file_repository,
             settings=settings,
