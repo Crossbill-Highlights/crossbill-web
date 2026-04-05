@@ -8,7 +8,7 @@
 # represent xpath() return types which depend on the query string content.
 
 import logging
-from pathlib import Path
+from io import BytesIO
 
 from ebooklib import epub
 from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
@@ -24,7 +24,7 @@ class EpubTextExtractionService:
 
     def extract_text(
         self,
-        epub_path: Path,
+        epub_content: bytes,
         start_xpoint: str,
         end_xpoint: str,
     ) -> str:
@@ -32,7 +32,7 @@ class EpubTextExtractionService:
         Extract text content between two XPoint positions in an EPUB.
 
         Args:
-            epub_path: Path to the EPUB file on disk
+            epub_content: EPUB file content as bytes
             start_xpoint: KOReader xpoint string for start position
             end_xpoint: KOReader xpoint string for end position
 
@@ -47,7 +47,7 @@ class EpubTextExtractionService:
         end = XPoint.parse(end_xpoint)
 
         # Load EPUB
-        epub_book = epub.read_epub(str(epub_path))
+        epub_book = epub.read_epub(BytesIO(epub_content))
 
         # Extract text based on whether positions are in same fragment
         if start.doc_fragment_index == end.doc_fragment_index:
@@ -122,7 +122,7 @@ class EpubTextExtractionService:
 
     def extract_chapter_text(
         self,
-        epub_path: Path,
+        epub_content: bytes,
         start_xpoint: str,
         end_xpoint: str | None,
     ) -> str:
@@ -134,7 +134,7 @@ class EpubTextExtractionService:
         3. Last chapter (no end_xpoint): extract from start element to end of spine
 
         Args:
-            epub_path: Path to the EPUB file on disk
+            epub_content: EPUB file content as bytes
             start_xpoint: XPoint string for chapter start
             end_xpoint: XPoint string for next chapter's start, or None for last chapter
 
@@ -144,7 +144,7 @@ class EpubTextExtractionService:
         start = XPoint.parse(start_xpoint)
         end = XPoint.parse(end_xpoint) if end_xpoint else None
 
-        epub_book = epub.read_epub(str(epub_path))
+        epub_book = epub.read_epub(BytesIO(epub_content))
 
         start_frag = start.doc_fragment_index
         end_frag = end.doc_fragment_index if end else None
