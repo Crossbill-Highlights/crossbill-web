@@ -1,11 +1,6 @@
-"""
-Book cover management use case.
-
-Handles cover file operations for the library context.
-"""
+"""Book cover management use case."""
 
 import logging
-from pathlib import Path
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
@@ -23,39 +18,28 @@ class BookCoverUseCase:
         book_repository: BookRepositoryProtocol,
         file_repository: FileRepositoryProtocol,
     ) -> None:
-        """
-        Initialize use case with dependencies.
-
-        Args:
-            book_repository: Book repository protocol implementation
-            file_repository: File repository protocol implementation
-        """
         self.book_repository = book_repository
         self.file_repository = file_repository
 
-    async def get_cover_path(self, book_id: int, user_id: int) -> Path | None:
+    async def get_cover(self, book_id: int, user_id: int) -> bytes | None:
         """
-        Get the file path for a book cover with ownership verification.
+        Get the cover image bytes with ownership verification.
 
         Args:
             book_id: ID of the book
             user_id: ID of the user requesting the cover
 
         Returns:
-            Path to the cover file
+            Cover image bytes, or None if no cover exists
 
         Raises:
             BookNotFoundError: If book is not found or user doesn't own it
-            HTTPException: If cover file doesn't exist
         """
-        # Convert primitives to value objects
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        # Verify book exists and user owns it
         book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
         if not book:
             raise BookNotFoundError(book_id)
 
-        # Find cover file
-        return await self.file_repository.find_cover(book_id_vo)
+        return await self.file_repository.get_cover(book_id_vo)
