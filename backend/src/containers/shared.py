@@ -1,3 +1,5 @@
+from typing import Any
+
 from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +20,7 @@ from src.infrastructure.learning.repositories.flashcard_repository import Flashc
 from src.infrastructure.library.repositories import BookRepository
 from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
 from src.infrastructure.library.repositories.file_repository import FileRepository
+from src.infrastructure.library.repositories.s3_file_repository import S3FileRepository
 from src.infrastructure.library.repositories.tag_repository import TagRepository
 from src.infrastructure.library.services.epub_parser_service import EpubParserService
 from src.infrastructure.library.services.epub_position_index_service import (
@@ -41,10 +44,25 @@ from src.infrastructure.reading.repositories.reading_session_repository import (
 from src.infrastructure.reading.services.highlight_label_resolver import HighlightLabelResolver
 
 
+def _create_s3_file_repository(settings: Any) -> S3FileRepository:  # noqa: ANN401
+    """Create an S3FileRepository with a configured boto3 client."""
+    import boto3
+
+    client = boto3.client(
+        "s3",
+        endpoint_url=settings.S3_ENDPOINT_URL,
+        aws_access_key_id=settings.S3_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY,
+        region_name=settings.S3_REGION,
+    )
+    return S3FileRepository(s3_client=client, bucket_name=settings.S3_BUCKET_NAME)
+
+
 class SharedContainer(containers.DeclarativeContainer):
     """Shared repositories, infrastructure services, and domain services."""
 
     db = providers.Dependency(instance_of=AsyncSession)
+    settings = providers.Dependency()
 
     # Repositories
     book_repository = providers.Factory(BookRepository, db=db)
@@ -57,7 +75,14 @@ class SharedContainer(containers.DeclarativeContainer):
     flashcard_repository = providers.Factory(FlashcardRepository, db=db)
     chapter_prereading_repository = providers.Factory(ChapterPrereadingRepository, db=db)
     highlight_style_repository = providers.Factory(HighlightStyleRepository, db=db)
-    file_repository = providers.Factory(FileRepository)
+    file_repository = providers.Selector(
+        providers.Callable(lambda settings: "s3" if settings.s3_enabled else "local", settings=settings),
+        s3=providers.Singleton(
+            _create_s3_file_repository,
+            settings=settings,
+        ),
+        local=providers.Factory(FileRepository),
+    )
 
     # AI
     ai_usage_repository = providers.Factory(AIUsageRepository, db=db)
