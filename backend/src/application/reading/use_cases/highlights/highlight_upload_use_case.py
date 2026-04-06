@@ -126,9 +126,9 @@ class HighlightUploadUseCase:
         # Build position index if EPUB
         position_index = None
         if book.file_type == "epub":
-            epub_path = await self.file_repository.find_epub(book.id)
-            if epub_path:
-                position_index = self.position_index_service.build_position_index(epub_path)
+            epub_content = await self.file_repository.get_epub(book.id)
+            if epub_content:
+                position_index = self.position_index_service.build_position_index(epub_content)
 
         # Step 2: Batch fetch chapters by chapter_number
         chapter_numbers: set[int] = {

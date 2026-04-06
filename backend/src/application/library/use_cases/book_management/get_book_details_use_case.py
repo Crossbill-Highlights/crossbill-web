@@ -174,7 +174,7 @@ class GetBookDetailsUseCase:
                     labels[style.id.value] = resolved
 
         # Check if cover file exists
-        has_cover = await self.file_repository.find_cover(book_id_vo) is not None
+        has_cover = await self.file_repository.has_cover(book_id_vo)
 
         # Return domain aggregation
         return BookDetailsAggregation(

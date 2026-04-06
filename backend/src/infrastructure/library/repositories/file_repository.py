@@ -3,7 +3,6 @@
 import asyncio
 import logging
 import re
-from pathlib import Path
 
 from src.config import BOOK_COVERS_DIR, EPUBS_DIR, PDFS_DIR  # type: ignore[attr-defined]
 from src.domain.common.value_objects.ids import BookId
@@ -40,7 +39,7 @@ def _sanitize_title(text: str) -> str:
 class FileRepository:
     """Repository for managing book files (EPUB, PDF, covers)."""
 
-    async def save_epub(self, book_id: BookId, content: bytes, title: str) -> Path:
+    async def save_epub(self, book_id: BookId, content: bytes, title: str) -> str:
         """
         Save an EPUB file to disk.
 
@@ -50,7 +49,7 @@ class FileRepository:
             title: Title of the book
 
         Returns:
-            Path to the saved file
+            Filename of the saved file
         """
         await asyncio.to_thread(lambda: EPUBS_DIR.mkdir(parents=True, exist_ok=True))
 
@@ -61,9 +60,9 @@ class FileRepository:
         file_path = EPUBS_DIR / f"{sanitized_title}_{book_id.value}.epub"
         await asyncio.to_thread(file_path.write_bytes, content)
         logger.info(f"Saved EPUB file: {file_path}")
-        return file_path
+        return file_path.name
 
-    async def save_pdf(self, book_id: BookId, content: bytes, title: str) -> Path:
+    async def save_pdf(self, book_id: BookId, content: bytes, title: str) -> str:
         """
         Save a PDF file to disk.
 
@@ -73,16 +72,16 @@ class FileRepository:
             title: Title of the book
 
         Returns:
-            Path to the saved file
+            Filename of the saved file
         """
         await asyncio.to_thread(lambda: PDFS_DIR.mkdir(parents=True, exist_ok=True))
         sanitized_title = _sanitize_title(title)
         file_path = PDFS_DIR / f"{sanitized_title}_{book_id.value}.pdf"
         await asyncio.to_thread(file_path.write_bytes, content)
         logger.info(f"Saved PDF file: {file_path}")
-        return file_path
+        return file_path.name
 
-    async def save_cover(self, book_id: BookId, content: bytes) -> Path:
+    async def save_cover(self, book_id: BookId, content: bytes) -> str:
         """
         Save a cover image to disk.
 
@@ -91,14 +90,14 @@ class FileRepository:
             content: File content as bytes
 
         Returns:
-            Path to the saved file
+            Filename of the saved file
         """
         await asyncio.to_thread(lambda: BOOK_COVERS_DIR.mkdir(parents=True, exist_ok=True))
         filename = f"{book_id.value}.jpg"
         file_path = BOOK_COVERS_DIR / filename
         await asyncio.to_thread(file_path.write_bytes, content)
         logger.info(f"Saved cover file: {file_path}")
-        return file_path
+        return file_path.name
 
     async def delete_epub(self, book_id: BookId) -> bool:
         """
@@ -188,15 +187,15 @@ class FileRepository:
             logger.error(f"Failed to delete cover file {cover_path}: {e!s}")
             return False
 
-    async def find_epub(self, book_id: BookId) -> Path | None:
+    async def get_epub(self, book_id: BookId) -> bytes | None:
         """
-        Find EPUB file path for a book.
+        Get EPUB file content for a book.
 
         Args:
             book_id: ID of the book
 
         Returns:
-            Path to the EPUB file, or None if not found
+            EPUB file content as bytes, or None if not found
         """
         epub_files = await asyncio.to_thread(
             lambda: list(EPUBS_DIR.glob(f"*_{book_id.value}.epub"))
@@ -205,36 +204,35 @@ class FileRepository:
         if not epub_files:
             return None
 
-        return epub_files[0]
+        return await asyncio.to_thread(epub_files[0].read_bytes)
 
-    async def find_pdf(self, book_id: BookId) -> Path | None:
+    async def get_pdf(self, book_id: BookId) -> bytes | None:
         """
-        Find PDF file path for a book.
+        Get PDF file content for a book.
 
         Args:
             book_id: ID of the book
 
         Returns:
-            Path to the PDF file, or None if not found
+            PDF file content as bytes, or None if not found
         """
         pdf_files = await asyncio.to_thread(lambda: list(PDFS_DIR.glob(f"*_{book_id.value}.pdf")))
 
         if not pdf_files:
             return None
 
-        return pdf_files[0]
+        return await asyncio.to_thread(pdf_files[0].read_bytes)
 
-    async def find_cover(self, book_id: BookId) -> Path | None:
+    async def get_cover(self, book_id: BookId) -> bytes | None:
         """
-        Find cover file path for a book.
+        Get cover image content for a book.
 
         Args:
             book_id: ID of the book
 
         Returns:
-            Path to the cover file, or None if not found
+            Cover image content as bytes, or None if not found
         """
-        # Look for cover with book_id in filename (supports multiple formats)
         cover_files = await asyncio.to_thread(
             lambda: list(BOOK_COVERS_DIR.glob(f"{book_id.value}.*"))
         )
@@ -242,4 +240,11 @@ class FileRepository:
         if not cover_files:
             return None
 
-        return cover_files[0]
+        return await asyncio.to_thread(cover_files[0].read_bytes)
+
+    async def has_cover(self, book_id: BookId) -> bool:
+        """Check if a cover image exists for a book."""
+        cover_files = await asyncio.to_thread(
+            lambda: list(BOOK_COVERS_DIR.glob(f"{book_id.value}.*"))
+        )
+        return len(cover_files) > 0

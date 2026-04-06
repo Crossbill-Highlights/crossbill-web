@@ -4,6 +4,8 @@ services:
     image: postgres:18-alpine
     container_name: crossbill-postgres
     restart: unless-stopped
+    ports:
+      - 5432:5432
     environment:
       POSTGRES_USER: crossbill
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crossbill_secure_password}
@@ -39,6 +41,11 @@ services:
       COOKIE_SECURE: true
       ALLOW_USER_REGISTRATIONS: false
       PORT: 8000
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
     volumes:
       - type: bind
         source: /path/on/host/for/crossbill/book-files
@@ -67,6 +74,11 @@ services:
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
       WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-5}
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
     volumes:
       - type: bind
         source: /path/on/host/for/crossbill/book-files
@@ -77,8 +89,28 @@ services:
     networks:
       - crossbill-network
 
+  # Optional: S3-compatible object storage for shared file access between app and worker.
+  # Not needed if using an external S3 service (e.g., Railway Object Storage, AWS S3).
+  garage:
+    image: dxflrs/garage:v2.2.0
+    container_name: crossbill-garage
+    restart: unless-stopped
+    ports:
+      - "3900:3900"  # S3 API
+      - "3902:3902"  # Admin API
+    volumes:
+      - ./garage.toml:/etc/garage.toml:ro
+      - garage_data:/var/lib/garage/data
+      - garage_meta:/var/lib/garage/meta
+    networks:
+      - crossbill-network
+
 volumes:
   postgres_data:
+    driver: local
+  garage_data:
+    driver: local
+  garage_meta:
     driver: local
 
 networks:

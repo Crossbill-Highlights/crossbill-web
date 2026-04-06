@@ -31,12 +31,12 @@ class TestCreateQuizSession:
         ".EpubTextExtractionService.extract_chapter_text"
     )
     @patch(
-        "src.infrastructure.library.repositories.file_repository.FileRepository.find_epub",
+        "src.infrastructure.library.repositories.file_repository.FileRepository.get_epub",
         new_callable=AsyncMock,
     )
     async def test_create_quiz_session_success(
         self,
-        mock_find_epub: AsyncMock,
+        mock_get_epub: AsyncMock,
         mock_extract: MagicMock,
         mock_start_quiz: AsyncMock,
         mock_ai_enabled: MagicMock,
@@ -50,9 +50,7 @@ class TestCreateQuizSession:
 
         chapter = await create_quiz_chapter(db_session, test_book)
 
-        mock_epub_path = MagicMock()
-        mock_epub_path.exists.return_value = True
-        mock_find_epub.return_value = mock_epub_path
+        mock_get_epub.return_value = b"fake epub content"
         mock_extract.return_value = "Chapter content here"
 
         mock_start_quiz.return_value = (

@@ -84,11 +84,11 @@ class TestExtractCoverFromOPFMeta:
         assert book.get_metadata("OPF", "cover") == []
 
         # But our service should still find the cover
-        result = service.extract_cover(epub_path)
+        result = service.extract_cover(epub_path.read_bytes())
         assert result is not None
         assert result == FAKE_IMAGE
 
     def test_returns_none_when_no_cover(self, service: EpubParserService, tmp_path: Path) -> None:
         epub_path = _create_epub_without_cover(tmp_path)
-        result = service.extract_cover(epub_path)
+        result = service.extract_cover(epub_path.read_bytes())
         assert result is None

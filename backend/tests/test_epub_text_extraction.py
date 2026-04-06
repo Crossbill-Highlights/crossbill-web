@@ -118,7 +118,7 @@ class TestEpubTextExtraction:
         # Extract "the first paragraph" from first paragraph
         # DocFragment[2] = first chapter (spine[1], after nav)
         result = service.extract_text(
-            epub_path=test_epub_path,
+            epub_content=test_epub_path.read_bytes(),
             start_xpoint="/body/DocFragment[2]/body/div/p[1]/text().8",
             end_xpoint="/body/DocFragment[2]/body/div/p[1]/text().27",
         )
@@ -130,7 +130,7 @@ class TestEpubTextExtraction:
         service = EpubTextExtractionService()
 
         result = service.extract_text(
-            epub_path=test_epub_path,
+            epub_content=test_epub_path.read_bytes(),
             start_xpoint="/body/DocFragment[2]/body/div/p[1]/text().0",
             end_xpoint="/body/DocFragment[2]/body/div/p[1]/text().44",
         )
@@ -142,7 +142,7 @@ class TestEpubTextExtraction:
         service = EpubTextExtractionService()
 
         result = service.extract_text(
-            epub_path=test_epub_path,
+            epub_content=test_epub_path.read_bytes(),
             start_xpoint="/body/DocFragment[2]/body/div/p[1]/text().0",
             end_xpoint="/body/DocFragment[2]/body/div/p[1]/text().7",
         )
@@ -155,7 +155,7 @@ class TestEpubTextExtraction:
 
         with pytest.raises(XPointParseError):
             service.extract_text(
-                epub_path=test_epub_path,
+                epub_content=test_epub_path.read_bytes(),
                 start_xpoint="invalid",
                 end_xpoint="/body/div/p[1]/text().10",
             )
@@ -166,7 +166,7 @@ class TestEpubTextExtraction:
 
         with pytest.raises(XPointNavigationError) as exc_info:
             service.extract_text(
-                epub_path=test_epub_path,
+                epub_content=test_epub_path.read_bytes(),
                 start_xpoint="/body/div/p[999]/text().0",
                 end_xpoint="/body/div/p[999]/text().10",
             )
@@ -179,7 +179,7 @@ class TestEpubTextExtraction:
 
         with pytest.raises(XPointNavigationError) as exc_info:
             service.extract_text(
-                epub_path=test_epub_path,
+                epub_content=test_epub_path.read_bytes(),
                 start_xpoint="/body/DocFragment[999]/body/div/p[1]/text().0",
                 end_xpoint="/body/DocFragment[999]/body/div/p[1]/text().10",
             )
@@ -195,7 +195,7 @@ class TestExtractChapterText:
         service = EpubTextExtractionService()
 
         result = service.extract_chapter_text(
-            epub_path=test_epub_path,
+            epub_content=test_epub_path.read_bytes(),
             start_xpoint="/body/DocFragment[2]/body",
             end_xpoint="/body/DocFragment[3]/body",
         )
@@ -211,7 +211,7 @@ class TestExtractChapterText:
         service = EpubTextExtractionService()
 
         result = service.extract_chapter_text(
-            epub_path=test_epub_path,
+            epub_content=test_epub_path.read_bytes(),
             start_xpoint="/body/DocFragment[3]/body",
             end_xpoint=None,
         )
@@ -247,7 +247,7 @@ class TestExtractChapterText:
             service = EpubTextExtractionService()
 
             result = service.extract_chapter_text(
-                epub_path=epub_path,
+                epub_content=epub_path.read_bytes(),
                 start_xpoint="/body/DocFragment[2]/body",
                 end_xpoint="/body/DocFragment[5]/body",
             )
@@ -280,7 +280,7 @@ class TestExtractChapterText:
             service = EpubTextExtractionService()
 
             result = service.extract_chapter_text(
-                epub_path=epub_path,
+                epub_content=epub_path.read_bytes(),
                 start_xpoint="/body/DocFragment[2]/body/section[1]",
                 end_xpoint="/body/DocFragment[2]/body/section[2]",
             )
@@ -314,7 +314,7 @@ class TestExtractChapterText:
             service = EpubTextExtractionService()
 
             result = service.extract_chapter_text(
-                epub_path=epub_path,
+                epub_content=epub_path.read_bytes(),
                 start_xpoint="/body/DocFragment[2]/body",
                 end_xpoint="/body/DocFragment[2]/body",
             )
@@ -379,7 +379,7 @@ class TestExtractChapterText:
             service = EpubTextExtractionService()
 
             result = service.extract_chapter_text(
-                epub_path=epub_path,
+                epub_content=epub_path.read_bytes(),
                 start_xpoint="/body/DocFragment[2]/body/section[2]",
                 end_xpoint="/body/DocFragment[3]/body/section[2]",
             )
@@ -414,7 +414,7 @@ class TestExtractChapterText:
             service = EpubTextExtractionService()
 
             result = service.extract_chapter_text(
-                epub_path=epub_path,
+                epub_content=epub_path.read_bytes(),
                 start_xpoint="/body/DocFragment[2]/body/section[2]",
                 end_xpoint=None,
             )

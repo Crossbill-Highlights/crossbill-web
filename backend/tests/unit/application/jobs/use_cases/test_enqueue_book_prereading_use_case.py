@@ -1,7 +1,6 @@
 """Tests for EnqueueBookPrereadingUseCase."""
 
 from datetime import UTC, datetime
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -69,9 +68,7 @@ def prereading_repo() -> AsyncMock:
 @pytest.fixture
 def file_repo() -> AsyncMock:
     repo = AsyncMock()
-    mock_path = MagicMock(spec=Path)
-    mock_path.exists.return_value = True
-    repo.find_epub.return_value = mock_path
+    repo.get_epub.return_value = b"fake epub content"
     return repo
 
 

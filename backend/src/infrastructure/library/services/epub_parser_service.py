@@ -4,7 +4,6 @@
 
 import logging
 from io import BytesIO
-from pathlib import Path
 from typing import Any, cast
 from urllib.parse import unquote
 
@@ -83,24 +82,24 @@ class EpubParserService:
             logger.error(f"EPUB validation failed: {e!s}")
             return False
 
-    def parse_toc(self, epub_path: Path) -> list[TocChapter]:
+    def parse_toc(self, epub_content: bytes) -> list[TocChapter]:
         """
         Parse table of contents from an EPUB file.
 
         Args:
-            epub_path: Path to the EPUB file
+            epub_content: EPUB file content as bytes
 
         Returns:
             List of TocChapter objects in reading order.
             Returns empty list if EPUB has no TOC or TOC is invalid.
         """
         try:
-            book = epub.read_epub(str(epub_path))
+            book = epub.read_epub(BytesIO(epub_content))
 
             toc = book.toc
 
             if not toc:
-                logger.info(f"EPUB at {epub_path} has no table of contents")
+                logger.info("EPUB has no table of contents")
                 return []
 
             chapters_with_hrefs = _extract_toc_hierarchy(toc)
@@ -136,14 +135,14 @@ class EpubParserService:
                     )
                 )
 
-            logger.info(f"Parsed {len(result)} chapters from EPUB TOC at {epub_path}")
+            logger.info(f"Parsed {len(result)} chapters from EPUB TOC")
             return result
 
         except Exception as e:
-            logger.error(f"Failed to parse TOC from EPUB at {epub_path}: {e!s}")
+            logger.error(f"Failed to parse TOC from EPUB: {e!s}")
             return []
 
-    def extract_cover(self, epub_path: Path) -> bytes | None:
+    def extract_cover(self, epub_content: bytes) -> bytes | None:
         """
         Extract cover image from an EPUB file.
 
@@ -155,7 +154,7 @@ class EpubParserService:
         Returns None if no cover found or on any error.
         """
         try:
-            book = epub.read_epub(str(epub_path))
+            book = epub.read_epub(BytesIO(epub_content))
 
             # Strategy 1: Check OPF metadata for cover item ID
             cover_meta = book.get_metadata("OPF", "cover")
@@ -166,7 +165,7 @@ class EpubParserService:
                     if item:
                         content = item.get_content()
                         if content:
-                            logger.info(f"Extracted cover from OPF metadata for {epub_path}")
+                            logger.info("Extracted cover from OPF metadata")
                             return bytes(content)
 
             # Strategy 2: Fall back to ITEM_COVER type
@@ -174,7 +173,7 @@ class EpubParserService:
             if cover_items:
                 content = cover_items[0].get_content()
                 if content:
-                    logger.info(f"Extracted cover from ITEM_COVER for {epub_path}")
+                    logger.info("Extracted cover from ITEM_COVER")
                     return bytes(content)
 
             # Strategy 3: Scan OPF "meta" entries for cover reference
@@ -189,14 +188,14 @@ class EpubParserService:
                         if item:
                             content = item.get_content()
                             if content:
-                                logger.info(f"Extracted cover from OPF meta scan for {epub_path}")
+                                logger.info("Extracted cover from OPF meta scan")
                                 return bytes(content)
 
-            logger.info(f"No cover image found in EPUB {epub_path}")
+            logger.info("No cover image found in EPUB")
             return None
 
         except Exception as e:
-            logger.warning(f"Failed to extract cover from EPUB {epub_path}: {e!s}")
+            logger.warning(f"Failed to extract cover from EPUB: {e!s}")
             return None
 
     @staticmethod

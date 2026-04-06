@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette import status
-from starlette.responses import FileResponse
+from starlette.responses import Response
 
 from src.application.library.use_cases.book_files.book_cover_use_case import BookCoverUseCase
 from src.application.library.use_cases.book_management.delete_book_use_case import (
@@ -439,12 +439,12 @@ async def delete_book(
     await use_case.delete_book(book_id, current_user.id.value)
 
 
-@router.get("/{book_id}/cover", status_code=status.HTTP_200_OK)
+@router.get("/{book_id}/cover", status_code=status.HTTP_200_OK, response_class=Response)
 async def get_book_cover(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: BookCoverUseCase = Depends(inject_use_case(container.library.book_cover_use_case)),
-) -> FileResponse:
+) -> Response:
     """
     Get the cover image for a book.
 
@@ -456,14 +456,14 @@ async def get_book_cover(
         current_user: Authenticated user
 
     Returns:
-        FileResponse with the book cover image
+        Response with the book cover image
 
     Raises:
         HTTPException: If book is not found, user doesn't own it, or cover doesn't exist
     """
-    cover_path = await use_case.get_cover_path(book_id, current_user.id.value)
+    cover_bytes = await use_case.get_cover(book_id, current_user.id.value)
 
-    if cover_path is None:
+    if cover_bytes is None:
         raise HTTPException(status_code=404, detail="Cover not found")
 
-    return FileResponse(cover_path, media_type="image/jpeg")
+    return Response(content=cover_bytes, media_type="image/jpeg")

@@ -79,11 +79,29 @@ class Settings(BaseSettings):
     # openrouter
     OPENROUTER_API_KEY: str | None = None
 
+    # S3-compatible storage (optional — if set, files are stored in S3 instead of local disk)
+    S3_ENDPOINT_URL: str | None = None
+    S3_ACCESS_KEY_ID: str | None = None
+    S3_SECRET_ACCESS_KEY: str | None = None
+    S3_BUCKET_NAME: str | None = None
+    S3_REGION: str = "us-east-1"
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def ai_enabled(self) -> bool:
         """Whether AI features are enabled."""
         return self.AI_PROVIDER is not None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def s3_enabled(self) -> bool:
+        """Whether S3 storage is enabled."""
+        return (
+            self.S3_ENDPOINT_URL is not None
+            and self.S3_ACCESS_KEY_ID is not None
+            and self.S3_SECRET_ACCESS_KEY is not None
+            and self.S3_BUCKET_NAME is not None
+        )
 
     @field_validator("ADMIN_PASSWORD", mode="after")
     @classmethod
