@@ -54,13 +54,13 @@ source ../.env
 ### 4. Run migrations
 
 ```bash
-uv run alembic upgrade head
+make migrate
 ```
 
 ### 5. Run the development server
 
 ```bash
-uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+make dev-app
 ```
 
 The API will be available at http://localhost:8000
@@ -101,29 +101,23 @@ docker-compose exec postgres psql -U crossbill -d crossbill
 
 ### Running tests
 ```bash
-uv run pytest
+make test
 ```
 
-### Linting
+### Linting and type checking
 ```bash
-uv run ruff check .
-uv run ruff check --fix .  # Auto-fix issues
+make lint
 ```
 
 ### Formatting
 ```bash
-uv run ruff format
-```
-
-### Type checking
-```bash
-uv run pyright
+make format
 ```
 
 ### Creating migrations
 ```bash
-uv run alembic revision --autogenerate -m "description"
-uv run alembic upgrade head
+make migrate-new msg="description"
+make migrate
 ```
 
 ## Create password hash to be saved to the database from password:

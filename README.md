@@ -64,7 +64,7 @@ The worker requires AI provider configuration (`AI_PROVIDER`, API keys) to proce
 For development, run the worker separately:
 
 ```bash
-cd backend && uv run saq src.worker.worker_settings
+make dev-worker
 ```
 
 ### S3-Compatible Storage (Optional)
