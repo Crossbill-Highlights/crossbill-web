@@ -25,10 +25,11 @@ services:
     container_name: crossbill-app
     restart: unless-stopped
     pull_policy: always
+    env_file: .env
     ports:
       - "8000:8000"
     environment:
-      # Refer to all possible environment variables in /backend/.env.example
+      # Refer to all possible environment variables in /.env.example with explanations!
       DATABASE_URL: postgresql://crossbill:${POSTGRES_PASSWORD:-crossbill_secure_password}@postgres:5432/crossbill
       ENVIRONMENT: production
       ADMIN_USERNAME: ${ADMIN_USERNAME}
@@ -63,6 +64,7 @@ services:
     container_name: crossbill-worker
     restart: unless-stopped
     pull_policy: always
+    env_file: .env
     command: ["saq", "src.worker.worker_settings"]
     environment:
       DATABASE_URL: postgresql://crossbill:${POSTGRES_PASSWORD:-crossbill_secure_password}@postgres:5432/crossbill
