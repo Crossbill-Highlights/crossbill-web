@@ -208,10 +208,19 @@ async def client(db_session: AsyncSession, test_user: User) -> AsyncGenerator[As
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user
 
+    # Always use local FileRepository in tests regardless of S3 env vars
+    from src.core import container  # noqa: PLC0415
+    from src.infrastructure.library.repositories.file_repository import (  # noqa: PLC0415
+        FileRepository,
+    )
+
+    container.shared.file_repository.override(FileRepository())
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as test_client:
         yield test_client
 
+    container.shared.file_repository.reset_override()
     app.dependency_overrides.clear()
 
 
