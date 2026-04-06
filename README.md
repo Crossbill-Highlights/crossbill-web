@@ -40,6 +40,19 @@ Crossbill helps you centralize and manage your ebook highlights by providing:
 
 Easiest way to install and run Crossbill is by using sample `docker-compose.yml` on top level of this repository.
 
+1. Copy the example environment file to the project root and fill in your values:
+
+```bash
+cp backend/.env.example .env
+# Edit .env with your configuration
+```
+
+2. Then start the services:
+
+```bash
+docker compose up
+```
+
 Then install the Koreader [plugin on your e-reader](clients/koreader-plugin/crossbill.koplugin/README.md).
 
 ### Background Worker
@@ -51,7 +64,7 @@ The worker requires AI provider configuration (`AI_PROVIDER`, API keys) to proce
 For development, run the worker separately:
 
 ```bash
-cd backend && uv run saq src.worker.worker_settings
+make dev-worker
 ```
 
 ### S3-Compatible Storage (Optional)
@@ -65,19 +78,24 @@ S3_ENDPOINT_URL=https://your-s3-endpoint.example.com
 S3_ACCESS_KEY_ID=your-access-key
 S3_SECRET_ACCESS_KEY=your-secret-key
 S3_BUCKET_NAME=crossbill-files
-S3_REGION=us-east-1
+S3_REGION=your-region
 ```
 
 When these are set, Crossbill automatically uses S3 instead of local disk. When they are not set, local file storage is used (the `book-files` volume mount).
 
-For local development, you can use [Garage](https://garagehq.deuxfleurs.fr/) as an S3-compatible server. The `docker-compose.yml` includes an optional `garage` service. Start it and run the one-time setup script:
+For local development or self-hosted server, you can use [Garage](https://garagehq.deuxfleurs.fr/) as an S3-compatible server. The `docker-compose.yml` includes an optional `garage` service. 
+Start it and run the one-time setup script:
 
 ```bash
 docker compose up -d garage
 ./scripts/setup_garage.sh
+
+# After setting the environment variables restart containers if they are already running:
+docker restart crossbill-app crossbill-worker
 ```
 
-The script creates the bucket and API key, then prints the credentials to add to your `backend/.env`.
+The script creates the bucket and API key, then prints the credentials to add to your `.env`. If you are going to use Garage in production, please refer [their docs](https://garagehq.deuxfleurs.fr/)
+for proper settings to be set in the `garage.toml`!
 
 ## Development
 

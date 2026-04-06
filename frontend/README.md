@@ -202,7 +202,7 @@ VITE_API_URL=http://localhost:8000
 
 **Solutions:**
 
-1. Ensure backend is running: `cd ../backend && uv run uvicorn src.main:app --reload`
+1. Ensure backend is running: `make dev-app` (from repo root)
 2. Check backend URL in `orval.config.ts` matches your backend
 3. Verify OpenAPI endpoint: `http://localhost:8000/api/v1/openapi.json`
 

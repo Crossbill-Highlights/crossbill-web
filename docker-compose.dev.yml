@@ -7,9 +7,10 @@ services:
     restart: unless-stopped
     ports:
       - "5432:5432"
+    env_file: .env
     environment:
       POSTGRES_USER: crossbill
-      POSTGRES_PASSWORD: crossbill_dev_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crossbill_dev_password}
       POSTGRES_DB: crossbill
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U crossbill"]
@@ -23,6 +24,7 @@ services:
     image: dxflrs/garage:v2.2.0
     container_name: crossbill-garage
     restart: unless-stopped
+    env_file: .env
     ports:
       - "3900:3900"  # S3 API
       - "3901:3901"  # RPC (for garage CLI)

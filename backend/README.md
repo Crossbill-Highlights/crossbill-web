@@ -25,15 +25,11 @@ Backend API for crossbill - a self-hosted web app to sync highlights from KORead
 ### 1. Start PostgreSQL Database
 
 ```bash
-docker-compose up -d
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-This starts a PostgreSQL 16 container with the following configuration:
-- Host: localhost
-- Port: 5432
-- Database: crossbill
-- User: crossbill
-- Password: crossbill_dev_password
+This starts a PostgreSQL container and Garage on docker. 
+Follow main readme for instructions on how to setup them for use in development, especially Garage.
 
 ### 2. Install dependencies
 
@@ -43,22 +39,28 @@ uv sync
 
 ### 3. Copy environment variables
 
+Copy the example environment file to the project root directory (used by both `docker-compose.yml` and local development):
+
 ```bash
-cp .env.example .env
+cp ../.env.example ../.env
 ```
 
+For local backend development, you can also source the `.env` file before running commands:
+
+```bash
+source ../.env
 ```
 
 ### 4. Run migrations
 
 ```bash
-uv run alembic upgrade head
+make migrate
 ```
 
 ### 5. Run the development server
 
 ```bash
-uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+make dev-app
 ```
 
 The API will be available at http://localhost:8000
@@ -99,29 +101,23 @@ docker-compose exec postgres psql -U crossbill -d crossbill
 
 ### Running tests
 ```bash
-uv run pytest
+make test
 ```
 
-### Linting
+### Linting and type checking
 ```bash
-uv run ruff check .
-uv run ruff check --fix .  # Auto-fix issues
+make lint
 ```
 
 ### Formatting
 ```bash
-uv run ruff format
-```
-
-### Type checking
-```bash
-uv run pyright
+make format
 ```
 
 ### Creating migrations
 ```bash
-uv run alembic revision --autogenerate -m "description"
-uv run alembic upgrade head
+make migrate-new msg="description"
+make migrate
 ```
 
 ## Create password hash to be saved to the database from password:
