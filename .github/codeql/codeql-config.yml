@@ -1,3 +1,6 @@
 paths-ignore:
   - "backend/alembic/versions/**"
-  - "backend/src/application/**/protocols/**"
+
+query-filters:
+  - exclude:
+      id: py/pointless-statement
