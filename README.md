@@ -70,26 +70,14 @@ S3_REGION=us-east-1
 
 When these are set, Crossbill automatically uses S3 instead of local disk. When they are not set, local file storage is used (the `book-files` volume mount).
 
-For local development, you can use [Garage](https://garagehq.deuxfleurs.fr/) as an S3-compatible server. The `docker-compose.yml` includes an optional `garage` service. After starting it, run the one-time setup:
+For local development, you can use [Garage](https://garagehq.deuxfleurs.fr/) as an S3-compatible server. The `docker-compose.yml` includes an optional `garage` service. Start it and run the one-time setup script:
 
 ```bash
-# Start Garage
 docker compose up -d garage
-
-# Get the node ID and assign storage layout
-NODE_ID=$(docker exec crossbill-garage garage node id -q | cut -c1-16)
-docker exec crossbill-garage garage layout assign -z dc1 -c 1G "$NODE_ID"
-docker exec crossbill-garage garage layout apply --version 1
-
-# Create a bucket and API key
-docker exec crossbill-garage garage bucket create crossbill-files
-docker exec crossbill-garage garage key create crossbill-key
-
-# Grant the key access to the bucket
-docker exec crossbill-garage garage bucket allow --read --write --owner crossbill-files --key crossbill-key
+./scripts/setup_garage.sh
 ```
 
-The `key create` command prints the access key ID and secret. Use those along with `S3_ENDPOINT_URL=http://localhost:3900` and `S3_BUCKET_NAME=crossbill-files` in your `.env`.
+The script creates the bucket and API key, then prints the credentials to add to your `backend/.env`.
 
 ## Development
 
