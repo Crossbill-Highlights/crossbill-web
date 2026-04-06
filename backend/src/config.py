@@ -22,7 +22,9 @@ PDFS_DIR = BOOK_FILES_DIR / "pdfs"
 class Settings(BaseSettings):
     """Application settings."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=("../.env", ".env"), env_file_encoding="utf-8"
+    )
 
     # Database
     DATABASE_URL: str = "postgresql://crossbill:crossbill_dev_password@localhost:5432/crossbill"

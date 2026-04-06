@@ -43,8 +43,16 @@ uv sync
 
 ### 3. Copy environment variables
 
+Copy the example environment file to the project root directory (used by both `docker-compose.yml` and local development):
+
 ```bash
-cp .env.example .env
+cp .env.example ../.env
+```
+
+For local backend development, you can also source the `.env` file before running commands:
+
+```bash
+source ../.env
 ```
 
 ```
