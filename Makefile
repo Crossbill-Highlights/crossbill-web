@@ -1,4 +1,4 @@
-.PHONY: help test dev-app dev-worker migrate migrate-new lint type-check format
+.PHONY: help test dev-app dev-worker migrate migrate-new lint format release-nightly
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -26,3 +26,6 @@ lint: ## Run ruff linter and pyright type checker on backend
 
 format: ## Format backend code with ruff
 	cd backend && uv run ruff format src tests
+
+release-nightly: ## Build and push nightly Docker image to Docker Hub
+	./scripts/build-for-docker-hub.sh
