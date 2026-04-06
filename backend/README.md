@@ -25,15 +25,11 @@ Backend API for crossbill - a self-hosted web app to sync highlights from KORead
 ### 1. Start PostgreSQL Database
 
 ```bash
-docker-compose up -d
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-This starts a PostgreSQL 16 container with the following configuration:
-- Host: localhost
-- Port: 5432
-- Database: crossbill
-- User: crossbill
-- Password: crossbill_dev_password
+This starts a PostgreSQL container and Garage on docker. 
+Follow main readme for instructions on how to setup them for use in development, especially Garage.
 
 ### 2. Install dependencies
 
@@ -46,15 +42,13 @@ uv sync
 Copy the example environment file to the project root directory (used by both `docker-compose.yml` and local development):
 
 ```bash
-cp .env.example ../.env
+cp ../.env.example ../.env
 ```
 
 For local backend development, you can also source the `.env` file before running commands:
 
 ```bash
 source ../.env
-```
-
 ```
 
 ### 4. Run migrations
