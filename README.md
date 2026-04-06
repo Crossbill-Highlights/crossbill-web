@@ -43,7 +43,7 @@ Easiest way to install and run Crossbill is by using sample `docker-compose.yml`
 1. Copy the example environment file to the project root and fill in your values:
 
 ```bash
-cp backend/.env.example .env
+cp .env.example .env
 # Edit .env with your configuration
 ```
 
