@@ -58,7 +58,7 @@ class TagInBook(BaseModel):
 class BookWithHighlightCount(BaseModel):
     """Schema for Book with highlight and flashcard counts."""
 
-    id: int
+    id: str
     client_book_id: str | None = None
     title: str
     author: str | None
@@ -113,7 +113,7 @@ class EreaderBookMetadata(BaseModel):
     for deciding whether to upload cover images, epub files, etc.
     """
 
-    book_id: int = Field(..., description="Internal book ID")
+    book_id: str = Field(..., description="Internal book ID")
     bookname: str = Field(..., description="Book title")
     author: str | None = Field(None, description="Book author")
     has_cover: bool = Field(..., description="Whether the book has a cover image")
