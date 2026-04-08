@@ -9,7 +9,7 @@ test: ## Run backend tests
 	cd backend && uv run pytest
 
 dev-app: ## Run the backend dev server
-	cd backend && uv run uvicorn src.main:app --reload
+	cd backend && uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 dev-worker: ## Run the SAQ background worker
 	cd backend && uv run saq src.worker.worker_settings
