@@ -56,7 +56,11 @@ class BookRepository:
 
     async def save(self, book: Book) -> Book:
         """Persist book to database."""
-        if book.id.value == 0:
+        # Check if book already exists in DB (upsert pattern for UUID PKs)
+        stmt = select(BookORM).where(BookORM.id == book.id.value)
+        result = await self.db.execute(stmt)
+        existing_orm = result.scalar_one_or_none()
+        if existing_orm is None:
             # Create new
             orm_model = self.mapper.to_orm(book)
             self.db.add(orm_model)
@@ -64,9 +68,6 @@ class BookRepository:
             await self.db.refresh(orm_model)
             return self.mapper.to_domain(orm_model)
         # Update existing
-        stmt = select(BookORM).where(BookORM.id == book.id.value)
-        result = await self.db.execute(stmt)
-        existing_orm = result.scalar_one()
         self.mapper.to_orm(book, existing_orm)
         await self.db.commit()
         await self.db.refresh(existing_orm)

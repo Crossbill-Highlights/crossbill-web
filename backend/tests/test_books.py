@@ -166,7 +166,7 @@ class TestDeleteBook:
 
     async def test_delete_book_not_found(self, client: AsyncClient) -> None:
         """Test deletion of non-existent book."""
-        response = await client.delete("/api/v1/books/99999")
+        response = await client.delete("/api/v1/books/00000000-0000-0000-0000-000000099999")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         data = response.json()
@@ -291,7 +291,7 @@ class TestDeleteHighlights:
         """Test deletion of highlights for non-existent book."""
         payload = {"highlight_ids": [1, 2, 3]}
         response = await client.request(
-            "DELETE", "/api/v1/books/99999/highlight", content=json.dumps(payload)
+            "DELETE", "/api/v1/books/00000000-0000-0000-0000-000000099999/highlight", content=json.dumps(payload)
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -679,7 +679,7 @@ class TestGetBooksWithFlashcardFilter:
         book_fc = data["book_flashcards"][0]
         assert book_fc["question"] == "What is the main theme?"
         assert book_fc["answer"] == "The main theme is resilience."
-        assert book_fc["book_id"] == book.id
+        assert book_fc["book_id"] == str(book.id)
         assert book_fc["highlight_id"] is None
 
         # Verify the highlight flashcard is in the chapter's highlights, not in book_flashcards

@@ -510,7 +510,7 @@ class TestGetBookReadingSessions:
 
     async def test_get_sessions_book_not_found(self, client: AsyncClient) -> None:
         """Test getting sessions for non-existent book."""
-        response = await client.get("/api/v1/books/99999/reading_sessions")
+        response = await client.get("/api/v1/books/00000000-0000-0000-0000-000000099999/reading_sessions")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 

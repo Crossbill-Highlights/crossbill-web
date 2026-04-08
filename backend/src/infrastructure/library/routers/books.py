@@ -186,7 +186,7 @@ def _build_book_details_schema(
         bookmarks=[
             Bookmark(
                 id=b.id.value,
-                book_id=b.book_id.value,
+                book_id=str(b.book_id.value),
                 highlight_id=b.highlight_id.value,
                 created_at=b.created_at,
             )

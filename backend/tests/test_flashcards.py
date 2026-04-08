@@ -34,7 +34,7 @@ class TestCreateFlashcardForHighlight:
         flashcard = data["flashcard"]
         assert flashcard["question"] == "What is this about?"
         assert flashcard["answer"] == "Test content"
-        assert flashcard["book_id"] == test_book.id
+        assert flashcard["book_id"] == str(test_book.id)
         assert flashcard["highlight_id"] == test_highlight.id
         assert flashcard["user_id"] == test_user.id
 
@@ -84,7 +84,7 @@ class TestCreateFlashcardForBook:
         flashcard = data["flashcard"]
         assert flashcard["question"] == "What is the main theme?"
         assert flashcard["answer"] == "The main theme is..."
-        assert flashcard["book_id"] == test_book.id
+        assert flashcard["book_id"] == str(test_book.id)
         assert flashcard["highlight_id"] is None  # Standalone flashcard
         assert flashcard["chapter_id"] is None
 
@@ -122,7 +122,7 @@ class TestCreateFlashcardForBook:
     async def test_create_flashcard_book_not_found(self, client: AsyncClient) -> None:
         """Test creating a flashcard for non-existent book."""
         response = await client.post(
-            "/api/v1/books/99999/flashcards",
+            "/api/v1/books/00000000-0000-0000-0000-000000099999/flashcards",
             json={"question": "What is this?", "answer": "Answer"},
         )
 
@@ -177,7 +177,7 @@ class TestGetFlashcardsForBook:
 
     async def test_get_flashcards_book_not_found(self, client: AsyncClient) -> None:
         """Test getting flashcards for non-existent book."""
-        response = await client.get("/api/v1/books/99999/flashcards")
+        response = await client.get("/api/v1/books/00000000-0000-0000-0000-000000099999/flashcards")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 

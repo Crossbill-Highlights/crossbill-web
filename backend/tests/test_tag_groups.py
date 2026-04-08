@@ -18,13 +18,13 @@ class TestCreateTagGroup:
         """Test successful creation of a tag group."""
         response = await client.post(
             "/api/v1/highlights/tag_group",
-            json={"book_id": test_book.id, "name": "Important Themes"},
+            json={"book_id": str(test_book.id), "name": "Important Themes"},
         )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["name"] == "Important Themes"
-        assert data["book_id"] == test_book.id
+        assert data["book_id"] == str(test_book.id)
         assert "id" in data
 
         # Verify in database
@@ -45,7 +45,7 @@ class TestCreateTagGroup:
             "/api/v1/highlights/tag_group",
             json={
                 "id": test_tag_group.id,
-                "book_id": test_tag_group.book_id,
+                "book_id": str(test_tag_group.book_id),
                 "name": "New Name",
             },
         )
@@ -54,7 +54,7 @@ class TestCreateTagGroup:
         data = response.json()
         assert data["id"] == test_tag_group.id
         assert data["name"] == "New Name"
-        assert data["book_id"] == test_tag_group.book_id
+        assert data["book_id"] == str(test_tag_group.book_id)
 
         # Verify in database
         await db_session.refresh(test_tag_group)
@@ -67,7 +67,7 @@ class TestCreateTagGroup:
         # Try to create another tag group with same name
         response = await client.post(
             "/api/v1/highlights/tag_group",
-            json={"book_id": test_tag_group.book_id, "name": test_tag_group.name},
+            json={"book_id": str(test_tag_group.book_id), "name": test_tag_group.name},
         )
 
         assert response.status_code == status.HTTP_409_CONFLICT
@@ -76,7 +76,7 @@ class TestCreateTagGroup:
         """Test creating tag group for non-existent book."""
         response = await client.post(
             "/api/v1/highlights/tag_group",
-            json={"book_id": 99999, "name": "Themes"},
+            json={"book_id": "00000000-0000-0000-0000-000000099999", "name": "Themes"},
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -87,7 +87,7 @@ class TestCreateTagGroup:
         """Test creating tag group with empty name."""
         response = await client.post(
             "/api/v1/highlights/tag_group",
-            json={"book_id": test_book.id, "name": "   "},
+            json={"book_id": str(test_book.id), "name": "   "},
         )
 
         assert response.status_code in {
@@ -112,7 +112,7 @@ class TestCreateTagGroup:
         # Try to update tag_group2 to have the same name as test_tag_group
         response = await client.post(
             "/api/v1/highlights/tag_group",
-            json={"id": tag_group2.id, "book_id": test_book.id, "name": test_tag_group.name},
+            json={"id": tag_group2.id, "book_id": str(test_book.id), "name": test_tag_group.name},
         )
 
         assert response.status_code == status.HTTP_409_CONFLICT
@@ -136,7 +136,7 @@ class TestCreateTagGroup:
         # Try to update test_tag_group with book2's id (should fail)
         response = await client.post(
             "/api/v1/highlights/tag_group",
-            json={"id": test_tag_group.id, "book_id": book2.id, "name": "Updated Name"},
+            json={"id": test_tag_group.id, "book_id": str(book2.id), "name": "Updated Name"},
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND

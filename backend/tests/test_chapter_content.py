@@ -75,7 +75,7 @@ class TestGetChapterContent:
         data = response.json()
         assert data["chapter_id"] == chapter.id
         assert data["chapter_name"] == "Chapter 1: Introduction"
-        assert data["book_id"] == test_book.id
+        assert data["book_id"] == str(test_book.id)
         assert data["content"] == "This is the chapter content."
 
     async def test_get_chapter_content_not_found(

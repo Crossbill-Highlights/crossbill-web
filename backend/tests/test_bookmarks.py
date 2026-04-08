@@ -82,7 +82,7 @@ class TestCreateBookmark:
 
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
-        assert data["book_id"] == test_book.id
+        assert data["book_id"] == str(test_book.id)
         assert data["highlight_id"] == test_highlight.id
         assert "id" in data
         assert "created_at" in data
@@ -129,7 +129,7 @@ class TestCreateBookmark:
     async def test_create_bookmark_book_not_found(self, client: AsyncClient) -> None:
         """Test creating a bookmark for non-existent book."""
         response = await client.post(
-            "/api/v1/books/99999/bookmarks",
+            "/api/v1/books/00000000-0000-0000-0000-000000099999/bookmarks",
             json={"highlight_id": 1},
         )
 
@@ -208,7 +208,7 @@ class TestDeleteBookmark:
 
     async def test_delete_bookmark_book_not_found(self, client: AsyncClient) -> None:
         """Test deleting a bookmark for non-existent book."""
-        response = await client.delete("/api/v1/books/99999/bookmarks/1")
+        response = await client.delete("/api/v1/books/00000000-0000-0000-0000-000000099999/bookmarks/1")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -264,7 +264,7 @@ class TestGetBookmarks:
 
     async def test_get_bookmarks_book_not_found(self, client: AsyncClient) -> None:
         """Test getting bookmarks for non-existent book."""
-        response = await client.get("/api/v1/books/99999/bookmarks")
+        response = await client.get("/api/v1/books/00000000-0000-0000-0000-000000099999/bookmarks")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -323,7 +323,7 @@ class TestBookDetailsWithBookmarks:
             assert "book_id" in bookmark
             assert "highlight_id" in bookmark
             assert "created_at" in bookmark
-            assert bookmark["book_id"] == test_book.id
+            assert bookmark["book_id"] == str(test_book.id)
 
     async def test_book_details_empty_bookmarks(
         self, client: AsyncClient, test_book: models.Book

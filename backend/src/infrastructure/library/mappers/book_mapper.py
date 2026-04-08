@@ -51,7 +51,7 @@ class BookMapper:
 
         # Create new
         return BookORM(
-            id=domain_entity.id.value if domain_entity.id.value != 0 else None,
+            id=domain_entity.id.value,
             user_id=domain_entity.user_id.value,
             title=domain_entity.title,
             client_book_id=domain_entity.client_book_id,
