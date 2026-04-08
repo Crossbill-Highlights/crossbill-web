@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from uuid import UUID, uuid4
 
 from ..entity import EntityId
 
@@ -7,11 +8,15 @@ from ..entity import EntityId
 class BookId(EntityId):
     """Strongly-typed book identifier."""
 
-    value: int
+    value: UUID
 
     def __post_init__(self) -> None:
-        if self.value < 0:
-            raise ValueError("BookId must be non-negative")
+        pass  # UUID type is enforced by dataclass type annotation
+
+    @classmethod
+    def generate(cls) -> "BookId":
+        """Generate a new random BookId."""
+        return cls(uuid4())
 
 
 @dataclass(frozen=True)
