@@ -10,7 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 interface ChapterToolbarProps {
   chapterId: number;
-  bookId: number;
+  bookId: string;
   hasSummary: boolean;
 }
 

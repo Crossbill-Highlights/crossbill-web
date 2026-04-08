@@ -19,7 +19,7 @@ export interface FlashcardChapterData {
 
 interface FlashcardChapterListProps {
   chapters: FlashcardChapterData[];
-  bookId: number;
+  bookId: string;
   isLoading?: boolean;
   emptyMessage?: string;
   animationKey?: string;

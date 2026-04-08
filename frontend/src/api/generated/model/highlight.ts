@@ -32,7 +32,7 @@ export interface Highlight {
    */
   datetime: string;
   id: number;
-  book_id: number;
+  book_id: string;
   chapter_id: number | null;
   /** Resolved label for this highlight */
   label?: HighlightLabel | null;

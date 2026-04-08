@@ -5,7 +5,7 @@ import { getContrastColor } from '@/utils/colorUtils.ts';
 import { Box, Chip, Typography } from '@mui/material';
 
 interface HighlightLabelsListProps {
-  bookId: number;
+  bookId: string;
   selectedLabelId?: number | null;
   onLabelClick: (labelId: number | null) => void;
   hideTitle?: boolean;

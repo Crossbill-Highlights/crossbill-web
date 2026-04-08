@@ -14,7 +14,7 @@ export interface HighlightUploadResponse {
   /** Response message */
   message: string;
   /** ID of the book */
-  book_id: number;
+  book_id: string;
   /**
    * Number of highlights created
    * @minimum 0

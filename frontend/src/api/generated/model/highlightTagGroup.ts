@@ -10,7 +10,7 @@
  */
 export interface HighlightTagGroup {
   id: number;
-  book_id: number;
+  book_id: string;
   /**
    * Tag group name
    * @minLength 1

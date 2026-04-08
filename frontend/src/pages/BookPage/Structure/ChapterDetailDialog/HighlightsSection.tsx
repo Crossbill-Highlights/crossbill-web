@@ -6,7 +6,7 @@ import { Stack, Typography } from '@mui/material';
 
 interface HighlightsSectionProps {
   chapter: ChapterWithHighlights;
-  bookId: number;
+  bookId: string;
   bookmarksByHighlightId: Record<number, Bookmark>;
   availableTags: HighlightTagInBook[];
 }

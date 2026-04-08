@@ -11,7 +11,7 @@ import type { TagInBook } from './tagInBook';
  * Schema for Book with highlight and flashcard counts.
  */
 export interface BookWithHighlightCount {
-  id: number;
+  id: string;
   client_book_id?: string | null;
   title: string;
   author: string | null;

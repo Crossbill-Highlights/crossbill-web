@@ -11,7 +11,7 @@
 export interface Flashcard {
   id: number;
   user_id: number;
-  book_id: number;
+  book_id: string;
   highlight_id: number | null;
   chapter_id?: number | null;
   /**

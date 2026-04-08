@@ -20,7 +20,7 @@ export const BookCard = ({ book }: BookCardProps) => {
     <FadeInOut ekey={book.id}>
       <Link
         to="/book/$bookId"
-        params={{ bookId: String(book.id) }}
+        params={{ bookId: book.id }}
         style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block' }}
       >
         <Box

@@ -34,7 +34,7 @@ import { axiosInstance } from '../../axios-instance';
  * @summary Get Book Highlight Labels
  */
 export const getBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet = (
-  bookId: number,
+  bookId: string,
   signal?: AbortSignal
 ) => {
   return axiosInstance<HighlightLabelInBook[]>({
@@ -45,7 +45,7 @@ export const getBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet = (
 };
 
 export const getGetBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGetQueryKey = (
-  bookId: number
+  bookId: string
 ) => {
   return [`/api/v1/books/${bookId}/highlight-labels`] as const;
 };
@@ -54,7 +54,7 @@ export const getGetBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGetQueryOpt
   TData = Awaited<ReturnType<typeof getBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -92,7 +92,7 @@ export function useGetBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet<
   TData = Awaited<ReturnType<typeof getBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -116,7 +116,7 @@ export function useGetBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet<
   TData = Awaited<ReturnType<typeof getBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -140,7 +140,7 @@ export function useGetBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet<
   TData = Awaited<ReturnType<typeof getBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -160,7 +160,7 @@ export function useGetBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet<
   TData = Awaited<ReturnType<typeof getBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<

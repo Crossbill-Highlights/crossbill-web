@@ -16,7 +16,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
 
 interface BatchPrereadingToolbarProps {
-  bookId: number;
+  bookId: string;
 }
 
 const TERMINAL_STATUSES = ['completed', 'completed_with_errors', 'failed', 'cancelled'];

@@ -39,7 +39,7 @@ import { KeyboardEvent, useState } from 'react';
 interface HighlightTagsProps {
   tags: HighlightTagInBook[];
   tagGroups: HighlightTagGroupInBook[];
-  bookId: number;
+  bookId: string;
   selectedTag?: number | null;
   onTagClick: (tagId: number | null) => void;
   hideTitle?: boolean;
@@ -606,14 +606,14 @@ const ListTitle = ({ onAddGroupClick }: { onAddGroupClick: () => void }) => {
   );
 };
 
-const useTagMutations = (bookId: number) => {
+const useTagMutations = (bookId: string) => {
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const updateTagMutation = useUpdateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost({
     mutation: {
       onMutate: async (variables: {
-        bookId: number;
+        bookId: string;
         tagId: number;
         data: { tag_group_id?: number | null };
       }) => {

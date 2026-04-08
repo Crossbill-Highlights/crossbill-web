@@ -17,7 +17,7 @@ export interface ReadingSessionUploadResponse {
   /** Response message */
   message: string;
   /** ID of the book for these sessions */
-  book_id: number;
+  book_id: string;
   /** Number of sessions created */
   created_count?: number;
   /** Sessions skipped because already uploaded */

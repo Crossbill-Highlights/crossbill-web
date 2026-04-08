@@ -29,7 +29,7 @@ import { axiosInstance } from '../../axios-instance';
  * @summary Enqueue Book Prereading
  */
 export const enqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost = (
-  bookId: number,
+  bookId: string,
   signal?: AbortSignal
 ) => {
   return axiosInstance<JobBatchResponse>({
@@ -46,13 +46,13 @@ export const getEnqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPostMutationO
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof enqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost>>,
     TError,
-    { bookId: number },
+    { bookId: string },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof enqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost>>,
   TError,
-  { bookId: number },
+  { bookId: string },
   TContext
 > => {
   const mutationKey = ['enqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost'];
@@ -64,7 +64,7 @@ export const getEnqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPostMutationO
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof enqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost>>,
-    { bookId: number }
+    { bookId: string }
   > = (props) => {
     const { bookId } = props ?? {};
 
@@ -92,7 +92,7 @@ export const useEnqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof enqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost>>,
       TError,
-      { bookId: number },
+      { bookId: string },
       TContext
     >;
   },
@@ -100,7 +100,7 @@ export const useEnqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof enqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost>>,
   TError,
-  { bookId: number },
+  { bookId: string },
   TContext
 > => {
   return useMutation(
@@ -113,7 +113,7 @@ export const useEnqueueBookPrereadingApiV1JobsBooksBookIdPrereadingPost = <
  * @summary Get Active Book Prereading Batch
  */
 export const getActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGet = (
-  bookId: number,
+  bookId: string,
   signal?: AbortSignal
 ) => {
   return axiosInstance<JobBatchResponse | null>({
@@ -124,7 +124,7 @@ export const getActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGet = (
 };
 
 export const getGetActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGetQueryKey = (
-  bookId: number
+  bookId: string
 ) => {
   return [`/api/v1/jobs/books/${bookId}/prereading`] as const;
 };
@@ -133,7 +133,7 @@ export const getGetActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGetQue
   TData = Awaited<ReturnType<typeof getActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -171,7 +171,7 @@ export function useGetActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGet
   TData = Awaited<ReturnType<typeof getActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -195,7 +195,7 @@ export function useGetActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGet
   TData = Awaited<ReturnType<typeof getActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -219,7 +219,7 @@ export function useGetActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGet
   TData = Awaited<ReturnType<typeof getActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -239,7 +239,7 @@ export function useGetActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGet
   TData = Awaited<ReturnType<typeof getActiveBookPrereadingBatchApiV1JobsBooksBookIdPrereadingGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<

@@ -48,7 +48,7 @@ Raises:
  * @summary Create Bookmark
  */
 export const createBookmarkApiV1BooksBookIdBookmarksPost = (
-  bookId: number,
+  bookId: string,
   bookmarkCreateRequest: BookmarkCreateRequest,
   signal?: AbortSignal
 ) => {
@@ -68,13 +68,13 @@ export const getCreateBookmarkApiV1BooksBookIdBookmarksPostMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createBookmarkApiV1BooksBookIdBookmarksPost>>,
     TError,
-    { bookId: number; data: BookmarkCreateRequest },
+    { bookId: string; data: BookmarkCreateRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createBookmarkApiV1BooksBookIdBookmarksPost>>,
   TError,
-  { bookId: number; data: BookmarkCreateRequest },
+  { bookId: string; data: BookmarkCreateRequest },
   TContext
 > => {
   const mutationKey = ['createBookmarkApiV1BooksBookIdBookmarksPost'];
@@ -86,7 +86,7 @@ export const getCreateBookmarkApiV1BooksBookIdBookmarksPostMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createBookmarkApiV1BooksBookIdBookmarksPost>>,
-    { bookId: number; data: BookmarkCreateRequest }
+    { bookId: string; data: BookmarkCreateRequest }
   > = (props) => {
     const { bookId, data } = props ?? {};
 
@@ -113,7 +113,7 @@ export const useCreateBookmarkApiV1BooksBookIdBookmarksPost = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof createBookmarkApiV1BooksBookIdBookmarksPost>>,
       TError,
-      { bookId: number; data: BookmarkCreateRequest },
+      { bookId: string; data: BookmarkCreateRequest },
       TContext
     >;
   },
@@ -121,7 +121,7 @@ export const useCreateBookmarkApiV1BooksBookIdBookmarksPost = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof createBookmarkApiV1BooksBookIdBookmarksPost>>,
   TError,
-  { bookId: number; data: BookmarkCreateRequest },
+  { bookId: string; data: BookmarkCreateRequest },
   TContext
 > => {
   return useMutation(
@@ -145,7 +145,7 @@ Raises:
     HTTPException: If book not found or fetching fails
  * @summary Get Bookmarks
  */
-export const getBookmarksApiV1BooksBookIdBookmarksGet = (bookId: number, signal?: AbortSignal) => {
+export const getBookmarksApiV1BooksBookIdBookmarksGet = (bookId: string, signal?: AbortSignal) => {
   return axiosInstance<BookmarksResponse>({
     url: `/api/v1/books/${bookId}/bookmarks`,
     method: 'GET',
@@ -153,7 +153,7 @@ export const getBookmarksApiV1BooksBookIdBookmarksGet = (bookId: number, signal?
   });
 };
 
-export const getGetBookmarksApiV1BooksBookIdBookmarksGetQueryKey = (bookId: number) => {
+export const getGetBookmarksApiV1BooksBookIdBookmarksGetQueryKey = (bookId: string) => {
   return [`/api/v1/books/${bookId}/bookmarks`] as const;
 };
 
@@ -161,7 +161,7 @@ export const getGetBookmarksApiV1BooksBookIdBookmarksGetQueryOptions = <
   TData = Awaited<ReturnType<typeof getBookmarksApiV1BooksBookIdBookmarksGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -197,7 +197,7 @@ export function useGetBookmarksApiV1BooksBookIdBookmarksGet<
   TData = Awaited<ReturnType<typeof getBookmarksApiV1BooksBookIdBookmarksGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -221,7 +221,7 @@ export function useGetBookmarksApiV1BooksBookIdBookmarksGet<
   TData = Awaited<ReturnType<typeof getBookmarksApiV1BooksBookIdBookmarksGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -245,7 +245,7 @@ export function useGetBookmarksApiV1BooksBookIdBookmarksGet<
   TData = Awaited<ReturnType<typeof getBookmarksApiV1BooksBookIdBookmarksGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -265,7 +265,7 @@ export function useGetBookmarksApiV1BooksBookIdBookmarksGet<
   TData = Awaited<ReturnType<typeof getBookmarksApiV1BooksBookIdBookmarksGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -302,7 +302,7 @@ Raises:
  * @summary Delete Bookmark
  */
 export const deleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete = (
-  bookId: number,
+  bookId: string,
   bookmarkId: number,
   signal?: AbortSignal
 ) => {
@@ -320,13 +320,13 @@ export const getDeleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDeleteMutationO
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete>>,
     TError,
-    { bookId: number; bookmarkId: number },
+    { bookId: string; bookmarkId: number },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete>>,
   TError,
-  { bookId: number; bookmarkId: number },
+  { bookId: string; bookmarkId: number },
   TContext
 > => {
   const mutationKey = ['deleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete'];
@@ -338,7 +338,7 @@ export const getDeleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDeleteMutationO
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete>>,
-    { bookId: number; bookmarkId: number }
+    { bookId: string; bookmarkId: number }
   > = (props) => {
     const { bookId, bookmarkId } = props ?? {};
 
@@ -366,7 +366,7 @@ export const useDeleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof deleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete>>,
       TError,
-      { bookId: number; bookmarkId: number },
+      { bookId: string; bookmarkId: number },
       TContext
     >;
   },
@@ -374,7 +374,7 @@ export const useDeleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof deleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete>>,
   TError,
-  { bookId: number; bookmarkId: number },
+  { bookId: string; bookmarkId: number },
   TContext
 > => {
   return useMutation(

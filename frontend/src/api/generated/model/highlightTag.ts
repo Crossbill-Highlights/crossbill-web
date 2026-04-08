@@ -10,7 +10,7 @@
  */
 export interface HighlightTag {
   id: number;
-  book_id: number;
+  book_id: string;
   tag_group_id?: number | null;
   /**
    * Tag name

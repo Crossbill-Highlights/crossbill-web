@@ -20,14 +20,14 @@ import { useState } from 'react';
 
 interface FlashcardSectionProps {
   highlight: Highlight;
-  bookId: number;
+  bookId: string;
   visible: boolean;
   disabled?: boolean;
 }
 
 interface FlashcardsListProps {
   flashcardsWithContext: FlashcardWithContext[];
-  bookId: number;
+  bookId: string;
   onEdit: (flashcardId: number) => void;
 }
 
@@ -174,7 +174,7 @@ export const FlashcardSection = ({
 };
 
 const useFlashcardMutations = (
-  bookId: number,
+  bookId: string,
   highlightId: number,
   showSnackbar: (message: string, severity: 'error' | 'warning' | 'info' | 'success') => void
 ) => {

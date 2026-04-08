@@ -538,7 +538,7 @@ Results are ranked by relevance and excludes soft-deleted highlights.
  * @summary Search Book Highlights
  */
 export const searchBookHighlightsApiV1BooksBookIdHighlightsGet = (
-  bookId: number,
+  bookId: string,
   params: SearchBookHighlightsApiV1BooksBookIdHighlightsGetParams,
   signal?: AbortSignal
 ) => {
@@ -551,7 +551,7 @@ export const searchBookHighlightsApiV1BooksBookIdHighlightsGet = (
 };
 
 export const getSearchBookHighlightsApiV1BooksBookIdHighlightsGetQueryKey = (
-  bookId: number,
+  bookId: string,
   params?: SearchBookHighlightsApiV1BooksBookIdHighlightsGetParams
 ) => {
   return [`/api/v1/books/${bookId}/highlights`, ...(params ? [params] : [])] as const;
@@ -561,7 +561,7 @@ export const getSearchBookHighlightsApiV1BooksBookIdHighlightsGetQueryOptions = 
   TData = Awaited<ReturnType<typeof searchBookHighlightsApiV1BooksBookIdHighlightsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   params: SearchBookHighlightsApiV1BooksBookIdHighlightsGetParams,
   options?: {
     query?: Partial<
@@ -599,7 +599,7 @@ export function useSearchBookHighlightsApiV1BooksBookIdHighlightsGet<
   TData = Awaited<ReturnType<typeof searchBookHighlightsApiV1BooksBookIdHighlightsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   params: SearchBookHighlightsApiV1BooksBookIdHighlightsGetParams,
   options: {
     query: Partial<
@@ -624,7 +624,7 @@ export function useSearchBookHighlightsApiV1BooksBookIdHighlightsGet<
   TData = Awaited<ReturnType<typeof searchBookHighlightsApiV1BooksBookIdHighlightsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   params: SearchBookHighlightsApiV1BooksBookIdHighlightsGetParams,
   options?: {
     query?: Partial<
@@ -649,7 +649,7 @@ export function useSearchBookHighlightsApiV1BooksBookIdHighlightsGet<
   TData = Awaited<ReturnType<typeof searchBookHighlightsApiV1BooksBookIdHighlightsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   params: SearchBookHighlightsApiV1BooksBookIdHighlightsGetParams,
   options?: {
     query?: Partial<
@@ -670,7 +670,7 @@ export function useSearchBookHighlightsApiV1BooksBookIdHighlightsGet<
   TData = Awaited<ReturnType<typeof searchBookHighlightsApiV1BooksBookIdHighlightsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   params: SearchBookHighlightsApiV1BooksBookIdHighlightsGetParams,
   options?: {
     query?: Partial<
@@ -716,7 +716,7 @@ Raises:
  * @summary Delete Highlights
  */
 export const deleteHighlightsApiV1BooksBookIdHighlightDelete = (
-  bookId: number,
+  bookId: string,
   highlightDeleteRequest: HighlightDeleteRequest,
   signal?: AbortSignal
 ) => {
@@ -736,13 +736,13 @@ export const getDeleteHighlightsApiV1BooksBookIdHighlightDeleteMutationOptions =
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteHighlightsApiV1BooksBookIdHighlightDelete>>,
     TError,
-    { bookId: number; data: HighlightDeleteRequest },
+    { bookId: string; data: HighlightDeleteRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteHighlightsApiV1BooksBookIdHighlightDelete>>,
   TError,
-  { bookId: number; data: HighlightDeleteRequest },
+  { bookId: string; data: HighlightDeleteRequest },
   TContext
 > => {
   const mutationKey = ['deleteHighlightsApiV1BooksBookIdHighlightDelete'];
@@ -754,7 +754,7 @@ export const getDeleteHighlightsApiV1BooksBookIdHighlightDeleteMutationOptions =
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteHighlightsApiV1BooksBookIdHighlightDelete>>,
-    { bookId: number; data: HighlightDeleteRequest }
+    { bookId: string; data: HighlightDeleteRequest }
   > = (props) => {
     const { bookId, data } = props ?? {};
 
@@ -781,7 +781,7 @@ export const useDeleteHighlightsApiV1BooksBookIdHighlightDelete = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof deleteHighlightsApiV1BooksBookIdHighlightDelete>>,
       TError,
-      { bookId: number; data: HighlightDeleteRequest },
+      { bookId: string; data: HighlightDeleteRequest },
       TContext
     >;
   },
@@ -789,7 +789,7 @@ export const useDeleteHighlightsApiV1BooksBookIdHighlightDelete = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof deleteHighlightsApiV1BooksBookIdHighlightDelete>>,
   TError,
-  { bookId: number; data: HighlightDeleteRequest },
+  { bookId: string; data: HighlightDeleteRequest },
   TContext
 > => {
   return useMutation(
@@ -811,7 +811,7 @@ Raises:
  * @summary Get Highlight Tags
  */
 export const getHighlightTagsApiV1BooksBookIdHighlightTagsGet = (
-  bookId: number,
+  bookId: string,
   signal?: AbortSignal
 ) => {
   return axiosInstance<HighlightTagsResponse>({
@@ -821,7 +821,7 @@ export const getHighlightTagsApiV1BooksBookIdHighlightTagsGet = (
   });
 };
 
-export const getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey = (bookId: number) => {
+export const getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey = (bookId: string) => {
   return [`/api/v1/books/${bookId}/highlight_tags`] as const;
 };
 
@@ -829,7 +829,7 @@ export const getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryOptions = <
   TData = Awaited<ReturnType<typeof getHighlightTagsApiV1BooksBookIdHighlightTagsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -865,7 +865,7 @@ export function useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet<
   TData = Awaited<ReturnType<typeof getHighlightTagsApiV1BooksBookIdHighlightTagsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -889,7 +889,7 @@ export function useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet<
   TData = Awaited<ReturnType<typeof getHighlightTagsApiV1BooksBookIdHighlightTagsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -913,7 +913,7 @@ export function useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet<
   TData = Awaited<ReturnType<typeof getHighlightTagsApiV1BooksBookIdHighlightTagsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -933,7 +933,7 @@ export function useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet<
   TData = Awaited<ReturnType<typeof getHighlightTagsApiV1BooksBookIdHighlightTagsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -972,7 +972,7 @@ Raises:
  * @summary Create Highlight Tag
  */
 export const createHighlightTagApiV1BooksBookIdHighlightTagPost = (
-  bookId: number,
+  bookId: string,
   highlightTagCreateRequest: HighlightTagCreateRequest,
   signal?: AbortSignal
 ) => {
@@ -992,13 +992,13 @@ export const getCreateHighlightTagApiV1BooksBookIdHighlightTagPostMutationOption
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createHighlightTagApiV1BooksBookIdHighlightTagPost>>,
     TError,
-    { bookId: number; data: HighlightTagCreateRequest },
+    { bookId: string; data: HighlightTagCreateRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createHighlightTagApiV1BooksBookIdHighlightTagPost>>,
   TError,
-  { bookId: number; data: HighlightTagCreateRequest },
+  { bookId: string; data: HighlightTagCreateRequest },
   TContext
 > => {
   const mutationKey = ['createHighlightTagApiV1BooksBookIdHighlightTagPost'];
@@ -1010,7 +1010,7 @@ export const getCreateHighlightTagApiV1BooksBookIdHighlightTagPostMutationOption
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createHighlightTagApiV1BooksBookIdHighlightTagPost>>,
-    { bookId: number; data: HighlightTagCreateRequest }
+    { bookId: string; data: HighlightTagCreateRequest }
   > = (props) => {
     const { bookId, data } = props ?? {};
 
@@ -1038,7 +1038,7 @@ export const useCreateHighlightTagApiV1BooksBookIdHighlightTagPost = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof createHighlightTagApiV1BooksBookIdHighlightTagPost>>,
       TError,
-      { bookId: number; data: HighlightTagCreateRequest },
+      { bookId: string; data: HighlightTagCreateRequest },
       TContext
     >;
   },
@@ -1046,7 +1046,7 @@ export const useCreateHighlightTagApiV1BooksBookIdHighlightTagPost = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof createHighlightTagApiV1BooksBookIdHighlightTagPost>>,
   TError,
-  { bookId: number; data: HighlightTagCreateRequest },
+  { bookId: string; data: HighlightTagCreateRequest },
   TContext
 > => {
   return useMutation(
@@ -1068,7 +1068,7 @@ Raises:
  * @summary Delete Highlight Tag
  */
 export const deleteHighlightTagApiV1BooksBookIdHighlightTagTagIdDelete = (
-  bookId: number,
+  bookId: string,
   tagId: number,
   signal?: AbortSignal
 ) => {
@@ -1086,13 +1086,13 @@ export const getDeleteHighlightTagApiV1BooksBookIdHighlightTagTagIdDeleteMutatio
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteHighlightTagApiV1BooksBookIdHighlightTagTagIdDelete>>,
     TError,
-    { bookId: number; tagId: number },
+    { bookId: string; tagId: number },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteHighlightTagApiV1BooksBookIdHighlightTagTagIdDelete>>,
   TError,
-  { bookId: number; tagId: number },
+  { bookId: string; tagId: number },
   TContext
 > => {
   const mutationKey = ['deleteHighlightTagApiV1BooksBookIdHighlightTagTagIdDelete'];
@@ -1104,7 +1104,7 @@ export const getDeleteHighlightTagApiV1BooksBookIdHighlightTagTagIdDeleteMutatio
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteHighlightTagApiV1BooksBookIdHighlightTagTagIdDelete>>,
-    { bookId: number; tagId: number }
+    { bookId: string; tagId: number }
   > = (props) => {
     const { bookId, tagId } = props ?? {};
 
@@ -1132,7 +1132,7 @@ export const useDeleteHighlightTagApiV1BooksBookIdHighlightTagTagIdDelete = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof deleteHighlightTagApiV1BooksBookIdHighlightTagTagIdDelete>>,
       TError,
-      { bookId: number; tagId: number },
+      { bookId: string; tagId: number },
       TContext
     >;
   },
@@ -1140,7 +1140,7 @@ export const useDeleteHighlightTagApiV1BooksBookIdHighlightTagTagIdDelete = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof deleteHighlightTagApiV1BooksBookIdHighlightTagTagIdDelete>>,
   TError,
-  { bookId: number; tagId: number },
+  { bookId: string; tagId: number },
   TContext
 > => {
   return useMutation(
@@ -1164,7 +1164,7 @@ Raises:
  * @summary Update Highlight Tag
  */
 export const updateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost = (
-  bookId: number,
+  bookId: string,
   tagId: number,
   highlightTagUpdateRequest: HighlightTagUpdateRequest,
   signal?: AbortSignal
@@ -1185,13 +1185,13 @@ export const getUpdateHighlightTagApiV1BooksBookIdHighlightTagTagIdPostMutationO
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost>>,
     TError,
-    { bookId: number; tagId: number; data: HighlightTagUpdateRequest },
+    { bookId: string; tagId: number; data: HighlightTagUpdateRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost>>,
   TError,
-  { bookId: number; tagId: number; data: HighlightTagUpdateRequest },
+  { bookId: string; tagId: number; data: HighlightTagUpdateRequest },
   TContext
 > => {
   const mutationKey = ['updateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost'];
@@ -1203,7 +1203,7 @@ export const getUpdateHighlightTagApiV1BooksBookIdHighlightTagTagIdPostMutationO
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost>>,
-    { bookId: number; tagId: number; data: HighlightTagUpdateRequest }
+    { bookId: string; tagId: number; data: HighlightTagUpdateRequest }
   > = (props) => {
     const { bookId, tagId, data } = props ?? {};
 
@@ -1232,7 +1232,7 @@ export const useUpdateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof updateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost>>,
       TError,
-      { bookId: number; tagId: number; data: HighlightTagUpdateRequest },
+      { bookId: string; tagId: number; data: HighlightTagUpdateRequest },
       TContext
     >;
   },
@@ -1240,7 +1240,7 @@ export const useUpdateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof updateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost>>,
   TError,
-  { bookId: number; tagId: number; data: HighlightTagUpdateRequest },
+  { bookId: string; tagId: number; data: HighlightTagUpdateRequest },
   TContext
 > => {
   return useMutation(
@@ -1267,7 +1267,7 @@ Raises:
  * @summary Add Tag To Highlight
  */
 export const addTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost = (
-  bookId: number,
+  bookId: string,
   highlightId: number,
   highlightTagAssociationRequest: HighlightTagAssociationRequest,
   signal?: AbortSignal
@@ -1288,13 +1288,13 @@ export const getAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPostMuta
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof addTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost>>,
     TError,
-    { bookId: number; highlightId: number; data: HighlightTagAssociationRequest },
+    { bookId: string; highlightId: number; data: HighlightTagAssociationRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof addTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost>>,
   TError,
-  { bookId: number; highlightId: number; data: HighlightTagAssociationRequest },
+  { bookId: string; highlightId: number; data: HighlightTagAssociationRequest },
   TContext
 > => {
   const mutationKey = ['addTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost'];
@@ -1306,7 +1306,7 @@ export const getAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPostMuta
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof addTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost>>,
-    { bookId: number; highlightId: number; data: HighlightTagAssociationRequest }
+    { bookId: string; highlightId: number; data: HighlightTagAssociationRequest }
   > = (props) => {
     const { bookId, highlightId, data } = props ?? {};
 
@@ -1336,7 +1336,7 @@ export const useAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof addTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost>>,
       TError,
-      { bookId: number; highlightId: number; data: HighlightTagAssociationRequest },
+      { bookId: string; highlightId: number; data: HighlightTagAssociationRequest },
       TContext
     >;
   },
@@ -1344,7 +1344,7 @@ export const useAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof addTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost>>,
   TError,
-  { bookId: number; highlightId: number; data: HighlightTagAssociationRequest },
+  { bookId: string; highlightId: number; data: HighlightTagAssociationRequest },
   TContext
 > => {
   return useMutation(
@@ -1368,7 +1368,7 @@ Raises:
  * @summary Remove Tag From Highlight
  */
 export const removeTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete = (
-  bookId: number,
+  bookId: string,
   highlightId: number,
   tagId: number,
   signal?: AbortSignal
@@ -1387,7 +1387,7 @@ export const getRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTag
         ReturnType<typeof removeTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete>
       >,
       TError,
-      { bookId: number; highlightId: number; tagId: number },
+      { bookId: string; highlightId: number; tagId: number },
       TContext
     >;
   }): UseMutationOptions<
@@ -1395,7 +1395,7 @@ export const getRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTag
       ReturnType<typeof removeTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete>
     >,
     TError,
-    { bookId: number; highlightId: number; tagId: number },
+    { bookId: string; highlightId: number; tagId: number },
     TContext
   > => {
     const mutationKey = [
@@ -1411,7 +1411,7 @@ export const getRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTag
       Awaited<
         ReturnType<typeof removeTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete>
       >,
-      { bookId: number; highlightId: number; tagId: number }
+      { bookId: string; highlightId: number; tagId: number }
     > = (props) => {
       const { bookId, highlightId, tagId } = props ?? {};
 
@@ -1448,7 +1448,7 @@ export const useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTag
         ReturnType<typeof removeTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete>
       >,
       TError,
-      { bookId: number; highlightId: number; tagId: number },
+      { bookId: string; highlightId: number; tagId: number },
       TContext
     >;
   },
@@ -1458,7 +1458,7 @@ export const useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTag
     ReturnType<typeof removeTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete>
   >,
   TError,
-  { bookId: number; highlightId: number; tagId: number },
+  { bookId: string; highlightId: number; tagId: number },
   TContext
 > => {
   return useMutation(

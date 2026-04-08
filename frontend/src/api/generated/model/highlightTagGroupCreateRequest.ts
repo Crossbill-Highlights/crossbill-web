@@ -12,7 +12,7 @@ export interface HighlightTagGroupCreateRequest {
   /** ID of existing tag group to update (optional) */
   id?: number | null;
   /** ID of the book this tag group belongs to */
-  book_id: number;
+  book_id: string;
   /**
    * Tag group name
    * @minLength 1

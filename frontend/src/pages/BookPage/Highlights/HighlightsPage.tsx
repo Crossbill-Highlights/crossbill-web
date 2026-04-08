@@ -343,7 +343,7 @@ export const HighlightsPage = () => {
 interface HighlightsSidebarProps {
   tags: HighlightTagInBook[];
   tagGroups: HighlightTagGroupInBook[];
-  bookId: number;
+  bookId: string;
   selectedTagId: number | undefined;
   onTagClick: (tagId: number | null) => void;
   selectedLabelId: number | undefined;
@@ -382,7 +382,7 @@ interface UseHighlightsFilterTabsParams {
   navChapters: ChapterNavigationData[];
   tags: HighlightTagInBook[];
   tagGroups: HighlightTagGroupInBook[];
-  bookId: number;
+  bookId: string;
   bookmarks: Bookmark[];
   allHighlights: Highlight[];
   selectedTagId: number | undefined;
@@ -501,7 +501,7 @@ const useHighlightsPageData = (chapters: ChapterData[]) => {
   };
 };
 
-const useBookSearch = (bookId: number, searchText: string) => {
+const useBookSearch = (bookId: string, searchText: string) => {
   const { data: searchResults, isLoading: isSearching } =
     useSearchBookHighlightsApiV1BooksBookIdHighlightsGet(
       bookId,

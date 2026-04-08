@@ -372,7 +372,7 @@ export const useUpdatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPu
  * @summary Get Book Prereading
  */
 export const getBookPrereadingApiV1BooksBookIdPrereadingGet = (
-  bookId: number,
+  bookId: string,
   signal?: AbortSignal
 ) => {
   return axiosInstance<BookPrereadingResponse>({
@@ -382,7 +382,7 @@ export const getBookPrereadingApiV1BooksBookIdPrereadingGet = (
   });
 };
 
-export const getGetBookPrereadingApiV1BooksBookIdPrereadingGetQueryKey = (bookId: number) => {
+export const getGetBookPrereadingApiV1BooksBookIdPrereadingGetQueryKey = (bookId: string) => {
   return [`/api/v1/books/${bookId}/prereading`] as const;
 };
 
@@ -390,7 +390,7 @@ export const getGetBookPrereadingApiV1BooksBookIdPrereadingGetQueryOptions = <
   TData = Awaited<ReturnType<typeof getBookPrereadingApiV1BooksBookIdPrereadingGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -426,7 +426,7 @@ export function useGetBookPrereadingApiV1BooksBookIdPrereadingGet<
   TData = Awaited<ReturnType<typeof getBookPrereadingApiV1BooksBookIdPrereadingGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -450,7 +450,7 @@ export function useGetBookPrereadingApiV1BooksBookIdPrereadingGet<
   TData = Awaited<ReturnType<typeof getBookPrereadingApiV1BooksBookIdPrereadingGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -474,7 +474,7 @@ export function useGetBookPrereadingApiV1BooksBookIdPrereadingGet<
   TData = Awaited<ReturnType<typeof getBookPrereadingApiV1BooksBookIdPrereadingGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -494,7 +494,7 @@ export function useGetBookPrereadingApiV1BooksBookIdPrereadingGet<
   TData = Awaited<ReturnType<typeof getBookPrereadingApiV1BooksBookIdPrereadingGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<

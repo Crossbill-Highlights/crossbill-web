@@ -10,7 +10,7 @@ import type { Highlight } from './highlight';
  * Schema for ReadingSession response.
  */
 export interface ReadingSession {
-  book_id: number;
+  book_id: string;
   device_id: string | null;
   content_hash: string;
   /** Session start timestamp */

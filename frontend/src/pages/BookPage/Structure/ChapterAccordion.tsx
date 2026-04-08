@@ -18,7 +18,7 @@ type ReadStatus = 'read' | 'current' | 'unread';
 interface ChapterAccordionProps {
   chapter: ChapterWithHighlights;
   childrenByParentId: Map<number | null, ChapterWithHighlights[]>;
-  bookId: number;
+  bookId: string;
   depth?: number;
   isRead?: boolean;
   isCurrent?: boolean;

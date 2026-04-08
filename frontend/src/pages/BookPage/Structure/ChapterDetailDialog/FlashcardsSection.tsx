@@ -24,13 +24,13 @@ import { useCallback, useMemo, useState } from 'react';
 
 interface FlashcardsSectionProps {
   chapter: ChapterWithHighlights;
-  bookId: number;
+  bookId: string;
   prereadingSummary?: ChapterPrereadingResponse;
   bookFlashcards?: Flashcard[];
 }
 
 const useFlashcardMutations = (
-  bookId: number,
+  bookId: string,
   chapterId: number,
   showSnackbar: (message: string, severity: 'error' | 'warning' | 'info' | 'success') => void
 ) => {

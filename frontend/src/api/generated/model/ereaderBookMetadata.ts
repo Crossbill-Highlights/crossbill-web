@@ -13,7 +13,7 @@ for deciding whether to upload cover images, epub files, etc.
  */
 export interface EreaderBookMetadata {
   /** Internal book ID */
-  book_id: number;
+  book_id: string;
   /** Book title */
   bookname: string;
   /** Book author */

@@ -14,7 +14,7 @@ export interface ChapterContentResponse {
   /** Name of the chapter */
   chapter_name: string;
   /** ID of the book */
-  book_id: number;
+  book_id: string;
   /** Full text content of the chapter */
   content: string;
 }

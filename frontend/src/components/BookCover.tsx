@@ -3,7 +3,7 @@ import { BookCoverIcon } from '@/theme/Icons.tsx';
 import { Box, CircularProgress, type SxProps, type Theme, useTheme } from '@mui/material';
 
 export interface BookCoverProps {
-  bookId: number;
+  bookId: string;
   hasCover: boolean;
   title: string;
   /**

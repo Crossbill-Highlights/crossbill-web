@@ -22,7 +22,7 @@ import { useState } from 'react';
 
 interface ToolbarProps {
   highlightId: number;
-  bookId: number;
+  bookId: string;
   highlightText: string;
   bookmark?: Bookmark;
   noteVisible: boolean;
@@ -115,7 +115,7 @@ export const Toolbar = ({
 
 const useBookmarkMutations = (
   bookmark: Bookmark | undefined,
-  bookId: number,
+  bookId: string,
   highlightId: number,
   showSnackbar: (message: string, severity: 'error' | 'warning' | 'info' | 'success') => void
 ) => {

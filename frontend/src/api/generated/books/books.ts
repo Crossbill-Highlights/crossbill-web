@@ -344,11 +344,11 @@ Raises:
     HTTPException: If book is not found or fetching fails
  * @summary Get Book Details
  */
-export const getBookDetailsApiV1BooksBookIdGet = (bookId: number, signal?: AbortSignal) => {
+export const getBookDetailsApiV1BooksBookIdGet = (bookId: string, signal?: AbortSignal) => {
   return axiosInstance<BookDetails>({ url: `/api/v1/books/${bookId}`, method: 'GET', signal });
 };
 
-export const getGetBookDetailsApiV1BooksBookIdGetQueryKey = (bookId: number) => {
+export const getGetBookDetailsApiV1BooksBookIdGetQueryKey = (bookId: string) => {
   return [`/api/v1/books/${bookId}`] as const;
 };
 
@@ -356,7 +356,7 @@ export const getGetBookDetailsApiV1BooksBookIdGetQueryOptions = <
   TData = Awaited<ReturnType<typeof getBookDetailsApiV1BooksBookIdGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getBookDetailsApiV1BooksBookIdGet>>, TError, TData>
@@ -387,7 +387,7 @@ export function useGetBookDetailsApiV1BooksBookIdGet<
   TData = Awaited<ReturnType<typeof getBookDetailsApiV1BooksBookIdGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options: {
     query: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getBookDetailsApiV1BooksBookIdGet>>, TError, TData>
@@ -407,7 +407,7 @@ export function useGetBookDetailsApiV1BooksBookIdGet<
   TData = Awaited<ReturnType<typeof getBookDetailsApiV1BooksBookIdGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getBookDetailsApiV1BooksBookIdGet>>, TError, TData>
@@ -427,7 +427,7 @@ export function useGetBookDetailsApiV1BooksBookIdGet<
   TData = Awaited<ReturnType<typeof getBookDetailsApiV1BooksBookIdGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getBookDetailsApiV1BooksBookIdGet>>, TError, TData>
@@ -443,7 +443,7 @@ export function useGetBookDetailsApiV1BooksBookIdGet<
   TData = Awaited<ReturnType<typeof getBookDetailsApiV1BooksBookIdGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getBookDetailsApiV1BooksBookIdGet>>, TError, TData>
@@ -477,7 +477,7 @@ Raises:
  * @summary Update Book
  */
 export const updateBookApiV1BooksBookIdPost = (
-  bookId: number,
+  bookId: string,
   bookUpdateRequest: BookUpdateRequest,
   signal?: AbortSignal
 ) => {
@@ -497,13 +497,13 @@ export const getUpdateBookApiV1BooksBookIdPostMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateBookApiV1BooksBookIdPost>>,
     TError,
-    { bookId: number; data: BookUpdateRequest },
+    { bookId: string; data: BookUpdateRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updateBookApiV1BooksBookIdPost>>,
   TError,
-  { bookId: number; data: BookUpdateRequest },
+  { bookId: string; data: BookUpdateRequest },
   TContext
 > => {
   const mutationKey = ['updateBookApiV1BooksBookIdPost'];
@@ -515,7 +515,7 @@ export const getUpdateBookApiV1BooksBookIdPostMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updateBookApiV1BooksBookIdPost>>,
-    { bookId: number; data: BookUpdateRequest }
+    { bookId: string; data: BookUpdateRequest }
   > = (props) => {
     const { bookId, data } = props ?? {};
 
@@ -539,7 +539,7 @@ export const useUpdateBookApiV1BooksBookIdPost = <TError = HTTPValidationError, 
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof updateBookApiV1BooksBookIdPost>>,
       TError,
-      { bookId: number; data: BookUpdateRequest },
+      { bookId: string; data: BookUpdateRequest },
       TContext
     >;
   },
@@ -547,7 +547,7 @@ export const useUpdateBookApiV1BooksBookIdPost = <TError = HTTPValidationError, 
 ): UseMutationResult<
   Awaited<ReturnType<typeof updateBookApiV1BooksBookIdPost>>,
   TError,
-  { bookId: number; data: BookUpdateRequest },
+  { bookId: string; data: BookUpdateRequest },
   TContext
 > => {
   return useMutation(getUpdateBookApiV1BooksBookIdPostMutationOptions(options), queryClient);
@@ -566,7 +566,7 @@ Raises:
     HTTPException: If book is not found or deletion fails
  * @summary Delete Book
  */
-export const deleteBookApiV1BooksBookIdDelete = (bookId: number, signal?: AbortSignal) => {
+export const deleteBookApiV1BooksBookIdDelete = (bookId: string, signal?: AbortSignal) => {
   return axiosInstance<void>({ url: `/api/v1/books/${bookId}`, method: 'DELETE', signal });
 };
 
@@ -577,13 +577,13 @@ export const getDeleteBookApiV1BooksBookIdDeleteMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteBookApiV1BooksBookIdDelete>>,
     TError,
-    { bookId: number },
+    { bookId: string },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteBookApiV1BooksBookIdDelete>>,
   TError,
-  { bookId: number },
+  { bookId: string },
   TContext
 > => {
   const mutationKey = ['deleteBookApiV1BooksBookIdDelete'];
@@ -595,7 +595,7 @@ export const getDeleteBookApiV1BooksBookIdDeleteMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteBookApiV1BooksBookIdDelete>>,
-    { bookId: number }
+    { bookId: string }
   > = (props) => {
     const { bookId } = props ?? {};
 
@@ -622,7 +622,7 @@ export const useDeleteBookApiV1BooksBookIdDelete = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof deleteBookApiV1BooksBookIdDelete>>,
       TError,
-      { bookId: number },
+      { bookId: string },
       TContext
     >;
   },
@@ -630,7 +630,7 @@ export const useDeleteBookApiV1BooksBookIdDelete = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof deleteBookApiV1BooksBookIdDelete>>,
   TError,
-  { bookId: number },
+  { bookId: string },
   TContext
 > => {
   return useMutation(getDeleteBookApiV1BooksBookIdDeleteMutationOptions(options), queryClient);
@@ -646,17 +646,17 @@ Args:
     current_user: Authenticated user
 
 Returns:
-    FileResponse with the book cover image
+    Response with the book cover image
 
 Raises:
     HTTPException: If book is not found, user doesn't own it, or cover doesn't exist
  * @summary Get Book Cover
  */
-export const getBookCoverApiV1BooksBookIdCoverGet = (bookId: number, signal?: AbortSignal) => {
-  return axiosInstance<unknown>({ url: `/api/v1/books/${bookId}/cover`, method: 'GET', signal });
+export const getBookCoverApiV1BooksBookIdCoverGet = (bookId: string, signal?: AbortSignal) => {
+  return axiosInstance<void>({ url: `/api/v1/books/${bookId}/cover`, method: 'GET', signal });
 };
 
-export const getGetBookCoverApiV1BooksBookIdCoverGetQueryKey = (bookId: number) => {
+export const getGetBookCoverApiV1BooksBookIdCoverGetQueryKey = (bookId: string) => {
   return [`/api/v1/books/${bookId}/cover`] as const;
 };
 
@@ -664,7 +664,7 @@ export const getGetBookCoverApiV1BooksBookIdCoverGetQueryOptions = <
   TData = Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -700,7 +700,7 @@ export function useGetBookCoverApiV1BooksBookIdCoverGet<
   TData = Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -724,7 +724,7 @@ export function useGetBookCoverApiV1BooksBookIdCoverGet<
   TData = Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -748,7 +748,7 @@ export function useGetBookCoverApiV1BooksBookIdCoverGet<
   TData = Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -768,7 +768,7 @@ export function useGetBookCoverApiV1BooksBookIdCoverGet<
   TData = Awaited<ReturnType<typeof getBookCoverApiV1BooksBookIdCoverGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<

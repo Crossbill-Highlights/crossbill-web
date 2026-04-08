@@ -13,7 +13,7 @@ import { CollapsibleSection } from './CollapsibleSection.tsx';
 
 interface PrereadingQuestionsSectionProps {
   chapterId: number;
-  bookId: number;
+  bookId: string;
   prereadingSummary?: ChapterPrereadingResponse;
 }
 

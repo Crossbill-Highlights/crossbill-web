@@ -52,7 +52,7 @@ Raises:
  * @summary Create Flashcard For Book
  */
 export const createFlashcardForBookApiV1BooksBookIdFlashcardsPost = (
-  bookId: number,
+  bookId: string,
   flashcardCreateRequest: FlashcardCreateRequest,
   signal?: AbortSignal
 ) => {
@@ -72,13 +72,13 @@ export const getCreateFlashcardForBookApiV1BooksBookIdFlashcardsPostMutationOpti
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createFlashcardForBookApiV1BooksBookIdFlashcardsPost>>,
     TError,
-    { bookId: number; data: FlashcardCreateRequest },
+    { bookId: string; data: FlashcardCreateRequest },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createFlashcardForBookApiV1BooksBookIdFlashcardsPost>>,
   TError,
-  { bookId: number; data: FlashcardCreateRequest },
+  { bookId: string; data: FlashcardCreateRequest },
   TContext
 > => {
   const mutationKey = ['createFlashcardForBookApiV1BooksBookIdFlashcardsPost'];
@@ -90,7 +90,7 @@ export const getCreateFlashcardForBookApiV1BooksBookIdFlashcardsPostMutationOpti
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createFlashcardForBookApiV1BooksBookIdFlashcardsPost>>,
-    { bookId: number; data: FlashcardCreateRequest }
+    { bookId: string; data: FlashcardCreateRequest }
   > = (props) => {
     const { bookId, data } = props ?? {};
 
@@ -118,7 +118,7 @@ export const useCreateFlashcardForBookApiV1BooksBookIdFlashcardsPost = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof createFlashcardForBookApiV1BooksBookIdFlashcardsPost>>,
       TError,
-      { bookId: number; data: FlashcardCreateRequest },
+      { bookId: string; data: FlashcardCreateRequest },
       TContext
     >;
   },
@@ -126,7 +126,7 @@ export const useCreateFlashcardForBookApiV1BooksBookIdFlashcardsPost = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof createFlashcardForBookApiV1BooksBookIdFlashcardsPost>>,
   TError,
-  { bookId: number; data: FlashcardCreateRequest },
+  { bookId: string; data: FlashcardCreateRequest },
   TContext
 > => {
   return useMutation(
@@ -151,7 +151,7 @@ Raises:
  * @summary Get Flashcards For Book
  */
 export const getFlashcardsForBookApiV1BooksBookIdFlashcardsGet = (
-  bookId: number,
+  bookId: string,
   signal?: AbortSignal
 ) => {
   return axiosInstance<FlashcardsWithHighlightsResponse>({
@@ -161,7 +161,7 @@ export const getFlashcardsForBookApiV1BooksBookIdFlashcardsGet = (
   });
 };
 
-export const getGetFlashcardsForBookApiV1BooksBookIdFlashcardsGetQueryKey = (bookId: number) => {
+export const getGetFlashcardsForBookApiV1BooksBookIdFlashcardsGetQueryKey = (bookId: string) => {
   return [`/api/v1/books/${bookId}/flashcards`] as const;
 };
 
@@ -169,7 +169,7 @@ export const getGetFlashcardsForBookApiV1BooksBookIdFlashcardsGetQueryOptions = 
   TData = Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -205,7 +205,7 @@ export function useGetFlashcardsForBookApiV1BooksBookIdFlashcardsGet<
   TData = Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -229,7 +229,7 @@ export function useGetFlashcardsForBookApiV1BooksBookIdFlashcardsGet<
   TData = Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -253,7 +253,7 @@ export function useGetFlashcardsForBookApiV1BooksBookIdFlashcardsGet<
   TData = Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -273,7 +273,7 @@ export function useGetFlashcardsForBookApiV1BooksBookIdFlashcardsGet<
   TData = Awaited<ReturnType<typeof getFlashcardsForBookApiV1BooksBookIdFlashcardsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<

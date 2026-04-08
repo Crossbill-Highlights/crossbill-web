@@ -140,7 +140,7 @@ Returns:
  * @summary Get Book Reading Sessions
  */
 export const getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet = (
-  bookId: number,
+  bookId: string,
   params?: GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
   signal?: AbortSignal
 ) => {
@@ -153,7 +153,7 @@ export const getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet = (
 };
 
 export const getGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetQueryKey = (
-  bookId: number,
+  bookId: string,
   params?: GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams
 ) => {
   return [`/api/v1/books/${bookId}/reading_sessions`, ...(params ? [params] : [])] as const;
@@ -163,7 +163,7 @@ export const getGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetQueryOpt
   TData = Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   params?: GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
   options?: {
     query?: Partial<
@@ -203,7 +203,7 @@ export function useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet<
   TData = Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   params: undefined | GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
   options: {
     query: Partial<
@@ -228,7 +228,7 @@ export function useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet<
   TData = Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   params?: GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
   options?: {
     query?: Partial<
@@ -253,7 +253,7 @@ export function useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet<
   TData = Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   params?: GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
   options?: {
     query?: Partial<
@@ -274,7 +274,7 @@ export function useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet<
   TData = Awaited<ReturnType<typeof getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet>>,
   TError = HTTPValidationError,
 >(
-  bookId: number,
+  bookId: string,
   params?: GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
   options?: {
     query?: Partial<

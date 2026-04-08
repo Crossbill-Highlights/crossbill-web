@@ -10,7 +10,7 @@ import type { FlashcardWithContext } from './FlashcardChapterList.tsx';
 
 interface FlashcardEditDialogProps {
   flashcard: FlashcardWithContext;
-  bookId: number;
+  bookId: string;
   open: boolean;
   onClose: () => void;
 }

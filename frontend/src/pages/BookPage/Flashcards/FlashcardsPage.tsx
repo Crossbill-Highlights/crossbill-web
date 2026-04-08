@@ -333,7 +333,7 @@ export const FlashcardsPage = () => {
 interface FlashcardsSidebarProps {
   tags: HighlightTagInBook[];
   tagGroups: HighlightTagGroupInBook[];
-  bookId: number;
+  bookId: string;
   selectedTagId: number | undefined;
   onTagClick: (tagId: number | null) => void;
 }
@@ -362,7 +362,7 @@ interface UseFlashcardsFilterTabsParams {
   navChapters: ChapterNavigationData[];
   tags: HighlightTagInBook[];
   tagGroups: HighlightTagGroupInBook[];
-  bookId: number;
+  bookId: string;
   selectedTagId: number | undefined;
   handleChapterClick: (chapterId: number) => void;
   handleTagClick: (tagId: number | null) => void;

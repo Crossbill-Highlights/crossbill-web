@@ -12,6 +12,6 @@ export interface Bookmark {
   /** ID of the highlight to bookmark */
   highlight_id: number;
   id: number;
-  book_id: number;
+  book_id: string;
   created_at: string;
 }

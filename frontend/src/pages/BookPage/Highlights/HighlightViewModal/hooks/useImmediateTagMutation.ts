@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 
 export interface UseImmediateTagMutationParams {
   /** Book ID for API calls */
-  bookId: number;
+  bookId: string;
   /** Highlight ID for API calls */
   highlightId: number;
   /** Initial tags for the highlight */

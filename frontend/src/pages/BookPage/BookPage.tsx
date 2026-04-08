@@ -17,7 +17,7 @@ import { useEffect, useState } from 'react';
 
 export const BookPage = () => {
   const { bookId } = useParams({ strict: false });
-  const { data: book, isLoading, isError } = useGetBookDetailsApiV1BooksBookIdGet(Number(bookId));
+  const { data: book, isLoading, isError } = useGetBookDetailsApiV1BooksBookIdGet(bookId!);
 
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));

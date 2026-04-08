@@ -16,7 +16,7 @@ import type { TagInBook } from './tagInBook';
  * Schema for detailed Book response with chapters and highlights.
  */
 export interface BookDetails {
-  id: number;
+  id: string;
   client_book_id?: string | null;
   title: string;
   author: string | null;

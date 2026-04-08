@@ -11,7 +11,7 @@ import { useState } from 'react';
 
 export interface FlashcardListCardProps {
   flashcard: FlashcardWithContext;
-  bookId: number;
+  bookId: string;
   onEdit: () => void;
   showSourceHighlight?: boolean;
 }

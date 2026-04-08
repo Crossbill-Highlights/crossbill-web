@@ -8,7 +8,7 @@ import { useState } from 'react';
 
 interface HighlightNoteProps {
   highlightId: number;
-  bookId: number;
+  bookId: string;
   initialNote: string | null | undefined;
   visible: boolean;
   disabled?: boolean;
@@ -62,7 +62,7 @@ export const HighlightNote = ({
 };
 
 const useNoteMutations = (
-  bookId: number,
+  bookId: string,
   highlightId: number,
   showSnackbar: (message: string, severity: 'error' | 'warning' | 'info' | 'success') => void
 ) => {

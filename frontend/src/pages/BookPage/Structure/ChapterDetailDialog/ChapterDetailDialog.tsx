@@ -29,7 +29,7 @@ interface ChapterDetailDialogProps {
   open: boolean;
   onClose: () => void;
   chapter: ChapterWithHighlights;
-  bookId: number;
+  bookId: string;
   allLeafChapters: ChapterWithHighlights[];
   currentIndex: number;
   onNavigate: (newIndex: number) => void;

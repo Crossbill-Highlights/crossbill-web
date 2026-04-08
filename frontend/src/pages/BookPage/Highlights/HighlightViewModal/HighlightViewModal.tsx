@@ -26,7 +26,7 @@ import { useVisibilityToggle } from './hooks/useVisibilityToggle.ts';
 
 export interface HighlightViewModalProps {
   highlight: Highlight;
-  bookId: number;
+  bookId: string;
   open: boolean;
   onClose: (lastViewedHighlightId?: number) => void;
   availableTags: HighlightTagInBook[];

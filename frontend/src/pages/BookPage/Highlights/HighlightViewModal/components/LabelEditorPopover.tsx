@@ -14,7 +14,7 @@ interface LabelEditorContentProps {
   styleId: number;
   currentLabel?: string | null;
   currentColor?: string | null;
-  bookId: number;
+  bookId: string;
   submitRef: MutableRefObject<(() => void) | null>;
   onClose: () => void;
 }
@@ -118,7 +118,7 @@ interface LabelEditorPopoverProps {
   styleId: number;
   currentLabel?: string | null;
   currentColor?: string | null;
-  bookId: number;
+  bookId: string;
 }
 
 export const LabelEditorPopover = ({
