@@ -2,6 +2,7 @@
 
 from datetime import datetime as dt
 from typing import Any
+from uuid import UUID, uuid4
 
 from sqlalchemy import (
     Column,
@@ -17,6 +18,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
 from sqlalchemy.dialects.postgresql import TSVECTOR
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
@@ -27,7 +29,7 @@ book_tags = Table(
     "book_tags",
     Base.metadata,
     Column(
-        "book_id", Integer, ForeignKey("books.id", ondelete="CASCADE"), primary_key=True, index=True
+        "book_id", PGUUID(as_uuid=True), ForeignKey("books.id", ondelete="CASCADE"), primary_key=True, index=True
     ),
     Column(
         "tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True, index=True
@@ -167,7 +169,7 @@ class Book(Base):
 
     __tablename__ = "books"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
@@ -237,8 +239,8 @@ class Chapter(Base):
     __tablename__ = "chapters"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    book_id: Mapped[int] = mapped_column(
-        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    book_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
     )
     parent_id: Mapped[int | None] = mapped_column(
         ForeignKey("chapters.id", ondelete="CASCADE"), index=True, nullable=True
@@ -291,8 +293,8 @@ class HighlightStyle(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    book_id: Mapped[int | None] = mapped_column(
-        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=True
+    book_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=True
     )
     device_color: Mapped[str | None] = mapped_column(String(50), nullable=True)
     device_style: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -330,8 +332,8 @@ class Highlight(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    book_id: Mapped[int] = mapped_column(
-        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    book_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
     )
     chapter_id: Mapped[int | None] = mapped_column(
         ForeignKey("chapters.id", ondelete="SET NULL"), index=True, nullable=True
@@ -433,8 +435,8 @@ class HighlightTagGroup(Base):
     __tablename__ = "highlight_tag_groups"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    book_id: Mapped[int] = mapped_column(
-        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    book_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     created_at: Mapped[dt] = mapped_column(
@@ -468,8 +470,8 @@ class HighlightTag(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    book_id: Mapped[int] = mapped_column(
-        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    book_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
     )
     tag_group_id: Mapped[int | None] = mapped_column(
         ForeignKey("highlight_tag_groups.id", ondelete="SET NULL"), index=True, nullable=True
@@ -511,8 +513,8 @@ class Bookmark(Base):
     __tablename__ = "bookmarks"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    book_id: Mapped[int] = mapped_column(
-        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    book_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
     )
     highlight_id: Mapped[int] = mapped_column(
         ForeignKey("highlights.id", ondelete="CASCADE"), index=True, nullable=False
@@ -539,8 +541,8 @@ class Flashcard(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    book_id: Mapped[int] = mapped_column(
-        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    book_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
     )
     highlight_id: Mapped[int | None] = mapped_column(
         ForeignKey("highlights.id", ondelete="CASCADE"), index=True, nullable=True
@@ -582,8 +584,8 @@ class ReadingSession(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    book_id: Mapped[int] = mapped_column(
-        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    book_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
     )
     start_time: Mapped[dt] = mapped_column(DateTime(timezone=True), nullable=False)
     end_time: Mapped[dt] = mapped_column(DateTime(timezone=True), nullable=False)
