@@ -1,6 +1,7 @@
 """Update book use case."""
 
 import logging
+from uuid import UUID
 
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
@@ -36,7 +37,7 @@ class UpdateBookUseCase:
         self.replace_book_tags_use_case = replace_book_tags_use_case
 
     async def update_book(
-        self, book_id: int, update_data: BookUpdateRequest, user_id: int
+        self, book_id: UUID, update_data: BookUpdateRequest, user_id: int
     ) -> tuple[Book, int, int, list[Tag], bool]:
         """
         Update book information.

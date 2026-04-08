@@ -1,6 +1,7 @@
 """Use case for ebook deletion operations."""
 
 import logging
+from uuid import UUID
 
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.domain.common.value_objects.ids import BookId
@@ -15,7 +16,7 @@ class EbookDeletionUseCase:
         """Initialize use case with dependencies."""
         self.file_repository = file_repository
 
-    async def delete_ebook(self, book_id: int) -> bool:
+    async def delete_ebook(self, book_id: UUID) -> bool:
         """
         Delete ebook file (EPUB or PDF) from disk.
 

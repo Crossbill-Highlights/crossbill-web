@@ -2,6 +2,8 @@
 Use case for replacing all tags on a book.
 """
 
+from uuid import UUID
+
 import structlog
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
@@ -31,7 +33,7 @@ class ReplaceBookTagsUseCase:
         self.tag_repository = tag_repository
         self.book_repository = book_repository
 
-    async def replace_tags(self, book_id: int, tag_names: list[str], user_id: int) -> list[Tag]:
+    async def replace_tags(self, book_id: UUID, tag_names: list[str], user_id: int) -> list[Tag]:
         """
         Replace all tags on a book.
 

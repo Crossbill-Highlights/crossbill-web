@@ -1,6 +1,7 @@
 """Delete book use case."""
 
 import logging
+from uuid import UUID
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.use_cases.book_files.ebook_deletion_use_case import (
@@ -23,7 +24,7 @@ class DeleteBookUseCase:
         self.book_repository = book_repository
         self.ebook_deletion_use_case = ebook_deletion_use_case
 
-    async def delete_book(self, book_id: int, user_id: int) -> None:
+    async def delete_book(self, book_id: UUID, user_id: int) -> None:
         """
         Delete a book and all its contents (hard delete).
 

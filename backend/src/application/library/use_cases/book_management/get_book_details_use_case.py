@@ -1,6 +1,7 @@
 """Get book details use case."""
 
 import logging
+from uuid import UUID
 
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
@@ -71,7 +72,7 @@ class GetBookDetailsUseCase:
         self.highlight_style_repository = highlight_style_repository
         self.highlight_style_resolver = highlight_style_resolver
 
-    async def get_book_details(self, book_id: int, user_id: int) -> BookDetailsAggregation:
+    async def get_book_details(self, book_id: UUID, user_id: int) -> BookDetailsAggregation:
         """
         Get detailed information about a book including its chapters and highlights.
 

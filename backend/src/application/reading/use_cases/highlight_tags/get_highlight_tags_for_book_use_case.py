@@ -1,5 +1,7 @@
 """Use case for getting highlight tags for a book."""
 
+from uuid import UUID
+
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.highlight_tag_repository import (
     HighlightTagRepositoryProtocol,
@@ -20,7 +22,7 @@ class GetHighlightTagsForBookUseCase:
         self.tag_repository = tag_repository
         self.book_repository = book_repository
 
-    async def get_tags(self, book_id: int, user_id: int) -> list[HighlightTag]:
+    async def get_tags(self, book_id: UUID, user_id: int) -> list[HighlightTag]:
         """
         Get all tags for a book.
 

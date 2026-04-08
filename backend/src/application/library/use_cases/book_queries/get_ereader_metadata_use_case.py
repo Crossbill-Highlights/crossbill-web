@@ -12,7 +12,7 @@ from src.domain.reading.exceptions import BookNotFoundError
 class EreaderMetadata:
     """Lightweight book metadata for ereader operations."""
 
-    book_id: int
+    book_id: str
     title: str
     author: str | None
     has_cover: bool
@@ -54,7 +54,7 @@ class GetEreaderMetadataUseCase:
         has_ebook = book.file_path is not None
 
         return EreaderMetadata(
-            book_id=book.id.value,
+            book_id=str(book.id.value),
             title=book.title,
             author=book.author,
             has_cover=has_cover,

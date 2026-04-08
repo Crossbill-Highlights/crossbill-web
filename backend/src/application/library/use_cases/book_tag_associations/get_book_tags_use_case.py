@@ -2,6 +2,8 @@
 Use case for getting all tags for a book.
 """
 
+from uuid import UUID
+
 import structlog
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
@@ -31,7 +33,7 @@ class GetBookTagsUseCase:
         self.tag_repository = tag_repository
         self.book_repository = book_repository
 
-    async def get_tags(self, book_id: int, user_id: int) -> list[Tag]:
+    async def get_tags(self, book_id: UUID, user_id: int) -> list[Tag]:
         """
         Get all tags for a book.
 

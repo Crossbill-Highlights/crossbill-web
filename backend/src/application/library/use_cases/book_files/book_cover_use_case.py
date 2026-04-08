@@ -1,6 +1,7 @@
 """Book cover management use case."""
 
 import logging
+from uuid import UUID
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
@@ -21,7 +22,7 @@ class BookCoverUseCase:
         self.book_repository = book_repository
         self.file_repository = file_repository
 
-    async def get_cover(self, book_id: int, user_id: int) -> bytes | None:
+    async def get_cover(self, book_id: UUID, user_id: int) -> bytes | None:
         """
         Get the cover image bytes with ownership verification.
 
