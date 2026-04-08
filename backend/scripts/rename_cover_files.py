@@ -36,14 +36,37 @@ def _sync_db_url(async_url: str) -> str:
 
 
 def fetch_book_id_uuid_pairs() -> list[tuple[int, str]]:
-    """Return [(id, uuid), ...] for every row in books."""
+    """Return [(old_int_id, uuid), ...] for every row in books.
+
+    Works after migration 050 (columns: id + uuid) or after migration 051
+    (columns: id_old + id, where id is the UUID).
+    """
     settings = get_settings()
     db_url = _sync_db_url(settings.DATABASE_URL)
     conn = psycopg2.connect(db_url)
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT id, uuid FROM books ORDER BY id")
-            rows: list[tuple[int, str]] = cur.fetchall()
+            # Detect which columns exist
+            cur.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'books' AND column_name IN ('uuid', 'id_old') "
+                "ORDER BY column_name"
+            )
+            columns = {row[0] for row in cur.fetchall()}
+
+            if "id_old" in columns:
+                # After migration 051: id_old is the int, id is the UUID
+                cur.execute("SELECT id_old, id FROM books ORDER BY id_old")
+            elif "uuid" in columns:
+                # After migration 050: id is the int, uuid is the UUID
+                cur.execute("SELECT id, uuid FROM books ORDER BY id")
+            else:
+                raise RuntimeError(
+                    "Cannot determine column layout. "
+                    "Expected either 'uuid' (post-050) or 'id_old' (post-051) column."
+                )
+
+            rows: list[tuple[int, str]] = [(row[0], str(row[1])) for row in cur.fetchall()]
         return rows
     finally:
         conn.close()

@@ -4,10 +4,11 @@ Revision ID: 051
 Revises: 050
 Create Date: 2026-04-08
 
-Drops old int-based columns and constraints, renames UUID columns to be the
-primary key, and recreates all foreign key constraints with UUID references.
+Renames old int-based columns to *_old (kept for safety / cover file rename),
+promotes UUID columns to be the primary key, and recreates all foreign key
+constraints with UUID references.
 
-This migration is NOT safely reversible (int IDs are gone).
+A follow-up migration will drop the *_old columns after cover files are renamed.
 """
 
 from collections.abc import Sequence
@@ -58,21 +59,20 @@ def upgrade() -> None:
     op.drop_constraint("books_pkey", "books", type_="primary")
 
     # ------------------------------------------------------------------ #
-    # 4. Drop old int book_id columns on all referencing tables.
+    # 4. Rename old int book_id columns to book_id_old (keep for safety).
     # ------------------------------------------------------------------ #
     for table, _nullable, _fk_name in REFERENCING_TABLES:
-        # Also drop the old ix_{table}_book_id index (int-based) if it exists.
-        # Some tables had this index, some did not. Use IF EXISTS via raw SQL.
+        # Drop the old ix_{table}_book_id index (int-based) if it exists.
         op.execute(
             sa.text(f"DROP INDEX IF EXISTS ix_{table}_book_id")
         )
-        op.drop_column(table, "book_id")
+        op.alter_column(table, "book_id", new_column_name="book_id_old")
 
     # ------------------------------------------------------------------ #
-    # 5. Drop old int id column on books, plus its index.
+    # 5. Rename old int id column on books to id_old (keep for safety).
     # ------------------------------------------------------------------ #
     op.execute(sa.text("DROP INDEX IF EXISTS ix_books_id"))
-    op.drop_column("books", "id")
+    op.alter_column("books", "id", new_column_name="id_old")
 
     # ------------------------------------------------------------------ #
     # 6. Rename books.uuid -> books.id.
