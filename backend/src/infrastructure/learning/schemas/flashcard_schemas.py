@@ -8,7 +8,7 @@ class Flashcard(BaseModel):
 
     id: int
     user_id: int
-    book_id: int
+    book_id: str
     highlight_id: int | None
     chapter_id: int | None = None
 

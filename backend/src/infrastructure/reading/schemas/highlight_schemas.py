@@ -60,7 +60,7 @@ class HighlightResponseBase(HighlightBase):
     """
 
     id: int
-    book_id: int
+    book_id: str
     chapter_id: int | None
     label: HighlightLabel | None = Field(None, description="Resolved label for this highlight")
     highlight_tags: list[HighlightTagInBook] = Field(

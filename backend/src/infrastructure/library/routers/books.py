@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette import status
@@ -79,7 +80,7 @@ def _map_chapters_to_schemas(
             )
             highlight_schema = Highlight(
                 id=h.id.value,
-                book_id=h.book_id.value,
+                book_id=str(h.book_id.value),
                 chapter_id=h.chapter_id.value if h.chapter_id else None,
                 text=h.text,
                 chapter=chapter.name if chapter else None,
@@ -98,7 +99,7 @@ def _map_chapters_to_schemas(
                     Flashcard(
                         id=fc.id.value,
                         user_id=fc.user_id.value,
-                        book_id=fc.book_id.value,
+                        book_id=str(fc.book_id.value),
                         highlight_id=fc.highlight_id.value if fc.highlight_id else None,
                         chapter_id=fc.chapter_id.value if fc.chapter_id else None,
                         question=fc.question,
@@ -157,7 +158,7 @@ def _build_book_details_schema(
         BookDetails Pydantic schema
     """
     return BookDetails(
-        id=agg.book.id.value,
+        id=str(agg.book.id.value),
         client_book_id=agg.book.client_book_id,
         title=agg.book.title,
         author=agg.book.author,
@@ -195,7 +196,7 @@ def _build_book_details_schema(
             Flashcard(
                 id=f.id.value,
                 user_id=f.user_id.value,
-                book_id=f.book_id.value,
+                book_id=str(f.book_id.value),
                 highlight_id=None,
                 chapter_id=f.chapter_id.value if f.chapter_id else None,
                 question=f.question,
@@ -253,7 +254,7 @@ async def get_books(
 
     books_list = [
         BookWithHighlightCount(
-            id=book.id.value,
+            id=str(book.id.value),
             client_book_id=book.client_book_id,
             title=book.title,
             author=book.author,
@@ -311,7 +312,7 @@ async def get_recently_viewed_books(
 
     books_list = [
         BookWithHighlightCount(
-            id=book.id.value,
+            id=str(book.id.value),
             client_book_id=book.client_book_id,
             title=book.title,
             author=book.author,
@@ -341,7 +342,7 @@ async def get_recently_viewed_books(
 
 @router.get("/{book_id}", response_model=BookDetails, status_code=status.HTTP_200_OK)
 async def get_book_details(
-    book_id: int,
+    book_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetBookDetailsUseCase = Depends(
         inject_use_case(container.library.get_book_details_use_case)
@@ -369,7 +370,7 @@ async def get_book_details(
     status_code=status.HTTP_200_OK,
 )
 async def update_book(
-    book_id: int,
+    book_id: UUID,
     request: BookUpdateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: UpdateBookUseCase = Depends(inject_use_case(container.library.update_book_use_case)),
@@ -393,7 +394,7 @@ async def update_book(
         book_id, request, current_user.id.value
     )
     return BookWithHighlightCount(
-        id=book.id.value,
+        id=str(book.id.value),
         client_book_id=book.client_book_id,
         title=book.title,
         author=book.author,
@@ -419,7 +420,7 @@ async def update_book(
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_book(
-    book_id: int,
+    book_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: DeleteBookUseCase = Depends(inject_use_case(container.library.delete_book_use_case)),
 ) -> None:
@@ -441,7 +442,7 @@ async def delete_book(
 
 @router.get("/{book_id}/cover", status_code=status.HTTP_200_OK, response_class=Response)
 async def get_book_cover(
-    book_id: int,
+    book_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: BookCoverUseCase = Depends(inject_use_case(container.library.book_cover_use_case)),
 ) -> Response:

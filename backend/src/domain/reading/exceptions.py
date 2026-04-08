@@ -1,5 +1,7 @@
 """Reading module domain exceptions."""
 
+from uuid import UUID
+
 from src.domain.common.exceptions import (
     BusinessRuleViolationError,
     ConflictError,
@@ -10,8 +12,8 @@ from src.domain.common.exceptions import (
 class BookNotFoundError(EntityNotFoundError):
     """Raised when a book cannot be found."""
 
-    def __init__(self, book_id: int | str) -> None:
-        super().__init__("Book", book_id)
+    def __init__(self, book_id: int | str | UUID) -> None:
+        super().__init__("Book", str(book_id))
 
 
 class ReadingSessionNotFoundError(EntityNotFoundError):
