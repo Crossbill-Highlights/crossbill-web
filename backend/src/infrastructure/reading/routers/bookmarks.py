@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends
 from starlette import status
@@ -27,7 +28,7 @@ router = APIRouter(prefix="/books", tags=["bookmarks"])
     status_code=status.HTTP_201_CREATED,
 )
 async def create_bookmark(
-    book_id: int,
+    book_id: UUID,
     request: BookmarkCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: CreateBookmarkUseCase = Depends(
@@ -58,7 +59,7 @@ async def create_bookmark(
     assert bookmark.created_at is not None
     return Bookmark(
         id=bookmark.id.value,
-        book_id=bookmark.book_id.value,
+        book_id=str(bookmark.book_id.value),
         highlight_id=bookmark.highlight_id.value,
         created_at=bookmark.created_at,
     )
@@ -69,7 +70,7 @@ async def create_bookmark(
     status_code=status.HTTP_200_OK,
 )
 async def delete_bookmark(
-    book_id: int,
+    book_id: UUID,
     bookmark_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: DeleteBookmarkUseCase = Depends(
@@ -99,7 +100,7 @@ async def delete_bookmark(
     status_code=status.HTTP_200_OK,
 )
 async def get_bookmarks(
-    book_id: int,
+    book_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetBookmarksUseCase = Depends(
         inject_use_case(container.reading.get_bookmarks_use_case)
@@ -130,7 +131,7 @@ async def get_bookmarks(
         bookmark_schemas.append(
             Bookmark(
                 id=b.id.value,
-                book_id=b.book_id.value,
+                book_id=str(b.book_id.value),
                 highlight_id=b.highlight_id.value,
                 created_at=b.created_at,
             )

@@ -9,6 +9,8 @@ from src.application.reading.protocols.highlight_repository import HighlightRepo
 from src.application.reading.protocols.highlight_style_repository import (
     HighlightStyleRepositoryProtocol,
 )
+from uuid import UUID
+
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_grouping_service import (
@@ -36,7 +38,7 @@ class HighlightSearchUseCase:
         self.highlight_style_resolver = highlight_style_resolver
 
     async def search_book_highlights(
-        self, book_id: int, user_id: int, search_text: str, limit: int = 100
+        self, book_id: UUID, user_id: int, search_text: str, limit: int = 100
     ) -> tuple[list[ChapterWithHighlights], int, dict[int, ResolvedLabel]]:
         """
         Search for highlights within a specific book using full-text search.

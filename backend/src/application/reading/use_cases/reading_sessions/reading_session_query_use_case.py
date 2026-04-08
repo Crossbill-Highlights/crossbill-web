@@ -18,6 +18,8 @@ from src.application.reading.protocols.highlight_style_repository import (
 from src.application.reading.protocols.reading_session_repository import (
     ReadingSessionRepositoryProtocol,
 )
+from uuid import UUID
+
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.reading_session import ReadingSession
@@ -73,7 +75,7 @@ class ReadingSessionQueryUseCase:
 
     async def get_sessions_for_book(
         self,
-        book_id: int,
+        book_id: UUID,
         user_id: int,
         limit: int,
         offset: int,

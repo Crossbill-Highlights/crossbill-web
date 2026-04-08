@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class ReadingSessionBase(BaseModel):
     """Base schema for ReadingSession."""
 
-    book_id: int
+    book_id: str
     device_id: str | None
     content_hash: str
     start_time: dt = Field(..., description="Session start timestamp")
@@ -88,7 +88,7 @@ class ReadingSessionUploadResponse(BaseModel):
 
     success: bool = Field(..., description="Whether the upload was successful (always True)")
     message: str = Field(..., description="Response message")
-    book_id: int = Field(..., description="ID of the book for these sessions")
+    book_id: str = Field(..., description="ID of the book for these sessions")
     created_count: int = Field(0, description="Number of sessions created")
     skipped_duplicate_count: int = Field(0, description="Sessions skipped because already uploaded")
 

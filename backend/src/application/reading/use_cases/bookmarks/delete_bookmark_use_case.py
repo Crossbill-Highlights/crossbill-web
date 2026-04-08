@@ -1,6 +1,7 @@
 """Use case for deleting bookmarks."""
 
 import structlog
+from uuid import UUID
 
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
@@ -19,7 +20,7 @@ class DeleteBookmarkUseCase:
         self.book_repository = book_repository
         self.bookmark_repository = bookmark_repository
 
-    async def delete_bookmark(self, book_id: int, bookmark_id: int, user_id: int) -> None:
+    async def delete_bookmark(self, book_id: UUID, bookmark_id: int, user_id: int) -> None:
         """
         Delete a bookmark (idempotent operation).
 

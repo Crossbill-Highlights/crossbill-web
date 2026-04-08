@@ -7,6 +7,8 @@ from src.application.reading.protocols.highlight_repository import HighlightRepo
 from src.application.reading.protocols.highlight_style_repository import (
     HighlightStyleRepositoryProtocol,
 )
+from uuid import UUID
+
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.library.entities.chapter import Chapter
 from src.domain.reading.entities.highlight import Highlight
@@ -37,7 +39,7 @@ class GetFlashcardsByBookUseCase:
         self.highlight_style_resolver = highlight_style_resolver
 
     async def get_flashcards(
-        self, book_id: int, user_id: int
+        self, book_id: UUID, user_id: int
     ) -> tuple[list[FlashcardWithHighlight], dict[int, ResolvedLabel]]:
         """
         Get all flashcards for a book with their associated highlights.

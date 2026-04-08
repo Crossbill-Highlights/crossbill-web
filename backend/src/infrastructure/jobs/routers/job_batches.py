@@ -14,6 +14,8 @@ from src.application.jobs.use_cases.get_active_book_batch_use_case import (
 )
 from src.application.jobs.use_cases.get_job_batch_use_case import GetJobBatchUseCase
 from src.core import container
+from uuid import UUID
+
 from src.domain.common.value_objects.ids import BookId, JobBatchId, UserId
 from src.domain.identity import User
 from src.domain.jobs.entities.job_batch import JobBatch, JobBatchType
@@ -46,7 +48,7 @@ def _to_response(batch: JobBatch) -> JobBatchResponse:
 )
 @require_ai_enabled
 async def enqueue_book_prereading(
-    book_id: int,
+    book_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: EnqueueBookPrereadingUseCase = Depends(
         inject_use_case(container.jobs.enqueue_book_prereading_use_case)
@@ -66,7 +68,7 @@ async def enqueue_book_prereading(
     status_code=status.HTTP_200_OK,
 )
 async def get_active_book_prereading_batch(
-    book_id: int,
+    book_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetActiveBookBatchUseCase = Depends(
         inject_use_case(container.jobs.get_active_book_batch_use_case)

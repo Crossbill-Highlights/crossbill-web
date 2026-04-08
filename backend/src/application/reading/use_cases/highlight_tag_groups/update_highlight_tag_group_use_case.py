@@ -8,6 +8,8 @@ from src.application.library.protocols.book_repository import BookRepositoryProt
 from src.application.reading.protocols.highlight_tag_repository import (
     HighlightTagRepositoryProtocol,
 )
+from uuid import UUID
+
 from src.domain.common.value_objects.ids import BookId, HighlightTagGroupId, UserId
 from src.domain.reading.entities.highlight_tag_group import HighlightTagGroup
 from src.domain.reading.exceptions import (
@@ -31,7 +33,7 @@ class UpdateHighlightTagGroupUseCase:
         self.book_repository = book_repository
 
     async def update_group(
-        self, group_id: int, book_id: int, new_name: str, user_id: int
+        self, group_id: int, book_id: UUID, new_name: str, user_id: int
     ) -> HighlightTagGroup:
         """
         Update a tag group's name.

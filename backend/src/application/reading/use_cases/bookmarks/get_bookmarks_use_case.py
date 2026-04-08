@@ -1,5 +1,7 @@
 """Use case for getting bookmarks."""
 
+from uuid import UUID
+
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
 from src.domain.common.value_objects.ids import BookId, UserId
@@ -16,7 +18,7 @@ class GetBookmarksUseCase:
         self.book_repository = book_repository
         self.bookmark_repository = bookmark_repository
 
-    async def get_bookmarks_by_book(self, book_id: int, user_id: int) -> list[Bookmark]:
+    async def get_bookmarks_by_book(self, book_id: UUID, user_id: int) -> list[Bookmark]:
         """
         Get all bookmarks for a book.
 

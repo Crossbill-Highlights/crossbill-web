@@ -7,6 +7,8 @@ import structlog
 from src.application.reading.protocols.highlight_tag_repository import (
     HighlightTagRepositoryProtocol,
 )
+from uuid import UUID
+
 from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects.ids import (
     BookId,
@@ -30,7 +32,7 @@ class UpdateTagGroupAssociationUseCase:
         self.tag_repository = tag_repository
 
     async def update_association(
-        self, book_id: int, tag_id: int, group_id: int | None, user_id: int
+        self, book_id: UUID, tag_id: int, group_id: int | None, user_id: int
     ) -> HighlightTag:
         """
         Update a tag's group association.

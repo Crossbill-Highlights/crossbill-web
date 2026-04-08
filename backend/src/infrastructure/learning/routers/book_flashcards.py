@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends
 from starlette import status
@@ -35,7 +36,7 @@ router = APIRouter(prefix="/books", tags=["flashcards"])
     status_code=status.HTTP_201_CREATED,
 )
 async def create_flashcard_for_book(
-    book_id: int,
+    book_id: UUID,
     request: FlashcardCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: CreateFlashcardForBookUseCase = Depends(
@@ -70,7 +71,7 @@ async def create_flashcard_for_book(
     flashcard = Flashcard(
         id=flashcard_entity.id.value,
         user_id=flashcard_entity.user_id.value,
-        book_id=flashcard_entity.book_id.value,
+        book_id=str(flashcard_entity.book_id.value),
         highlight_id=flashcard_entity.highlight_id.value if flashcard_entity.highlight_id else None,
         chapter_id=flashcard_entity.chapter_id.value if flashcard_entity.chapter_id else None,
         question=flashcard_entity.question,
@@ -89,7 +90,7 @@ async def create_flashcard_for_book(
     status_code=status.HTTP_200_OK,
 )
 async def get_flashcards_for_book(
-    book_id: int,
+    book_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetFlashcardsByBookUseCase = Depends(
         inject_use_case(container.learning.get_flashcards_by_book_use_case)
@@ -134,7 +135,7 @@ async def get_flashcards_for_book(
             # Manually construct highlight schema
             highlight_schema = HighlightResponseBase(
                 id=highlight.id.value,
-                book_id=highlight.book_id.value,
+                book_id=str(highlight.book_id.value),
                 chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
                 text=highlight.text,
                 note=highlight.note,
@@ -167,7 +168,7 @@ async def get_flashcards_for_book(
         flashcard_schema = FlashcardWithHighlight(
             id=fc.id.value,
             user_id=fc.user_id.value,
-            book_id=fc.book_id.value,
+            book_id=str(fc.book_id.value),
             highlight_id=fc.highlight_id.value if fc.highlight_id else None,
             chapter_id=fc.chapter_id.value if fc.chapter_id else None,
             question=fc.question,

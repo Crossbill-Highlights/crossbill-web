@@ -5,6 +5,8 @@ import structlog
 from src.application.reading.protocols.highlight_tag_repository import (
     HighlightTagRepositoryProtocol,
 )
+from uuid import UUID
+
 from src.domain.common.value_objects.ids import HighlightTagId, UserId
 from src.domain.reading.exceptions import HighlightTagNotFoundError
 
@@ -20,7 +22,7 @@ class DeleteHighlightTagUseCase:
     ) -> None:
         self.tag_repository = tag_repository
 
-    async def delete_tag(self, book_id: int, tag_id: int, user_id: int) -> bool:
+    async def delete_tag(self, book_id: UUID, tag_id: int, user_id: int) -> bool:
         """
         Delete a tag.
 

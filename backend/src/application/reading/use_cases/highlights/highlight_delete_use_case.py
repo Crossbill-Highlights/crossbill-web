@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.domain.common.value_objects import BookId, HighlightId, UserId
@@ -13,7 +15,7 @@ class HighlightDeleteUseCase:
         self.book_repository = book_repository
         self.highlight_repository = highlight_repository
 
-    async def delete_highlights(self, book_id: int, highlight_ids: list[int], user_id: int) -> int:
+    async def delete_highlights(self, book_id: UUID, highlight_ids: list[int], user_id: int) -> int:
         """
         Soft delete highlights from a book.
 

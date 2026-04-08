@@ -1,6 +1,7 @@
 """API routes for reading sessions management."""
 
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
@@ -90,7 +91,7 @@ async def upload_reading_sessions(
     return ReadingSessionUploadResponse(
         success=True,
         message=message,
-        book_id=result.book_id.value,  # Extract .value from BookId
+        book_id=str(result.book_id.value),  # Extract .value from BookId
         created_count=result.created_count,
         skipped_duplicate_count=result.skipped_duplicate_count,
     )
@@ -102,7 +103,7 @@ async def upload_reading_sessions(
     status_code=status.HTTP_200_OK,
 )
 async def get_book_reading_sessions(
-    book_id: int,
+    book_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     limit: int = Query(30, ge=1, le=1000, description="Maximum sessions to return"),
     offset: int = Query(0, ge=0, description="Number of sessions to skip"),
@@ -152,7 +153,7 @@ async def get_book_reading_sessions(
             highlight_schemas.append(
                 Highlight(
                     id=highlight.id.value,
-                    book_id=highlight.book_id.value,
+                    book_id=str(highlight.book_id.value),
                     chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
                     text=highlight.text,
                     page=highlight.page,
@@ -183,7 +184,7 @@ async def get_book_reading_sessions(
         sessions_schemas.append(
             ReadingSession(
                 id=session.id.value,
-                book_id=session.book_id.value,
+                book_id=str(session.book_id.value),
                 device_id=session.device_id,
                 content_hash=session.content_hash.value,
                 start_time=session.start_time,

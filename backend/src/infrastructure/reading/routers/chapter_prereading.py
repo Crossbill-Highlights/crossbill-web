@@ -1,6 +1,7 @@
 """API router for chapter prereading content."""
 
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends
 from starlette import status
@@ -148,7 +149,7 @@ book_prereading_router = APIRouter(prefix="/books", tags=["prereading"])
     status_code=status.HTTP_200_OK,
 )
 async def get_book_prereading(
-    book_id: int,
+    book_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetBookPrereadingUseCase = Depends(
         inject_use_case(container.reading.get_book_prereading_use_case)

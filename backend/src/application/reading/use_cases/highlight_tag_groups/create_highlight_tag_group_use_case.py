@@ -8,6 +8,8 @@ from src.application.library.protocols.book_repository import BookRepositoryProt
 from src.application.reading.protocols.highlight_tag_repository import (
     HighlightTagRepositoryProtocol,
 )
+from uuid import UUID
+
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.reading.entities.highlight_tag_group import HighlightTagGroup
 from src.domain.reading.exceptions import BookNotFoundError, DuplicateTagGroupNameError
@@ -26,7 +28,7 @@ class CreateHighlightTagGroupUseCase:
         self.tag_repository = tag_repository
         self.book_repository = book_repository
 
-    async def create_group(self, book_id: int, name: str, user_id: int) -> HighlightTagGroup:
+    async def create_group(self, book_id: UUID, name: str, user_id: int) -> HighlightTagGroup:
         """
         Create a new tag group.
 

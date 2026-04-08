@@ -13,6 +13,8 @@ from src.application.reading.protocols.highlight_style_repository import (
 from src.application.reading.protocols.highlight_tag_repository import (
     HighlightTagRepositoryProtocol,
 )
+from uuid import UUID
+
 from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects.ids import BookId, HighlightId, HighlightTagId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
@@ -43,7 +45,7 @@ class AddTagToHighlightByNameUseCase:
         self.highlight_style_resolver = highlight_style_resolver
 
     async def add_tag(
-        self, book_id: int, highlight_id: int, tag_name: str, user_id: int
+        self, book_id: UUID, highlight_id: int, tag_name: str, user_id: int
     ) -> tuple[Highlight, list[Flashcard], list[HighlightTag], dict[int, ResolvedLabel]]:
         """
         Add tag by name, creating if it doesn't exist (get-or-create pattern).

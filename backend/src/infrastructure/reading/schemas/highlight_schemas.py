@@ -145,7 +145,7 @@ class HighlightUploadResponse(BaseModel):
 
     success: bool = Field(..., description="Whether the upload was successful")
     message: str = Field(..., description="Response message")
-    book_id: int = Field(..., description="ID of the book")
+    book_id: str = Field(..., description="ID of the book")
     highlights_created: int = Field(..., ge=0, description="Number of highlights created")
     highlights_skipped: int = Field(
         ..., ge=0, description="Number of highlights skipped (duplicates)"

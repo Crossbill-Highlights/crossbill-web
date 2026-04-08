@@ -1,5 +1,7 @@
 """Router for highlight label management."""
 
+from uuid import UUID
+
 from fastapi import APIRouter, Depends
 
 from src.application.reading.use_cases.highlight_labels.create_global_highlight_label_use_case import (
@@ -29,7 +31,7 @@ router = APIRouter(tags=["highlight-labels"])
 
 @router.get("/books/{book_id}/highlight-labels", response_model=list[HighlightLabelInBook])
 async def get_book_highlight_labels(
-    book_id: int,
+    book_id: UUID,
     current_user: User = Depends(get_current_user),
     use_case: GetBookHighlightLabelsUseCase = Depends(
         inject_use_case(container.reading.get_book_highlight_labels_use_case)

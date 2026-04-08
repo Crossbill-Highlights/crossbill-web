@@ -8,6 +8,8 @@ from src.application.library.protocols.file_repository import FileRepositoryProt
 from src.application.reading.protocols.ebook_text_extraction_service import (
     EbookTextExtractionServiceProtocol,
 )
+from uuid import UUID
+
 from src.domain.common.exceptions import DomainError, ValidationError
 from src.domain.common.value_objects.ids import ChapterId, UserId
 from src.domain.reading.exceptions import BookNotFoundError, ChapterNotFoundError
@@ -30,7 +32,7 @@ class ChapterContentUseCase:
         self.file_repo = file_repo
         self.text_extraction = text_extraction_service
 
-    async def get_chapter_content(self, chapter_id: int, user_id: int) -> tuple[str, str, int]:
+    async def get_chapter_content(self, chapter_id: int, user_id: int) -> tuple[str, str, UUID]:
         """Extract text content for a chapter.
 
         Args:

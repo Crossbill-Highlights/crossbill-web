@@ -1,5 +1,7 @@
 """Use case for creating standalone flashcards for books."""
 
+from uuid import UUID
+
 import structlog
 
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
@@ -29,7 +31,7 @@ class CreateFlashcardForBookUseCase:
 
     async def create_flashcard(
         self,
-        book_id: int,
+        book_id: UUID,
         user_id: int,
         question: str,
         answer: str,

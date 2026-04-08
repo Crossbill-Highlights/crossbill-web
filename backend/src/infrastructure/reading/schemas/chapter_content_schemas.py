@@ -8,5 +8,5 @@ class ChapterContentResponse(BaseModel):
 
     chapter_id: int = Field(..., description="ID of the chapter")
     chapter_name: str = Field(..., description="Name of the chapter")
-    book_id: int = Field(..., description="ID of the book")
+    book_id: str = Field(..., description="ID of the book")
     content: str = Field(..., description="Full text content of the chapter")

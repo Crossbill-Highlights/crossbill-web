@@ -56,6 +56,8 @@ from src.application.reading.use_cases.highlights.update_highlight_note_use_case
 )
 from src.core import container
 from src.database import DatabaseSession
+from uuid import UUID
+
 from src.domain.common.value_objects import HighlightTagId, UserId
 from src.domain.identity.entities.user import User
 from src.domain.reading.services.highlight_grouping_service import (
@@ -146,7 +148,7 @@ async def upload_highlights(
     return HighlightUploadResponse(
         success=True,
         message="Successfully synced highlights",
-        book_id=0,  # TODO: Return actual book_id from service if needed
+        book_id="",  # TODO: Return actual book_id from service if needed
         highlights_created=created,
         highlights_skipped=skipped,
     )
@@ -195,7 +197,7 @@ async def update_highlight_note(
     # Build response from domain entities
     highlight_schema = Highlight(
         id=highlight.id.value,
-        book_id=highlight.book_id.value,
+        book_id=str(highlight.book_id.value),
         chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
         text=highlight.text,
         chapter=None,  # We don't have chapter name loaded
@@ -224,7 +226,7 @@ async def update_highlight_note(
             Flashcard(
                 id=fc.id.value,
                 user_id=fc.user_id.value,
-                book_id=fc.book_id.value,
+                book_id=str(fc.book_id.value),
                 highlight_id=fc.highlight_id.value if fc.highlight_id else None,
                 question=fc.question,
                 answer=fc.answer,
@@ -274,14 +276,14 @@ async def create_or_update_tag_group(
         # Update existing
         tag_group = await update_use_case.update_group(
             group_id=request.id,
-            book_id=request.book_id,
+            book_id=UUID(request.book_id),
             new_name=request.name,
             user_id=current_user.id.value,
         )
     else:
         # Create new
         tag_group = await create_use_case.create_group(
-            book_id=request.book_id,
+            book_id=UUID(request.book_id),
             name=request.name,
             user_id=current_user.id.value,
         )
@@ -289,7 +291,7 @@ async def create_or_update_tag_group(
     # Manually construct response to handle value objects
     return HighlightTagGroup(
         id=tag_group.id.value,
-        book_id=tag_group.book_id.value,
+        book_id=str(tag_group.book_id.value),
         name=tag_group.name,
     )
 
@@ -362,7 +364,7 @@ async def create_flashcard_for_highlight(
     flashcard = Flashcard(
         id=flashcard_entity.id.value,
         user_id=flashcard_entity.user_id.value,
-        book_id=flashcard_entity.book_id.value,
+        book_id=str(flashcard_entity.book_id.value),
         highlight_id=flashcard_entity.highlight_id.value if flashcard_entity.highlight_id else None,
         question=flashcard_entity.question,
         answer=flashcard_entity.answer,
@@ -401,7 +403,7 @@ def _map_chapters_to_schemas(
             )
             highlight_schema = Highlight(
                 id=h.id.value,
-                book_id=h.book_id.value,
+                book_id=str(h.book_id.value),
                 chapter_id=h.chapter_id.value if h.chapter_id else None,
                 text=h.text,
                 chapter=chapter.name if chapter else None,
@@ -420,7 +422,7 @@ def _map_chapters_to_schemas(
                     Flashcard(
                         id=fc.id.value,
                         user_id=fc.user_id.value,
-                        book_id=fc.book_id.value,
+                        book_id=str(fc.book_id.value),
                         highlight_id=fc.highlight_id.value if fc.highlight_id else None,
                         question=fc.question,
                         answer=fc.answer,
@@ -469,7 +471,7 @@ def _map_chapters_to_schemas(
     status_code=status.HTTP_200_OK,
 )
 async def search_book_highlights(
-    book_id: int,
+    book_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     search_text: str = Query(
         ...,
@@ -502,7 +504,7 @@ async def search_book_highlights(
     status_code=status.HTTP_200_OK,
 )
 async def delete_highlights(
-    book_id: int,
+    book_id: UUID,
     request: HighlightDeleteRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: HighlightDeleteUseCase = Depends(
@@ -543,7 +545,7 @@ async def delete_highlights(
     status_code=status.HTTP_200_OK,
 )
 async def get_highlight_tags(
-    book_id: int,
+    book_id: UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetHighlightTagsForBookUseCase = Depends(
         inject_use_case(container.reading.get_highlight_tags_for_book_use_case)
@@ -566,7 +568,7 @@ async def get_highlight_tags(
         tags=[
             HighlightTag(
                 id=tag.id.value,
-                book_id=tag.book_id.value,
+                book_id=str(tag.book_id.value),
                 name=tag.name,
                 tag_group_id=tag.tag_group_id,
             )
@@ -581,7 +583,7 @@ async def get_highlight_tags(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_highlight_tag(
-    book_id: int,
+    book_id: UUID,
     request: HighlightTagCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: CreateHighlightTagUseCase = Depends(
@@ -604,7 +606,7 @@ async def create_highlight_tag(
     tag = await use_case.create_tag(book_id, request.name, user_id=current_user.id.value)
     return HighlightTag(
         id=tag.id.value,
-        book_id=tag.book_id.value,
+        book_id=str(tag.book_id.value),
         name=tag.name,
         tag_group_id=tag.tag_group_id,
     )
@@ -615,7 +617,7 @@ async def create_highlight_tag(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_highlight_tag(
-    book_id: int,
+    book_id: UUID,
     tag_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: DeleteHighlightTagUseCase = Depends(
@@ -648,7 +650,7 @@ async def delete_highlight_tag(
     status_code=status.HTTP_200_OK,
 )
 async def update_highlight_tag(
-    book_id: int,
+    book_id: UUID,
     tag_id: int,
     request: HighlightTagUpdateRequest,
     db: DatabaseSession,
@@ -705,7 +707,7 @@ async def update_highlight_tag(
 
     return HighlightTag(
         id=tag.id.value,
-        book_id=tag.book_id.value,
+        book_id=str(tag.book_id.value),
         name=tag.name,
         tag_group_id=tag.tag_group_id,
     )
@@ -717,7 +719,7 @@ async def update_highlight_tag(
     status_code=status.HTTP_200_OK,
 )
 async def add_tag_to_highlight(
-    book_id: int,
+    book_id: UUID,
     highlight_id: int,
     request: HighlightTagAssociationRequest,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -767,7 +769,7 @@ async def add_tag_to_highlight(
     # Manually construct schema from domain entities
     return Highlight(
         id=highlight.id.value,
-        book_id=highlight.book_id.value,
+        book_id=str(highlight.book_id.value),
         chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
         text=highlight.text,
         chapter=None,
@@ -796,7 +798,7 @@ async def add_tag_to_highlight(
             Flashcard(
                 id=fc.id.value,
                 user_id=fc.user_id.value,
-                book_id=fc.book_id.value,
+                book_id=str(fc.book_id.value),
                 highlight_id=fc.highlight_id.value if fc.highlight_id else None,
                 question=fc.question,
                 answer=fc.answer,
@@ -814,7 +816,7 @@ async def add_tag_to_highlight(
     status_code=status.HTTP_200_OK,
 )
 async def remove_tag_from_highlight(
-    book_id: int,
+    book_id: UUID,
     highlight_id: int,
     tag_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -847,7 +849,7 @@ async def remove_tag_from_highlight(
     # Manually construct schema from domain entities
     return Highlight(
         id=highlight.id.value,
-        book_id=highlight.book_id.value,
+        book_id=str(highlight.book_id.value),
         chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
         text=highlight.text,
         chapter=None,
@@ -876,7 +878,7 @@ async def remove_tag_from_highlight(
             Flashcard(
                 id=fc.id.value,
                 user_id=fc.user_id.value,
-                book_id=fc.book_id.value,
+                book_id=str(fc.book_id.value),
                 highlight_id=fc.highlight_id.value if fc.highlight_id else None,
                 question=fc.question,
                 answer=fc.answer,

@@ -4,6 +4,8 @@ from src.application.library.protocols.book_repository import BookRepositoryProt
 from src.application.reading.protocols.highlight_style_repository import (
     HighlightStyleRepositoryProtocol,
 )
+from uuid import UUID
+
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.reading.entities.highlight_style import HighlightStyle
 from src.domain.reading.exceptions import BookNotFoundError
@@ -27,7 +29,7 @@ class GetBookHighlightLabelsUseCase:
         self.resolver = highlight_style_resolver
 
     async def execute(
-        self, book_id: int, user_id: int
+        self, book_id: UUID, user_id: int
     ) -> list[tuple[HighlightStyle, ResolvedLabel, int]]:
         """Returns list of (style, resolved_label, highlight_count) for the book."""
         user_id_vo = UserId(user_id)

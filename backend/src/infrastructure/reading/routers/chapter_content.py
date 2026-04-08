@@ -40,6 +40,6 @@ async def get_chapter_content(
     return ChapterContentResponse(
         chapter_id=chapter_id,
         chapter_name=chapter_name,
-        book_id=book_id,
+        book_id=str(book_id),
         content=content,
     )

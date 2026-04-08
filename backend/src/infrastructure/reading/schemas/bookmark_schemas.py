@@ -15,7 +15,7 @@ class Bookmark(BookmarkBase):
     """Schema for Bookmark response."""
 
     id: int
-    book_id: int
+    book_id: str
     created_at: datetime
 
     model_config = {"from_attributes": True}

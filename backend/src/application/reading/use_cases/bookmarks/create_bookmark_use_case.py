@@ -1,6 +1,7 @@
 """Use case for creating bookmarks."""
 
 import structlog
+from uuid import UUID
 
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
@@ -24,7 +25,7 @@ class CreateBookmarkUseCase:
         self.bookmark_repository = bookmark_repository
         self.highlight_repository = highlight_repository
 
-    async def create_bookmark(self, book_id: int, highlight_id: int, user_id: int) -> Bookmark:
+    async def create_bookmark(self, book_id: UUID, highlight_id: int, user_id: int) -> Bookmark:
         """
         Create a new bookmark for a highlight.
 

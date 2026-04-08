@@ -7,7 +7,7 @@ class HighlightTag(BaseModel):
     """Schema for HighlightTag response."""
 
     id: int
-    book_id: int
+    book_id: str
     tag_group_id: int | None = None
     name: str = Field(..., min_length=1, max_length=100, description="Tag name")
 
@@ -56,7 +56,7 @@ class HighlightTagGroup(BaseModel):
     """Schema for HighlightTagGroup response."""
 
     id: int
-    book_id: int
+    book_id: str
     name: str = Field(..., min_length=1, max_length=100, description="Tag group name")
 
     model_config = {"from_attributes": True}
@@ -75,5 +75,5 @@ class HighlightTagGroupCreateRequest(BaseModel):
     """Schema for creating or updating a highlight tag group."""
 
     id: int | None = Field(None, description="ID of existing tag group to update (optional)")
-    book_id: int = Field(..., description="ID of the book this tag group belongs to")
+    book_id: str = Field(..., description="ID of the book this tag group belongs to")
     name: str = Field(..., min_length=1, max_length=100, description="Tag group name")
