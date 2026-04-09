@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -61,16 +62,29 @@ class Book(Entity[BookId]):
         """Update the book's end position (total document length)."""
         self.end_position = position
 
-    def update_file(self, ebook_file: str, file_type: str) -> None:
-        """Update book file metadata."""
-        if file_type not in ["epub", "pdf"]:
-            raise DomainError(f"Invalid file type: {file_type}")
-        self.ebook_file = ebook_file
-        self.file_type = file_type
+    def set_file(self, file_type: str) -> str:
+        """Set ebook file reference, generating a UUID filename on first upload.
 
-    def update_cover_file(self, cover_file: str) -> None:
-        """Update book cover file reference."""
-        self.cover_file = cover_file
+        Returns the filename (existing or newly generated).
+        """
+        if file_type not in ("epub", "pdf"):
+            raise DomainError(f"Invalid file type: {file_type}")
+        if self.ebook_file is not None:
+            self.file_type = file_type
+            return self.ebook_file
+        self.ebook_file = f"{uuid.uuid4()}.{file_type}"
+        self.file_type = file_type
+        return self.ebook_file
+
+    def set_cover_file(self) -> str:
+        """Set cover file reference, generating a UUID filename on first upload.
+
+        Returns the filename (existing or newly generated).
+        """
+        if self.cover_file is not None:
+            return self.cover_file
+        self.cover_file = f"{uuid.uuid4()}.jpg"
+        return self.cover_file
 
     # Factory methods
     @classmethod
