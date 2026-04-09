@@ -1,6 +1,8 @@
 """Unit tests for Book entity file reference methods."""
 
 import uuid
+from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 
@@ -9,11 +11,9 @@ from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.library.entities.book import Book
 
 
-def _make_book(**overrides: object) -> Book:
+def _make_book(**overrides: Any) -> Book:  # noqa: ANN401
     """Create a Book with sensible defaults for testing."""
-    from datetime import UTC, datetime
-
-    defaults: dict = {
+    defaults: dict[str, Any] = {
         "id": BookId(1),
         "user_id": UserId(1),
         "title": "Test Book",
