@@ -51,7 +51,7 @@ async def create_book(
         current_user: Authenticated user
 
     Returns:
-        EreaderBookMetadata with book_id, bookname, author, has_cover, has_epub
+        EreaderBookMetadata with book_id, bookname, author, cover_file, has_epub
     """
     await create_use_case.create_book(book_data, current_user.id.value)
 
@@ -62,7 +62,7 @@ async def create_book(
         book_id=metadata.book_id,
         bookname=metadata.title,
         author=metadata.author,
-        has_cover=metadata.has_cover,
+        cover_file=metadata.cover_file,
         has_ebook=metadata.has_ebook,
     )
 
@@ -90,7 +90,7 @@ async def get_book_metadata(
         current_user: Authenticated user
 
     Returns:
-        EreaderBookMetadata with book_id, bookname, author, hasCover, hasEpub
+        EreaderBookMetadata with book_id, bookname, author, coverFile, hasEpub
 
     Raises:
         HTTPException: 404 if book is not found
@@ -100,7 +100,7 @@ async def get_book_metadata(
         book_id=metadata.book_id,
         bookname=metadata.title,
         author=metadata.author,
-        has_cover=metadata.has_cover,
+        cover_file=metadata.cover_file,
         has_ebook=metadata.has_ebook,
     )
 

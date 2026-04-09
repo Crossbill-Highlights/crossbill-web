@@ -44,6 +44,7 @@ from src.infrastructure.learning.routers import (
 )
 from src.infrastructure.learning.routers import book_flashcards as learning_books
 from src.infrastructure.library.routers import books as library_books
+from src.infrastructure.library.routers import covers as library_covers
 from src.infrastructure.library.routers import ereader as library_ereader
 from src.infrastructure.reading.routers import (
     bookmarks,
@@ -316,6 +317,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 # Library
 app.include_router(library_books.router, prefix=settings.API_V1_PREFIX)
 app.include_router(library_ereader.router, prefix=settings.API_V1_PREFIX)
+app.include_router(library_covers.router, prefix=settings.API_V1_PREFIX)
 
 # Reading
 app.include_router(highlights.router, prefix=settings.API_V1_PREFIX)

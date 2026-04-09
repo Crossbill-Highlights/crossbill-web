@@ -21,8 +21,8 @@ export interface BookDetails {
   title: string;
   author: string | null;
   isbn: string | null;
-  /** Whether the book has a cover image */
-  has_cover: boolean;
+  /** Cover image filename (UUID.jpg) or null */
+  cover_file?: string | null;
   description?: string | null;
   language?: string | null;
   page_count?: number | null;

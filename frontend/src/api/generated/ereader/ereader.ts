@@ -42,7 +42,7 @@ Args:
     current_user: Authenticated user
 
 Returns:
-    EreaderBookMetadata with book_id, bookname, author, has_cover, has_epub
+    EreaderBookMetadata with book_id, bookname, author, cover_file, has_epub
  * @summary Create Book
  */
 export const createBookApiV1EreaderBooksPost = (bookCreate: BookCreate, signal?: AbortSignal) => {
@@ -131,7 +131,7 @@ Args:
     current_user: Authenticated user
 
 Returns:
-    EreaderBookMetadata with book_id, bookname, author, hasCover, hasEpub
+    EreaderBookMetadata with book_id, bookname, author, coverFile, hasEpub
 
 Raises:
     HTTPException: 404 if book is not found
