@@ -10,6 +10,12 @@ from src.domain.common.value_objects.ids import BookId
 logger = logging.getLogger(__name__)
 
 
+def _validate_filename(filename: str) -> None:
+    """Validate that a filename does not contain path traversal sequences."""
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise ValueError(f"Invalid filename: {filename}")
+
+
 def _sanitize_title(text: str) -> str:
     """
     Sanitize text for use in filename.
@@ -106,6 +112,7 @@ class FileRepository:
         Returns:
             True if file was deleted, False if not found
         """
+        _validate_filename(filename)
         file_path = EPUBS_DIR / filename
         if not await asyncio.to_thread(file_path.exists):
             logger.info(f"No EPUB file found: {file_path}")
@@ -129,6 +136,7 @@ class FileRepository:
         Returns:
             True if file was deleted, False if not found
         """
+        _validate_filename(filename)
         file_path = PDFS_DIR / filename
         if not await asyncio.to_thread(file_path.exists):
             logger.info(f"No PDF file found: {file_path}")
@@ -152,6 +160,7 @@ class FileRepository:
         Returns:
             True if file was deleted, False if not found
         """
+        _validate_filename(filename)
         file_path = BOOK_COVERS_DIR / filename
         if not await asyncio.to_thread(file_path.exists):
             logger.info(f"No cover file found: {file_path}")
@@ -175,6 +184,7 @@ class FileRepository:
         Returns:
             EPUB file content as bytes, or None if not found
         """
+        _validate_filename(filename)
         file_path = EPUBS_DIR / filename
         if not await asyncio.to_thread(file_path.exists):
             return None
@@ -190,6 +200,7 @@ class FileRepository:
         Returns:
             PDF file content as bytes, or None if not found
         """
+        _validate_filename(filename)
         file_path = PDFS_DIR / filename
         if not await asyncio.to_thread(file_path.exists):
             return None
@@ -205,6 +216,7 @@ class FileRepository:
         Returns:
             Cover image content as bytes, or None if not found
         """
+        _validate_filename(filename)
         file_path = BOOK_COVERS_DIR / filename
         if not await asyncio.to_thread(file_path.exists):
             return None
@@ -212,5 +224,6 @@ class FileRepository:
 
     async def has_cover(self, filename: str) -> bool:
         """Check if a cover image exists by filename."""
+        _validate_filename(filename)
         file_path = BOOK_COVERS_DIR / filename
         return await asyncio.to_thread(file_path.exists)

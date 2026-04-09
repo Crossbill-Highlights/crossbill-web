@@ -10,6 +10,12 @@ from src.domain.common.value_objects.ids import BookId
 logger = logging.getLogger(__name__)
 
 
+def _validate_filename(filename: str) -> None:
+    """Validate that a filename does not contain path traversal sequences."""
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise ValueError(f"Invalid filename: {filename}")
+
+
 def _sanitize_title(text: str) -> str:
     """
     Sanitize text for use in an S3 object key.
@@ -143,6 +149,7 @@ class S3FileRepository:
         Returns:
             True if deleted, False if not found or error
         """
+        _validate_filename(filename)
         return await asyncio.to_thread(self._delete_object, f"epubs/{filename}")
 
     async def delete_pdf(self, filename: str) -> bool:
@@ -155,6 +162,7 @@ class S3FileRepository:
         Returns:
             True if deleted, False if not found or error
         """
+        _validate_filename(filename)
         return await asyncio.to_thread(self._delete_object, f"pdfs/{filename}")
 
     async def delete_cover(self, filename: str) -> bool:
@@ -167,6 +175,7 @@ class S3FileRepository:
         Returns:
             True if deleted, False if not found or error
         """
+        _validate_filename(filename)
         return await asyncio.to_thread(self._delete_object, f"book-covers/{filename}")
 
     async def get_epub(self, filename: str) -> bytes | None:
@@ -179,6 +188,7 @@ class S3FileRepository:
         Returns:
             EPUB bytes or None if not found
         """
+        _validate_filename(filename)
         return await asyncio.to_thread(self._get_object, f"epubs/{filename}")
 
     async def get_pdf(self, filename: str) -> bytes | None:
@@ -191,6 +201,7 @@ class S3FileRepository:
         Returns:
             PDF bytes or None if not found
         """
+        _validate_filename(filename)
         return await asyncio.to_thread(self._get_object, f"pdfs/{filename}")
 
     async def get_cover(self, filename: str) -> bytes | None:
@@ -203,8 +214,10 @@ class S3FileRepository:
         Returns:
             Cover image bytes or None if not found
         """
+        _validate_filename(filename)
         return await asyncio.to_thread(self._get_object, f"book-covers/{filename}")
 
     async def has_cover(self, filename: str) -> bool:
         """Check if a cover image exists in S3 by filename."""
+        _validate_filename(filename)
         return await asyncio.to_thread(self._object_exists, f"book-covers/{filename}")
