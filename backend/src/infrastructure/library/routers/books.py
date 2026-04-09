@@ -162,7 +162,7 @@ def _build_book_details_schema(
         title=agg.book.title,
         author=agg.book.author,
         isbn=agg.book.isbn,
-        has_cover=agg.has_cover,
+        cover_file=agg.book.cover_file,
         description=agg.book.description,
         language=agg.book.language,
         page_count=agg.book.page_count,
@@ -258,7 +258,7 @@ async def get_books(
             title=book.title,
             author=book.author,
             isbn=book.isbn,
-            has_cover=has_cover,
+            cover_file=book.cover_file,
             description=book.description,
             language=book.language,
             page_count=book.page_count,
@@ -275,7 +275,7 @@ async def get_books(
             updated_at=book.updated_at,
             last_viewed=book.last_viewed,
         )
-        for book, highlight_count, flashcard_count, tags, has_cover in results
+        for book, highlight_count, flashcard_count, tags in results
     ]
 
     return BooksListResponse(books=books_list, total=total, offset=offset, limit=limit)
@@ -316,7 +316,7 @@ async def get_recently_viewed_books(
             title=book.title,
             author=book.author,
             isbn=book.isbn,
-            has_cover=has_cover,
+            cover_file=book.cover_file,
             description=book.description,
             language=book.language,
             page_count=book.page_count,
@@ -333,7 +333,7 @@ async def get_recently_viewed_books(
             updated_at=book.updated_at,
             last_viewed=book.last_viewed,
         )
-        for book, highlight_count, flashcard_count, tags, has_cover in results
+        for book, highlight_count, flashcard_count, tags in results
     ]
 
     return RecentlyViewedBooksResponse(books=books_list)
@@ -389,7 +389,7 @@ async def update_book(
     Raises:
         HTTPException: If book is not found or update fails
     """
-    book, highlight_count, flashcard_count, tags, has_cover = await use_case.update_book(
+    book, highlight_count, flashcard_count, tags = await use_case.update_book(
         book_id, request, current_user.id.value
     )
     return BookWithHighlightCount(
@@ -398,7 +398,7 @@ async def update_book(
         title=book.title,
         author=book.author,
         isbn=book.isbn,
-        has_cover=has_cover,
+        cover_file=book.cover_file,
         description=book.description,
         language=book.language,
         page_count=book.page_count,
