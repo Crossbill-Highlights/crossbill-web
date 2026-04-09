@@ -117,11 +117,9 @@ class EbookUploadUseCase:
         if not self.epub_parser.validate_epub(content):
             raise InvalidEbookError("EPUB structure validation failed", ebook_type="EPUB")
 
-        # Delete old ebook file if exists
-        await self.file_repository.delete_epub(book.ebook_file)
-
-        epub_filename = await self.file_repository.save_epub(book.id, content, book.title)
-        book.update_file(epub_filename, "epub")
+        # Get or generate UUID filename
+        epub_filename = book.set_file("epub")
+        await self.file_repository.save_epub(epub_filename, content)
 
         # Extract and save cover if none exists
         await self._extract_and_save_cover(book, content)
@@ -172,8 +170,8 @@ class EbookUploadUseCase:
 
         cover_bytes = self.epub_parser.extract_cover(epub_content)
         if cover_bytes:
-            cover_filename = await self.file_repository.save_cover(book.id, cover_bytes)
-            book.update_cover_file(cover_filename)
+            cover_filename = book.set_cover_file()
+            await self.file_repository.save_cover(cover_filename, cover_bytes)
 
     async def _backfill_positions(
         self,
