@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
-from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.domain.common.value_objects import UserId
 from src.domain.reading.exceptions import BookNotFoundError
 
@@ -15,7 +14,7 @@ class EreaderMetadata:
     book_id: int
     title: str
     author: str | None
-    has_cover: bool
+    cover_file: str | None
     has_ebook: bool
 
 
@@ -25,10 +24,8 @@ class GetEreaderMetadataUseCase:
     def __init__(
         self,
         book_repository: BookRepositoryProtocol,
-        file_repository: FileRepositoryProtocol,
     ) -> None:
         self.book_repository = book_repository
-        self.file_repository = file_repository
 
     async def get_metadata_for_ereader(self, client_book_id: str, user_id: int) -> EreaderMetadata:
         """
@@ -50,13 +47,13 @@ class GetEreaderMetadataUseCase:
         if not book:
             raise BookNotFoundError(client_book_id)
 
-        has_cover = book.cover_file is not None
+        cover_file = book.cover_file
         has_ebook = book.ebook_file is not None
 
         return EreaderMetadata(
             book_id=book.id.value,
             title=book.title,
             author=book.author,
-            has_cover=has_cover,
+            cover_file=cover_file,
             has_ebook=has_ebook,
         )

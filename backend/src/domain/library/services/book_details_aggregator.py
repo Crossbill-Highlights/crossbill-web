@@ -24,7 +24,6 @@ class BookDetailsAggregation:
     highlight_tag_groups: list[Any]  # Legacy ORM models (temporary)
     bookmarks: list[Any]  # Legacy ORM models (temporary)
     chapters_with_highlights: list[ChapterWithHighlights]
-    has_cover: bool = False
     book_flashcards: list[Flashcard] = field(default_factory=list)
     reading_position: Position | None = None
     labels: dict[int, ResolvedLabel] = field(default_factory=dict)
