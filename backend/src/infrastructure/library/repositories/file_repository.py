@@ -2,10 +2,8 @@
 
 import asyncio
 import logging
-import re
 
 from src.config import BOOK_COVERS_DIR, EPUBS_DIR, PDFS_DIR  # type: ignore[attr-defined]
-from src.domain.common.value_objects.ids import BookId
 
 logger = logging.getLogger(__name__)
 
@@ -16,87 +14,31 @@ def _validate_filename(filename: str) -> None:
         raise ValueError(f"Invalid filename: {filename}")
 
 
-def _sanitize_title(text: str) -> str:
-    """
-    Sanitize text for use in filename.
-
-    Removes/replaces characters that are invalid in filenames.
-    Limits length to prevent overly long filenames.
-
-    Args:
-        text: Text to sanitize
-
-    Returns:
-        Sanitized text safe for filenames
-    """
-    # Remove invalid filename characters
-    sanitized = re.sub(r'[<>:"/\\|?*]', "", text)
-    # Replace spaces and other whitespace with underscores
-    sanitized = re.sub(r"\s+", "_", sanitized)
-    # Remove leading/trailing underscores and dots
-    sanitized = sanitized.strip("_.")
-    # Limit length (leave room for book_id and extension)
-    max_length = 100
-    if len(sanitized) > max_length:
-        sanitized = sanitized[:max_length]
-    return sanitized
-
-
 class FileRepository:
     """Repository for managing book files (EPUB, PDF, covers)."""
 
-    async def save_epub(self, book_id: BookId, content: bytes, title: str) -> str:
-        """
-        Save an EPUB file to disk.
-
-        Args:
-            book_id: ID of the book
-            content: File content as bytes
-            title: Title of the book
-
-        Returns:
-            Filename of the saved file
-        """
+    async def save_epub(self, filename: str, content: bytes) -> str:
+        """Save an EPUB file to disk."""
+        _validate_filename(filename)
         await asyncio.to_thread(lambda: EPUBS_DIR.mkdir(parents=True, exist_ok=True))
-
-        sanitized_title = _sanitize_title(title)
-        file_path = EPUBS_DIR / f"{sanitized_title}_{book_id.value}.epub"
+        file_path = EPUBS_DIR / filename
         await asyncio.to_thread(file_path.write_bytes, content)
         logger.info(f"Saved EPUB file: {file_path}")
         return file_path.name
 
-    async def save_pdf(self, book_id: BookId, content: bytes, title: str) -> str:
-        """
-        Save a PDF file to disk.
-
-        Args:
-            book_id: ID of the book
-            content: File content as bytes
-            title: Title of the book
-
-        Returns:
-            Filename of the saved file
-        """
+    async def save_pdf(self, filename: str, content: bytes) -> str:
+        """Save a PDF file to disk."""
+        _validate_filename(filename)
         await asyncio.to_thread(lambda: PDFS_DIR.mkdir(parents=True, exist_ok=True))
-        sanitized_title = _sanitize_title(title)
-        file_path = PDFS_DIR / f"{sanitized_title}_{book_id.value}.pdf"
+        file_path = PDFS_DIR / filename
         await asyncio.to_thread(file_path.write_bytes, content)
         logger.info(f"Saved PDF file: {file_path}")
         return file_path.name
 
-    async def save_cover(self, book_id: BookId, content: bytes) -> str:
-        """
-        Save a cover image to disk.
-
-        Args:
-            book_id: ID of the book
-            content: File content as bytes
-
-        Returns:
-            Filename of the saved file
-        """
+    async def save_cover(self, filename: str, content: bytes) -> str:
+        """Save a cover image to disk."""
+        _validate_filename(filename)
         await asyncio.to_thread(lambda: BOOK_COVERS_DIR.mkdir(parents=True, exist_ok=True))
-        filename = f"{book_id.value}.jpg"
         file_path = BOOK_COVERS_DIR / filename
         await asyncio.to_thread(file_path.write_bytes, content)
         logger.info(f"Saved cover file: {file_path}")
