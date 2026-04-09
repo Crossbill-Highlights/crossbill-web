@@ -175,7 +175,7 @@ class BookDetails(BaseModel):
     title: str
     author: str | None
     isbn: str | None
-    has_cover: bool = Field(..., description="Whether the book has a cover image")
+    cover_file: str | None = Field(None, description="Cover image filename (UUID.jpg) or null")
     description: str | None = None
     language: str | None = None
     page_count: int | None = None
