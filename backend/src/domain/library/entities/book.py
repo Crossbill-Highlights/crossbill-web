@@ -33,8 +33,9 @@ class Book(Entity[BookId]):
     description: str | None = None
     language: str | None = None
     page_count: int | None = None
-    file_path: str | None = None
+    ebook_file: str | None = None
     file_type: str | None = None
+    cover_file: str | None = None
     last_viewed: datetime | None = None
     end_position: Position | None = None
 
@@ -60,12 +61,16 @@ class Book(Entity[BookId]):
         """Update the book's end position (total document length)."""
         self.end_position = position
 
-    def update_file(self, file_path: str, file_type: str) -> None:
+    def update_file(self, ebook_file: str, file_type: str) -> None:
         """Update book file metadata."""
         if file_type not in ["epub", "pdf"]:
             raise DomainError(f"Invalid file type: {file_type}")
-        self.file_path = file_path
+        self.ebook_file = ebook_file
         self.file_type = file_type
+
+    def update_cover_file(self, cover_file: str) -> None:
+        """Update book cover file reference."""
+        self.cover_file = cover_file
 
     # Factory methods
     @classmethod
@@ -79,8 +84,9 @@ class Book(Entity[BookId]):
         description: str | None = None,
         language: str | None = None,
         page_count: int | None = None,
-        file_path: str | None = None,
+        ebook_file: str | None = None,
         file_type: str | None = None,
+        cover_file: str | None = None,
         end_position: Position | None = None,
     ) -> "Book":
         """Factory for creating new book."""
@@ -95,8 +101,9 @@ class Book(Entity[BookId]):
             description=description,
             language=language,
             page_count=page_count,
-            file_path=file_path,
+            ebook_file=ebook_file,
             file_type=file_type,
+            cover_file=cover_file,
             created_at=now,
             updated_at=now,
             last_viewed=None,
@@ -117,8 +124,9 @@ class Book(Entity[BookId]):
         description: str | None = None,
         language: str | None = None,
         page_count: int | None = None,
-        file_path: str | None = None,
+        ebook_file: str | None = None,
         file_type: str | None = None,
+        cover_file: str | None = None,
         last_viewed: datetime | None = None,
         end_position: Position | None = None,
     ) -> "Book":
@@ -133,8 +141,9 @@ class Book(Entity[BookId]):
             description=description,
             language=language,
             page_count=page_count,
-            file_path=file_path,
+            ebook_file=ebook_file,
             file_type=file_type,
+            cover_file=cover_file,
             created_at=created_at,
             updated_at=updated_at,
             last_viewed=last_viewed,

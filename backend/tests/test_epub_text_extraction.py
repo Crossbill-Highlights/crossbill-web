@@ -72,9 +72,9 @@ async def test_epub_path(db_session: AsyncSession, test_user: User) -> AsyncGene
         author="Test Author",
     )
 
-    # Update book with file_path and file_type
+    # Update book with ebook_file and file_type
     epub_filename = f"test_epub_{book.id}.epub"
-    book.file_path = epub_filename
+    book.ebook_file = epub_filename
     book.file_type = "epub"
     await db_session.commit()
 
@@ -228,7 +228,7 @@ class TestExtractChapterText:
             author="Test Author",
         )
         epub_filename = f"test_multi_frag_{book.id}.epub"
-        book.file_path = epub_filename
+        book.ebook_file = epub_filename
         book.file_type = "epub"
         await db_session.commit()
 
@@ -269,7 +269,7 @@ class TestExtractChapterText:
             author="Test Author",
         )
         epub_filename = f"test_same_frag_{book.id}.epub"
-        book.file_path = epub_filename
+        book.ebook_file = epub_filename
         book.file_type = "epub"
         await db_session.commit()
 
@@ -303,7 +303,7 @@ class TestExtractChapterText:
             author="Test Author",
         )
         epub_filename = f"test_same_frag_fallback_{book.id}.epub"
-        book.file_path = epub_filename
+        book.ebook_file = epub_filename
         book.file_type = "epub"
         await db_session.commit()
 
@@ -336,7 +336,7 @@ class TestExtractChapterText:
             author="Test Author",
         )
         epub_filename = f"test_cross_frag_precise_{book.id}.epub"
-        book.file_path = epub_filename
+        book.ebook_file = epub_filename
         book.file_type = "epub"
         await db_session.commit()
 
@@ -403,7 +403,7 @@ class TestExtractChapterText:
             author="Test Author",
         )
         epub_filename = f"test_last_ch_precise_{book.id}.epub"
-        book.file_path = epub_filename
+        book.ebook_file = epub_filename
         book.file_type = "epub"
         await db_session.commit()
 

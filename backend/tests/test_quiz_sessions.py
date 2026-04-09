@@ -44,7 +44,7 @@ class TestCreateQuizSession:
         db_session: AsyncSession,
         test_book: Book,
     ) -> None:
-        test_book.file_path = "/path/to/test.epub"
+        test_book.ebook_file = "/path/to/test.epub"
         test_book.file_type = "epub"
         await db_session.commit()
 

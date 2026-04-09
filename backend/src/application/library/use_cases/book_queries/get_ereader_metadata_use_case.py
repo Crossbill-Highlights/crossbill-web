@@ -50,8 +50,8 @@ class GetEreaderMetadataUseCase:
         if not book:
             raise BookNotFoundError(client_book_id)
 
-        has_cover = await self.file_repository.has_cover(book.id)
-        has_ebook = book.file_path is not None
+        has_cover = book.cover_file is not None
+        has_ebook = book.ebook_file is not None
 
         return EreaderMetadata(
             book_id=book.id.value,

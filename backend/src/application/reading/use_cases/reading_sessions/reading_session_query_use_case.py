@@ -104,8 +104,8 @@ class ReadingSessionQueryUseCase:
 
         # Resolve epub content once for the book
         epub_content = None
-        if include_content and book.file_path and book.file_type == "epub":
-            epub_content = await self.file_repo.get_epub(book.id)
+        if include_content and book.ebook_file and book.file_type == "epub":
+            epub_content = await self.file_repo.get_epub(book.ebook_file)
 
         sessions = await self.session_repository.find_by_book_id(
             book_id_vo, user_id_vo, limit, offset

@@ -21,8 +21,9 @@ class BookMapper:
             description=orm_model.description,
             language=orm_model.language,
             page_count=orm_model.page_count,
-            file_path=orm_model.file_path,
+            ebook_file=orm_model.ebook_file,
             file_type=orm_model.file_type,
+            cover_file=orm_model.cover_file,
             last_viewed=orm_model.last_viewed,
             end_position=Position.from_json(orm_model.end_position)
             if orm_model.end_position
@@ -41,8 +42,9 @@ class BookMapper:
             orm_model.description = domain_entity.description
             orm_model.language = domain_entity.language
             orm_model.page_count = domain_entity.page_count
-            orm_model.file_path = domain_entity.file_path
+            orm_model.ebook_file = domain_entity.ebook_file
             orm_model.file_type = domain_entity.file_type
+            orm_model.cover_file = domain_entity.cover_file
             orm_model.last_viewed = domain_entity.last_viewed
             orm_model.end_position = (
                 domain_entity.end_position.to_json() if domain_entity.end_position else None
@@ -60,8 +62,9 @@ class BookMapper:
             description=domain_entity.description,
             language=domain_entity.language,
             page_count=domain_entity.page_count,
-            file_path=domain_entity.file_path,
+            ebook_file=domain_entity.ebook_file,
             file_type=domain_entity.file_type,
+            cover_file=domain_entity.cover_file,
             created_at=domain_entity.created_at,
             last_viewed=domain_entity.last_viewed,
             end_position=domain_entity.end_position.to_json()

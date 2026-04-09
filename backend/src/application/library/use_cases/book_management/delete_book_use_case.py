@@ -44,7 +44,7 @@ class DeleteBookUseCase:
         if not book:
             raise BookNotFoundError(book_id)
 
-        await self.ebook_deletion_use_case.delete_ebook(book_id)
+        await self.ebook_deletion_use_case.delete_ebook(book)
         await self.book_repository.delete(book)
 
         logger.info(f"Successfully deleted book {book_id}")

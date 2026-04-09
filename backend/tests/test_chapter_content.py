@@ -43,7 +43,7 @@ class TestGetChapterContent:
         test_book: Book,
     ) -> None:
         """Should return chapter text content from EPUB."""
-        test_book.file_path = "test.epub"
+        test_book.ebook_file = "test.epub"
         test_book.file_type = "epub"
         await db_session.commit()
 

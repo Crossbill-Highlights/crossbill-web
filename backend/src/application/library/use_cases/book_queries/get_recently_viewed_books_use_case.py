@@ -57,7 +57,7 @@ class GetRecentlyViewedBooksUseCase:
                 h_count,
                 f_count,
                 tags,
-                await self.file_repository.has_cover(book.id),
+                book.cover_file is not None,
             )
             for book, h_count, f_count, tags in results
         ]
