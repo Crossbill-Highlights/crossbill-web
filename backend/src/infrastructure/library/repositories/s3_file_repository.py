@@ -2,10 +2,7 @@
 
 import asyncio
 import logging
-import re
 from typing import Any
-
-from src.domain.common.value_objects.ids import BookId
 
 logger = logging.getLogger(__name__)
 
@@ -14,28 +11,6 @@ def _validate_filename(filename: str) -> None:
     """Validate that a filename does not contain path traversal sequences."""
     if "/" in filename or "\\" in filename or ".." in filename:
         raise ValueError(f"Invalid filename: {filename}")
-
-
-def _sanitize_title(text: str) -> str:
-    """
-    Sanitize text for use in an S3 object key.
-
-    Removes/replaces characters that are invalid in filenames.
-    Limits length to prevent overly long keys.
-
-    Args:
-        text: Text to sanitize
-
-    Returns:
-        Sanitized text safe for use in keys/filenames
-    """
-    sanitized = re.sub(r'[<>:"/\\|?*]', "", text)
-    sanitized = re.sub(r"\s+", "_", sanitized)
-    sanitized = sanitized.strip("_.")
-    max_length = 100
-    if len(sanitized) > max_length:
-        sanitized = sanitized[:max_length]
-    return sanitized
 
 
 class S3FileRepository:
@@ -84,56 +59,25 @@ class S3FileRepository:
     # Public interface (FileRepositoryProtocol)
     # ------------------------------------------------------------------
 
-    async def save_epub(self, book_id: BookId, content: bytes, title: str) -> str:
-        """
-        Upload an EPUB file to S3.
-
-        Args:
-            book_id: ID of the book
-            content: File content as bytes
-            title: Title of the book
-
-        Returns:
-            Filename (basename) of the uploaded object
-        """
-        sanitized_title = _sanitize_title(title)
-        filename = f"{sanitized_title}_{book_id.value}.epub"
+    async def save_epub(self, filename: str, content: bytes) -> str:
+        """Upload an EPUB file to S3."""
+        _validate_filename(filename)
         key = f"epubs/{filename}"
         await asyncio.to_thread(self._client.put_object, Bucket=self._bucket, Key=key, Body=content)
         logger.info(f"Uploaded EPUB to S3: {key}")
         return filename
 
-    async def save_pdf(self, book_id: BookId, content: bytes, title: str) -> str:
-        """
-        Upload a PDF file to S3.
-
-        Args:
-            book_id: ID of the book
-            content: File content as bytes
-            title: Title of the book
-
-        Returns:
-            Filename (basename) of the uploaded object
-        """
-        sanitized_title = _sanitize_title(title)
-        filename = f"{sanitized_title}_{book_id.value}.pdf"
+    async def save_pdf(self, filename: str, content: bytes) -> str:
+        """Upload a PDF file to S3."""
+        _validate_filename(filename)
         key = f"pdfs/{filename}"
         await asyncio.to_thread(self._client.put_object, Bucket=self._bucket, Key=key, Body=content)
         logger.info(f"Uploaded PDF to S3: {key}")
         return filename
 
-    async def save_cover(self, book_id: BookId, content: bytes) -> str:
-        """
-        Upload a cover image to S3.
-
-        Args:
-            book_id: ID of the book
-            content: File content as bytes
-
-        Returns:
-            Filename (basename) of the uploaded object
-        """
-        filename = f"{book_id.value}.jpg"
+    async def save_cover(self, filename: str, content: bytes) -> str:
+        """Upload a cover image to S3."""
+        _validate_filename(filename)
         key = f"book-covers/{filename}"
         await asyncio.to_thread(self._client.put_object, Bucket=self._bucket, Key=key, Body=content)
         logger.info(f"Uploaded cover to S3: {key}")
