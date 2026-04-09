@@ -14,6 +14,7 @@ from src.application.reading.protocols.reading_session_repository import (
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.common.value_objects.position import Position
 from src.domain.common.value_objects.position_index import PositionIndex
+from src.domain.library.entities.book import Book
 from src.domain.library.entities.chapter import TocChapter
 from src.domain.library.exceptions import InvalidEbookError
 from src.domain.reading.exceptions import BookNotFoundError
@@ -96,7 +97,7 @@ class EbookUploadUseCase:
         1. Validates the book exists and belongs to user
         2. Validates epub structure using ebooklib
         3. Saves file via file repository
-        4. Updates book.file_path and book.file_type in database
+        4. Updates book.ebook_file and book.file_type in database
         5. Parses TOC and saves chapters
 
         Args:
@@ -116,11 +117,15 @@ class EbookUploadUseCase:
         if not self.epub_parser.validate_epub(content):
             raise InvalidEbookError("EPUB structure validation failed", ebook_type="EPUB")
 
+        # Delete old ebook file if exists
+        if book.ebook_file:
+            await self.file_repository.delete_epub(book.ebook_file)
+
         epub_filename = await self.file_repository.save_epub(book.id, content, book.title)
         book.update_file(epub_filename, "epub")
 
         # Extract and save cover if none exists
-        await self._extract_and_save_cover(book.id, content)
+        await self._extract_and_save_cover(book, content)
 
         # Build position index from EPUB DOM
         position_index = self.position_index_service.build_position_index(content)
@@ -159,17 +164,17 @@ class EbookUploadUseCase:
 
     async def _extract_and_save_cover(
         self,
-        book_id: BookId,
+        book: Book,
         epub_content: bytes,
     ) -> None:
         """Extract cover from EPUB and save it, if no cover already exists."""
-        existing_cover = await self.file_repository.has_cover(book_id)
-        if existing_cover:
+        if book.cover_file is not None:
             return
 
         cover_bytes = self.epub_parser.extract_cover(epub_content)
         if cover_bytes:
-            await self.file_repository.save_cover(book_id, cover_bytes)
+            cover_filename = await self.file_repository.save_cover(book.id, cover_bytes)
+            book.update_cover_file(cover_filename)
 
     async def _backfill_positions(
         self,

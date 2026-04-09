@@ -53,9 +53,6 @@ class FileRepository:
         """
         await asyncio.to_thread(lambda: EPUBS_DIR.mkdir(parents=True, exist_ok=True))
 
-        # Delete possible existing epub file before saving the new one
-        await self.delete_epub(book_id)
-
         sanitized_title = _sanitize_title(title)
         file_path = EPUBS_DIR / f"{sanitized_title}_{book_id.value}.epub"
         await asyncio.to_thread(file_path.write_bytes, content)
@@ -99,152 +96,121 @@ class FileRepository:
         logger.info(f"Saved cover file: {file_path}")
         return file_path.name
 
-    async def delete_epub(self, book_id: BookId) -> bool:
+    async def delete_epub(self, filename: str) -> bool:
         """
-        Delete EPUB file for a book.
-
-        Uses glob pattern to find the file by book_id suffix.
+        Delete an EPUB file by filename.
 
         Args:
-            book_id: ID of the book
+            filename: Name of the file to delete
 
         Returns:
             True if file was deleted, False if not found
         """
-        epub_files = await asyncio.to_thread(
-            lambda: list(EPUBS_DIR.glob(f"*_{book_id.value}.epub"))
-        )
-
-        if not epub_files:
-            logger.info(f"No EPUB file found for book {book_id}")
+        file_path = EPUBS_DIR / filename
+        if not await asyncio.to_thread(file_path.exists):
+            logger.info(f"No EPUB file found: {file_path}")
             return False
-
-        epub_path = epub_files[0]
 
         try:
-            await asyncio.to_thread(epub_path.unlink)
-            logger.info(f"Deleted EPUB file: {epub_path}")
+            await asyncio.to_thread(file_path.unlink)
+            logger.info(f"Deleted EPUB file: {file_path}")
             return True
         except Exception as e:
-            logger.error(f"Failed to delete EPUB file {epub_path}: {e!s}")
+            logger.error(f"Failed to delete EPUB file {file_path}: {e!s}")
             return False
 
-    async def delete_pdf(self, book_id: BookId) -> bool:
+    async def delete_pdf(self, filename: str) -> bool:
         """
-        Delete PDF file for a book.
-
-        Uses glob pattern to find the file by book_id suffix.
+        Delete a PDF file by filename.
 
         Args:
-            book_id: ID of the book
+            filename: Name of the file to delete
 
         Returns:
             True if file was deleted, False if not found
         """
-        pdf_files = await asyncio.to_thread(lambda: list(PDFS_DIR.glob(f"*_{book_id.value}.pdf")))
-
-        if not pdf_files:
-            logger.info(f"No PDF file found for book {book_id}")
+        file_path = PDFS_DIR / filename
+        if not await asyncio.to_thread(file_path.exists):
+            logger.info(f"No PDF file found: {file_path}")
             return False
-
-        pdf_path = pdf_files[0]
 
         try:
-            await asyncio.to_thread(pdf_path.unlink)
-            logger.info(f"Deleted PDF file: {pdf_path}")
+            await asyncio.to_thread(file_path.unlink)
+            logger.info(f"Deleted PDF file: {file_path}")
             return True
         except Exception as e:
-            logger.error(f"Failed to delete PDF file {pdf_path}: {e!s}")
+            logger.error(f"Failed to delete PDF file {file_path}: {e!s}")
             return False
 
-    async def delete_cover(self, book_id: BookId) -> bool:
+    async def delete_cover(self, filename: str) -> bool:
         """
-        Delete cover image for a book.
-
-        Uses glob pattern to find the file by book_id suffix.
+        Delete a cover image by filename.
 
         Args:
-            book_id: ID of the book
+            filename: Name of the file to delete
 
         Returns:
             True if file was deleted, False if not found
         """
-        cover_files = await asyncio.to_thread(
-            lambda: list(BOOK_COVERS_DIR.glob(f"{book_id.value}.*"))
-        )
-
-        if not cover_files:
-            logger.info(f"No cover file found for book {book_id}")
+        file_path = BOOK_COVERS_DIR / filename
+        if not await asyncio.to_thread(file_path.exists):
+            logger.info(f"No cover file found: {file_path}")
             return False
-
-        cover_path = cover_files[0]
 
         try:
-            await asyncio.to_thread(cover_path.unlink)
-            logger.info(f"Deleted cover file: {cover_path}")
+            await asyncio.to_thread(file_path.unlink)
+            logger.info(f"Deleted cover file: {file_path}")
             return True
         except Exception as e:
-            logger.error(f"Failed to delete cover file {cover_path}: {e!s}")
+            logger.error(f"Failed to delete cover file {file_path}: {e!s}")
             return False
 
-    async def get_epub(self, book_id: BookId) -> bytes | None:
+    async def get_epub(self, filename: str) -> bytes | None:
         """
-        Get EPUB file content for a book.
+        Get EPUB file content by filename.
 
         Args:
-            book_id: ID of the book
+            filename: Name of the file to read
 
         Returns:
             EPUB file content as bytes, or None if not found
         """
-        epub_files = await asyncio.to_thread(
-            lambda: list(EPUBS_DIR.glob(f"*_{book_id.value}.epub"))
-        )
-
-        if not epub_files:
+        file_path = EPUBS_DIR / filename
+        if not await asyncio.to_thread(file_path.exists):
             return None
+        return await asyncio.to_thread(file_path.read_bytes)
 
-        return await asyncio.to_thread(epub_files[0].read_bytes)
-
-    async def get_pdf(self, book_id: BookId) -> bytes | None:
+    async def get_pdf(self, filename: str) -> bytes | None:
         """
-        Get PDF file content for a book.
+        Get PDF file content by filename.
 
         Args:
-            book_id: ID of the book
+            filename: Name of the file to read
 
         Returns:
             PDF file content as bytes, or None if not found
         """
-        pdf_files = await asyncio.to_thread(lambda: list(PDFS_DIR.glob(f"*_{book_id.value}.pdf")))
-
-        if not pdf_files:
+        file_path = PDFS_DIR / filename
+        if not await asyncio.to_thread(file_path.exists):
             return None
+        return await asyncio.to_thread(file_path.read_bytes)
 
-        return await asyncio.to_thread(pdf_files[0].read_bytes)
-
-    async def get_cover(self, book_id: BookId) -> bytes | None:
+    async def get_cover(self, filename: str) -> bytes | None:
         """
-        Get cover image content for a book.
+        Get cover image content by filename.
 
         Args:
-            book_id: ID of the book
+            filename: Name of the file to read
 
         Returns:
             Cover image content as bytes, or None if not found
         """
-        cover_files = await asyncio.to_thread(
-            lambda: list(BOOK_COVERS_DIR.glob(f"{book_id.value}.*"))
-        )
-
-        if not cover_files:
+        file_path = BOOK_COVERS_DIR / filename
+        if not await asyncio.to_thread(file_path.exists):
             return None
+        return await asyncio.to_thread(file_path.read_bytes)
 
-        return await asyncio.to_thread(cover_files[0].read_bytes)
-
-    async def has_cover(self, book_id: BookId) -> bool:
-        """Check if a cover image exists for a book."""
-        cover_files = await asyncio.to_thread(
-            lambda: list(BOOK_COVERS_DIR.glob(f"{book_id.value}.*"))
-        )
-        return len(cover_files) > 0
+    async def has_cover(self, filename: str) -> bool:
+        """Check if a cover image exists by filename."""
+        file_path = BOOK_COVERS_DIR / filename
+        return await asyncio.to_thread(file_path.exists)

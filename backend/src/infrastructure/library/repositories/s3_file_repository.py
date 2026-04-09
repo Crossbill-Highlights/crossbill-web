@@ -1,7 +1,6 @@
 """S3-compatible repository for file I/O operations."""
 
 import asyncio
-import fnmatch
 import logging
 import re
 from typing import Any
@@ -44,43 +43,36 @@ class S3FileRepository:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _find_keys(self, prefix: str, pattern: str) -> list[str]:
-        """List object keys under *prefix* whose basename matches *pattern*."""
-        response = self._client.list_objects_v2(Bucket=self._bucket, Prefix=prefix)
-        contents = response.get("Contents", [])
-        return [
-            obj["Key"] for obj in contents if fnmatch.fnmatch(obj["Key"].split("/")[-1], pattern)
-        ]
-
-    async def _async_find_keys(self, prefix: str, pattern: str) -> list[str]:
-        return await asyncio.to_thread(self._find_keys, prefix, pattern)
-
-    async def _delete_by_pattern(self, prefix: str, pattern: str) -> bool:
-        """Delete the first key matching *pattern* under *prefix*."""
-        keys = await self._async_find_keys(prefix, pattern)
-        if not keys:
-            return False
-        key = keys[0]
+    def _get_object(self, key: str) -> bytes | None:
+        """Get an object from S3 by exact key. Returns None if not found."""
         try:
-            await asyncio.to_thread(self._client.delete_object, Bucket=self._bucket, Key=key)
+            response = self._client.get_object(Bucket=self._bucket, Key=key)
+            return response["Body"].read()  # type: ignore[no-any-return]
+        except self._client.exceptions.NoSuchKey:
+            return None
+
+    def _delete_object(self, key: str) -> bool:
+        """Delete an object from S3 by exact key. Returns True if deleted."""
+        try:
+            # Check if exists first
+            self._client.head_object(Bucket=self._bucket, Key=key)
+        except Exception:
+            return False
+        try:
+            self._client.delete_object(Bucket=self._bucket, Key=key)
             logger.info(f"Deleted S3 object: {key}")
             return True
         except Exception as e:
             logger.error(f"Failed to delete S3 object {key}: {e!s}")
             return False
 
-    async def _get_by_pattern(self, prefix: str, pattern: str) -> bytes | None:
-        """Return the bytes of the first key matching *pattern* under *prefix*."""
-        keys = await self._async_find_keys(prefix, pattern)
-        if not keys:
-            return None
-        key = keys[0]
-
-        def _read() -> bytes:
-            response = self._client.get_object(Bucket=self._bucket, Key=key)
-            return response["Body"].read()  # type: ignore[no-any-return]
-
-        return await asyncio.to_thread(_read)
+    def _object_exists(self, key: str) -> bool:
+        """Check if an object exists in S3."""
+        try:
+            self._client.head_object(Bucket=self._bucket, Key=key)
+            return True
+        except Exception:
+            return False
 
     # ------------------------------------------------------------------
     # Public interface (FileRepositoryProtocol)
@@ -90,8 +82,6 @@ class S3FileRepository:
         """
         Upload an EPUB file to S3.
 
-        Deletes any existing EPUB for this book before uploading.
-
         Args:
             book_id: ID of the book
             content: File content as bytes
@@ -100,8 +90,6 @@ class S3FileRepository:
         Returns:
             Filename (basename) of the uploaded object
         """
-        await self.delete_epub(book_id)
-
         sanitized_title = _sanitize_title(title)
         filename = f"{sanitized_title}_{book_id.value}.epub"
         key = f"epubs/{filename}"
@@ -145,79 +133,78 @@ class S3FileRepository:
         logger.info(f"Uploaded cover to S3: {key}")
         return filename
 
-    async def delete_epub(self, book_id: BookId) -> bool:
+    async def delete_epub(self, filename: str) -> bool:
         """
-        Delete the EPUB file for a book from S3.
+        Delete an EPUB file from S3 by filename.
 
         Args:
-            book_id: ID of the book
+            filename: Name of the file to delete
 
         Returns:
             True if deleted, False if not found or error
         """
-        return await self._delete_by_pattern("epubs/", f"*_{book_id.value}.epub")
+        return await asyncio.to_thread(self._delete_object, f"epubs/{filename}")
 
-    async def delete_pdf(self, book_id: BookId) -> bool:
+    async def delete_pdf(self, filename: str) -> bool:
         """
-        Delete the PDF file for a book from S3.
+        Delete a PDF file from S3 by filename.
 
         Args:
-            book_id: ID of the book
+            filename: Name of the file to delete
 
         Returns:
             True if deleted, False if not found or error
         """
-        return await self._delete_by_pattern("pdfs/", f"*_{book_id.value}.pdf")
+        return await asyncio.to_thread(self._delete_object, f"pdfs/{filename}")
 
-    async def delete_cover(self, book_id: BookId) -> bool:
+    async def delete_cover(self, filename: str) -> bool:
         """
-        Delete the cover image for a book from S3.
+        Delete a cover image from S3 by filename.
 
         Args:
-            book_id: ID of the book
+            filename: Name of the file to delete
 
         Returns:
             True if deleted, False if not found or error
         """
-        return await self._delete_by_pattern("book-covers/", f"{book_id.value}.*")
+        return await asyncio.to_thread(self._delete_object, f"book-covers/{filename}")
 
-    async def get_epub(self, book_id: BookId) -> bytes | None:
+    async def get_epub(self, filename: str) -> bytes | None:
         """
-        Retrieve EPUB file content from S3.
+        Retrieve EPUB file content from S3 by filename.
 
         Args:
-            book_id: ID of the book
+            filename: Name of the file to retrieve
 
         Returns:
             EPUB bytes or None if not found
         """
-        return await self._get_by_pattern("epubs/", f"*_{book_id.value}.epub")
+        return await asyncio.to_thread(self._get_object, f"epubs/{filename}")
 
-    async def get_pdf(self, book_id: BookId) -> bytes | None:
+    async def get_pdf(self, filename: str) -> bytes | None:
         """
-        Retrieve PDF file content from S3.
+        Retrieve PDF file content from S3 by filename.
 
         Args:
-            book_id: ID of the book
+            filename: Name of the file to retrieve
 
         Returns:
             PDF bytes or None if not found
         """
-        return await self._get_by_pattern("pdfs/", f"*_{book_id.value}.pdf")
+        return await asyncio.to_thread(self._get_object, f"pdfs/{filename}")
 
-    async def get_cover(self, book_id: BookId) -> bytes | None:
+    async def get_cover(self, filename: str) -> bytes | None:
         """
-        Retrieve cover image content from S3.
+        Retrieve cover image content from S3 by filename.
 
         Args:
-            book_id: ID of the book
+            filename: Name of the file to retrieve
 
         Returns:
             Cover image bytes or None if not found
         """
-        return await self._get_by_pattern("book-covers/", f"{book_id.value}.*")
+        return await asyncio.to_thread(self._get_object, f"book-covers/{filename}")
 
-    async def has_cover(self, book_id: BookId) -> bool:
-        """Check if a cover image exists for a book in S3."""
-        keys = await self._async_find_keys("book-covers/", f"{book_id.value}.*")
-        return len(keys) > 0
+    async def has_cover(self, filename: str) -> bool:
+        """Check if a cover image exists in S3 by filename."""
+        return await asyncio.to_thread(self._object_exists, f"book-covers/{filename}")

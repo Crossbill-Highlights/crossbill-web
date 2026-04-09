@@ -72,8 +72,7 @@ class UpdateBookUseCase:
         highlight_count = await self.highlight_repository.count_by_book(book_id_vo, user_id_vo)
         flashcard_count = await self.flashcard_repository.count_by_book(book_id_vo, user_id_vo)
 
-        # Check if cover file exists
-        has_cover = await self.file_repository.has_cover(book_id_vo)
+        has_cover = book.cover_file is not None
 
         logger.info(f"Successfully updated book {book_id}")
 

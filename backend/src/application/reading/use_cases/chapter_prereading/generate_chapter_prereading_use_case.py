@@ -70,10 +70,10 @@ class GenerateChapterPrereadingUseCase:
 
         # 3. Resolve epub path
         book = await self.book_repo.find_by_id(chapter.book_id, user_id)
-        if not book or not book.file_path or book.file_type != "epub":
+        if not book or not book.ebook_file or book.file_type != "epub":
             raise BookNotFoundError(chapter.book_id.value)
 
-        epub_content = await self.file_repo.get_epub(book.id)
+        epub_content = await self.file_repo.get_epub(book.ebook_file)
         if not epub_content:
             raise BookNotFoundError(chapter.book_id.value)
 

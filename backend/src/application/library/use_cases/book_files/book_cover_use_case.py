@@ -42,4 +42,7 @@ class BookCoverUseCase:
         if not book:
             raise BookNotFoundError(book_id)
 
-        return await self.file_repository.get_cover(book_id_vo)
+        if not book.cover_file:
+            return None
+
+        return await self.file_repository.get_cover(book.cover_file)

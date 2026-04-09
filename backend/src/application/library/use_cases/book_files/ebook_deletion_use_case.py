@@ -3,7 +3,7 @@
 import logging
 
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
-from src.domain.common.value_objects.ids import BookId
+from src.domain.library.entities.book import Book
 
 logger = logging.getLogger(__name__)
 
@@ -15,27 +15,33 @@ class EbookDeletionUseCase:
         """Initialize use case with dependencies."""
         self.file_repository = file_repository
 
-    async def delete_ebook(self, book_id: int) -> bool:
+    async def delete_ebook(self, book: Book) -> bool:
         """
-        Delete ebook file (EPUB or PDF) from disk.
+        Delete ebook file (EPUB or PDF) and cover from storage.
 
-        Attempts to delete both EPUB and PDF files. Returns True if either succeeded.
+        Attempts to delete the ebook file and cover. Returns True if an ebook was deleted.
 
         Args:
-            book_id: ID of the book
+            book: The book domain entity
 
         Returns:
-            True if at least one file was deleted, False if no files existed
+            True if at least one ebook file was deleted, False if no files existed
         """
-        book_id_obj = BookId(book_id)
+        epub_deleted = False
+        pdf_deleted = False
 
-        epub_deleted = await self.file_repository.delete_epub(book_id_obj)
-        pdf_deleted = await self.file_repository.delete_pdf(book_id_obj)
-        await self.file_repository.delete_cover(book_id_obj)
+        if book.ebook_file:
+            if book.file_type == "pdf":
+                pdf_deleted = await self.file_repository.delete_pdf(book.ebook_file)
+            else:
+                epub_deleted = await self.file_repository.delete_epub(book.ebook_file)
+
+        if book.cover_file:
+            await self.file_repository.delete_cover(book.cover_file)
 
         if epub_deleted or pdf_deleted:
-            logger.info(f"Deleted ebook file(s) for book {book_id}")
+            logger.info(f"Deleted ebook file(s) for book {book.id.value}")
             return True
 
-        logger.info(f"No ebook files found for book {book_id}")
+        logger.info(f"No ebook files found for book {book.id.value}")
         return False

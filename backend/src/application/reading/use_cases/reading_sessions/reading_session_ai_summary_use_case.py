@@ -82,10 +82,10 @@ class ReadingSessionAISummaryUseCase:
 
             # Resolve epub path
             book = await self.book_repo.find_by_id(session.book_id, user_id_vo)
-            if not book or not book.file_path or book.file_type != "epub":
+            if not book or not book.ebook_file or book.file_type != "epub":
                 raise BookNotFoundError(session.book_id.value)
 
-            epub_content = await self.file_repo.get_epub(book.id)
+            epub_content = await self.file_repo.get_epub(book.ebook_file)
             if not epub_content:
                 raise BookNotFoundError(session.book_id.value)
 
