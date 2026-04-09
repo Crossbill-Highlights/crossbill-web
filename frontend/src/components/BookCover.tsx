@@ -1,10 +1,8 @@
-import { useAuthenticatedImage } from '@/hooks/useAuthenticatedImage.ts';
 import { BookCoverIcon } from '@/theme/Icons.tsx';
-import { Box, CircularProgress, type SxProps, type Theme, useTheme } from '@mui/material';
+import { Box, type SxProps, type Theme, useTheme } from '@mui/material';
 
 export interface BookCoverProps {
-  bookId: number;
-  hasCover: boolean;
+  coverFile: string | null;
   title: string;
   /**
    * Width of the cover container
@@ -26,8 +24,7 @@ export interface BookCoverProps {
 }
 
 export const BookCover = ({
-  bookId,
-  hasCover,
+  coverFile,
   title,
   width = '100%',
   height = 200,
@@ -40,13 +37,9 @@ export const BookCover = ({
       ? import.meta.env.VITE_API_URL
       : 'http://localhost:8000';
 
-  const imageUrl = hasCover ? `${apiUrl}/api/v1/books/${bookId}/cover` : null;
-  const { objectUrl, loading, error } = useAuthenticatedImage(imageUrl);
-
-  const coverUrl = objectUrl;
-
+  const coverUrl = coverFile ? `${apiUrl}/api/v1/covers/${coverFile}` : null;
   const placeholderBackground = theme.palette.action.hover;
-  const showPlaceholder = !coverUrl || error;
+  const showPlaceholder = !coverUrl;
 
   return (
     <Box
@@ -61,16 +54,7 @@ export const BookCover = ({
         ...sx,
       }}
     >
-      {/* Show loading spinner while fetching authenticated image */}
-      {loading && (
-        <CircularProgress
-          size={typeof height === 'number' ? Math.min(height * 0.3, 40) : 40}
-          sx={{ color: 'text.disabled' }}
-        />
-      )}
-
-      {/* Show image when loaded */}
-      {!loading && coverUrl && (
+      {coverUrl ? (
         <img
           src={coverUrl}
           alt={`${title} cover`}
@@ -80,18 +64,16 @@ export const BookCover = ({
             objectFit,
           }}
           onError={(e) => {
-            // Fallback to placeholder if image fails to load
             e.currentTarget.style.display = 'none';
             const placeholder = e.currentTarget.nextSibling as HTMLElement | null;
             if (placeholder) placeholder.style.display = 'flex';
           }}
         />
-      )}
+      ) : null}
 
-      {/* Placeholder icon when no cover is available or on error */}
       <Box
         sx={{
-          display: !loading && showPlaceholder ? 'flex' : 'none',
+          display: showPlaceholder ? 'flex' : 'none',
           alignItems: 'center',
           justifyContent: 'center',
           width: '100%',

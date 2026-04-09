@@ -52,8 +52,7 @@ export const BookTitle = ({ book }: BookTitleProps) => {
             }}
           >
             <BookCover
-              bookId={book.id}
-              hasCover={book.has_cover}
+              coverFile={book.cover_file ?? null}
               title={book.title}
               height="100%"
               width="100%"
