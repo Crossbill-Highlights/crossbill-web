@@ -217,7 +217,3 @@ class S3FileRepository:
         _validate_filename(filename)
         return await asyncio.to_thread(self._get_object, f"book-covers/{filename}")
 
-    async def has_cover(self, filename: str) -> bool:
-        """Check if a cover image exists in S3 by filename."""
-        _validate_filename(filename)
-        return await asyncio.to_thread(self._object_exists, f"book-covers/{filename}")

@@ -222,8 +222,3 @@ class FileRepository:
             return None
         return await asyncio.to_thread(file_path.read_bytes)
 
-    async def has_cover(self, filename: str) -> bool:
-        """Check if a cover image exists by filename."""
-        _validate_filename(filename)
-        file_path = BOOK_COVERS_DIR / filename
-        return await asyncio.to_thread(file_path.exists)

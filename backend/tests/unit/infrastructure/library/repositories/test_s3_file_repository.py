@@ -306,27 +306,3 @@ async def test_delete_cover_returns_false_on_exception(
     assert result is False
 
 
-# ---------------------------------------------------------------------------
-# has_cover
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.asyncio
-async def test_has_cover_returns_true_when_cover_exists(
-    repo: S3FileRepository, s3_client: MagicMock
-) -> None:
-    result = await repo.has_cover("42.jpg")
-
-    assert result is True
-    s3_client.head_object.assert_called_once_with(Bucket="test-bucket", Key="book-covers/42.jpg")
-
-
-@pytest.mark.asyncio
-async def test_has_cover_returns_false_when_no_cover(
-    repo: S3FileRepository, s3_client: MagicMock
-) -> None:
-    s3_client.head_object.side_effect = Exception("not found")
-
-    result = await repo.has_cover("42.jpg")
-
-    assert result is False
