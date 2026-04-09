@@ -1,11 +1,9 @@
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from starlette import status
-from starlette.responses import Response
 
-from src.application.library.use_cases.book_files.book_cover_use_case import BookCoverUseCase
 from src.application.library.use_cases.book_management.delete_book_use_case import (
     DeleteBookUseCase,
 )
@@ -437,33 +435,3 @@ async def delete_book(
         HTTPException: If book is not found or deletion fails
     """
     await use_case.delete_book(book_id, current_user.id.value)
-
-
-@router.get("/{book_id}/cover", status_code=status.HTTP_200_OK, response_class=Response)
-async def get_book_cover(
-    book_id: int,
-    current_user: Annotated[User, Depends(get_current_user)],
-    use_case: BookCoverUseCase = Depends(inject_use_case(container.library.book_cover_use_case)),
-) -> Response:
-    """
-    Get the cover image for a book.
-
-    This endpoint serves the book cover image with user ownership verification.
-    Only users who own the book can access its cover.
-
-    Args:
-        book_id: ID of the book
-        current_user: Authenticated user
-
-    Returns:
-        Response with the book cover image
-
-    Raises:
-        HTTPException: If book is not found, user doesn't own it, or cover doesn't exist
-    """
-    cover_bytes = await use_case.get_cover(book_id, current_user.id.value)
-
-    if cover_bytes is None:
-        raise HTTPException(status_code=404, detail="Cover not found")
-
-    return Response(content=cover_bytes, media_type="image/jpeg")
