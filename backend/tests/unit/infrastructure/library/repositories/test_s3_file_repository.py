@@ -304,5 +304,3 @@ async def test_delete_cover_returns_false_on_exception(
     result = await repo.delete_cover("42.jpg")
 
     assert result is False
-
-

@@ -228,4 +228,3 @@ class S3FileRepository:
             return None
         _validate_filename(filename)
         return await asyncio.to_thread(self._get_object, f"book-covers/{filename}")
-

@@ -233,4 +233,3 @@ class FileRepository:
         if not await asyncio.to_thread(file_path.exists):
             return None
         return await asyncio.to_thread(file_path.read_bytes)
-
