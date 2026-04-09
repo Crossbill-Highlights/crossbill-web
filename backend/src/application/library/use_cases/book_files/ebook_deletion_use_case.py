@@ -30,14 +30,12 @@ class EbookDeletionUseCase:
         epub_deleted = False
         pdf_deleted = False
 
-        if book.ebook_file:
-            if book.file_type == "pdf":
-                pdf_deleted = await self.file_repository.delete_pdf(book.ebook_file)
-            else:
-                epub_deleted = await self.file_repository.delete_epub(book.ebook_file)
+        if book.file_type == "pdf":
+            pdf_deleted = await self.file_repository.delete_pdf(book.ebook_file)
+        else:
+            epub_deleted = await self.file_repository.delete_epub(book.ebook_file)
 
-        if book.cover_file:
-            await self.file_repository.delete_cover(book.cover_file)
+        await self.file_repository.delete_cover(book.cover_file)
 
         if epub_deleted or pdf_deleted:
             logger.info(f"Deleted ebook file(s) for book {book.id.value}")

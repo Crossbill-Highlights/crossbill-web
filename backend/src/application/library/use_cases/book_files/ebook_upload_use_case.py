@@ -118,8 +118,7 @@ class EbookUploadUseCase:
             raise InvalidEbookError("EPUB structure validation failed", ebook_type="EPUB")
 
         # Delete old ebook file if exists
-        if book.ebook_file:
-            await self.file_repository.delete_epub(book.ebook_file)
+        await self.file_repository.delete_epub(book.ebook_file)
 
         epub_filename = await self.file_repository.save_epub(book.id, content, book.title)
         book.update_file(epub_filename, "epub")

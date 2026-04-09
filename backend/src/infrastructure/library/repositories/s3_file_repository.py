@@ -139,81 +139,93 @@ class S3FileRepository:
         logger.info(f"Uploaded cover to S3: {key}")
         return filename
 
-    async def delete_epub(self, filename: str) -> bool:
+    async def delete_epub(self, filename: str | None) -> bool:
         """
         Delete an EPUB file from S3 by filename.
 
         Args:
-            filename: Name of the file to delete
+            filename: Name of the file to delete, or None
 
         Returns:
-            True if deleted, False if not found or error
+            True if deleted, False if not found, error, or filename is None
         """
+        if filename is None:
+            return False
         _validate_filename(filename)
         return await asyncio.to_thread(self._delete_object, f"epubs/{filename}")
 
-    async def delete_pdf(self, filename: str) -> bool:
+    async def delete_pdf(self, filename: str | None) -> bool:
         """
         Delete a PDF file from S3 by filename.
 
         Args:
-            filename: Name of the file to delete
+            filename: Name of the file to delete, or None
 
         Returns:
-            True if deleted, False if not found or error
+            True if deleted, False if not found, error, or filename is None
         """
+        if filename is None:
+            return False
         _validate_filename(filename)
         return await asyncio.to_thread(self._delete_object, f"pdfs/{filename}")
 
-    async def delete_cover(self, filename: str) -> bool:
+    async def delete_cover(self, filename: str | None) -> bool:
         """
         Delete a cover image from S3 by filename.
 
         Args:
-            filename: Name of the file to delete
+            filename: Name of the file to delete, or None
 
         Returns:
-            True if deleted, False if not found or error
+            True if deleted, False if not found, error, or filename is None
         """
+        if filename is None:
+            return False
         _validate_filename(filename)
         return await asyncio.to_thread(self._delete_object, f"book-covers/{filename}")
 
-    async def get_epub(self, filename: str) -> bytes | None:
+    async def get_epub(self, filename: str | None) -> bytes | None:
         """
         Retrieve EPUB file content from S3 by filename.
 
         Args:
-            filename: Name of the file to retrieve
+            filename: Name of the file to retrieve, or None
 
         Returns:
-            EPUB bytes or None if not found
+            EPUB bytes or None if not found or filename is None
         """
+        if filename is None:
+            return None
         _validate_filename(filename)
         return await asyncio.to_thread(self._get_object, f"epubs/{filename}")
 
-    async def get_pdf(self, filename: str) -> bytes | None:
+    async def get_pdf(self, filename: str | None) -> bytes | None:
         """
         Retrieve PDF file content from S3 by filename.
 
         Args:
-            filename: Name of the file to retrieve
+            filename: Name of the file to retrieve, or None
 
         Returns:
-            PDF bytes or None if not found
+            PDF bytes or None if not found or filename is None
         """
+        if filename is None:
+            return None
         _validate_filename(filename)
         return await asyncio.to_thread(self._get_object, f"pdfs/{filename}")
 
-    async def get_cover(self, filename: str) -> bytes | None:
+    async def get_cover(self, filename: str | None) -> bytes | None:
         """
         Retrieve cover image content from S3 by filename.
 
         Args:
-            filename: Name of the file to retrieve
+            filename: Name of the file to retrieve, or None
 
         Returns:
-            Cover image bytes or None if not found
+            Cover image bytes or None if not found or filename is None
         """
+        if filename is None:
+            return None
         _validate_filename(filename)
         return await asyncio.to_thread(self._get_object, f"book-covers/{filename}")
 

@@ -102,16 +102,18 @@ class FileRepository:
         logger.info(f"Saved cover file: {file_path}")
         return file_path.name
 
-    async def delete_epub(self, filename: str) -> bool:
+    async def delete_epub(self, filename: str | None) -> bool:
         """
         Delete an EPUB file by filename.
 
         Args:
-            filename: Name of the file to delete
+            filename: Name of the file to delete, or None
 
         Returns:
-            True if file was deleted, False if not found
+            True if file was deleted, False if not found or filename is None
         """
+        if filename is None:
+            return False
         _validate_filename(filename)
         file_path = EPUBS_DIR / filename
         if not await asyncio.to_thread(file_path.exists):
@@ -126,16 +128,18 @@ class FileRepository:
             logger.error(f"Failed to delete EPUB file {file_path}: {e!s}")
             return False
 
-    async def delete_pdf(self, filename: str) -> bool:
+    async def delete_pdf(self, filename: str | None) -> bool:
         """
         Delete a PDF file by filename.
 
         Args:
-            filename: Name of the file to delete
+            filename: Name of the file to delete, or None
 
         Returns:
-            True if file was deleted, False if not found
+            True if file was deleted, False if not found or filename is None
         """
+        if filename is None:
+            return False
         _validate_filename(filename)
         file_path = PDFS_DIR / filename
         if not await asyncio.to_thread(file_path.exists):
@@ -150,16 +154,18 @@ class FileRepository:
             logger.error(f"Failed to delete PDF file {file_path}: {e!s}")
             return False
 
-    async def delete_cover(self, filename: str) -> bool:
+    async def delete_cover(self, filename: str | None) -> bool:
         """
         Delete a cover image by filename.
 
         Args:
-            filename: Name of the file to delete
+            filename: Name of the file to delete, or None
 
         Returns:
-            True if file was deleted, False if not found
+            True if file was deleted, False if not found or filename is None
         """
+        if filename is None:
+            return False
         _validate_filename(filename)
         file_path = BOOK_COVERS_DIR / filename
         if not await asyncio.to_thread(file_path.exists):
@@ -174,7 +180,7 @@ class FileRepository:
             logger.error(f"Failed to delete cover file {file_path}: {e!s}")
             return False
 
-    async def get_epub(self, filename: str) -> bytes | None:
+    async def get_epub(self, filename: str | None) -> bytes | None:
         """
         Get EPUB file content by filename.
 
@@ -184,13 +190,15 @@ class FileRepository:
         Returns:
             EPUB file content as bytes, or None if not found
         """
+        if filename is None:
+            return None
         _validate_filename(filename)
         file_path = EPUBS_DIR / filename
         if not await asyncio.to_thread(file_path.exists):
             return None
         return await asyncio.to_thread(file_path.read_bytes)
 
-    async def get_pdf(self, filename: str) -> bytes | None:
+    async def get_pdf(self, filename: str | None) -> bytes | None:
         """
         Get PDF file content by filename.
 
@@ -200,13 +208,15 @@ class FileRepository:
         Returns:
             PDF file content as bytes, or None if not found
         """
+        if filename is None:
+            return None
         _validate_filename(filename)
         file_path = PDFS_DIR / filename
         if not await asyncio.to_thread(file_path.exists):
             return None
         return await asyncio.to_thread(file_path.read_bytes)
 
-    async def get_cover(self, filename: str) -> bytes | None:
+    async def get_cover(self, filename: str | None) -> bytes | None:
         """
         Get cover image content by filename.
 
@@ -216,6 +226,8 @@ class FileRepository:
         Returns:
             Cover image content as bytes, or None if not found
         """
+        if filename is None:
+            return None
         _validate_filename(filename)
         file_path = BOOK_COVERS_DIR / filename
         if not await asyncio.to_thread(file_path.exists):
