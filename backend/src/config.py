@@ -79,6 +79,10 @@ class Settings(BaseSettings):
     # openrouter
     OPENROUTER_API_KEY: str | None = None
 
+    # Worker
+    EMBEDDED_WORKER: bool = True
+    WORKER_CONCURRENCY: int = 2
+
     # S3-compatible storage (optional — if set, files are stored in S3 instead of local disk)
     S3_ENDPOINT_URL: str | None = None
     S3_ACCESS_KEY_ID: str | None = None
