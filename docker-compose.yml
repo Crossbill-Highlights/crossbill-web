@@ -59,6 +59,8 @@ services:
 
   # Background job worker (SAQ) — processes async tasks like batch AI prereading generation.
   # Uses the same image as the app with a different entrypoint. Requires AI_PROVIDER config for AI tasks.
+  # NOTE: Not needed when EMBEDDED_WORKER=true (the default) — the app runs the worker in-process.
+  # Use a separate worker container only if you need process isolation or higher concurrency.
   worker:
     image: tumetsu/crossbill:latest
     container_name: crossbill-worker
