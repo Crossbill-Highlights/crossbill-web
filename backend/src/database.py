@@ -36,8 +36,15 @@ def _make_async_url(url: str) -> str:
 
 
 def initialize_database(settings: Settings) -> None:
-    """Initialize database engine and session factory once at startup."""
+    """Initialize database engine and session factory once at startup.
+
+    Subsequent calls are no-ops so the embedded worker does not create a
+    duplicate connection pool when the FastAPI lifespan already initialised it.
+    """
     global _engine, _session_factory  # noqa: PLW0603
+
+    if _engine is not None:
+        return
 
     async_url = _make_async_url(settings.DATABASE_URL)
 

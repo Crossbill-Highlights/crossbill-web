@@ -1,12 +1,16 @@
 """SAQ worker entrypoint.
 
 Start with: saq src.worker.worker_settings
+
+For embedded mode (in-process with FastAPI), use create_embedded_worker().
 """
 
-import os
+import signal
+from typing import ClassVar
 
 import boto3
 import structlog
+from saq import Queue, Worker
 from saq.types import Context, SettingsDict
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -31,23 +35,42 @@ from src.infrastructure.reading.repositories.chapter_prereading_repository impor
 
 logger = structlog.get_logger(__name__)
 
-app_settings = get_settings()
-queue = create_queue(app_settings.DATABASE_URL)
-
 _session_factory: async_sessionmaker[AsyncSession] | None = None
+
+# Settings and queue are created lazily to avoid side effects when importing
+# this module from the FastAPI app (which only needs create_embedded_worker).
+_app_settings = None
+_queue = None
+
+
+def _get_app_settings():  # noqa: ANN202
+    """Get cached settings (lazy singleton)."""
+    global _app_settings  # noqa: PLW0603
+    if _app_settings is None:
+        _app_settings = get_settings()
+    return _app_settings
+
+
+def _get_queue() -> Queue:
+    """Get cached SAQ queue (lazy singleton)."""
+    global _queue  # noqa: PLW0603
+    if _queue is None:
+        _queue = create_queue(_get_app_settings().DATABASE_URL)
+    return _queue
 
 
 def _build_file_repo() -> S3FileRepository | FileRepository:
     """Build the appropriate file repository based on config."""
-    if app_settings.s3_enabled:
+    settings = _get_app_settings()
+    if settings.s3_enabled:
         client = boto3.client(
             "s3",
-            endpoint_url=app_settings.S3_ENDPOINT_URL,
-            aws_access_key_id=app_settings.S3_ACCESS_KEY_ID,
-            aws_secret_access_key=app_settings.S3_SECRET_ACCESS_KEY,
-            region_name=app_settings.S3_REGION,
+            endpoint_url=settings.S3_ENDPOINT_URL,
+            aws_access_key_id=settings.S3_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY,
+            region_name=settings.S3_REGION,
         )
-        return S3FileRepository(s3_client=client, bucket_name=app_settings.S3_BUCKET_NAME)  # type: ignore[arg-type]
+        return S3FileRepository(s3_client=client, bucket_name=settings.S3_BUCKET_NAME)  # type: ignore[arg-type]
     return FileRepository()
 
 
@@ -71,10 +94,11 @@ def _build_prereading_handler(db: AsyncSession) -> PrereadingTaskHandler:
 async def startup(ctx: Context) -> None:
     """Initialize worker resources."""
     logger.info("worker_starting")
-    initialize_database(app_settings)
+    settings = _get_app_settings()
+    initialize_database(settings)
 
     global _session_factory  # noqa: PLW0603
-    _session_factory = get_session_factory(app_settings)
+    _session_factory = get_session_factory(settings)
 
     logger.info("worker_started")
 
@@ -116,11 +140,46 @@ async def after_process(ctx: Context) -> None:
         await handler.after_process(ctx)
 
 
-worker_settings: SettingsDict[Context] = {
-    "queue": queue,
-    "functions": [generate_chapter_prereading],
-    "concurrency": int(os.getenv("WORKER_CONCURRENCY", "5")),
-    "startup": startup,
-    "shutdown": shutdown,
-    "after_process": after_process,
-}
+def _build_worker_settings() -> SettingsDict[Context]:
+    """Build SAQ worker settings lazily (called on first access)."""
+    return {
+        "queue": _get_queue(),
+        "functions": [generate_chapter_prereading],
+        "concurrency": _get_app_settings().WORKER_CONCURRENCY,
+        "startup": startup,
+        "shutdown": shutdown,
+        "after_process": after_process,
+    }
+
+
+def __getattr__(name: str) -> SettingsDict[Context]:
+    """Module-level __getattr__ for lazy worker_settings access.
+
+    SAQ CLI does ``import src.worker; src.worker.worker_settings`` which
+    triggers this on first access, keeping the import itself side-effect-free.
+    """
+    if name == "worker_settings":
+        return _build_worker_settings()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+class EmbeddedWorker(Worker[Context]):
+    """SAQ Worker that skips signal handler registration.
+
+    When running inside the FastAPI process, uvicorn owns SIGINT/SIGTERM.
+    The app lifespan calls worker.stop() on shutdown instead.
+    """
+
+    SIGNALS: ClassVar[list[signal.Signals]] = []
+
+
+def create_embedded_worker(queue: Queue, concurrency: int = 2) -> EmbeddedWorker:
+    """Create a Worker instance for running inside the app process."""
+    return EmbeddedWorker(
+        queue=queue,
+        functions=[generate_chapter_prereading],
+        concurrency=concurrency,
+        startup=[startup],
+        shutdown=[shutdown],
+        after_process=after_process,
+    )

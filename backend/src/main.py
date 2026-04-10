@@ -1,5 +1,7 @@
 """Main FastAPI application."""
 
+import asyncio
+import contextlib
 import os
 import time
 import uuid
@@ -126,7 +128,28 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     queue_service = SaqJobQueueService(saq_queue)
     container.job_queue_service.override(queue_service)
 
+    # Start embedded worker if enabled (runs SAQ in the same process)
+    embedded_worker = None
+    worker_task: asyncio.Task[None] | None = None
+    if settings.EMBEDDED_WORKER:
+        from src.worker import create_embedded_worker  # noqa: PLC0415
+
+        embedded_worker = create_embedded_worker(saq_queue, concurrency=settings.WORKER_CONCURRENCY)
+        worker_task = asyncio.create_task(embedded_worker.start())
+        logger.info("embedded_worker_started", concurrency=settings.WORKER_CONCURRENCY)
+
     yield
+
+    # Stop embedded worker gracefully.
+    # worker.stop() signals the run-loop to exit, which should resolve
+    # worker_task naturally.  The cancel() is a defensive fallback in case
+    # start() does not exit cleanly (e.g. stuck awaiting a job).
+    if embedded_worker is not None and worker_task is not None:
+        await embedded_worker.stop()
+        worker_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await worker_task
+        logger.info("embedded_worker_stopped")
 
     await saq_queue.disconnect()
     container.job_queue_service.reset_override()

@@ -59,37 +59,42 @@ services:
 
   # Background job worker (SAQ) — processes async tasks like batch AI prereading generation.
   # Uses the same image as the app with a different entrypoint. Requires AI_PROVIDER config for AI tasks.
-  worker:
-    image: tumetsu/crossbill:latest
-    container_name: crossbill-worker
-    restart: unless-stopped
-    pull_policy: always
-    env_file: .env
-    command: ["saq", "src.worker.worker_settings"]
-    environment:
-      DATABASE_URL: postgresql://crossbill:${POSTGRES_PASSWORD:-crossbill_secure_password}@postgres:5432/crossbill
-      ENVIRONMENT: production
-      AI_PROVIDER: ${AI_PROVIDER:-}
-      AI_MODEL_NAME: ${AI_MODEL_NAME:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
-      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-5}
-      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-}
-      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
-      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
-      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-}
-      S3_REGION: ${S3_REGION:-us-east-1}
-    volumes:
-      - type: bind
-        source: /path/on/host/for/crossbill/book-files
-        target: /app/book-files
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - crossbill-network
+  #
+  # NOT NEEDED by default — the app runs the worker in-process (EMBEDDED_WORKER=true).
+  # Uncomment this service and set EMBEDDED_WORKER=false in the app if you need process isolation
+  # or want to scale the worker independently.
+  #
+  # worker:
+  #   image: tumetsu/crossbill:latest
+  #   container_name: crossbill-worker
+  #   restart: unless-stopped
+  #   pull_policy: always
+  #   env_file: .env
+  #   command: ["saq", "src.worker.worker_settings"]
+  #   environment:
+  #     DATABASE_URL: postgresql://crossbill:${POSTGRES_PASSWORD:-crossbill_secure_password}@postgres:5432/crossbill
+  #     ENVIRONMENT: production
+  #     AI_PROVIDER: ${AI_PROVIDER:-}
+  #     AI_MODEL_NAME: ${AI_MODEL_NAME:-}
+  #     OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  #     ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  #     GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+  #     OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+  #     WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-5}
+  #     S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-}
+  #     S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+  #     S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+  #     S3_BUCKET_NAME: ${S3_BUCKET_NAME:-}
+  #     S3_REGION: ${S3_REGION:-us-east-1}
+  #   volumes:
+  #     - type: bind
+  #       source: /path/on/host/for/crossbill/book-files
+  #       target: /app/book-files
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - crossbill-network
 
   # Optional: S3-compatible object storage for shared file access between app and worker.
   # Not needed if using an external S3 service (e.g., Railway Object Storage, AWS S3).
