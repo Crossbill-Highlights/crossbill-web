@@ -140,7 +140,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     yield
 
-    # Stop embedded worker gracefully
+    # Stop embedded worker gracefully.
+    # worker.stop() signals the run-loop to exit, which should resolve
+    # worker_task naturally.  The cancel() is a defensive fallback in case
+    # start() does not exit cleanly (e.g. stuck awaiting a job).
     if embedded_worker is not None and worker_task is not None:
         await embedded_worker.stop()
         worker_task.cancel()
