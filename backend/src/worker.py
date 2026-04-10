@@ -7,6 +7,7 @@ For embedded mode (in-process with FastAPI), use create_embedded_worker().
 
 import os
 import signal
+from typing import ClassVar
 
 import boto3
 import structlog
@@ -137,7 +138,7 @@ class EmbeddedWorker(Worker[Context]):
     The app lifespan calls worker.stop() on shutdown instead.
     """
 
-    SIGNALS: list[signal.Signals] = []
+    SIGNALS: ClassVar[list[signal.Signals]] = []
 
 
 def create_embedded_worker(queue: Queue, concurrency: int = 2) -> EmbeddedWorker:
