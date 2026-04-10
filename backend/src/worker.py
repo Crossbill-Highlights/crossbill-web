@@ -1,12 +1,16 @@
 """SAQ worker entrypoint.
 
 Start with: saq src.worker.worker_settings
+
+For embedded mode (in-process with FastAPI), use create_embedded_worker().
 """
 
 import os
+import signal
 
 import boto3
 import structlog
+from saq import Queue, Worker
 from saq.types import Context, SettingsDict
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -124,3 +128,25 @@ worker_settings: SettingsDict[Context] = {
     "shutdown": shutdown,
     "after_process": after_process,
 }
+
+
+class EmbeddedWorker(Worker[Context]):
+    """SAQ Worker that skips signal handler registration.
+
+    When running inside the FastAPI process, uvicorn owns SIGINT/SIGTERM.
+    The app lifespan calls worker.stop() on shutdown instead.
+    """
+
+    SIGNALS: list[signal.Signals] = []
+
+
+def create_embedded_worker(queue: Queue, concurrency: int = 2) -> EmbeddedWorker:
+    """Create a Worker instance for running inside the app process."""
+    return EmbeddedWorker(
+        queue=queue,
+        functions=[generate_chapter_prereading],
+        concurrency=concurrency,
+        startup=[startup],
+        shutdown=[shutdown],
+        after_process=after_process,
+    )
