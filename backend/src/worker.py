@@ -5,7 +5,6 @@ Start with: saq src.worker.worker_settings
 For embedded mode (in-process with FastAPI), use create_embedded_worker().
 """
 
-import os
 import signal
 from typing import ClassVar
 
@@ -146,7 +145,7 @@ def _build_worker_settings() -> SettingsDict[Context]:
     return {
         "queue": _get_queue(),
         "functions": [generate_chapter_prereading],
-        "concurrency": int(os.getenv("WORKER_CONCURRENCY", "5")),
+        "concurrency": _get_app_settings().WORKER_CONCURRENCY,
         "startup": startup,
         "shutdown": shutdown,
         "after_process": after_process,
