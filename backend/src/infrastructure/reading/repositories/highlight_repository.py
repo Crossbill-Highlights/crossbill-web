@@ -267,9 +267,7 @@ class HighlightRepository:
             else:
                 # SQLite: Use LIKE-based search
                 escaped = escape_like_pattern(search_text)
-                stmt = stmt.where(
-                    HighlightORM.text.ilike(f"%{escaped}%", escape=LIKE_ESCAPE_CHAR)
-                )
+                stmt = stmt.where(HighlightORM.text.ilike(f"%{escaped}%", escape=LIKE_ESCAPE_CHAR))
 
         # Add optional book_id filter
         if book_id is not None:
