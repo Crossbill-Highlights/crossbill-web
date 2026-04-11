@@ -70,11 +70,6 @@ STATIC_DIR = (Path(__file__).parent.parent / "static").resolve()
 
 async def _initialize_admin_password() -> None:
     """Initialize admin user password from environment variable if not set."""
-    if not settings.ADMIN_PASSWORD:
-        logger.info("admin_password_skip", reason="ADMIN_PASSWORD not set")
-        return
-
-    # Use singleton session factory instead of creating new engine
     session_factory = get_session_factory(settings)
     async with session_factory() as db:
         # Use repository to find and update admin user

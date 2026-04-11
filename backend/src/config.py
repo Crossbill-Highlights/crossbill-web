@@ -40,9 +40,9 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: list[str] = ["*"]
 
-    # Admin setup (for first-time initialization)
+    # Admin setup (for first-time initialization on a fresh deployment)
     ADMIN_USERNAME: str = "admin"
-    ADMIN_PASSWORD: str = "admin"  # noqa: S105
+    ADMIN_PASSWORD: str = ""
 
     # Auth
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
@@ -112,6 +112,23 @@ class Settings(BaseSettings):
     def strip_admin_password(cls, value: str) -> str:
         """Strip whitespace from admin password."""
         return value.strip()
+
+    @model_validator(mode="after")
+    def validate_admin_password(self) -> "Settings":
+        """Require ADMIN_PASSWORD to be set to a non-default value for first-run provisioning."""
+        if not self.ADMIN_PASSWORD:
+            msg = (
+                "ADMIN_PASSWORD must be set (e.g. in your .env file) so the initial "
+                "admin user can be provisioned on first startup."
+            )
+            raise ValueError(msg)
+        if self.ADMIN_PASSWORD.lower() == "admin":
+            msg = (
+                "ADMIN_PASSWORD must not be set to the insecure default 'admin'. "
+                "Choose a strong password — you can change it again from the UI after first login."
+            )
+            raise ValueError(msg)
+        return self
 
     @model_validator(mode="after")
     def validate_ai_provider_config(self) -> "Settings":

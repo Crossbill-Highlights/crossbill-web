@@ -2,6 +2,12 @@
 
 import logging
 import os
+
+# Settings are constructed at import time in src.main, so env vars that feed
+# the Settings validator must be set before any src.* imports below.
+os.environ.setdefault("TESTING", "1")
+os.environ.setdefault("ADMIN_PASSWORD", "test-admin-password")
+
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from datetime import datetime as dt
 from typing import Any
@@ -9,7 +15,11 @@ from typing import Any
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import event, select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.pool import StaticPool
 
 from src.database import Base, get_db
@@ -131,9 +141,6 @@ async def create_test_highlight_style(
     await db_session.refresh(style)
     return style
 
-
-# Set TESTING environment variable to skip database initialization in main.py
-os.environ["TESTING"] = "1"
 
 # Test database URL (in-memory SQLite with aiosqlite)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
