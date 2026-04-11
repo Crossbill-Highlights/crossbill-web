@@ -7,12 +7,44 @@ from src.config import Settings
 
 def _build_settings(**overrides: object) -> Settings:
     defaults: dict[str, object] = {
-        "SECRET_KEY": "test-secret",
-        "REFRESH_TOKEN_SECRET_KEY": "test-refresh-secret",
+        "SECRET_KEY": "test-secret-key-at-least-32-bytes-long",
+        "REFRESH_TOKEN_SECRET_KEY": "test-refresh-token-secret-key-at-least-32-bytes-long",
         "ADMIN_PASSWORD": "test-admin-password",
     }
     defaults.update(overrides)
     return Settings(**defaults)  # type: ignore[arg-type]
+
+
+class TestJwtSecretKeyValidation:
+    def test_empty_secret_key_rejected(self) -> None:
+        with pytest.raises(ValueError, match="SECRET_KEY must be set"):
+            _build_settings(SECRET_KEY="")
+
+    def test_short_secret_key_rejected(self) -> None:
+        with pytest.raises(ValueError, match="SECRET_KEY must be set"):
+            _build_settings(SECRET_KEY="short")
+
+    def test_insecure_example_secret_key_rejected(self) -> None:
+        with pytest.raises(ValueError, match="SECRET_KEY must be set"):
+            _build_settings(SECRET_KEY="123")
+
+    def test_empty_refresh_secret_key_rejected(self) -> None:
+        with pytest.raises(ValueError, match="REFRESH_TOKEN_SECRET_KEY must be set"):
+            _build_settings(REFRESH_TOKEN_SECRET_KEY="")
+
+    def test_short_refresh_secret_key_rejected(self) -> None:
+        with pytest.raises(ValueError, match="REFRESH_TOKEN_SECRET_KEY must be set"):
+            _build_settings(REFRESH_TOKEN_SECRET_KEY="random secret")
+
+    def test_exactly_32_byte_secret_keys_ok(self) -> None:
+        access = "a" * 32
+        refresh = "b" * 32
+        settings = _build_settings(
+            SECRET_KEY=access,
+            REFRESH_TOKEN_SECRET_KEY=refresh,
+        )
+        assert len(settings.SECRET_KEY) == 32
+        assert len(settings.REFRESH_TOKEN_SECRET_KEY) == 32
 
 
 class TestCorsOriginsValidation:

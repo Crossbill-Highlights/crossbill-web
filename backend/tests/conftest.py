@@ -7,6 +7,11 @@ import os
 # the Settings validator must be set before any src.* imports below.
 os.environ.setdefault("TESTING", "1")
 os.environ.setdefault("ADMIN_PASSWORD", "test-admin-password")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-at-least-32-bytes-long")
+os.environ.setdefault(
+    "REFRESH_TOKEN_SECRET_KEY",
+    "test-refresh-token-secret-key-at-least-32-bytes-long",
+)
 
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from datetime import datetime as dt

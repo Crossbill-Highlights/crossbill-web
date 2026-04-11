@@ -118,6 +118,21 @@ class Settings(BaseSettings):
         return value.strip()
 
     @model_validator(mode="after")
+    def validate_jwt_secret_keys(self) -> "Settings":
+        """Require JWT signing secrets to be set and long enough to resist brute force."""
+        minimum_length = 32
+        for field_name in ("SECRET_KEY", "REFRESH_TOKEN_SECRET_KEY"):
+            value: str = getattr(self, field_name)
+            if len(value.encode("utf-8")) < minimum_length:
+                msg = (
+                    f"{field_name} must be set to at least {minimum_length} bytes. "
+                    "Generate one with: "
+                    'python -c "import secrets; print(secrets.token_urlsafe(32))"'
+                )
+                raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
     def validate_admin_password(self) -> "Settings":
         """Require ADMIN_PASSWORD to be set to a non-default value for first-run provisioning."""
         if not self.ADMIN_PASSWORD:
