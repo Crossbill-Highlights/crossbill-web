@@ -153,12 +153,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await dispose_engine()
 
 
+_docs_enabled = settings.ENVIRONMENT != "production"
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    docs_url=f"{settings.API_V1_PREFIX}/docs",
-    redoc_url=f"{settings.API_V1_PREFIX}/redoc",
-    openapi_url=f"{settings.API_V1_PREFIX}/openapi.json",
+    docs_url=f"{settings.API_V1_PREFIX}/docs" if _docs_enabled else None,
+    redoc_url=f"{settings.API_V1_PREFIX}/redoc" if _docs_enabled else None,
+    openapi_url=f"{settings.API_V1_PREFIX}/openapi.json" if _docs_enabled else None,
     lifespan=lifespan,
 )
 
@@ -373,11 +375,13 @@ async def health() -> dict[str, str]:
 @app.get(f"{settings.API_V1_PREFIX}/")
 async def api_root() -> dict[str, Any]:
     """API root endpoint."""
-    return {
+    response: dict[str, Any] = {
         "message": "crossbill API v1",
         "version": settings.VERSION,
-        "docs": f"{settings.API_V1_PREFIX}/docs",
     }
+    if _docs_enabled:
+        response["docs"] = f"{settings.API_V1_PREFIX}/docs"
+    return response
 
 
 # Mount static files for frontend assets (JS, CSS, etc.)
