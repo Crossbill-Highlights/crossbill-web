@@ -25,6 +25,7 @@ from src.domain.library.entities.book import Book
 from src.domain.library.entities.chapter import Chapter
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.infrastructure.common.sql import LIKE_ESCAPE_CHAR, escape_like_pattern
 from src.infrastructure.learning.mappers.flashcard_mapper import FlashcardMapper
 from src.infrastructure.library.mappers.book_mapper import BookMapper
 from src.infrastructure.library.mappers.chapter_mapper import ChapterMapper
@@ -265,7 +266,8 @@ class HighlightRepository:
                 stmt = stmt.where(HighlightORM.text_search_vector.op("@@")(search_query))
             else:
                 # SQLite: Use LIKE-based search
-                stmt = stmt.where(HighlightORM.text.ilike(f"%{search_text}%"))
+                escaped = escape_like_pattern(search_text)
+                stmt = stmt.where(HighlightORM.text.ilike(f"%{escaped}%", escape=LIKE_ESCAPE_CHAR))
 
         # Add optional book_id filter
         if book_id is not None:
