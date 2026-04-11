@@ -38,7 +38,11 @@ class Settings(BaseSettings):
     ENVIRONMENT: Literal["development", "production", "test"] = "development"
 
     # CORS
-    CORS_ORIGINS: list[str] = ["*"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8000",
+    ]
 
     # Admin setup (for first-time initialization on a fresh deployment)
     ADMIN_USERNAME: str = "admin"
@@ -127,6 +131,19 @@ class Settings(BaseSettings):
                 "ADMIN_PASSWORD must not be set to the insecure default 'admin'. "
                 "Choose a strong password — you can change it again from the UI after first login."
             )
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def validate_cors_origins_in_production(self) -> "Settings":
+        """Reject wildcard or empty CORS origins in production."""
+        if self.ENVIRONMENT != "production":
+            return self
+        if not self.CORS_ORIGINS:
+            msg = "CORS_ORIGINS must be set to explicit origins in production"
+            raise ValueError(msg)
+        if "*" in self.CORS_ORIGINS:
+            msg = "CORS_ORIGINS must not contain wildcard '*' in production"
             raise ValueError(msg)
         return self
 
