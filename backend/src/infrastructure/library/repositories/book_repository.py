@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.tag import Tag
+from src.infrastructure.common.sql import LIKE_ESCAPE_CHAR, escape_like_pattern
 from src.infrastructure.library.mappers.book_mapper import BookMapper
 from src.infrastructure.library.mappers.tag_mapper import TagMapper
 from src.models import Book as BookORM
@@ -174,9 +175,10 @@ class BookRepository:
         # Build base filter conditions - always filter by user
         filters = [BookORM.user_id == user_id.value]
         if search_text:
-            search_pattern = f"%{search_text}%"
+            search_pattern = f"%{escape_like_pattern(search_text)}%"
             filters.append(
-                (BookORM.title.ilike(search_pattern)) | (BookORM.author.ilike(search_pattern))
+                BookORM.title.ilike(search_pattern, escape=LIKE_ESCAPE_CHAR)
+                | BookORM.author.ilike(search_pattern, escape=LIKE_ESCAPE_CHAR)
             )
 
         if include_only_with_flashcards:
