@@ -20,6 +20,8 @@ export interface EreaderBookMetadata {
   author?: string | null;
   /** Cover image filename (UUID.jpg) or null */
   cover_file?: string | null;
+  /** Blurhash string for cover placeholder */
+  cover_blurhash?: string | null;
   /** Whether the book has an ebook file */
   has_ebook: boolean;
 }

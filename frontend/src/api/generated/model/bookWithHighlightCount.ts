@@ -18,6 +18,8 @@ export interface BookWithHighlightCount {
   isbn: string | null;
   /** Cover image filename (UUID.jpg) or null */
   cover_file?: string | null;
+  /** Blurhash string for cover placeholder */
+  cover_blurhash?: string | null;
   description?: string | null;
   language?: string | null;
   page_count?: number | null;

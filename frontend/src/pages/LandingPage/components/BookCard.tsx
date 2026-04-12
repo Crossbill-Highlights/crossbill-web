@@ -42,6 +42,7 @@ export const BookCard = ({ book }: BookCardProps) => {
             <BookCover
               coverFile={book.cover_file ?? null}
               title={book.title}
+              blurhash={book.cover_blurhash}
               width={150}
               height={220}
               objectFit="cover"

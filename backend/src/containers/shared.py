@@ -23,6 +23,7 @@ from src.infrastructure.library.repositories.chapter_repository import ChapterRe
 from src.infrastructure.library.repositories.file_repository import FileRepository
 from src.infrastructure.library.repositories.s3_file_repository import S3FileRepository
 from src.infrastructure.library.repositories.tag_repository import TagRepository
+from src.infrastructure.library.services.cover_image_service import CoverImageService
 from src.infrastructure.library.services.epub_parser_service import EpubParserService
 from src.infrastructure.library.services.epub_position_index_service import (
     EpubPositionIndexService,
@@ -93,6 +94,7 @@ class SharedContainer(containers.DeclarativeContainer):
     epub_parser_service = providers.Factory(EpubParserService)
     epub_position_index_service = providers.Factory(EpubPositionIndexService)
     ebook_text_extraction_service = providers.Factory(EpubTextExtractionService)
+    cover_image_service = providers.Factory(CoverImageService)
 
     # Identity services
     user_repository = providers.Factory(UserRepository, db=db)
