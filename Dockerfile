@@ -33,6 +33,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
   curl \
   gcc \
+  libc6-dev \
   libffi-dev \
   && rm -rf /var/lib/apt/lists/*
 
