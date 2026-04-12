@@ -90,3 +90,15 @@ class TestSetCoverFile:
 
         assert filename == "existing-uuid.jpg"
         assert book.cover_file == "existing-uuid.jpg"
+
+
+class TestSetCoverBlurhash:
+    def test_sets_blurhash_on_book(self) -> None:
+        book = _make_book()
+        book.set_cover_blurhash("LEHV6nWB2yk8pyo0adR*.7kCMdnj")
+        assert book.cover_blurhash == "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
+
+    def test_overwrites_existing_blurhash(self) -> None:
+        book = _make_book(cover_blurhash="old-hash")
+        book.set_cover_blurhash("new-hash")
+        assert book.cover_blurhash == "new-hash"

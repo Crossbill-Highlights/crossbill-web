@@ -37,6 +37,7 @@ class Book(Entity[BookId]):
     ebook_file: str | None = None
     file_type: str | None = None
     cover_file: str | None = None
+    cover_blurhash: str | None = None
     last_viewed: datetime | None = None
     end_position: Position | None = None
 
@@ -86,6 +87,10 @@ class Book(Entity[BookId]):
         self.cover_file = f"{uuid.uuid4()}.jpg"
         return self.cover_file
 
+    def set_cover_blurhash(self, blurhash: str) -> None:
+        """Set the blurhash string for the cover image."""
+        self.cover_blurhash = blurhash
+
     # Factory methods
     @classmethod
     def create(
@@ -101,6 +106,7 @@ class Book(Entity[BookId]):
         ebook_file: str | None = None,
         file_type: str | None = None,
         cover_file: str | None = None,
+        cover_blurhash: str | None = None,
         end_position: Position | None = None,
     ) -> "Book":
         """Factory for creating new book."""
@@ -118,6 +124,7 @@ class Book(Entity[BookId]):
             ebook_file=ebook_file,
             file_type=file_type,
             cover_file=cover_file,
+            cover_blurhash=cover_blurhash,
             created_at=now,
             updated_at=now,
             last_viewed=None,
@@ -141,6 +148,7 @@ class Book(Entity[BookId]):
         ebook_file: str | None = None,
         file_type: str | None = None,
         cover_file: str | None = None,
+        cover_blurhash: str | None = None,
         last_viewed: datetime | None = None,
         end_position: Position | None = None,
     ) -> "Book":
@@ -158,6 +166,7 @@ class Book(Entity[BookId]):
             ebook_file=ebook_file,
             file_type=file_type,
             cover_file=cover_file,
+            cover_blurhash=cover_blurhash,
             created_at=created_at,
             updated_at=updated_at,
             last_viewed=last_viewed,
