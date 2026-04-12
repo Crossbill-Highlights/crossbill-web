@@ -242,11 +242,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
-                "script-src 'self' https://static.cloudflareinsights.com; "
+                "script-src 'self' https://static.cloudflareinsights.com 'sha256-ZswfTY7H35rbv8WC7NXBoiC7WNu86vSzCDChNWwZZDM='; "
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
                 "img-src 'self' data: blob:; "
                 "font-src 'self' https://fonts.gstatic.com; "
-                "connect-src 'self'; "
+                "connect-src 'self' https://cloudflareinsights.com; "
                 "frame-ancestors 'none'; "
                 "base-uri 'self'; "
                 "form-action 'self'"
