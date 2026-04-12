@@ -2,7 +2,6 @@
 
 from io import BytesIO
 
-import pytest
 from PIL import Image
 
 from src.infrastructure.library.services.cover_image_service import CoverImageService
@@ -21,7 +20,7 @@ class TestProcessCover:
         service = CoverImageService()
         original = _create_test_image(600, 840)
 
-        resized_bytes, blurhash = service.process_cover(original)
+        resized_bytes, _blurhash = service.process_cover(original)
 
         img = Image.open(BytesIO(resized_bytes))
         assert img.width == 300
@@ -31,7 +30,7 @@ class TestProcessCover:
         service = CoverImageService()
         original = _create_test_image(800, 600)
 
-        resized_bytes, blurhash = service.process_cover(original)
+        resized_bytes, _blurhash = service.process_cover(original)
 
         img = Image.open(BytesIO(resized_bytes))
         assert img.width == 300
@@ -41,7 +40,7 @@ class TestProcessCover:
         service = CoverImageService()
         original = _create_test_image(400, 1000)
 
-        resized_bytes, blurhash = service.process_cover(original)
+        resized_bytes, _blurhash = service.process_cover(original)
 
         img = Image.open(BytesIO(resized_bytes))
         assert img.width == 168
@@ -51,7 +50,7 @@ class TestProcessCover:
         service = CoverImageService()
         original = _create_test_image(100, 150)
 
-        resized_bytes, blurhash = service.process_cover(original)
+        resized_bytes, _blurhash = service.process_cover(original)
 
         img = Image.open(BytesIO(resized_bytes))
         assert img.width == 100
@@ -83,7 +82,7 @@ class TestProcessCover:
         img.save(buffer, format="PNG")
         png_bytes = buffer.getvalue()
 
-        resized_bytes, blurhash = service.process_cover(png_bytes)
+        resized_bytes, _blurhash = service.process_cover(png_bytes)
 
         result_img = Image.open(BytesIO(resized_bytes))
         assert result_img.format == "JPEG"
