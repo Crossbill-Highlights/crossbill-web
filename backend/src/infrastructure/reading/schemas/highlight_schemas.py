@@ -176,6 +176,7 @@ class BookDetails(BaseModel):
     author: str | None
     isbn: str | None
     cover_file: str | None = Field(None, description="Cover image filename (UUID.jpg) or null")
+    cover_blurhash: str | None = Field(None, description="Blurhash string for cover placeholder")
     description: str | None = None
     language: str | None = None
     page_count: int | None = None

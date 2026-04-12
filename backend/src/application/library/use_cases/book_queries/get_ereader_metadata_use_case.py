@@ -15,6 +15,7 @@ class EreaderMetadata:
     title: str
     author: str | None
     cover_file: str | None
+    cover_blurhash: str | None
     has_ebook: bool
 
 
@@ -55,5 +56,6 @@ class GetEreaderMetadataUseCase:
             title=book.title,
             author=book.author,
             cover_file=cover_file,
+            cover_blurhash=book.cover_blurhash,
             has_ebook=has_ebook,
         )

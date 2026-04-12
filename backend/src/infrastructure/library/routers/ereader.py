@@ -63,6 +63,7 @@ async def create_book(
         bookname=metadata.title,
         author=metadata.author,
         cover_file=metadata.cover_file,
+        cover_blurhash=metadata.cover_blurhash,
         has_ebook=metadata.has_ebook,
     )
 
@@ -101,6 +102,7 @@ async def get_book_metadata(
         bookname=metadata.title,
         author=metadata.author,
         cover_file=metadata.cover_file,
+        cover_blurhash=metadata.cover_blurhash,
         has_ebook=metadata.has_ebook,
     )
 

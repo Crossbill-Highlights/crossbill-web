@@ -64,6 +64,7 @@ class BookWithHighlightCount(BaseModel):
     author: str | None
     isbn: str | None
     cover_file: str | None = Field(None, description="Cover image filename (UUID.jpg) or null")
+    cover_blurhash: str | None = Field(None, description="Blurhash string for cover placeholder")
     description: str | None = None
     language: str | None = None
     page_count: int | None = None
@@ -117,4 +118,5 @@ class EreaderBookMetadata(BaseModel):
     bookname: str = Field(..., description="Book title")
     author: str | None = Field(None, description="Book author")
     cover_file: str | None = Field(None, description="Cover image filename (UUID.jpg) or null")
+    cover_blurhash: str | None = Field(None, description="Blurhash string for cover placeholder")
     has_ebook: bool = Field(..., description="Whether the book has an ebook file")
