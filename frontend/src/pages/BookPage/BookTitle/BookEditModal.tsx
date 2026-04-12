@@ -155,6 +155,7 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
           <BookCover
             coverFile={book.cover_file ?? null}
             title={book.title}
+            blurhash={book.cover_blurhash}
             width="120px"
             height="180px"
             objectFit="cover"

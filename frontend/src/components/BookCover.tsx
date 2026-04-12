@@ -1,31 +1,28 @@
 import { BookCoverIcon } from '@/theme/Icons.tsx';
 import { Box, type SxProps, type Theme, useTheme } from '@mui/material';
+import { useState } from 'react';
+import { Blurhash } from 'react-blurhash';
+
+/** Neutral gray fallback for books without a generated blurhash. */
+const FALLBACK_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
 
 export interface BookCoverProps {
   coverFile: string | null;
   title: string;
   /**
-   * Width of the cover container
+   * Blurhash string for placeholder. Falls back to a neutral default if null.
    */
+  blurhash?: string | null;
   width?: number | string | { xs?: number | string; sm?: number | string };
-  /**
-   * Height of the cover container
-   */
   height?: number | string | { xs?: number | string; sm?: number | string };
-  /**
-   * Object fit for the image ('contain' | 'cover')
-   * @default 'contain'
-   */
   objectFit?: 'contain' | 'cover';
-  /**
-   * Additional sx props for the container
-   */
   sx?: SxProps<Theme>;
 }
 
 export const BookCover = ({
   coverFile,
   title,
+  blurhash,
   width = '100%',
   height = 200,
   objectFit = 'contain',
@@ -38,56 +35,101 @@ export const BookCover = ({
       : 'http://localhost:8000';
 
   const coverUrl = coverFile ? `${apiUrl}/api/v1/covers/${coverFile}` : null;
-  const placeholderBackground = theme.palette.action.hover;
-  const showPlaceholder = !coverUrl;
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  const numericHeight = typeof height === 'number' ? height : 200;
 
   return (
     <Box
+      className="book-cover"
       sx={{
         width,
         height,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: showPlaceholder ? placeholderBackground : 'transparent',
         overflow: 'hidden',
+        position: 'relative',
         ...sx,
       }}
     >
       {coverUrl ? (
-        <img
-          src={coverUrl}
-          alt={`${title} cover`}
-          style={{
+        <>
+          {/* Blurhash placeholder — visible until image loads */}
+          {!imageLoaded && (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+              }}
+            >
+              <Blurhash hash={blurhash || FALLBACK_BLURHASH} width="100%" height="100%" />
+            </Box>
+          )}
+
+          {/* Actual cover image */}
+          <img
+            src={coverUrl}
+            alt={`${title} cover`}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit,
+              opacity: imageLoaded ? 1 : 0,
+              transition: 'opacity 0.3s ease-in',
+            }}
+            onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const placeholder = e.currentTarget.parentElement!.querySelector(
+                '.book-cover-icon-fallback'
+              ) as HTMLElement | null;
+              if (placeholder) placeholder.style.display = 'flex';
+            }}
+          />
+
+          {/* Icon fallback for broken images */}
+          <Box
+            className="book-cover-icon-fallback"
+            sx={{
+              display: 'none',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
+              height: '100%',
+              background: theme.palette.action.hover,
+            }}
+          >
+            <BookCoverIcon
+              sx={{
+                fontSize: numericHeight * 0.4,
+                color: 'text.disabled',
+                opacity: 1,
+              }}
+            />
+          </Box>
+        </>
+      ) : (
+        /* No cover file at all — show icon placeholder */
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             width: '100%',
             height: '100%',
-            objectFit,
+            background: theme.palette.action.hover,
           }}
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-            const placeholder = e.currentTarget.nextSibling as HTMLElement | null;
-            if (placeholder) placeholder.style.display = 'flex';
-          }}
-        />
-      ) : null}
-
-      <Box
-        sx={{
-          display: showPlaceholder ? 'flex' : 'none',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '100%',
-          height: '100%',
-        }}
-      >
-        <BookCoverIcon
-          sx={{
-            fontSize: typeof height === 'number' ? height * 0.4 : 80,
-            color: 'text.disabled',
-            opacity: 1,
-          }}
-        />
-      </Box>
+        >
+          <BookCoverIcon
+            sx={{
+              fontSize: numericHeight * 0.4,
+              color: 'text.disabled',
+              opacity: 1,
+            }}
+          />
+        </Box>
+      )}
     </Box>
   );
 };

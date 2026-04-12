@@ -54,6 +54,7 @@ export const BookTitle = ({ book }: BookTitleProps) => {
             <BookCover
               coverFile={book.cover_file ?? null}
               title={book.title}
+              blurhash={book.cover_blurhash}
               height="100%"
               width="100%"
               objectFit="cover"
