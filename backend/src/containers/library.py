@@ -54,6 +54,7 @@ class LibraryContainer(containers.DeclarativeContainer):
     highlight_style_resolver = providers.Dependency()
     epub_parser_service = providers.Dependency()
     epub_position_index_service = providers.Dependency()
+    cover_image_service = providers.Dependency()
 
     # Cross-module dependency from reading
     get_highlight_tags_for_book_use_case = providers.Dependency()
@@ -82,6 +83,7 @@ class LibraryContainer(containers.DeclarativeContainer):
         chapter_repository=chapter_repository,
         file_repository=file_repository,
         epub_parser=epub_parser_service,
+        cover_image_service=cover_image_service,
         position_index_service=epub_position_index_service,
         highlight_repository=highlight_repository,
         session_repository=reading_session_repository,

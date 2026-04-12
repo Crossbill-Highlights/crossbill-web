@@ -4,6 +4,7 @@ import logging
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
+from src.application.library.protocols.cover_image_service import CoverImageServiceProtocol
 from src.application.library.protocols.epub_parser import EpubParserProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.application.library.protocols.position_index_service import PositionIndexServiceProtocol
@@ -31,6 +32,7 @@ class EbookUploadUseCase:
         chapter_repository: ChapterRepositoryProtocol,
         file_repository: FileRepositoryProtocol,
         epub_parser: EpubParserProtocol,
+        cover_image_service: CoverImageServiceProtocol,
         position_index_service: PositionIndexServiceProtocol,
         highlight_repository: HighlightRepositoryProtocol,
         session_repository: ReadingSessionRepositoryProtocol,
@@ -43,6 +45,7 @@ class EbookUploadUseCase:
             chapter_repository: Chapter repository protocol implementation
             file_repository: File repository protocol implementation
             epub_parser: EPUB parser service
+            cover_image_service: Service for processing cover images
             position_index_service: Service for building position indices from EPUBs
             highlight_repository: Repository for highlight persistence
             session_repository: Repository for reading session persistence
@@ -51,6 +54,7 @@ class EbookUploadUseCase:
         self.chapter_repository = chapter_repository
         self.file_repository = file_repository
         self.epub_parser = epub_parser
+        self.cover_image_service = cover_image_service
         self.position_index_service = position_index_service
         self.highlight_repository = highlight_repository
         self.session_repository = session_repository
@@ -164,14 +168,16 @@ class EbookUploadUseCase:
         book: Book,
         epub_content: bytes,
     ) -> None:
-        """Extract cover from EPUB and save it, if no cover already exists."""
+        """Extract cover from EPUB, resize, generate blurhash, and save."""
         if book.cover_file is not None:
             return
 
         cover_bytes = self.epub_parser.extract_cover(epub_content)
         if cover_bytes:
+            processed_bytes, blurhash_str = self.cover_image_service.process_cover(cover_bytes)
             cover_filename = book.set_cover_file()
-            await self.file_repository.save_cover(cover_filename, cover_bytes)
+            book.set_cover_blurhash(blurhash_str)
+            await self.file_repository.save_cover(cover_filename, processed_bytes)
 
     async def _backfill_positions(
         self,
