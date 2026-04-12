@@ -177,6 +177,7 @@ class Book(Base):
     ebook_file: Mapped[str | None] = mapped_column(String(500), nullable=True)
     file_type: Mapped[str | None] = mapped_column(String(10), nullable=True)
     cover_file: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    cover_blurhash: Mapped[str | None] = mapped_column(String(40), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     language: Mapped[str | None] = mapped_column(String(10), nullable=True)
     page_count: Mapped[int | None] = mapped_column(nullable=True)
