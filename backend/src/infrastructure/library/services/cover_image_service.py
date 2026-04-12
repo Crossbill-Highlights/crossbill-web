@@ -42,6 +42,8 @@ class CoverImageService:
 
         # Generate blurhash from a fresh read of the saved JPEG
         hash_img = Image.open(BytesIO(jpeg_bytes))
-        hash_str = blurhash.encode(hash_img, x_components=BLURHASH_X_COMPONENTS, y_components=BLURHASH_Y_COMPONENTS)
+        hash_str = blurhash.encode(
+            hash_img, x_components=BLURHASH_X_COMPONENTS, y_components=BLURHASH_Y_COMPONENTS
+        )
 
         return jpeg_bytes, hash_str
