@@ -36,7 +36,7 @@ dev = [
   "httpx>=0.28.1",
   "pyright>=1.1.398",
   "lxml-stubs>=0.5.1",
-  "aiosqlite>=0.20.0",
+  "aiosqlite>=0.22.1",
 ]
 
 [build-system]
