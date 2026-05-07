@@ -11,17 +11,19 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { CollapsibleSection } from './CollapsibleSection.tsx';
 
-interface PrereadingQuestionsSectionProps {
+interface ChapterReviewSectionProps {
   chapterId: number;
   bookId: number;
   prereadingSummary?: ChapterPrereadingResponse;
+  onStartQuiz: () => void;
 }
 
-export const PrereadingQuestionsSection = ({
+export const ChapterReviewSection = ({
   chapterId,
   bookId,
   prereadingSummary,
-}: PrereadingQuestionsSectionProps) => {
+  onStartQuiz,
+}: ChapterReviewSectionProps) => {
   const queryClient = useQueryClient();
 
   // Local edits keyed by chapterId so they reset when switching chapters
@@ -144,6 +146,10 @@ export const PrereadingQuestionsSection = ({
           </Stack>
         </CollapsibleSection>
       )}
+
+      <Box sx={{ py: 1 }}>
+        <AIActionButton text="Quiz me" onClick={onStartQuiz} />
+      </Box>
     </AIFeature>
   );
 };
