@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
+from slowapi.middleware import SlowAPIASGIMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from src.config import configure_logging, get_settings
@@ -168,7 +168,10 @@ app = FastAPI(
 # `default_limits` apply to every route (not only those with an explicit
 # `@limiter.limit(...)` decorator).
 app.state.limiter = limiter
-app.add_middleware(SlowAPIMiddleware)
+# Use the ASGI variant (not SlowAPIMiddleware): SlowAPIMiddleware's
+# `sync_check_limits` falls back to slowapi's default text response when
+# the registered exception handler is a coroutine, which it is here.
+app.add_middleware(SlowAPIASGIMiddleware)
 
 
 @app.exception_handler(RateLimitExceeded)
