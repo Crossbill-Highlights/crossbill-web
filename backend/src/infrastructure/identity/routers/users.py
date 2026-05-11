@@ -1,8 +1,6 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, Response
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
 from src.application.identity.use_cases.register_user_use_case import RegisterUserUseCase
 from src.application.identity.use_cases.update_user_use_case import UpdateUserUseCase
@@ -10,6 +8,7 @@ from src.core import container
 from src.database import DatabaseSession
 from src.domain.identity.entities.user import User
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.rate_limit import limiter
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.identity.routers.auth import set_refresh_cookie, token_pair_to_response
 from src.infrastructure.identity.schemas import (
@@ -20,7 +19,6 @@ from src.infrastructure.identity.schemas import (
 from src.infrastructure.identity.services.token_service import TokenWithRefresh
 
 router = APIRouter(prefix="/users", tags=["users"])
-limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/register")
