@@ -13,8 +13,8 @@ from collections.abc import AsyncGenerator
 
 import pytest
 from httpx import AsyncClient
+from slowapi import Limiter
 from slowapi.util import get_remote_address
-from slowapi.wrappers import LimitGroup
 
 from src.main import STATIC_DIR, app
 
@@ -24,32 +24,25 @@ async def rate_limited_client(client: AsyncClient) -> AsyncGenerator[AsyncClient
     """Re-enable the limiter at 3/minute on the shared app and yield the test client.
 
     Depends on the conftest ``client`` fixture so DB and auth overrides are in
-    place. We restore the limiter's original ``enabled`` flag and
-    ``_default_limits`` on teardown to avoid cross-test pollution.
+    place. We mutate the live shared ``app.state.limiter`` (rather than swap
+    in a separate test Limiter) because ``test_per_route_limit_overrides_default``
+    asserts behavior that only holds when per-route decorators and the global
+    default share the same Limiter instance — the very property the production
+    code depends on. We restore the original ``enabled`` flag and defaults on
+    teardown.
+
+    The temporary 3/minute defaults are constructed via slowapi's own public
+    ``Limiter(default_limits=[...])`` constructor so we don't depend on the
+    positional-arg signature of the internal ``LimitGroup`` class.
     """
     limiter = app.state.limiter
 
     original_enabled = limiter.enabled
     original_defaults = list(limiter._default_limits)
 
-    # slowapi stores defaults as LimitGroup objects (NOT Limit objects).
-    # _check_request_limit does ``itertools.chain(*self._default_limits)`` and
-    # iterating a LimitGroup yields parsed Limit instances, so we must hand it
-    # a LimitGroup here — Limit alone would explode at iteration time.
+    template = Limiter(key_func=get_remote_address, default_limits=["3/minute"])
     limiter.enabled = True
-    limiter._default_limits = [
-        LimitGroup(
-            "3/minute",
-            get_remote_address,
-            None,
-            False,
-            None,
-            None,
-            None,
-            1,
-            False,
-        )
-    ]
+    limiter._default_limits = template._default_limits  # pyright: ignore[reportPrivateUsage]
     limiter.reset()
 
     yield client
