@@ -6,8 +6,6 @@ from typing import Annotated
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from starlette import status
 
 from src.application.identity.dtos import TokenPairWithMetadata
@@ -22,6 +20,7 @@ from src.config import get_settings
 from src.core import container
 from src.domain.identity.exceptions import InvalidCredentialsError
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.rate_limit import limiter
 from src.infrastructure.identity.services.token_service import (
     REFRESH_TOKEN_EXPIRE_DAYS,
     TokenWithRefresh,
@@ -29,7 +28,6 @@ from src.infrastructure.identity.services.token_service import (
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
-limiter = Limiter(key_func=get_remote_address)
 settings = get_settings()
 
 
