@@ -44,6 +44,10 @@ class Settings(BaseSettings):
         "http://localhost:8000",
     ]
 
+    # Rate limiting (per-IP, applied app-wide via slowapi)
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_DEFAULT: str = "300/minute"
+
     # Admin setup (for first-time initialization on a fresh deployment)
     ADMIN_USERNAME: str = "admin"
     ADMIN_PASSWORD: str = ""
