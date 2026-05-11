@@ -16,7 +16,7 @@ from httpx import AsyncClient
 from slowapi.util import get_remote_address
 from slowapi.wrappers import LimitGroup
 
-from src.main import app
+from src.main import STATIC_DIR, app
 
 
 @pytest.fixture
@@ -83,8 +83,6 @@ async def test_spa_catch_all_is_subject_to_default_limit(
     (i.e. the frontend has been built into ``backend/static``). When it
     doesn't exist the catch-all isn't registered at all — skip in that case.
     """
-    from src.main import STATIC_DIR
-
     if not STATIC_DIR.exists():
         pytest.skip("static dir not present — SPA catch-all not registered")
 
