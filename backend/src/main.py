@@ -15,9 +15,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
-from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from src.config import configure_logging, get_settings
@@ -31,6 +30,7 @@ from src.domain.common.exceptions import (
     EntityNotFoundError,
     ValidationError,
 )
+from src.infrastructure.common.rate_limit import limiter
 from src.infrastructure.common.routers import settings as settings_router
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.routers import auth, users
@@ -164,9 +164,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure rate limiter
-limiter = Limiter(key_func=get_remote_address)
+# Wire the shared rate limiter and install slowapi's middleware so
+# `default_limits` apply to every route (not only those with an explicit
+# `@limiter.limit(...)` decorator).
 app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
 
 
 @app.exception_handler(RateLimitExceeded)
@@ -382,8 +384,9 @@ app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health")
+@limiter.exempt  # type: ignore[misc]
 async def health() -> dict[str, str]:
-    """Health check endpoint."""
+    """Health check endpoint. Exempt from rate limit so probes never trip it."""
     return {"status": "healthy"}
 
 
