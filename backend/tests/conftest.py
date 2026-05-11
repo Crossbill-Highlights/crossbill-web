@@ -12,6 +12,7 @@ os.environ.setdefault(
     "REFRESH_TOKEN_SECRET_KEY",
     "test-refresh-token-secret-key-at-least-32-bytes-long",
 )
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from datetime import datetime as dt
