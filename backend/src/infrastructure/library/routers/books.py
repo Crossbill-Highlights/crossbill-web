@@ -10,6 +10,7 @@ from src.application.library.use_cases.book_management.delete_book_use_case impo
 from src.application.library.use_cases.book_management.get_book_details_use_case import (
     GetBookDetailsUseCase,
 )
+from src.application.library.dtos import UpdateBookInput
 from src.application.library.use_cases.book_management.update_book_use_case import (
     UpdateBookUseCase,
 )
@@ -390,8 +391,9 @@ async def update_book(
     Raises:
         HTTPException: If book is not found or update fails
     """
+    update_input = UpdateBookInput(tags=request.tags)
     book, highlight_count, flashcard_count, tags = await use_case.update_book(
-        book_id, request, current_user.id.value
+        book_id, update_input, current_user.id.value
     )
     return BookWithHighlightCount(
         id=book.id.value,

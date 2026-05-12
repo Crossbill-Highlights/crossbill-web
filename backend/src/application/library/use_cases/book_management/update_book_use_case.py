@@ -8,11 +8,11 @@ from src.application.library.use_cases.book_tag_associations.replace_book_tags_u
     ReplaceBookTagsUseCase,
 )
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
+from src.application.library.dtos import UpdateBookInput
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.tag import Tag
 from src.domain.reading.exceptions import BookNotFoundError
-from src.infrastructure.library.schemas import BookUpdateRequest
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class UpdateBookUseCase:
         self.replace_book_tags_use_case = replace_book_tags_use_case
 
     async def update_book(
-        self, book_id: int, update_data: BookUpdateRequest, user_id: int
+        self, book_id: int, update_data: UpdateBookInput, user_id: int
     ) -> tuple[Book, int, int, list[Tag]]:
         """
         Update book information.

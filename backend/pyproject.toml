@@ -37,6 +37,7 @@ dev = [
   "pyright>=1.1.398",
   "lxml-stubs>=0.5.1",
   "aiosqlite>=0.22.1",
+  "import-linter>=2.1",
 ]
 
 [build-system]
@@ -113,6 +114,30 @@ ignore = [
 line-ending = "auto"
 quote-style = "double"
 indent-style = "space"
+
+[tool.importlinter]
+root_packages = ["src"]
+
+[[tool.importlinter.contracts]]
+id = "domain-independence"
+name = "Domain layer must not import application or infrastructure"
+type = "forbidden"
+source_modules = ["src.domain"]
+forbidden_modules = ["src.application", "src.infrastructure", "src.containers"]
+
+[[tool.importlinter.contracts]]
+id = "application-no-infra"
+name = "Application layer must not directly import infrastructure"
+type = "forbidden"
+source_modules = ["src.application"]
+forbidden_modules = ["src.infrastructure"]
+
+[[tool.importlinter.contracts]]
+id = "orm-boundary"
+name = "ORM models must not be imported in domain or application layers"
+type = "forbidden"
+source_modules = ["src.domain", "src.application"]
+forbidden_modules = ["src.models", "src.infrastructure.jobs.orm"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
