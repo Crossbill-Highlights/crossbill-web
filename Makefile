@@ -23,6 +23,7 @@ migrate-new: ## Create a new migration (usage: make migrate-new msg="description
 lint: ## Run ruff linter and pyright type checker on backend
 	cd backend && uv run ruff check src tests
 	cd backend && uv run pyright
+	cd backend && uv run --no-sync lint-imports
 
 format: ## Format backend code with ruff
 	cd backend && uv run ruff format src tests

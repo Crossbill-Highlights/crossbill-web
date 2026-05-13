@@ -37,6 +37,7 @@ dev = [
   "pyright>=1.1.398",
   "lxml-stubs>=0.5.1",
   "aiosqlite>=0.22.1",
+  "import-linter>=2.11",
 ]
 
 [build-system]
@@ -113,6 +114,61 @@ ignore = [
 line-ending = "auto"
 quote-style = "double"
 indent-style = "space"
+
+[tool.importlinter]
+root_packages = ["src"]
+
+[[tool.importlinter.contracts]]
+id = "domain-independence"
+name = "Domain layer must not import application or infrastructure"
+type = "forbidden"
+source_modules = ["src.domain"]
+forbidden_modules = ["src.application", "src.infrastructure", "src.containers"]
+
+[[tool.importlinter.contracts]]
+id = "application-no-infra"
+name = "Application layer must not directly import infrastructure"
+type = "forbidden"
+source_modules = ["src.application"]
+forbidden_modules = ["src.infrastructure"]
+
+[[tool.importlinter.contracts]]
+id = "orm-boundary"
+name = "ORM models must only be directly imported in repository and mapper modules"
+type = "forbidden"
+allow_indirect_imports = "true"
+source_modules = [
+    "src.domain",
+    "src.application",
+    "src.containers",
+    "src.infrastructure.ai.ai_agents",
+    "src.infrastructure.ai.ai_model",
+    "src.infrastructure.ai.ai_service",
+    "src.infrastructure.common.dependencies",
+    "src.infrastructure.common.di",
+    "src.infrastructure.common.rate_limit",
+    "src.infrastructure.common.routers",
+    "src.infrastructure.common.schemas",
+    "src.infrastructure.common.sql",
+    "src.infrastructure.identity.dependencies",
+    "src.infrastructure.identity.routers",
+    "src.infrastructure.identity.schemas",
+    "src.infrastructure.identity.services",
+    "src.infrastructure.jobs.routers",
+    "src.infrastructure.jobs.schemas",
+    "src.infrastructure.jobs.tasks",
+    "src.infrastructure.jobs.saq_job_queue_service",
+    "src.infrastructure.jobs.saq_queue",
+    "src.infrastructure.learning.routers",
+    "src.infrastructure.learning.schemas",
+    "src.infrastructure.library.routers",
+    "src.infrastructure.library.schemas",
+    "src.infrastructure.library.services",
+    "src.infrastructure.reading.routers",
+    "src.infrastructure.reading.schemas",
+    "src.infrastructure.reading.services",
+]
+forbidden_modules = ["src.models", "src.infrastructure.jobs.orm"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -2,13 +2,13 @@
 
 import logging
 
+from src.application.library.dtos import CreateBookInput
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.use_cases.book_tag_associations.add_tags_to_book_use_case import (
     AddTagsToBookUseCase,
 )
 from src.domain.common.value_objects import UserId
 from src.domain.library.entities.book import Book
-from src.infrastructure.library.schemas import BookCreate
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class CreateBookUseCase:
         self.book_repository = book_repository
         self.add_tags_to_book_use_case = add_tags_to_book_use_case
 
-    async def create_book(self, book_data: BookCreate, user_id: int) -> tuple[Book, bool]:
+    async def create_book(self, book_data: CreateBookInput, user_id: int) -> tuple[Book, bool]:
         """
         Get or create a book based on client_book_id.
 

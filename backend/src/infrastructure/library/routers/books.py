@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from starlette import status
 
+from src.application.library.dtos import UpdateBookInput
 from src.application.library.use_cases.book_management.delete_book_use_case import (
     DeleteBookUseCase,
 )
@@ -390,8 +391,9 @@ async def update_book(
     Raises:
         HTTPException: If book is not found or update fails
     """
+    update_input = UpdateBookInput(tags=request.tags)
     book, highlight_count, flashcard_count, tags = await use_case.update_book(
-        book_id, request, current_user.id.value
+        book_id, update_input, current_user.id.value
     )
     return BookWithHighlightCount(
         id=book.id.value,

@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
+from src.application.library.dtos import CreateBookInput
 from src.application.library.use_cases.book_files.ebook_upload_use_case import EbookUploadUseCase
 from src.application.library.use_cases.book_management.create_book_use_case import (
     CreateBookUseCase,
@@ -53,7 +54,17 @@ async def create_book(
     Returns:
         EreaderBookMetadata with book_id, bookname, author, cover_file, has_epub
     """
-    await create_use_case.create_book(book_data, current_user.id.value)
+    create_input = CreateBookInput(
+        title=book_data.title,
+        client_book_id=book_data.client_book_id,
+        author=book_data.author,
+        isbn=book_data.isbn,
+        description=book_data.description,
+        language=book_data.language,
+        page_count=book_data.page_count,
+        keywords=book_data.keywords,
+    )
+    await create_use_case.create_book(create_input, current_user.id.value)
 
     metadata = await metadata_use_case.get_metadata_for_ereader(
         book_data.client_book_id, current_user.id.value
