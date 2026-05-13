@@ -73,9 +73,6 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Install import-linter
-        run: uv tool install import-linter
-
       - name: Check formatting with Ruff
         run: uv run ruff format --check .
 
@@ -86,7 +83,7 @@ jobs:
         run: uv run pyright
 
       - name: Check architecture with import-linter
-        run: lint-imports
+        run: uv run lint-imports
 
       - name: Run tests with pytest
         env:

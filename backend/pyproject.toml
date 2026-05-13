@@ -37,6 +37,7 @@ dev = [
   "pyright>=1.1.398",
   "lxml-stubs>=0.5.1",
   "aiosqlite>=0.22.1",
+  "import-linter>=2.11",
 ]
 
 [build-system]
