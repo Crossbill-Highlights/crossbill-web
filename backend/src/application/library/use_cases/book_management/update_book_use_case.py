@@ -3,12 +3,12 @@
 import logging
 
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
+from src.application.library.dtos import UpdateBookInput
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.use_cases.book_tag_associations.replace_book_tags_use_case import (
     ReplaceBookTagsUseCase,
 )
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
-from src.application.library.dtos import UpdateBookInput
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.tag import Tag

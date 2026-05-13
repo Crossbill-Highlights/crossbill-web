@@ -4,13 +4,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from starlette import status
 
+from src.application.library.dtos import UpdateBookInput
 from src.application.library.use_cases.book_management.delete_book_use_case import (
     DeleteBookUseCase,
 )
 from src.application.library.use_cases.book_management.get_book_details_use_case import (
     GetBookDetailsUseCase,
 )
-from src.application.library.dtos import UpdateBookInput
 from src.application.library.use_cases.book_management.update_book_use_case import (
     UpdateBookUseCase,
 )

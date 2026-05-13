@@ -2,11 +2,11 @@
 
 import logging
 
+from src.application.library.dtos import CreateBookInput
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.use_cases.book_tag_associations.add_tags_to_book_use_case import (
     AddTagsToBookUseCase,
 )
-from src.application.library.dtos import CreateBookInput
 from src.domain.common.value_objects import UserId
 from src.domain.library.entities.book import Book
 
