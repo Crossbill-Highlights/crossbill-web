@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import NullPool, StaticPool
 
 from src.config import Settings, get_settings
 
@@ -56,13 +56,11 @@ def initialize_database(settings: Settings) -> None:
             poolclass=StaticPool,
         )
     else:
-        _engine = create_async_engine(
-            async_url,
-            pool_size=20,  # Base pool size
-            max_overflow=30,  # Allow 10 extra connections under load
-            pool_pre_ping=True,  # Verify connections before use
-            pool_recycle=3600,  # Recycle connections after 1 hour
-        )
+        # NullPool: no persistent connections are held between requests.
+        # Each session checkout opens a fresh connection and closes it on
+        # release, which is appropriate for serverless deployments where
+        # holding idle connections would prevent the service from sleeping.
+        _engine = create_async_engine(async_url, poolclass=NullPool)
 
     _session_factory = async_sessionmaker(
         autocommit=False, autoflush=False, expire_on_commit=False, bind=_engine

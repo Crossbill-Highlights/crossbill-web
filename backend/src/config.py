@@ -90,6 +90,9 @@ class Settings(BaseSettings):
     # Worker
     EMBEDDED_WORKER: bool = True
     WORKER_CONCURRENCY: int = 2
+    # Seconds of inactivity before the SAQ queue connection is closed.
+    # Set to 0 to keep the connection alive indefinitely (ignored when EMBEDDED_WORKER=True).
+    SAQ_IDLE_TIMEOUT: int = 3600
 
     # S3-compatible storage (optional — if set, files are stored in S3 instead of local disk)
     S3_ENDPOINT_URL: str | None = None

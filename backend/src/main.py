@@ -115,12 +115,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if not os.getenv("TESTING"):
         await _initialize_admin_password()
 
-    # Initialize SAQ queue for job enqueueing
+    # Initialize SAQ queue for job enqueueing.
+    # When EMBEDDED_WORKER is True the queue must be connected before the
+    # worker starts; otherwise we connect lazily on first use and
+    # auto-disconnect after SAQ_IDLE_TIMEOUT seconds of inactivity.
     from src.core import container  # noqa: PLC0415
 
     saq_queue = create_queue(settings.DATABASE_URL)
-    await saq_queue.connect()
-    queue_service = SaqJobQueueService(saq_queue)
+    queue_service = SaqJobQueueService(
+        saq_queue,
+        idle_timeout=0 if settings.EMBEDDED_WORKER else settings.SAQ_IDLE_TIMEOUT,
+    )
+    await queue_service.start(connect_immediately=settings.EMBEDDED_WORKER)
     container.job_queue_service.override(queue_service)
 
     # Start embedded worker if enabled (runs SAQ in the same process)
@@ -146,7 +152,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             await worker_task
         logger.info("embedded_worker_stopped")
 
-    await saq_queue.disconnect()
+    await queue_service.stop()
     container.job_queue_service.reset_override()
 
     # Cleanup on shutdown
