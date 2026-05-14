@@ -16,7 +16,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIASGIMiddleware
 from starlette.datastructures import MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -31,7 +30,7 @@ from src.domain.common.exceptions import (
     EntityNotFoundError,
     ValidationError,
 )
-from src.infrastructure.common.rate_limit import limiter
+from src.infrastructure.common.rate_limit import RateLimitMiddleware, limiter
 from src.infrastructure.common.routers import settings as settings_router
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.routers import auth, users
@@ -165,14 +164,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Wire the shared rate limiter and install slowapi's middleware so
+# Wire the shared rate limiter and install our rate-limit middleware so
 # `default_limits` apply to every route (not only those with an explicit
-# `@limiter.limit(...)` decorator).
+# `@limiter.limit(...)` decorator). We use a local fix for slowapi's
+# SlowAPIASGIMiddleware, which re-sends http.response.start on every body
+# chunk and breaks multi-chunk streamed responses (FileResponse, StaticFiles).
 app.state.limiter = limiter
-# Use the ASGI variant (not SlowAPIMiddleware): SlowAPIMiddleware's
-# `sync_check_limits` falls back to slowapi's default text response when
-# the registered exception handler is a coroutine, which it is here.
-app.add_middleware(SlowAPIASGIMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 
 @app.exception_handler(RateLimitExceeded)
