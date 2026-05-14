@@ -13,11 +13,11 @@ from typing import Any
 import structlog
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIASGIMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.datastructures import MutableHeaders
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from src.config import configure_logging, get_settings
 from src.database import dispose_engine, get_session_factory, initialize_database
@@ -30,7 +30,7 @@ from src.domain.common.exceptions import (
     EntityNotFoundError,
     ValidationError,
 )
-from src.infrastructure.common.rate_limit import limiter
+from src.infrastructure.common.rate_limit import RateLimitMiddleware, limiter
 from src.infrastructure.common.routers import settings as settings_router
 from src.infrastructure.identity.repositories.user_repository import UserRepository
 from src.infrastructure.identity.routers import auth, users
@@ -164,14 +164,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Wire the shared rate limiter and install slowapi's middleware so
+# Wire the shared rate limiter and install our rate-limit middleware so
 # `default_limits` apply to every route (not only those with an explicit
-# `@limiter.limit(...)` decorator).
+# `@limiter.limit(...)` decorator). We use a local fix for slowapi's
+# SlowAPIASGIMiddleware, which re-sends http.response.start on every body
+# chunk and breaks multi-chunk streamed responses (FileResponse, StaticFiles).
 app.state.limiter = limiter
-# Use the ASGI variant (not SlowAPIMiddleware): SlowAPIMiddleware's
-# `sync_check_limits` falls back to slowapi's default text response when
-# the registered exception handler is a coroutine, which it is here.
-app.add_middleware(SlowAPIASGIMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 
 @app.exception_handler(RateLimitExceeded)
@@ -191,74 +190,96 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONRe
     )
 
 
-# Add request ID middleware
-@app.middleware("http")
-async def add_request_id_and_logging(
-    request: Request, call_next: RequestResponseEndpoint
-) -> Response:
-    """Add request ID to each request and log request/response."""
-    request_id = str(uuid.uuid4())
-    request.state.request_id = request_id
+# Pure ASGI middleware (NOT BaseHTTPMiddleware): wrapping the body via
+# BaseHTTPMiddleware truncates FileResponse/StaticFiles bodies, which uvicorn
+# rejects with "Response content shorter than Content-Length".
+class RequestIdAndLoggingMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
 
-    # Bind request_id to context for all logs in this request
-    structlog.contextvars.clear_contextvars()
-    structlog.contextvars.bind_contextvars(request_id=request_id)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-    start_time = time.time()
+        request_id = str(uuid.uuid4())
+        scope.setdefault("state", {})["request_id"] = request_id
 
-    # Log incoming request
-    logger.info(
-        "request_started",
-        method=request.method,
-        path=request.url.path,
-        client_host=request.client.host if request.client else None,
-    )
+        structlog.contextvars.clear_contextvars()
+        structlog.contextvars.bind_contextvars(request_id=request_id)
 
-    response = await call_next(request)
+        client = scope.get("client")
+        client_host = client[0] if client else None
+        method = scope.get("method")
+        path = scope.get("path")
 
-    # Calculate request duration
-    duration = time.time() - start_time
-
-    # Log completed request
-    logger.info(
-        "request_completed",
-        method=request.method,
-        path=request.url.path,
-        status_code=response.status_code,
-        duration_ms=round(duration * 1000, 2),
-    )
-
-    # Add request ID to response headers
-    response.headers["X-Request-ID"] = request_id
-
-    return response
-
-
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Permissions-Policy"] = (
-            "camera=(), microphone=(), geolocation=(), payment=()"
+        logger.info(
+            "request_started",
+            method=method,
+            path=path,
+            client_host=client_host,
         )
-        if settings.ENVIRONMENT != "development":
-            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-            response.headers["Content-Security-Policy"] = (
-                "default-src 'self'; "
-                "script-src 'self'; "
-                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-                "img-src 'self' data: blob:; "
-                "font-src 'self' https://fonts.gstatic.com; "
-                "connect-src 'self'; "
-                "frame-ancestors 'none'; "
-                "base-uri 'self'; "
-                "form-action 'self'"
+
+        start_time = time.time()
+        status_code = 500
+
+        async def wrapped_send(message: Message) -> None:
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+                MutableHeaders(raw=message["headers"])["X-Request-ID"] = request_id
+            await send(message)
+
+        try:
+            await self.app(scope, receive, wrapped_send)
+        finally:
+            duration = time.time() - start_time
+            logger.info(
+                "request_completed",
+                method=method,
+                path=path,
+                status_code=status_code,
+                duration_ms=round(duration * 1000, 2),
             )
-        return response
 
 
+class SecurityHeadersMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def wrapped_send(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(raw=message["headers"])
+                headers["X-Content-Type-Options"] = "nosniff"
+                headers["X-Frame-Options"] = "DENY"
+                headers["Permissions-Policy"] = (
+                    "camera=(), microphone=(), geolocation=(), payment=()"
+                )
+                if settings.ENVIRONMENT != "development":
+                    headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+                    headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+                    headers["Content-Security-Policy"] = (
+                        "default-src 'self'; "
+                        "script-src 'self'; "
+                        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                        "img-src 'self' data: blob:; "
+                        "font-src 'self' https://fonts.gstatic.com; "
+                        "connect-src 'self'; "
+                        "frame-ancestors 'none'; "
+                        "base-uri 'self'; "
+                        "form-action 'self'"
+                    )
+            await send(message)
+
+        await self.app(scope, receive, wrapped_send)
+
+
+app.add_middleware(RequestIdAndLoggingMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
 # Configure CORS
