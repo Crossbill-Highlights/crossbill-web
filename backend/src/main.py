@@ -262,9 +262,7 @@ class SecurityHeadersMiddleware:
                 )
                 if settings.ENVIRONMENT != "development":
                     headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-                    headers["Strict-Transport-Security"] = (
-                        "max-age=31536000; includeSubDomains"
-                    )
+                    headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
                     headers["Content-Security-Policy"] = (
                         "default-src 'self'; "
                         "script-src 'self'; "
