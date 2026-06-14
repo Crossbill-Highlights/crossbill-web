@@ -12,6 +12,7 @@ from ebooklib import epub
 from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
 
 from src.domain.library.entities.chapter import TocChapter
+from src.infrastructure.common.memory import trims_memory
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,7 @@ def _extract_toc_hierarchy(
 class EpubParserService:
     """Infrastructure service for parsing EPUB files."""
 
+    @trims_memory
     def validate_epub(self, content: bytes) -> bool:
         """
         Validate epub file using ebooklib.
@@ -82,6 +84,7 @@ class EpubParserService:
             logger.error(f"EPUB validation failed: {e!s}")
             return False
 
+    @trims_memory
     def parse_toc(self, epub_content: bytes) -> list[TocChapter]:
         """
         Parse table of contents from an EPUB file.
@@ -142,6 +145,7 @@ class EpubParserService:
             logger.error(f"Failed to parse TOC from EPUB: {e!s}")
             return []
 
+    @trims_memory
     def extract_cover(self, epub_content: bytes) -> bytes | None:
         """
         Extract cover image from an EPUB file.
