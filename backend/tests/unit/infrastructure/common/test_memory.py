@@ -2,6 +2,8 @@
 
 import contextlib
 
+import pytest
+
 from src.infrastructure.common.memory import trim_memory, trims_memory
 
 
@@ -32,7 +34,9 @@ def test_trims_memory_preserves_metadata() -> None:
     assert parse.__doc__ == "Parse docstring."
 
 
-def test_trims_memory_trims_even_when_wrapped_raises(monkeypatch) -> None:
+def test_trims_memory_trims_even_when_wrapped_raises(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     trimmed: list[bool] = []
     monkeypatch.setattr(
         "src.infrastructure.common.memory.trim_memory",
