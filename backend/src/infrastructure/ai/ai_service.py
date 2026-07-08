@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 
 import structlog
 from pydantic_ai import Agent, ModelMessage, ModelMessagesTypeAdapter
+from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
 from pydantic_core import to_jsonable_python
 
 from src.application.ai.ai_usage_context import AIUsageContext
@@ -121,6 +122,20 @@ class AIService:
         agent = get_quiz_agent()
         restored = ModelMessagesTypeAdapter.validate_python(message_history)
         return await self._respond(agent, usage_context, prompt=user_message, message_history=restored)
+
+    def seed_chat_context(
+        self, chapter_content: str, assistant_opener: str
+    ) -> SerializedMessageHistory:
+        """Build an initial chat history seeded with the chapter content, without
+        calling the model. The content is stored as the opening user turn (paired
+        with the fixed opener as the assistant turn) so that later continue_chat
+        calls have the chapter in context."""
+        prompt = f"The reader wants to chat about the contents of this chapter.\n\n--- CHAPTER CONTENT ---\n{chapter_content}"
+        messages: list[ModelMessage] = [
+            ModelRequest(parts=[UserPromptPart(content=prompt)]),
+            ModelResponse(parts=[TextPart(content=assistant_opener)]),
+        ]
+        return to_jsonable_python(messages)
 
     async def start_chat(
             self, chapter_content: str, usage_context: AIUsageContext

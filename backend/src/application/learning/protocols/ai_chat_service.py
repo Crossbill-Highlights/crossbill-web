@@ -5,6 +5,10 @@ from src.domain.common.types import SerializedMessageHistory
 
 
 class AIChatServiceProtocol(Protocol):
+    def seed_chat_context(
+        self, chapter_content: str, assistant_opener: str
+    ) -> SerializedMessageHistory: ...
+
     async def start_chat(
         self, chapter_content: str, usage_context: AIUsageContext
     ) -> tuple[str, SerializedMessageHistory]: ...

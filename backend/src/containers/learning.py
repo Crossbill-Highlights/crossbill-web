@@ -113,6 +113,9 @@ class LearningContainer(containers.DeclarativeContainer):
         StartChatSessionUseCase,
         ai_chat_session_repository=ai_chat_session_repository,
         chapter_repo=chapter_repository,
+        book_repo=book_repository,
+        file_repo=file_repository,
+        text_extraction_service=ebook_text_extraction_service,
         ai_chat_service=ai_service,
     )
     send_chat_message_use_case = providers.Factory(
