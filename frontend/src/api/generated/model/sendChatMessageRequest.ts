@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SendQuizMessageResponse {
+export interface SendChatMessageRequest {
+  /** @minLength 1 */
   message: string;
 }

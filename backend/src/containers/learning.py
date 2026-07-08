@@ -1,5 +1,11 @@
 from dependency_injector import containers, providers
 
+from src.application.learning.use_cases.chat.send_chat_message_use_case import (
+    SendChatMessageUseCase,
+)
+from src.application.learning.use_cases.chat.start_chat_session_use_case import (
+    StartChatSessionUseCase,
+)
 from src.application.learning.use_cases.flashcards.create_flashcard_for_book_use_case import (
     CreateFlashcardForBookUseCase,
 )
@@ -100,4 +106,17 @@ class LearningContainer(containers.DeclarativeContainer):
         SendQuizMessageUseCase,
         ai_chat_session_repository=ai_chat_session_repository,
         ai_quiz_service=ai_service,
+    )
+
+    # Chat
+    start_chat_session_use_case = providers.Factory(
+        StartChatSessionUseCase,
+        ai_chat_session_repository=ai_chat_session_repository,
+        chapter_repo=chapter_repository,
+        ai_chat_service=ai_service,
+    )
+    send_chat_message_use_case = providers.Factory(
+        SendChatMessageUseCase,
+        ai_chat_session_repository=ai_chat_session_repository,
+        ai_chat_service=ai_service,
     )

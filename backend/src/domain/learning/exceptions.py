@@ -9,6 +9,11 @@ class QuizSessionNotFoundError(EntityNotFoundError):
     def __init__(self, session_id: int) -> None:
         super().__init__("QuizSession", session_id)
 
+class ChatSessionNotFoundError(EntityNotFoundError):
+    """Raised when a chat session cannot be found."""
+
+    def __init__(self, session_id: int) -> None:
+        super().__init__("ChatSession", session_id)
 
 class FlashcardNotFoundError(EntityNotFoundError):
     """Raised when a flashcard cannot be found."""

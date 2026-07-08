@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   useCreateQuizSessionApiV1ChaptersChapterIdQuizSessionsPost,
   useSendQuizMessageApiV1QuizSessionsSessionIdMessagesPost,
-} from '@/api/generated/quiz/quiz';
+} from '@/api/generated/chat/chat';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 

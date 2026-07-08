@@ -5,6 +5,12 @@ from typing import Annotated
 import structlog
 from fastapi import APIRouter, Depends, status
 
+from src.application.learning.use_cases.chat.send_chat_message_use_case import (
+    SendChatMessageUseCase,
+)
+from src.application.learning.use_cases.chat.start_chat_session_use_case import (
+    StartChatSessionUseCase,
+)
 from src.application.learning.use_cases.quiz.send_quiz_message_use_case import (
     SendQuizMessageUseCase,
 )
@@ -24,7 +30,7 @@ from src.infrastructure.learning.schemas.chat_schemas import (
 
 logger = structlog.get_logger(__name__)
 
-router = APIRouter(tags=["quiz"])
+router = APIRouter(tags=["chat"])
 
 
 @router.post(
@@ -60,5 +66,42 @@ async def send_quiz_message(
     ),
 ) -> SendChatMessageResponse:
     """Send a message to an existing quiz session."""
+    ai_response = await use_case.send(session_id, body.message, current_user.id.value)
+    return SendChatMessageResponse(message=ai_response)
+
+
+@router.post(
+    "/chapters/{chapter_id}/chat-sessions",
+    response_model=CreateChatSessionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+@require_ai_enabled
+async def create_chat_session(
+        chapter_id: int,
+        current_user: Annotated[User, Depends(get_current_user)],
+        use_case: StartChatSessionUseCase = Depends(
+            inject_use_case(container.learning.start_chat_session_use_case)
+        ),
+) -> CreateChatSessionResponse:
+    """Start a chat session for a chapter."""
+    session_id, first_question = await use_case.start(chapter_id, current_user.id.value)
+    return CreateChatSessionResponse(session_id=session_id, message=first_question)
+
+
+@router.post(
+    "/chat-sessions/{session_id}/messages",
+    response_model=SendChatMessageResponse,
+    status_code=status.HTTP_200_OK,
+)
+@require_ai_enabled
+async def send_chat_message(
+        session_id: int,
+        body: SendChatMessageRequest,
+        current_user: Annotated[User, Depends(get_current_user)],
+        use_case: SendChatMessageUseCase = Depends(
+            inject_use_case(container.learning.send_chat_message_use_case)
+        ),
+) -> SendChatMessageResponse:
+    """Send a message to an existing chat session."""
     ai_response = await use_case.send(session_id, body.message, current_user.id.value)
     return SendChatMessageResponse(message=ai_response)

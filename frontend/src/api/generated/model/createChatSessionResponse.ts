@@ -5,7 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SendQuizMessageRequest {
-  /** @minLength 1 */
+export interface CreateChatSessionResponse {
+  session_id: number;
   message: string;
 }
