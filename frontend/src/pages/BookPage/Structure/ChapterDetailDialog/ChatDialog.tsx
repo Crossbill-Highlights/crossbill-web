@@ -1,81 +1,78 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import {
-  useCreateQuizSessionApiV1ChaptersChapterIdQuizSessionsPost,
-  useSendQuizMessageApiV1QuizSessionsSessionIdMessagesPost,
-} from '@/api/generated/chat/chat';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 
-import { ChatInput } from './quiz/ChatInput.tsx';
-import { type ChatMessage, ChatMessageList } from './quiz/ChatMessageList.tsx';
-import { SessionError } from './quiz/SessionError.tsx';
+import { ChatInput } from './chat/ChatInput.tsx';
+import { type ChatMessage, ChatMessageList } from './chat/ChatMessageList.tsx';
+import { SessionError } from './chat/SessionError.tsx';
+import type { ChatVariant } from './chatVariants.ts';
 
-interface QuizChatDialogProps {
+interface ChatDialogProps {
   open: boolean;
   onClose: () => void;
   chapterId: number;
   chapterName: string;
+  variant: ChatVariant;
 }
 
 const ERROR_MESSAGE = 'Something went wrong. The AI service may be temporarily unavailable.';
 
 /** Wrapper that remounts inner content each time the dialog opens, giving fresh state. */
-export const QuizChatDialog = ({ open, onClose, chapterId, chapterName }: QuizChatDialogProps) => {
-  const title = <CommonDialogTitle>Quiz: {chapterName}</CommonDialogTitle>;
+export const ChatDialog = ({ open, onClose, chapterId, chapterName, variant }: ChatDialogProps) => {
+  const title = <CommonDialogTitle>{variant.title(chapterName)}</CommonDialogTitle>;
 
   return (
     <CommonDialog open={open} onClose={onClose} maxWidth="md" title={title}>
-      {open && <QuizChatContent chapterId={chapterId} />}
+      {open && <ChatContent chapterId={chapterId} variant={variant} />}
     </CommonDialog>
   );
 };
 
-interface QuizChatContentProps {
+interface ChatContentProps {
   chapterId: number;
+  variant: ChatVariant;
 }
 
-const QuizChatContent = ({ chapterId }: QuizChatContentProps) => {
+const ChatContent = ({ chapterId, variant }: ChatContentProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { mutate: createSession, isPending: isCreating } =
-    useCreateQuizSessionApiV1ChaptersChapterIdQuizSessionsPost({
-      mutation: {
-        onSuccess: (data) => {
-          setError(null);
-          setSessionId(data.session_id);
-          setMessages([{ role: 'assistant', content: data.message }]);
-        },
-        onError: () => {
-          setError(ERROR_MESSAGE);
-        },
+  const { mutate: createSession, isPending: isCreating } = variant.useCreateSession({
+    mutation: {
+      onSuccess: (data) => {
+        setError(null);
+        setSessionId(data.session_id);
+        setMessages([{ role: 'assistant', content: data.message }]);
       },
-    });
+      onError: () => {
+        setError(ERROR_MESSAGE);
+      },
+    },
+  });
 
-  const { mutate: sendMessage, isPending: isSending } =
-    useSendQuizMessageApiV1QuizSessionsSessionIdMessagesPost({
-      mutation: {
-        onSuccess: (data) => {
-          setError(null);
-          setMessages((prev) => [...prev, { role: 'assistant', content: data.message }]);
-        },
-        onError: () => {
-          // Remove the optimistically-added user message and restore it to input
-          setMessages((prev) => {
-            const last = prev[prev.length - 1];
-            if (last.role === 'user') {
-              setInput(last.content);
-              return prev.slice(0, -1);
-            }
-            return prev;
-          });
-          setError(ERROR_MESSAGE);
-        },
+  const { mutate: sendMessage, isPending: isSending } = variant.useSendMessage({
+    mutation: {
+      onSuccess: (data) => {
+        setError(null);
+        setMessages((prev) => [...prev, { role: 'assistant', content: data.message }]);
       },
-    });
+      onError: () => {
+        // Remove the optimistically-added user message and restore it to input
+        setMessages((prev) => {
+          const last = prev[prev.length - 1];
+          if (last.role === 'user') {
+            setInput(last.content);
+            return prev.slice(0, -1);
+          }
+          return prev;
+        });
+        setError(ERROR_MESSAGE);
+      },
+    },
+  });
 
   // Start session on mount
   useEffect(() => {

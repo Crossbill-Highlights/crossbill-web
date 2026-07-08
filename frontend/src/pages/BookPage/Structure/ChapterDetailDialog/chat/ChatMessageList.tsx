@@ -29,6 +29,7 @@ export const ChatMessageList = ({ messages, isLoading, error }: ChatMessageListP
         display: 'flex',
         flexDirection: 'column',
         gap: 2,
+        mt: 2,
         mb: 2,
       }}
     >
