@@ -5,7 +5,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CreateQuizSessionResponse {
-  session_id: number;
+export interface SendChatMessageResponse {
   message: string;
 }

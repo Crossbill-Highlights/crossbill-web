@@ -25,6 +25,12 @@ lint: ## Run ruff linter and pyright type checker on backend
 	cd backend && uv run pyright
 	cd backend && uv run --no-sync lint-imports
 
+lint-fix: ## Run ruff linter and pyright type checker on backend
+	cd backend && uv run ruff check --fix src tests
+	cd backend && uv run pyright
+	cd backend && uv run --no-sync lint-imports
+	cd backend && uv run ruff format src tests
+
 format: ## Format backend code with ruff
 	cd backend && uv run ruff format src tests
 

@@ -19,10 +19,11 @@ import { sumBy } from 'lodash';
 import { useMemo, useState } from 'react';
 import { ChapterReviewSection } from './ChapterReviewSection.tsx';
 import { ChapterToolbar } from './ChapterToolbar.tsx';
+import { ChatDialog } from './ChatDialog.tsx';
+import { CHAT_VARIANT, QUIZ_VARIANT } from './chatVariants.ts';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
 import { HighlightsSection } from './HighlightsSection.tsx';
 import { PrereadingSummarySection } from './PrereadingSummarySection.tsx';
-import { QuizChatDialog } from './QuizChatDialog.tsx';
 
 interface ChapterDetailDialogProps {
   open: boolean;
@@ -59,6 +60,7 @@ export const ChapterDetailDialog = ({
   bookFlashcards,
 }: ChapterDetailDialogProps) => {
   const [quizOpen, setQuizOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(TAB_CHAPTER_REVIEW);
 
   const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext } =
@@ -122,6 +124,7 @@ export const ChapterDetailDialog = ({
             bookId={bookId}
             prereadingSummary={prereadingSummary}
             onStartQuiz={() => setQuizOpen(true)}
+            onStartChat={() => setChatOpen(true)}
           />
         )}
 
@@ -174,11 +177,19 @@ export const ChapterDetailDialog = ({
           <FadeInOut ekey={chapter.id}>{renderContent()}</FadeInOut>
         </CommonDialogHorizontalNavigation>
       </CommonDialog>
-      <QuizChatDialog
+      <ChatDialog
         open={quizOpen}
         onClose={() => setQuizOpen(false)}
         chapterId={chapter.id}
         chapterName={chapter.name}
+        variant={QUIZ_VARIANT}
+      />
+      <ChatDialog
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        chapterId={chapter.id}
+        chapterName={chapter.name}
+        variant={CHAT_VARIANT}
       />
     </>
   );
