@@ -1,14 +1,14 @@
 from pydantic import BaseModel, Field
 
 
-class CreateQuizSessionResponse(BaseModel):
+class CreateChatSessionResponse(BaseModel):
     session_id: int
     message: str
 
 
-class SendQuizMessageRequest(BaseModel):
+class SendChatMessageRequest(BaseModel):
     message: str = Field(..., min_length=1)
 
 
-class SendQuizMessageResponse(BaseModel):
+class SendChatMessageResponse(BaseModel):
     message: str
