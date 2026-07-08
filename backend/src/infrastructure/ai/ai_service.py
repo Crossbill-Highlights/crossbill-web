@@ -96,7 +96,13 @@ class AIService:
         )
         return [AIFlashcardSuggestion(question=s.question, answer=s.answer) for s in result.output]
 
-    async def _respond(self, agent: Agent[None, str], usage_context: AIUsageContext,  prompt: str, message_history: Sequence[ModelMessage] | None =None) -> tuple[str, SerializedMessageHistory] :
+    async def _respond(
+        self,
+        agent: Agent[None, str],
+        usage_context: AIUsageContext,
+        prompt: str,
+        message_history: Sequence[ModelMessage] | None = None,
+    ) -> tuple[str, SerializedMessageHistory]:
         result = await agent.run(user_prompt=prompt, message_history=message_history)
         usage = result.usage()
         await self._save_usage(
@@ -104,7 +110,6 @@ class AIService:
         )
         serialized: SerializedMessageHistory = to_jsonable_python(result.all_messages())
         return result.output, serialized
-
 
     async def start_quiz(
         self, chapter_content: str, question_count: int, usage_context: AIUsageContext
@@ -121,7 +126,9 @@ class AIService:
     ) -> tuple[str, SerializedMessageHistory]:
         agent = get_quiz_agent()
         restored = ModelMessagesTypeAdapter.validate_python(message_history)
-        return await self._respond(agent, usage_context, prompt=user_message, message_history=restored)
+        return await self._respond(
+            agent, usage_context, prompt=user_message, message_history=restored
+        )
 
     def seed_chat_context(
         self, chapter_content: str, assistant_opener: str
@@ -138,18 +145,20 @@ class AIService:
         return to_jsonable_python(messages)
 
     async def start_chat(
-            self, chapter_content: str, usage_context: AIUsageContext
+        self, chapter_content: str, usage_context: AIUsageContext
     ) -> tuple[str, SerializedMessageHistory]:
         agent = get_chat_agent()
         prompt = f"The reader wants chat about contents of this chapter.\n\n--- CHAPTER CONTENT ---\n{chapter_content}"
         return await self._respond(agent, usage_context, prompt=prompt)
 
     async def continue_chat(
-            self,
-            user_message: str,
-            message_history: SerializedMessageHistory,
-            usage_context: AIUsageContext,
+        self,
+        user_message: str,
+        message_history: SerializedMessageHistory,
+        usage_context: AIUsageContext,
     ) -> tuple[str, SerializedMessageHistory]:
         agent = get_chat_agent()
         restored = ModelMessagesTypeAdapter.validate_python(message_history)
-        return await self._respond(agent, usage_context, prompt=user_message, message_history=restored)
+        return await self._respond(
+            agent, usage_context, prompt=user_message, message_history=restored
+        )

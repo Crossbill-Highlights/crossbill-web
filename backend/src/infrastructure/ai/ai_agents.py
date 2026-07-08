@@ -156,6 +156,7 @@ def get_quiz_agent() -> Agent[None, str]:
         instructions=QUIZ_INSTRUCTIONS,
     )
 
+
 CHAT_INSTRUCTIONS = """
 You are a reading comprehension tutor. Your goal is to help the reader to understand and
 deepen their understanding of a book chapter they have previously read.
@@ -170,6 +171,8 @@ FORMAT:
 - Keep responses concise and conversational.
 - Use markdown formatting when helpful (bold for emphasis, lists for summaries).
 """
+
+
 def get_chat_agent() -> Agent[None, str]:
     return Agent(
         get_ai_model(),

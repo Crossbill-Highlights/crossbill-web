@@ -77,11 +77,11 @@ async def send_quiz_message(
 )
 @require_ai_enabled
 async def create_chat_session(
-        chapter_id: int,
-        current_user: Annotated[User, Depends(get_current_user)],
-        use_case: StartChatSessionUseCase = Depends(
-            inject_use_case(container.learning.start_chat_session_use_case)
-        ),
+    chapter_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: StartChatSessionUseCase = Depends(
+        inject_use_case(container.learning.start_chat_session_use_case)
+    ),
 ) -> CreateChatSessionResponse:
     """Start a chat session for a chapter."""
     session_id, first_question = await use_case.start(chapter_id, current_user.id.value)
@@ -95,12 +95,12 @@ async def create_chat_session(
 )
 @require_ai_enabled
 async def send_chat_message(
-        session_id: int,
-        body: SendChatMessageRequest,
-        current_user: Annotated[User, Depends(get_current_user)],
-        use_case: SendChatMessageUseCase = Depends(
-            inject_use_case(container.learning.send_chat_message_use_case)
-        ),
+    session_id: int,
+    body: SendChatMessageRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: SendChatMessageUseCase = Depends(
+        inject_use_case(container.learning.send_chat_message_use_case)
+    ),
 ) -> SendChatMessageResponse:
     """Send a message to an existing chat session."""
     ai_response = await use_case.send(session_id, body.message, current_user.id.value)
