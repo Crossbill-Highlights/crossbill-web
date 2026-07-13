@@ -1,24 +1,15 @@
-import type {
-  GetNotesForBookApiV1BooksBookIdNotesGetParams,
-  NoteWithLinks,
-} from '@/api/generated/model';
-import {
-  getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey,
-  useDeleteNoteApiV1NotesNoteIdDelete,
-  useGetNotesForBookApiV1BooksBookIdNotesGet,
-} from '@/api/generated/notes/notes.ts';
+import type { GetNotesForBookApiV1BooksBookIdNotesGetParams } from '@/api/generated/model';
+import { useGetNotesForBookApiV1BooksBookIdNotesGet } from '@/api/generated/notes/notes.ts';
 import { Spinner } from '@/components/animations/Spinner.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { AddIcon } from '@/theme/Icons.tsx';
 import { Box, Button, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useState } from 'react';
 
 import { NoteCard } from './NoteCard';
 import { NoteEditorDialog } from './NoteEditorDialog';
+import { useNoteModals } from './hooks/useNoteModals';
 import { NOTE_KIND_LABELS, NOTE_KINDS, type NoteKindValue } from './noteKinds';
 
 interface NoteKindFilterProps {
@@ -43,8 +34,6 @@ const NoteKindFilter = ({ value, onChange }: NoteKindFilterProps) => (
 
 export const NotesPage = () => {
   const { book } = useBookPage();
-  const { showSnackbar } = useSnackbar();
-  const queryClient = useQueryClient();
   const navigate = useNavigate({ from: '/book/$bookId/notes' });
   const { kind, chapterId, tagId } = useSearch({ from: '/book/$bookId/notes' });
 
@@ -54,25 +43,7 @@ export const NotesPage = () => {
     highlight_tag_id: tagId,
   };
   const { data, isLoading, isError } = useGetNotesForBookApiV1BooksBookIdNotesGet(book.id, params);
-
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editingNote, setEditingNote] = useState<NoteWithLinks | null>(null);
-  const [deletingNote, setDeletingNote] = useState<NoteWithLinks | null>(null);
-
-  const deleteMutation = useDeleteNoteApiV1NotesNoteIdDelete({
-    mutation: {
-      onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey(book.id),
-        });
-        setDeletingNote(null);
-      },
-      onError: (error) => {
-        console.error('Failed to delete note:', error);
-        showSnackbar('Failed to delete note. Please try again.', 'error');
-      },
-    },
-  });
+  const noteModals = useNoteModals(book.id);
 
   const handleKindFilter = (value: NoteKindValue | null) => {
     void navigate({ search: (prev) => ({ ...prev, kind: value ?? undefined }) });
@@ -90,14 +61,7 @@ export const NotesPage = () => {
           onChange={handleKindFilter}
         />
         <Box sx={{ flexGrow: 1 }} />
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            setEditingNote(null);
-            setEditorOpen(true);
-          }}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={noteModals.openCreate}>
           New note
         </Button>
       </Box>
@@ -115,28 +79,25 @@ export const NotesPage = () => {
           <li key={note.id}>
             <NoteCard
               note={note}
-              onEdit={() => {
-                setEditingNote(note);
-                setEditorOpen(true);
-              }}
-              onDelete={() => setDeletingNote(note)}
+              onEdit={() => noteModals.openEdit(note)}
+              onDelete={() => noteModals.requestDelete(note)}
             />
           </li>
         ))}
       </Stack>
 
-      <NoteEditorDialog open={editorOpen} onClose={() => setEditorOpen(false)} note={editingNote} />
+      <NoteEditorDialog
+        open={noteModals.editorOpen}
+        onClose={noteModals.closeEditor}
+        note={noteModals.editingNote}
+      />
       <ConfirmationDialog
-        open={deletingNote !== null}
+        open={noteModals.deletingNote !== null}
         title="Delete note"
-        message={`Delete note "${deletingNote?.title ?? ''}"? This cannot be undone.`}
-        onConfirm={() => {
-          if (deletingNote) {
-            void deleteMutation.mutateAsync({ noteId: deletingNote.id });
-          }
-        }}
-        onClose={() => setDeletingNote(null)}
-        isLoading={deleteMutation.isPending}
+        message={`Delete note "${noteModals.deletingNote?.title ?? ''}"? This cannot be undone.`}
+        onConfirm={noteModals.confirmDelete}
+        onClose={noteModals.cancelDelete}
+        isLoading={noteModals.isDeleting}
       />
     </Box>
   );
