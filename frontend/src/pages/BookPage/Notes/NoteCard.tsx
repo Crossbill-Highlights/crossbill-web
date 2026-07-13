@@ -17,17 +17,17 @@ const NoteStyled = styled(Box)(({ theme }) => ({
   position: 'relative',
   borderLeft: `3px solid ${theme.palette.primary.main}`,
   paddingLeft: theme.spacing(2),
-  paddingTop: theme.spacing(1),
-  paddingBottom: theme.spacing(1),
+  paddingTop: theme.spacing(2),
+  paddingBottom: theme.spacing(2),
   transition: 'background-color 0.15s ease',
   '&:hover': {
     backgroundColor: theme.palette.action.hover,
   },
 }));
 
-const ActionButtonsStyled = styled(Box)(() => ({
+const ActionButtonsStyled = styled(Box)(({ theme }) => ({
   position: 'absolute',
-  top: 8,
+  top: theme.spacing(2),
   right: 0,
   display: 'flex',
   gap: 0.5,
@@ -50,7 +50,7 @@ export const NoteCard = ({ note, onEdit, onDelete }: NoteCardProps) => {
     <NoteStyled>
       <Box sx={{ pr: 8 }}>
         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
-          <Typography variant="h6">{note.title}</Typography>
+          <Typography variant="h3">{note.title}</Typography>
           {note.kind && <Chip size="small" label={NOTE_KIND_LABELS[note.kind as NoteKindValue]} />}
         </Stack>
         {note.body && (
