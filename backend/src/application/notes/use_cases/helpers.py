@@ -1,12 +1,14 @@
 """Shared helpers for note use cases."""
 
+from collections.abc import Callable
+
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.application.reading.protocols.highlight_tag_repository import (
     HighlightTagRepositoryProtocol,
 )
-from src.domain.common.exceptions import ValidationError
-from src.domain.common.value_objects import ChapterId, HighlightId, HighlightTagId, UserId
+from src.domain.common.exceptions import EntityNotFoundError, ValidationError
+from src.domain.common.value_objects import UserId
 from src.domain.notes.entities.note import NoteKind
 from src.domain.notes.exceptions import NoteLinkBookMismatchError
 from src.domain.reading.exceptions import (
@@ -36,24 +38,50 @@ async def validate_link_targets(
     highlight_repository: HighlightRepositoryProtocol,
     highlight_tag_repository: HighlightTagRepositoryProtocol,
 ) -> None:
-    """Validate that every linked entity exists and belongs to a linked book."""
-    for chapter_id in chapter_ids:
-        chapter = await chapter_repository.find_by_id(ChapterId(chapter_id), user_id)
-        if not chapter:
-            raise ChapterNotFoundError(chapter_id)
-        if chapter.book_id.value not in allowed_book_ids:
-            raise NoteLinkBookMismatchError("Chapter", chapter_id)
+    """Validate that every linked entity exists, is owned, and belongs to a linked book.
 
-    for highlight_id in highlight_ids:
-        highlight = await highlight_repository.find_by_id(HighlightId(highlight_id), user_id)
-        if not highlight:
-            raise HighlightNotFoundError(highlight_id)
-        if highlight.book_id.value not in allowed_book_ids:
-            raise NoteLinkBookMismatchError("Highlight", highlight_id)
+    Each entity kind is fetched with a single bulk query; a requested id missing
+    from the result was either not found or not owned by the user.
+    """
+    chapters = await chapter_repository.find_by_ids(chapter_ids, user_id)
+    _check_links(
+        chapter_ids,
+        {chapter.id.value: chapter.book_id.value for chapter in chapters},
+        allowed_book_ids,
+        ChapterNotFoundError,
+        "Chapter",
+    )
 
-    for tag_id in highlight_tag_ids:
-        tag = await highlight_tag_repository.find_by_id(HighlightTagId(tag_id), user_id)
-        if not tag:
-            raise HighlightTagNotFoundError(tag_id)
-        if tag.book_id.value not in allowed_book_ids:
-            raise NoteLinkBookMismatchError("HighlightTag", tag_id)
+    highlights = await highlight_repository.find_by_ids(highlight_ids, user_id)
+    _check_links(
+        highlight_ids,
+        {highlight.id.value: highlight.book_id.value for highlight in highlights},
+        allowed_book_ids,
+        HighlightNotFoundError,
+        "Highlight",
+    )
+
+    tags = await highlight_tag_repository.find_by_ids(highlight_tag_ids, user_id)
+    _check_links(
+        highlight_tag_ids,
+        {tag.id.value: tag.book_id.value for tag in tags},
+        allowed_book_ids,
+        HighlightTagNotFoundError,
+        "HighlightTag",
+    )
+
+
+def _check_links(
+    requested_ids: list[int],
+    book_id_by_id: dict[int, int],
+    allowed_book_ids: set[int],
+    not_found_error: Callable[[int], EntityNotFoundError],
+    entity_type: str,
+) -> None:
+    """Raise NotFound for any missing id, or a book mismatch for a wrong book."""
+    for requested_id in requested_ids:
+        book_id = book_id_by_id.get(requested_id)
+        if book_id is None:
+            raise not_found_error(requested_id)
+        if book_id not in allowed_book_ids:
+            raise NoteLinkBookMismatchError(entity_type, requested_id)
