@@ -130,6 +130,21 @@ class FlashcardId(EntityId):
 
 
 @dataclass(frozen=True)
+class NoteId(EntityId):
+    """Strongly-typed note identifier."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("NoteId must be non-negative")
+
+    @classmethod
+    def generate(cls) -> "NoteId":
+        return cls(0)  # Database assigns real ID
+
+
+@dataclass(frozen=True)
 class BookmarkId(EntityId):
     """Strongly-typed bookmark identifier."""
 
