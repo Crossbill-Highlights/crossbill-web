@@ -1,5 +1,7 @@
 import type { NoteWithLinks } from '@/api/generated/model';
-import { Box, Chip, Stack, styled, Typography } from '@mui/material';
+import { markdownStyles } from '@/theme/theme';
+import { Box, Chip, Stack, styled, Typography, useTheme } from '@mui/material';
+import ReactMarkdown from 'react-markdown';
 
 import { NOTE_KIND_LABELS, type NoteKindValue } from './noteKinds';
 
@@ -25,9 +27,7 @@ const NoteStyled = styled(Box)(({ theme }) => ({
 }));
 
 export const NoteCard = ({ note, onClick }: NoteCardProps) => {
-  const chapters = note.chapters ?? [];
-  const highlightTags = note.highlight_tags ?? [];
-  const highlights = note.highlights ?? [];
+  const theme = useTheme();
 
   return (
     <NoteStyled
@@ -46,35 +46,17 @@ export const NoteCard = ({ note, onClick }: NoteCardProps) => {
         {note.kind && <Chip size="small" label={NOTE_KIND_LABELS[note.kind as NoteKindValue]} />}
       </Stack>
       {note.body && (
-        <Typography
-          variant="body2"
-          color="text.secondary"
+        <Box
           sx={{
+            ...markdownStyles(theme),
             display: '-webkit-box',
             WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
           }}
         >
-          {note.body}
-        </Typography>
-      )}
-      {(chapters.length > 0 || highlightTags.length > 0 || highlights.length > 0) && (
-        <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
-          {chapters.map((chapter) => (
-            <Chip key={`ch-${chapter.id}`} size="small" variant="outlined" label={chapter.name} />
-          ))}
-          {highlightTags.map((tag) => (
-            <Chip key={`tag-${tag.id}`} size="small" variant="outlined" label={`#${tag.name}`} />
-          ))}
-          {highlights.length > 0 && (
-            <Chip
-              size="small"
-              variant="outlined"
-              label={`${highlights.length} highlight${highlights.length === 1 ? '' : 's'}`}
-            />
-          )}
-        </Stack>
+          <ReactMarkdown>{note.body}</ReactMarkdown>
+        </Box>
       )}
     </NoteStyled>
   );

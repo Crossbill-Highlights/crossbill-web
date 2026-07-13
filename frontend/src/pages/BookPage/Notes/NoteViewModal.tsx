@@ -112,7 +112,7 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
           {activeNote?.kind && (
             <Chip
               size="small"
-              label={NOTE_KIND_LABELS[activeNote?.kind as NoteKindValue]}
+              label={NOTE_KIND_LABELS[activeNote.kind as NoteKindValue]}
               sx={{ mb: 0.5, ml: 1 }}
             />
           )}
