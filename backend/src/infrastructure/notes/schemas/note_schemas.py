@@ -1,11 +1,13 @@
 """Pydantic schemas for Note API request/response validation."""
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 NoteKindLiteral = Literal["character", "term", "concept", "other"]
+
+NoteTitle = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 class NoteLinkedChapter(BaseModel):
@@ -56,7 +58,7 @@ class NoteWithLinks(Note):
 class NoteCreateRequest(BaseModel):
     """Schema for creating a note."""
 
-    title: str = Field(..., min_length=1, description="Note title")
+    title: NoteTitle = Field(..., description="Note title")
     body: str = Field("", description="Markdown body")
     kind: NoteKindLiteral | None = Field(None, description="Optional note kind")
     book_id: int = Field(..., description="Book this note is created in")
@@ -76,7 +78,7 @@ class NoteCreateResponse(BaseModel):
 class NoteUpdateRequest(BaseModel):
     """Schema for updating a note (full replace of fields and links)."""
 
-    title: str = Field(..., min_length=1, description="Note title")
+    title: NoteTitle = Field(..., description="Note title")
     body: str = Field("", description="Markdown body")
     kind: NoteKindLiteral | None = Field(None, description="Optional note kind")
     chapter_ids: list[int] = Field(default_factory=list)

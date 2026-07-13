@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 
 from src.domain.common.aggregate_root import AggregateRoot
-from src.domain.common.exceptions import DomainError
+from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects import NoteId, UserId
 
 
@@ -78,12 +78,12 @@ class Note(AggregateRoot[NoteId]):
     @staticmethod
     def _validate_title(title: str) -> None:
         if not title or not title.strip():
-            raise DomainError("Note title cannot be empty")
+            raise ValidationError("Note title cannot be empty")
 
     @staticmethod
     def _validate_books(book_ids: list[int]) -> None:
         if not book_ids:
-            raise DomainError("Note must be linked to at least one book")
+            raise ValidationError("Note must be linked to at least one book")
 
     @classmethod
     def create(

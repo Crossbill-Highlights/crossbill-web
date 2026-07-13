@@ -65,6 +65,14 @@ class TestCreateNote:
         response = await client.post("/api/v1/notes", json={"title": "", "book_id": test_book.id})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
+    async def test_create_note_whitespace_title(
+        self, client: AsyncClient, test_book: models.Book
+    ) -> None:
+        response = await client.post(
+            "/api/v1/notes", json={"title": "   ", "book_id": test_book.id}
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
     async def test_create_note_invalid_kind(
         self, client: AsyncClient, test_book: models.Book
     ) -> None:
@@ -396,6 +404,15 @@ class TestUpdateNote:
             json={"title": "X", "body": "", "kind": None, "chapter_ids": [99999]},
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    async def test_update_note_whitespace_title(
+        self, client: AsyncClient, note_id: int
+    ) -> None:
+        response = await client.put(
+            f"/api/v1/notes/{note_id}",
+            json={"title": "   ", "body": "", "kind": None},
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 class TestDeleteNote:
