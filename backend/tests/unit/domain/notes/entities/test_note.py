@@ -1,5 +1,7 @@
 """Tests for Note domain entity."""
 
+from typing import Any
+
 import pytest
 
 from src.domain.common.exceptions import DomainError
@@ -8,7 +10,7 @@ from src.domain.notes.entities.note import Note, NoteKind
 
 
 def make_note(**overrides: object) -> Note:
-    defaults: dict = {
+    defaults: dict[str, Any] = {
         "user_id": UserId(1),
         "title": "Stoicism",
         "book_ids": [1],
