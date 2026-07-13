@@ -303,6 +303,32 @@ class TestGetNotesForBook:
         notes = response.json()["notes"]
         assert len(notes) == 2
 
+    async def test_list_includes_tag_not_attached_to_any_highlight(
+        self, client: AsyncClient, test_book: models.Book
+    ) -> None:
+        # A tag linked to a note but NOT to any highlight must still appear in
+        # the note's tag summary in the list response.
+        tag_resp = await client.post(
+            f"/api/v1/books/{test_book.id}/highlight_tag",
+            json={"name": "note-only"},
+        )
+        assert tag_resp.status_code in (200, 201), tag_resp.text
+        tag_id = tag_resp.json()["id"]
+
+        await client.post(
+            "/api/v1/notes",
+            json={
+                "title": "Concept",
+                "book_id": test_book.id,
+                "highlight_tag_ids": [tag_id],
+            },
+        )
+
+        response = await client.get(f"/api/v1/books/{test_book.id}/notes")
+        note = next(n for n in response.json()["notes"] if n["title"] == "Concept")
+        assert note["highlight_tag_ids"] == [tag_id]
+        assert [t["id"] for t in note["highlight_tags"]] == [tag_id]
+
     async def test_list_notes_includes_link_summaries(
         self,
         client: AsyncClient,
@@ -364,6 +390,39 @@ class TestUpdateNote:
             },
         )
         return response.json()["note"]["id"]
+
+    async def test_update_note_links_freshly_created_tag(
+        self,
+        client: AsyncClient,
+        note_id: int,
+        test_book: models.Book,
+    ) -> None:
+        # Simulate the note editor: create a brand-new highlight tag, then
+        # PUT the note referencing that tag's id.
+        tag_resp = await client.post(
+            f"/api/v1/books/{test_book.id}/highlight_tag",
+            json={"name": "freshly-created"},
+        )
+        assert tag_resp.status_code in (200, 201), tag_resp.text
+        tag_id = tag_resp.json()["id"]
+
+        put_resp = await client.put(
+            f"/api/v1/notes/{note_id}",
+            json={
+                "title": "Raskolnikov",
+                "body": "",
+                "kind": "character",
+                "chapter_ids": [],
+                "highlight_ids": [],
+                "highlight_tag_ids": [tag_id],
+            },
+        )
+        assert put_resp.status_code == status.HTTP_200_OK, put_resp.text
+        assert put_resp.json()["note"]["highlight_tag_ids"] == [tag_id]
+
+        get_resp = await client.get(f"/api/v1/notes/{note_id}")
+        assert get_resp.json()["highlight_tag_ids"] == [tag_id]
+        assert [t["id"] for t in get_resp.json()["highlight_tags"]] == [tag_id]
 
     async def test_update_note_fields_and_links(
         self,

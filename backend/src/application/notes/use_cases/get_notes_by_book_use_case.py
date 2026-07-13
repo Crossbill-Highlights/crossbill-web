@@ -72,9 +72,15 @@ class GetNotesByBookUseCase:
                 book_id_vo, user_id_vo
             )
         }
+        # Fetch the tags the notes actually reference by id. (find_by_book only
+        # returns tags with active highlight associations, which would drop
+        # tags attached to a note but no highlight.)
+        referenced_tag_ids = {tid for note in notes for tid in note.highlight_tag_ids}
         tags_by_id = {
             tag.id.value: tag
-            for tag in await self.highlight_tag_repository.find_by_book(book_id_vo, user_id_vo)
+            for tag in await self.highlight_tag_repository.find_by_ids(
+                list(referenced_tag_ids), user_id_vo
+            )
         }
 
         return [
