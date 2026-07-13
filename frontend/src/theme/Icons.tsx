@@ -12,6 +12,7 @@ export {
   ExpandMore as ExpandMoreIcon,
   FilterList as FilterListIcon,
   Menu as MenuIcon,
+  MoreHoriz as MoreIcon,
   KeyboardArrowUp as ScrollToTopIcon,
 } from '@mui/icons-material';
 
