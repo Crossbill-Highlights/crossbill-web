@@ -9,10 +9,6 @@ interface NoteToolbarProps {
   disabled?: boolean;
 }
 
-/**
- * Action toolbar for the note detail modal. Sits below the note content,
- * mirroring the highlight modal's `Toolbar` (content first, actions underneath).
- */
 export const NoteToolbar = ({ onEdit, onCopy, onDelete, disabled = false }: NoteToolbarProps) => (
   <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
     <IconButtonWithTooltip
