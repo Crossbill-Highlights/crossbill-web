@@ -14,17 +14,25 @@ interface ChatDialogProps {
   chapterId: number;
   chapterName: string;
   variant: ChatVariant;
+  onSaveNote?: (content: string) => void;
 }
 
 const ERROR_MESSAGE = 'Something went wrong. The AI service may be temporarily unavailable.';
 
 /** Wrapper that remounts inner content each time the dialog opens, giving fresh state. */
-export const ChatDialog = ({ open, onClose, chapterId, chapterName, variant }: ChatDialogProps) => {
+export const ChatDialog = ({
+  open,
+  onClose,
+  chapterId,
+  chapterName,
+  variant,
+  onSaveNote,
+}: ChatDialogProps) => {
   const title = <CommonDialogTitle>{variant.title(chapterName)}</CommonDialogTitle>;
 
   return (
     <CommonDialog open={open} onClose={onClose} maxWidth="md" title={title}>
-      {open && <ChatContent chapterId={chapterId} variant={variant} />}
+      {open && <ChatContent chapterId={chapterId} variant={variant} onSaveNote={onSaveNote} />}
     </CommonDialog>
   );
 };
@@ -32,9 +40,10 @@ export const ChatDialog = ({ open, onClose, chapterId, chapterName, variant }: C
 interface ChatContentProps {
   chapterId: number;
   variant: ChatVariant;
+  onSaveNote?: (content: string) => void;
 }
 
-const ChatContent = ({ chapterId, variant }: ChatContentProps) => {
+const ChatContent = ({ chapterId, variant, onSaveNote }: ChatContentProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState<number | null>(null);
@@ -105,7 +114,12 @@ const ChatContent = ({ chapterId, variant }: ChatContentProps) => {
         isCreating={isCreating}
         onRetry={handleRetryCreate}
       />
-      <ChatMessageList messages={messages} isLoading={isSending} error={error} />
+      <ChatMessageList
+        messages={messages}
+        isLoading={isSending}
+        error={error}
+        onSaveNote={onSaveNote}
+      />
       <ChatInput
         value={input}
         onChange={setInput}

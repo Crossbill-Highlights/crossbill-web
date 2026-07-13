@@ -1,0 +1,1 @@
+"""Notes application context."""

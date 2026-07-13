@@ -79,6 +79,20 @@ class ChapterRepository:
         orm_model = result.scalar_one_or_none()
         return self.mapper.to_domain(orm_model) if orm_model else None
 
+    async def find_by_ids(self, chapter_ids: list[int], user_id: UserId) -> list[Chapter]:
+        """Find chapters by ids with ownership verification (via the owning book)."""
+        if not chapter_ids:
+            return []
+        stmt = (
+            select(ChapterORM)
+            .join(BookORM, BookORM.id == ChapterORM.book_id)
+            .where(ChapterORM.id.in_(chapter_ids))
+            .where(BookORM.user_id == user_id.value)
+        )
+        result = await self.db.execute(stmt)
+        orm_models = result.scalars().all()
+        return [self.mapper.to_domain(m) for m in orm_models]
+
     async def find_all_by_book(self, book_id: BookId, user_id: UserId) -> list[Chapter]:
         """Find all chapters for a book, ordered by chapter_number."""
         stmt = (

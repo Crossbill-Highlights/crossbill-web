@@ -80,6 +80,19 @@ class HighlightRepository:
 
         return self.mapper.to_domain(orm_model)
 
+    async def find_by_ids(self, highlight_ids: list[int], user_id: UserId) -> list[Highlight]:
+        """Load highlights by ids, scoped to the user."""
+        if not highlight_ids:
+            return []
+        stmt = (
+            select(HighlightORM)
+            .where(HighlightORM.id.in_(highlight_ids))
+            .where(HighlightORM.user_id == user_id.value)
+        )
+        result = await self.db.execute(stmt)
+        orm_models = result.scalars().all()
+        return [self.mapper.to_domain(m) for m in orm_models]
+
     async def find_by_id_with_relations(
         self, highlight_id: HighlightId, user_id: UserId
     ) -> tuple[Highlight, list[Flashcard], list[HighlightTag]] | None:

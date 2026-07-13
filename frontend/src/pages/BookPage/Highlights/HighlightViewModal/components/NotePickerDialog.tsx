@@ -1,0 +1,38 @@
+import type { NoteWithLinks } from '@/api/generated/model';
+import { useGetNotesForBookApiV1BooksBookIdNotesGet } from '@/api/generated/notes/notes.ts';
+import { Spinner } from '@/components/animations/Spinner.tsx';
+import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
+import { List, ListItemButton, ListItemText, Typography } from '@mui/material';
+
+interface NotePickerDialogProps {
+  open: boolean;
+  onClose: () => void;
+  bookId: number;
+  onSelect: (note: NoteWithLinks) => void;
+}
+
+export const NotePickerDialog = ({ open, onClose, bookId, onSelect }: NotePickerDialogProps) => {
+  const { data, isLoading } = useGetNotesForBookApiV1BooksBookIdNotesGet(bookId, undefined, {
+    query: { enabled: open },
+  });
+
+  // NOTE: the orval axios mutator unwraps the response (`.then(({ data }) => data)`),
+  // so the generated GET hook's `data` is the payload itself, not an AxiosResponse.
+  const notes = data?.notes ?? [];
+
+  return (
+    <CommonDialog open={open} onClose={onClose} title="Add highlight to note" maxWidth="sm">
+      {isLoading && <Spinner />}
+      {!isLoading && notes.length === 0 && (
+        <Typography color="text.secondary">No notes in this book yet.</Typography>
+      )}
+      <List>
+        {notes.map((note) => (
+          <ListItemButton key={note.id} onClick={() => onSelect(note)}>
+            <ListItemText primary={note.title} secondary={note.kind ?? undefined} />
+          </ListItemButton>
+        ))}
+      </List>
+    </CommonDialog>
+  );
+};

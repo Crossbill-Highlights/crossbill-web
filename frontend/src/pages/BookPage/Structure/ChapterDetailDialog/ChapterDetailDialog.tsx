@@ -14,6 +14,7 @@ import {
   useModalSwipeNavigation,
 } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { ProgressBar } from '@/pages/BookPage/Highlights/HighlightViewModal/components/ProgressBar.tsx';
+import { NoteEditorDialog } from '@/pages/BookPage/Notes/NoteEditorDialog';
 import { Box, Button, Tab, Tabs } from '@mui/material';
 import { sumBy } from 'lodash';
 import { useMemo, useState } from 'react';
@@ -23,6 +24,7 @@ import { ChatDialog } from './ChatDialog.tsx';
 import { CHAT_VARIANT, QUIZ_VARIANT } from './chatVariants.ts';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
 import { HighlightsSection } from './HighlightsSection.tsx';
+import { NotesSection } from './NotesSection.tsx';
 import { PrereadingSummarySection } from './PrereadingSummarySection.tsx';
 
 interface ChapterDetailDialogProps {
@@ -42,6 +44,7 @@ interface ChapterDetailDialogProps {
 const TAB_CHAPTER_REVIEW = 0;
 const TAB_HIGHLIGHTS = 1;
 const TAB_FLASHCARDS = 2;
+const TAB_NOTES = 3;
 
 const formatTabLabel = (label: string, count: number) =>
   count > 0 ? `${label} (${count})` : label;
@@ -62,6 +65,7 @@ export const ChapterDetailDialog = ({
   const [quizOpen, setQuizOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(TAB_CHAPTER_REVIEW);
+  const [chatNoteBody, setChatNoteBody] = useState<string | null>(null);
 
   const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext } =
     useModalHorizontalNavigation({
@@ -115,6 +119,7 @@ export const ChapterDetailDialog = ({
         <Tab label="Chapter review" />
         <Tab label={formatTabLabel('Highlights', highlightCount)} />
         <Tab label={formatTabLabel('Flashcards', flashcardCount)} />
+        <Tab label="Notes" />
       </Tabs>
 
       <Box sx={{ pt: 2, pb: 2 }} {...tabSwipeHandlers}>
@@ -145,6 +150,8 @@ export const ChapterDetailDialog = ({
             bookFlashcards={bookFlashcards}
           />
         )}
+
+        {activeTab === TAB_NOTES && <NotesSection chapter={chapter} bookId={bookId} />}
       </Box>
     </Box>
   );
@@ -190,6 +197,13 @@ export const ChapterDetailDialog = ({
         chapterId={chapter.id}
         chapterName={chapter.name}
         variant={CHAT_VARIANT}
+        onSaveNote={(content) => setChatNoteBody(content)}
+      />
+      <NoteEditorDialog
+        open={chatNoteBody !== null}
+        onClose={() => setChatNoteBody(null)}
+        initialBody={chatNoteBody ?? ''}
+        initialChapterIds={[chapter.id]}
       />
     </>
   );

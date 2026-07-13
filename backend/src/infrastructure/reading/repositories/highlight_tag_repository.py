@@ -104,6 +104,30 @@ class HighlightTagRepository:
         orm_models = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orm_models]
 
+    async def find_by_ids(self, tag_ids: list[int], user_id: UserId) -> list[HighlightTag]:
+        """
+        Get tags by their ids, scoped to the user.
+
+        Unlike find_by_book, this does not require the tags to have active
+        highlight associations, so tags attached only to notes are returned.
+
+        Args:
+            tag_ids: The tag ids to fetch
+            user_id: The user ID
+
+        Returns:
+            List of tag entities (only those owned by the user)
+        """
+        if not tag_ids:
+            return []
+        stmt = select(HighlightTagORM).where(
+            HighlightTagORM.id.in_(tag_ids),
+            HighlightTagORM.user_id == user_id.value,
+        )
+        result = await self.db.execute(stmt)
+        orm_models = result.scalars().all()
+        return [self.mapper.to_domain(orm) for orm in orm_models]
+
     async def save(self, tag: HighlightTag) -> HighlightTag:
         """
         Save a tag entity.

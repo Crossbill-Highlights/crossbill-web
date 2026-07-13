@@ -31,6 +31,7 @@ from src.infrastructure.library.services.epub_position_index_service import (
 from src.infrastructure.library.services.epub_text_extraction_service import (
     EpubTextExtractionService,
 )
+from src.infrastructure.notes.repositories.note_repository import NoteRepository
 from src.infrastructure.reading.repositories import (
     BookmarkRepository,
     HighlightRepository,
@@ -70,6 +71,7 @@ class SharedContainer(containers.DeclarativeContainer):
     highlight_repository = providers.Factory(HighlightRepository, db=db)
     highlight_tag_repository = providers.Factory(HighlightTagRepository, db=db)
     chapter_repository = providers.Factory(ChapterRepository, db=db)
+    note_repository = providers.Factory(NoteRepository, db=db)
     reading_session_repository = providers.Factory(ReadingSessionRepository, db=db)
     tag_repository = providers.Factory(TagRepository, db=db)
     flashcard_repository = providers.Factory(FlashcardRepository, db=db)
