@@ -23,6 +23,7 @@ import { ChatDialog } from './ChatDialog.tsx';
 import { CHAT_VARIANT, QUIZ_VARIANT } from './chatVariants.ts';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
 import { HighlightsSection } from './HighlightsSection.tsx';
+import { NotesSection } from './NotesSection.tsx';
 import { PrereadingSummarySection } from './PrereadingSummarySection.tsx';
 
 interface ChapterDetailDialogProps {
@@ -42,6 +43,7 @@ interface ChapterDetailDialogProps {
 const TAB_CHAPTER_REVIEW = 0;
 const TAB_HIGHLIGHTS = 1;
 const TAB_FLASHCARDS = 2;
+const TAB_NOTES = 3;
 
 const formatTabLabel = (label: string, count: number) =>
   count > 0 ? `${label} (${count})` : label;
@@ -115,6 +117,7 @@ export const ChapterDetailDialog = ({
         <Tab label="Chapter review" />
         <Tab label={formatTabLabel('Highlights', highlightCount)} />
         <Tab label={formatTabLabel('Flashcards', flashcardCount)} />
+        <Tab label="Notes" />
       </Tabs>
 
       <Box sx={{ pt: 2, pb: 2 }} {...tabSwipeHandlers}>
@@ -145,6 +148,8 @@ export const ChapterDetailDialog = ({
             bookFlashcards={bookFlashcards}
           />
         )}
+
+        {activeTab === TAB_NOTES && <NotesSection chapter={chapter} bookId={bookId} />}
       </Box>
     </Box>
   );
