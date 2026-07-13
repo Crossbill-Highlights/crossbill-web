@@ -1,9 +1,8 @@
 import type { ChapterWithHighlights } from '@/api/generated/model';
 import { useGetNotesForBookApiV1BooksBookIdNotesGet } from '@/api/generated/notes/notes.ts';
 import { Spinner } from '@/components/animations/Spinner.tsx';
-import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { NoteCard } from '@/pages/BookPage/Notes/NoteCard';
-import { NoteEditorDialog } from '@/pages/BookPage/Notes/NoteEditorDialog';
+import { NoteModals } from '@/pages/BookPage/Notes/NoteModals';
 import { useNoteModals } from '@/pages/BookPage/Notes/hooks/useNoteModals';
 import { AddIcon } from '@/theme/Icons.tsx';
 import { Box, Button, Stack, Typography } from '@mui/material';
@@ -50,20 +49,7 @@ export const NotesSection = ({ chapter, bookId }: NotesSectionProps) => {
           </li>
         ))}
       </Stack>
-      <NoteEditorDialog
-        open={noteModals.editorOpen}
-        onClose={noteModals.closeEditor}
-        note={noteModals.editingNote}
-        initialChapterIds={[chapter.id]}
-      />
-      <ConfirmationDialog
-        open={noteModals.deletingNote !== null}
-        title="Delete note"
-        message={`Delete note "${noteModals.deletingNote?.title ?? ''}"? This cannot be undone.`}
-        onConfirm={noteModals.confirmDelete}
-        onClose={noteModals.cancelDelete}
-        isLoading={noteModals.isDeleting}
-      />
+      <NoteModals controller={noteModals} initialChapterIds={[chapter.id]} />
     </Box>
   );
 };

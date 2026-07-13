@@ -1,14 +1,13 @@
 import type { GetNotesForBookApiV1BooksBookIdNotesGetParams } from '@/api/generated/model';
 import { useGetNotesForBookApiV1BooksBookIdNotesGet } from '@/api/generated/notes/notes.ts';
 import { Spinner } from '@/components/animations/Spinner.tsx';
-import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { AddIcon } from '@/theme/Icons.tsx';
 import { Box, Button, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 
 import { NoteCard } from './NoteCard';
-import { NoteEditorDialog } from './NoteEditorDialog';
+import { NoteModals } from './NoteModals';
 import { useNoteModals } from './hooks/useNoteModals';
 import { NOTE_KIND_LABELS, NOTE_KINDS, type NoteKindValue } from './noteKinds';
 
@@ -86,19 +85,7 @@ export const NotesPage = () => {
         ))}
       </Stack>
 
-      <NoteEditorDialog
-        open={noteModals.editorOpen}
-        onClose={noteModals.closeEditor}
-        note={noteModals.editingNote}
-      />
-      <ConfirmationDialog
-        open={noteModals.deletingNote !== null}
-        title="Delete note"
-        message={`Delete note "${noteModals.deletingNote?.title ?? ''}"? This cannot be undone.`}
-        onConfirm={noteModals.confirmDelete}
-        onClose={noteModals.cancelDelete}
-        isLoading={noteModals.isDeleting}
-      />
+      <NoteModals controller={noteModals} />
     </Box>
   );
 };
