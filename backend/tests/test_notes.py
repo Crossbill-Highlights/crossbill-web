@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime
 
+import pytest
 from fastapi import status
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -258,3 +259,81 @@ class TestGetNote:
         response = await client.get(f"/api/v1/notes/{note_id}")
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["highlights"] == []
+
+
+class TestGetNotesForBook:
+    """Test suite for GET /books/{book_id}/notes endpoint."""
+
+    @pytest.fixture
+    async def two_notes(
+        self,
+        client: AsyncClient,
+        test_book: models.Book,
+        test_chapter: models.Chapter,
+    ) -> tuple[int, int]:
+        """Create a character note (linked to chapter) and a concept note."""
+        first = await client.post(
+            "/api/v1/notes",
+            json={
+                "title": "Raskolnikov",
+                "kind": "character",
+                "book_id": test_book.id,
+                "chapter_ids": [test_chapter.id],
+            },
+        )
+        second = await client.post(
+            "/api/v1/notes",
+            json={"title": "Nihilism", "kind": "concept", "book_id": test_book.id},
+        )
+        return first.json()["note"]["id"], second.json()["note"]["id"]
+
+    async def test_list_notes(
+        self, client: AsyncClient, test_book: models.Book, two_notes: tuple[int, int]
+    ) -> None:
+        response = await client.get(f"/api/v1/books/{test_book.id}/notes")
+        assert response.status_code == status.HTTP_200_OK
+        notes = response.json()["notes"]
+        assert len(notes) == 2
+
+    async def test_list_notes_includes_link_summaries(
+        self,
+        client: AsyncClient,
+        test_book: models.Book,
+        test_chapter: models.Chapter,
+        two_notes: tuple[int, int],
+    ) -> None:
+        response = await client.get(f"/api/v1/books/{test_book.id}/notes")
+        notes = response.json()["notes"]
+        raskolnikov = next(n for n in notes if n["title"] == "Raskolnikov")
+        assert raskolnikov["chapters"] == [{"id": test_chapter.id, "name": test_chapter.name}]
+
+    async def test_list_notes_filter_by_kind(
+        self, client: AsyncClient, test_book: models.Book, two_notes: tuple[int, int]
+    ) -> None:
+        response = await client.get(f"/api/v1/books/{test_book.id}/notes?kind=character")
+        notes = response.json()["notes"]
+        assert len(notes) == 1
+        assert notes[0]["title"] == "Raskolnikov"
+
+    async def test_list_notes_filter_by_chapter(
+        self,
+        client: AsyncClient,
+        test_book: models.Book,
+        test_chapter: models.Chapter,
+        two_notes: tuple[int, int],
+    ) -> None:
+        response = await client.get(
+            f"/api/v1/books/{test_book.id}/notes?chapter_id={test_chapter.id}"
+        )
+        notes = response.json()["notes"]
+        assert len(notes) == 1
+        assert notes[0]["title"] == "Raskolnikov"
+
+    async def test_list_notes_empty(self, client: AsyncClient, test_book: models.Book) -> None:
+        response = await client.get(f"/api/v1/books/{test_book.id}/notes")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["notes"] == []
+
+    async def test_list_notes_book_not_found(self, client: AsyncClient) -> None:
+        response = await client.get("/api/v1/books/99999/notes")
+        assert response.status_code == status.HTTP_404_NOT_FOUND

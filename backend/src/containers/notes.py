@@ -2,6 +2,7 @@ from dependency_injector import containers, providers
 
 from src.application.notes.use_cases.create_note_use_case import CreateNoteUseCase
 from src.application.notes.use_cases.get_note_use_case import GetNoteUseCase
+from src.application.notes.use_cases.get_notes_by_book_use_case import GetNotesByBookUseCase
 
 
 class NotesContainer(containers.DeclarativeContainer):
@@ -25,6 +26,14 @@ class NotesContainer(containers.DeclarativeContainer):
     get_note_use_case = providers.Factory(
         GetNoteUseCase,
         note_repository=note_repository,
+        chapter_repository=chapter_repository,
+        highlight_repository=highlight_repository,
+        highlight_tag_repository=highlight_tag_repository,
+    )
+    get_notes_by_book_use_case = providers.Factory(
+        GetNotesByBookUseCase,
+        note_repository=note_repository,
+        book_repository=book_repository,
         chapter_repository=chapter_repository,
         highlight_repository=highlight_repository,
         highlight_tag_repository=highlight_tag_repository,

@@ -2,12 +2,13 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from starlette import status
 
 from src.application.notes.use_cases.create_note_use_case import CreateNoteUseCase
 from src.application.notes.use_cases.dtos import NoteWithLinkedEntities
 from src.application.notes.use_cases.get_note_use_case import GetNoteUseCase
+from src.application.notes.use_cases.get_notes_by_book_use_case import GetNotesByBookUseCase
 from src.core import container
 from src.domain.identity import User
 from src.domain.notes.entities.note import Note as NoteEntity
@@ -17,9 +18,11 @@ from src.infrastructure.notes.schemas import (
     Note,
     NoteCreateRequest,
     NoteCreateResponse,
+    NoteKindLiteral,
     NoteLinkedChapter,
     NoteLinkedHighlight,
     NoteLinkedTag,
+    NotesResponse,
     NoteWithLinks,
 )
 
@@ -104,3 +107,30 @@ async def get_note(
 ) -> NoteWithLinks:
     dto = await use_case.get_note(note_id=note_id, user_id=current_user.id.value)
     return note_with_links_to_schema(dto)
+
+
+@router.get(
+    "/books/{book_id}/notes",
+    response_model=NotesResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_notes_for_book(
+    book_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    kind: Annotated[NoteKindLiteral | None, Query()] = None,
+    chapter_id: Annotated[int | None, Query()] = None,
+    highlight_id: Annotated[int | None, Query()] = None,
+    highlight_tag_id: Annotated[int | None, Query()] = None,
+    use_case: GetNotesByBookUseCase = Depends(
+        inject_use_case(container.notes.get_notes_by_book_use_case)
+    ),
+) -> NotesResponse:
+    dtos = await use_case.get_notes(
+        book_id=book_id,
+        user_id=current_user.id.value,
+        kind=kind,
+        chapter_id=chapter_id,
+        highlight_id=highlight_id,
+        highlight_tag_id=highlight_tag_id,
+    )
+    return NotesResponse(notes=[note_with_links_to_schema(dto) for dto in dtos])
