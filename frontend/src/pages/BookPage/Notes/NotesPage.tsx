@@ -42,7 +42,7 @@ export const NotesPage = () => {
     highlight_tag_id: tagId,
   };
   const { data, isLoading, isError } = useGetNotesForBookApiV1BooksBookIdNotesGet(book.id, params);
-  const noteModals = useNoteModals(book.id);
+  const noteModals = useNoteModals();
 
   const handleKindFilter = (value: NoteKindValue | null) => {
     void navigate({ search: (prev) => ({ ...prev, kind: value ?? undefined }) });
@@ -76,11 +76,7 @@ export const NotesPage = () => {
       <Stack component="ul" sx={{ gap: 2, listStyle: 'none', p: 0, m: 0 }}>
         {notes.map((note) => (
           <li key={note.id}>
-            <NoteCard
-              note={note}
-              onEdit={() => noteModals.openEdit(note)}
-              onDelete={() => noteModals.requestDelete(note)}
-            />
+            <NoteCard note={note} onClick={() => noteModals.openView(note)} />
           </li>
         ))}
       </Stack>

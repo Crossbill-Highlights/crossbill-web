@@ -16,7 +16,7 @@ export const NotesSection = ({ chapter, bookId }: NotesSectionProps) => {
   const { data, isLoading } = useGetNotesForBookApiV1BooksBookIdNotesGet(bookId, {
     chapter_id: chapter.id,
   });
-  const noteModals = useNoteModals(bookId);
+  const noteModals = useNoteModals({ syncToUrl: false });
 
   // NOTE: the orval axios mutator unwraps the response (`.then(({ data }) => data)`),
   // so the generated GET hook's `data` is the payload itself, not an AxiosResponse.
@@ -41,11 +41,7 @@ export const NotesSection = ({ chapter, bookId }: NotesSectionProps) => {
       <Stack component="ul" sx={{ gap: 2, listStyle: 'none', p: 0, m: 0 }}>
         {notes.map((note) => (
           <li key={note.id}>
-            <NoteCard
-              note={note}
-              onEdit={() => noteModals.openEdit(note)}
-              onDelete={() => noteModals.requestDelete(note)}
-            />
+            <NoteCard note={note} onClick={() => noteModals.openView(note)} />
           </li>
         ))}
       </Stack>
