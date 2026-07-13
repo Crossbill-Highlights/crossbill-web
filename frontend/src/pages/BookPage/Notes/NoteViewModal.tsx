@@ -12,10 +12,12 @@ import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { markdownStyles } from '@/theme/theme';
 import { Box, Button, Chip, Stack, Typography, useTheme } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 import { NoteEditorForm, type NoteEditorFormHandle } from './NoteEditorForm';
+import { NoteLinkTabs } from './components/NoteLinkTabs';
 import { NoteToolbar } from './components/NoteToolbar';
 import { NOTE_KIND_LABELS, type NoteKindValue } from './noteKinds';
 
@@ -39,6 +41,25 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
   const { book } = useBookPage();
   const { showSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  // Navigating to another route drops the `noteId` param, so the note modal
+  // closes naturally as the target entity's deep link opens its modal there.
+  const handleOpenHighlight = (highlightId: number) => {
+    void navigate({
+      to: '/book/$bookId/highlights',
+      params: { bookId: String(book.id) },
+      search: { highlightId },
+    });
+  };
+
+  const handleOpenChapter = (chapterId: number) => {
+    void navigate({
+      to: '/book/$bookId/structure',
+      params: { bookId: String(book.id) },
+      search: { chapterId },
+    });
+  };
 
   const [isEditing, setIsEditing] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -137,16 +158,8 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
                   <ReactMarkdown>{activeNote.body}</ReactMarkdown>
                 </Box>
               )}
-              {(chapters.length > 0 || highlightTags.length > 0 || highlights.length > 0) && (
+              {highlightTags.length > 0 && (
                 <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: 'wrap', gap: 0.5 }}>
-                  {chapters.map((chapter) => (
-                    <Chip
-                      key={`ch-${chapter.id}`}
-                      size="small"
-                      variant="outlined"
-                      label={chapter.name}
-                    />
-                  ))}
                   {highlightTags.map((tag) => (
                     <Chip
                       key={`tag-${tag.id}`}
@@ -155,13 +168,6 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
                       label={`#${tag.name}`}
                     />
                   ))}
-                  {highlights.length > 0 && (
-                    <Chip
-                      size="small"
-                      variant="outlined"
-                      label={`${highlights.length} highlight${highlights.length === 1 ? '' : 's'}`}
-                    />
-                  )}
                 </Stack>
               )}
             </Box>
@@ -171,6 +177,14 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
               onDelete={() => setDeleteConfirmOpen(true)}
               disabled={isDeleting}
             />
+            {(highlights.length > 0 || chapters.length > 0) && (
+              <NoteLinkTabs
+                highlights={highlights}
+                chapters={chapters}
+                onOpenHighlight={handleOpenHighlight}
+                onOpenChapter={handleOpenChapter}
+              />
+            )}
           </Stack>
         ) : isError ? (
           <Typography color="text.secondary">
