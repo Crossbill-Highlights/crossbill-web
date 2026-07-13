@@ -5,7 +5,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import models
-from src.domain.common.value_objects import BookId, ChapterId, NoteId, UserId
+from src.domain.common.value_objects import (
+    BookId,
+    ChapterId,
+    HighlightId,
+    HighlightTagId,
+    NoteId,
+    UserId,
+)
 from src.domain.notes.entities.note import Note, NoteKind
 from src.infrastructure.notes.repositories.note_repository import NoteRepository
 
@@ -142,6 +149,60 @@ class TestNoteRepositoryFind:
             BookId(test_book.id), UserId(test_user.id), chapter_id=ChapterId(99999)
         )
         assert len(matching) == 1
+        assert empty == []
+
+    async def test_find_by_book_filters_by_highlight(
+        self,
+        note_repository: NoteRepository,
+        test_user: models.User,
+        test_book: models.Book,
+        test_highlight: models.Highlight,
+    ) -> None:
+        note = Note.create(
+            user_id=UserId(test_user.id),
+            title="Stoicism",
+            book_ids=[test_book.id],
+            highlight_ids=[test_highlight.id],
+        )
+        saved = await note_repository.save(note)
+
+        matching = await note_repository.find_by_book(
+            BookId(test_book.id),
+            UserId(test_user.id),
+            highlight_id=HighlightId(test_highlight.id),
+        )
+        empty = await note_repository.find_by_book(
+            BookId(test_book.id), UserId(test_user.id), highlight_id=HighlightId(99999)
+        )
+        assert [n.id for n in matching] == [saved.id]
+        assert empty == []
+
+    async def test_find_by_book_filters_by_highlight_tag(
+        self,
+        note_repository: NoteRepository,
+        test_user: models.User,
+        test_book: models.Book,
+        test_highlight_tag: models.HighlightTag,
+    ) -> None:
+        note = Note.create(
+            user_id=UserId(test_user.id),
+            title="Stoicism",
+            book_ids=[test_book.id],
+            highlight_tag_ids=[test_highlight_tag.id],
+        )
+        saved = await note_repository.save(note)
+
+        matching = await note_repository.find_by_book(
+            BookId(test_book.id),
+            UserId(test_user.id),
+            highlight_tag_id=HighlightTagId(test_highlight_tag.id),
+        )
+        empty = await note_repository.find_by_book(
+            BookId(test_book.id),
+            UserId(test_user.id),
+            highlight_tag_id=HighlightTagId(99999),
+        )
+        assert [n.id for n in matching] == [saved.id]
         assert empty == []
 
 

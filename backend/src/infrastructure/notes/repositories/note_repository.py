@@ -12,6 +12,7 @@ from src.domain.common.value_objects import (
     UserId,
 )
 from src.domain.notes.entities.note import Note, NoteKind
+from src.domain.notes.exceptions import NoteNotFoundError
 from src.infrastructure.notes.mappers.note_mapper import NoteMapper
 from src.models import Book as BookORM
 from src.models import Chapter as ChapterORM
@@ -76,7 +77,7 @@ class NoteRepository:
         else:
             orm_model = await self.db.get(NoteORM, note.id.value)
             if not orm_model:
-                raise ValueError(f"Note {note.id.value} not found")
+                raise NoteNotFoundError(note.id.value)
             self.mapper.to_orm(note, orm_model)
             await self._sync_links(orm_model, note)
         note_id = orm_model.id
