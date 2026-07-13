@@ -6,9 +6,11 @@ from fastapi import APIRouter, Depends, Query
 from starlette import status
 
 from src.application.notes.use_cases.create_note_use_case import CreateNoteUseCase
+from src.application.notes.use_cases.delete_note_use_case import DeleteNoteUseCase
 from src.application.notes.use_cases.dtos import NoteWithLinkedEntities
 from src.application.notes.use_cases.get_note_use_case import GetNoteUseCase
 from src.application.notes.use_cases.get_notes_by_book_use_case import GetNotesByBookUseCase
+from src.application.notes.use_cases.update_note_use_case import UpdateNoteUseCase
 from src.core import container
 from src.domain.identity import User
 from src.domain.notes.entities.note import Note as NoteEntity
@@ -18,11 +20,14 @@ from src.infrastructure.notes.schemas import (
     Note,
     NoteCreateRequest,
     NoteCreateResponse,
+    NoteDeleteResponse,
     NoteKindLiteral,
     NoteLinkedChapter,
     NoteLinkedHighlight,
     NoteLinkedTag,
     NotesResponse,
+    NoteUpdateRequest,
+    NoteUpdateResponse,
     NoteWithLinks,
 )
 
@@ -134,3 +139,45 @@ async def get_notes_for_book(
         highlight_tag_id=highlight_tag_id,
     )
     return NotesResponse(notes=[note_with_links_to_schema(dto) for dto in dtos])
+
+
+@router.put(
+    "/notes/{note_id}",
+    response_model=NoteUpdateResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def update_note(
+    note_id: int,
+    request: NoteUpdateRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: UpdateNoteUseCase = Depends(inject_use_case(container.notes.update_note_use_case)),
+) -> NoteUpdateResponse:
+    note_entity = await use_case.update_note(
+        note_id=note_id,
+        user_id=current_user.id.value,
+        title=request.title,
+        body=request.body,
+        kind=request.kind,
+        chapter_ids=request.chapter_ids,
+        highlight_ids=request.highlight_ids,
+        highlight_tag_ids=request.highlight_tag_ids,
+    )
+    return NoteUpdateResponse(
+        success=True,
+        message="Note updated successfully",
+        note=note_entity_to_schema(note_entity),
+    )
+
+
+@router.delete(
+    "/notes/{note_id}",
+    response_model=NoteDeleteResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def delete_note(
+    note_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: DeleteNoteUseCase = Depends(inject_use_case(container.notes.delete_note_use_case)),
+) -> NoteDeleteResponse:
+    await use_case.delete_note(note_id=note_id, user_id=current_user.id.value)
+    return NoteDeleteResponse(success=True, message="Note deleted successfully")

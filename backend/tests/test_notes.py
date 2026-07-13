@@ -337,3 +337,107 @@ class TestGetNotesForBook:
     async def test_list_notes_book_not_found(self, client: AsyncClient) -> None:
         response = await client.get("/api/v1/books/99999/notes")
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+class TestUpdateNote:
+    """Test suite for PUT /notes/{note_id} endpoint."""
+
+    @pytest.fixture
+    async def note_id(
+        self, client: AsyncClient, test_book: models.Book, test_chapter: models.Chapter
+    ) -> int:
+        response = await client.post(
+            "/api/v1/notes",
+            json={
+                "title": "Raskolnikov",
+                "kind": "character",
+                "book_id": test_book.id,
+                "chapter_ids": [test_chapter.id],
+            },
+        )
+        return response.json()["note"]["id"]
+
+    async def test_update_note_fields_and_links(
+        self,
+        client: AsyncClient,
+        note_id: int,
+        test_highlight: models.Highlight,
+    ) -> None:
+        response = await client.put(
+            f"/api/v1/notes/{note_id}",
+            json={
+                "title": "Rodion Raskolnikov",
+                "body": "Updated body",
+                "kind": "character",
+                "chapter_ids": [],
+                "highlight_ids": [test_highlight.id],
+                "highlight_tag_ids": [],
+            },
+        )
+        assert response.status_code == status.HTTP_200_OK
+        note = response.json()["note"]
+        assert note["title"] == "Rodion Raskolnikov"
+        assert note["body"] == "Updated body"
+        assert note["chapter_ids"] == []
+        assert note["highlight_ids"] == [test_highlight.id]
+
+    async def test_update_note_not_found(self, client: AsyncClient) -> None:
+        response = await client.put(
+            "/api/v1/notes/99999",
+            json={"title": "X", "body": "", "kind": None},
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    async def test_update_note_invalid_chapter(
+        self, client: AsyncClient, note_id: int
+    ) -> None:
+        response = await client.put(
+            f"/api/v1/notes/{note_id}",
+            json={"title": "X", "body": "", "kind": None, "chapter_ids": [99999]},
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+class TestDeleteNote:
+    """Test suite for DELETE /notes/{note_id} endpoint."""
+
+    async def test_delete_note(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        test_book: models.Book,
+    ) -> None:
+        create = await client.post(
+            "/api/v1/notes", json={"title": "Doomed", "book_id": test_book.id}
+        )
+        note_id = create.json()["note"]["id"]
+
+        response = await client.delete(f"/api/v1/notes/{note_id}")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["success"] is True
+        result = await db_session.execute(select(models.Note).filter_by(id=note_id))
+        assert result.scalar_one_or_none() is None
+
+    async def test_delete_note_not_found(self, client: AsyncClient) -> None:
+        response = await client.delete("/api/v1/notes/99999")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    async def test_note_deleted_when_book_deleted(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        test_book: models.Book,
+    ) -> None:
+        create = await client.post(
+            "/api/v1/notes", json={"title": "Cascade", "book_id": test_book.id}
+        )
+        note_id = create.json()["note"]["id"]
+
+        response = await client.delete(f"/api/v1/books/{test_book.id}")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        # The note_books link row is gone; the note itself remains (user-scoped)
+        # but is no longer reachable via any book listing.
+        result = await db_session.execute(
+            select(models.note_books).filter_by(note_id=note_id)
+        )
+        assert result.first() is None
