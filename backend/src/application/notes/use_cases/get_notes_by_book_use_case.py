@@ -68,9 +68,7 @@ class GetNotesByBookUseCase:
         }
         highlights_by_id = {
             highlight.id.value: highlight
-            for highlight in await self.highlight_repository.find_by_book_id(
-                book_id_vo, user_id_vo
-            )
+            for highlight in await self.highlight_repository.find_by_book_id(book_id_vo, user_id_vo)
         }
         # Fetch the tags the notes actually reference by id. (find_by_book only
         # returns tags with active highlight associations, which would drop
@@ -86,9 +84,7 @@ class GetNotesByBookUseCase:
         return [
             NoteWithLinkedEntities(
                 note=note,
-                chapters=[
-                    chapters_by_id[cid] for cid in note.chapter_ids if cid in chapters_by_id
-                ],
+                chapters=[chapters_by_id[cid] for cid in note.chapter_ids if cid in chapters_by_id],
                 highlights=[
                     highlights_by_id[hid] for hid in note.highlight_ids if hid in highlights_by_id
                 ],

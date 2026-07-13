@@ -80,9 +80,7 @@ class HighlightRepository:
 
         return self.mapper.to_domain(orm_model)
 
-    async def find_by_ids(
-        self, highlight_ids: list[int], user_id: UserId
-    ) -> list[Highlight]:
+    async def find_by_ids(self, highlight_ids: list[int], user_id: UserId) -> list[Highlight]:
         """Load highlights by ids, scoped to the user."""
         if not highlight_ids:
             return []

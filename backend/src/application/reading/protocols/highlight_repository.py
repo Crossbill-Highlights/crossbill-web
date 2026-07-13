@@ -12,9 +12,7 @@ from src.domain.reading import Highlight, HighlightTag
 class HighlightRepositoryProtocol(Protocol):
     async def find_by_id(self, highlight_id: HighlightId, user_id: UserId) -> Highlight | None: ...
 
-    async def find_by_ids(
-        self, highlight_ids: list[int], user_id: UserId
-    ) -> list[Highlight]: ...
+    async def find_by_ids(self, highlight_ids: list[int], user_id: UserId) -> list[Highlight]: ...
 
     async def find_by_id_with_relations(
         self, highlight_id: HighlightId, user_id: UserId

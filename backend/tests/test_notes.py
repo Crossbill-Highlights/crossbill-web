@@ -455,18 +455,14 @@ class TestUpdateNote:
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    async def test_update_note_invalid_chapter(
-        self, client: AsyncClient, note_id: int
-    ) -> None:
+    async def test_update_note_invalid_chapter(self, client: AsyncClient, note_id: int) -> None:
         response = await client.put(
             f"/api/v1/notes/{note_id}",
             json={"title": "X", "body": "", "kind": None, "chapter_ids": [99999]},
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    async def test_update_note_whitespace_title(
-        self, client: AsyncClient, note_id: int
-    ) -> None:
+    async def test_update_note_whitespace_title(self, client: AsyncClient, note_id: int) -> None:
         response = await client.put(
             f"/api/v1/notes/{note_id}",
             json={"title": "   ", "body": "", "kind": None},
@@ -513,7 +509,5 @@ class TestDeleteNote:
         assert response.status_code == status.HTTP_204_NO_CONTENT
         # The note_books link row is gone; the note itself remains (user-scoped)
         # but is no longer reachable via any book listing.
-        result = await db_session.execute(
-            select(models.note_books).filter_by(note_id=note_id)
-        )
+        result = await db_session.execute(select(models.note_books).filter_by(note_id=note_id))
         assert result.first() is None
