@@ -21,6 +21,26 @@ import { NoteCard } from './NoteCard';
 import { NoteEditorDialog } from './NoteEditorDialog';
 import { NOTE_KIND_LABELS, NOTE_KINDS, type NoteKindValue } from './noteKinds';
 
+interface NoteKindFilterProps {
+  value: NoteKindValue | null;
+  onChange: (value: NoteKindValue | null) => void;
+}
+
+const NoteKindFilter = ({ value, onChange }: NoteKindFilterProps) => (
+  <ToggleButtonGroup
+    size="small"
+    exclusive
+    value={value}
+    onChange={(_, next: NoteKindValue | null) => onChange(next)}
+  >
+    {NOTE_KINDS.map((kind) => (
+      <ToggleButton key={kind} value={kind}>
+        {NOTE_KIND_LABELS[kind]}
+      </ToggleButton>
+    ))}
+  </ToggleButtonGroup>
+);
+
 export const NotesPage = () => {
   const { book } = useBookPage();
   const { showSnackbar } = useSnackbar();
@@ -65,18 +85,10 @@ export const NotesPage = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-        <ToggleButtonGroup
-          size="small"
-          exclusive
-          value={kind ?? null}
-          onChange={(_, value: NoteKindValue | null) => handleKindFilter(value)}
-        >
-          {NOTE_KINDS.map((value) => (
-            <ToggleButton key={value} value={value}>
-              {NOTE_KIND_LABELS[value]}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
+        <NoteKindFilter
+          value={(kind as NoteKindValue | undefined) ?? null}
+          onChange={handleKindFilter}
+        />
         <Box sx={{ flexGrow: 1 }} />
         <Button
           variant="contained"
