@@ -109,6 +109,13 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
       title={
         <CommonDialogTitle>
           {isEditing ? 'Edit note' : (activeNote?.title ?? 'Note')}
+          {activeNote?.kind && (
+            <Chip
+              size="small"
+              label={NOTE_KIND_LABELS[activeNote?.kind as NoteKindValue]}
+              sx={{ mb: 0.5, ml: 1 }}
+            />
+          )}
         </CommonDialogTitle>
       }
       footerActions={footerActions}
@@ -125,13 +132,6 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
         ) : activeNote ? (
           <Stack gap={2}>
             <Box>
-              {activeNote.kind && (
-                <Chip
-                  size="small"
-                  label={NOTE_KIND_LABELS[activeNote.kind as NoteKindValue]}
-                  sx={{ mb: 1 }}
-                />
-              )}
               {activeNote.body && (
                 <Box sx={markdownStyles(theme)}>
                   <ReactMarkdown>{activeNote.body}</ReactMarkdown>
