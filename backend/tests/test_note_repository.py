@@ -118,6 +118,23 @@ class TestNoteRepositoryFind:
         notes = await note_repository.find_by_book(BookId(test_book.id), UserId(test_user.id))
         assert [n.id for n in notes] == [saved_note.id]
 
+    async def test_find_by_book_orders_by_title_case_insensitive(
+        self,
+        note_repository: NoteRepository,
+        test_book: models.Book,
+        test_user: models.User,
+    ) -> None:
+        for title in ["banana", "Apple", "cherry"]:
+            await note_repository.save(
+                Note.create(
+                    user_id=UserId(test_user.id),
+                    title=title,
+                    book_ids=[test_book.id],
+                )
+            )
+        notes = await note_repository.find_by_book(BookId(test_book.id), UserId(test_user.id))
+        assert [n.title for n in notes] == ["Apple", "banana", "cherry"]
+
     async def test_find_by_book_filters_by_kind(
         self,
         note_repository: NoteRepository,

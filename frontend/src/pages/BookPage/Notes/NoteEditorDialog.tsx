@@ -1,4 +1,9 @@
-import type { NoteWithLinks } from '@/api/generated/model';
+import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
+import {
+  getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey,
+  useCreateHighlightTagApiV1BooksBookIdHighlightTagPost,
+} from '@/api/generated/highlights/highlights.ts';
+import type { HighlightTagInBook, NoteWithLinks } from '@/api/generated/model';
 import {
   getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey,
   useCreateNoteApiV1NotesPost,
@@ -7,6 +12,7 @@ import {
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
+import { HighlightTagInput } from '@/pages/BookPage/Highlights/HighlightViewModal/components/HighlightTagInput.tsx';
 import { Autocomplete, Box, Button, MenuItem, TextField } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -28,11 +34,6 @@ interface ChapterOption {
   name: string;
 }
 
-interface TagOption {
-  id: number;
-  name: string;
-}
-
 export const NoteEditorDialog = ({
   open,
   onClose,
@@ -49,16 +50,12 @@ export const NoteEditorDialog = ({
     id: chapter.id,
     name: chapter.name,
   }));
-  const tagOptions: TagOption[] = book.highlight_tags.map((tag) => ({
-    id: tag.id,
-    name: tag.name,
-  }));
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [kind, setKind] = useState<NoteKindValue | ''>('');
   const [chapters, setChapters] = useState<ChapterOption[]>([]);
-  const [tags, setTags] = useState<TagOption[]>([]);
+  const [tags, setTags] = useState<HighlightTagInBook[]>([]);
   const [highlightIds, setHighlightIds] = useState<number[]>([]);
 
   useEffect(() => {
@@ -68,7 +65,7 @@ export const NoteEditorDialog = ({
       setBody(note.body);
       setKind((note.kind as NoteKindValue | null) ?? '');
       setChapters(chapterOptions.filter((option) => note.chapter_ids.includes(option.id)));
-      setTags(tagOptions.filter((option) => note.highlight_tag_ids.includes(option.id)));
+      setTags(book.highlight_tags.filter((tag) => note.highlight_tag_ids.includes(tag.id)));
       setHighlightIds(note.highlight_ids);
     } else {
       setTitle('');
@@ -85,6 +82,57 @@ export const NoteEditorDialog = ({
     void queryClient.invalidateQueries({
       queryKey: getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey(book.id),
     });
+  };
+
+  const createTagMutation = useCreateHighlightTagApiV1BooksBookIdHighlightTagPost({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({
+          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(book.id),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey(book.id),
+        });
+      },
+      onError: (error) => {
+        console.error('Failed to create tag:', error);
+        showSnackbar('Failed to create tag. Please try again.', 'error');
+      },
+    },
+  });
+
+  /**
+   * Resolve the tag field's value into concrete tags. Typed-in strings that
+   * don't match an existing tag are created immediately (like the highlight
+   * tag field), so the tag exists book-wide; the note links to it on save.
+   */
+  const handleTagsChange = async (newValue: (HighlightTagInBook | string)[]) => {
+    const resolved: HighlightTagInBook[] = [];
+    for (const item of newValue) {
+      if (typeof item !== 'string') {
+        if (!resolved.some((tag) => tag.id === item.id)) {
+          resolved.push(item);
+        }
+        continue;
+      }
+      const name = item.trim();
+      if (!name) continue;
+      const existing =
+        book.highlight_tags.find((tag) => tag.name.toLowerCase() === name.toLowerCase()) ??
+        resolved.find((tag) => tag.name.toLowerCase() === name.toLowerCase());
+      if (existing) {
+        if (!resolved.some((tag) => tag.id === existing.id)) {
+          resolved.push(existing);
+        }
+        continue;
+      }
+      const created = await createTagMutation.mutateAsync({
+        bookId: book.id,
+        data: { name },
+      });
+      resolved.push({ id: created.id, name: created.name, tag_group_id: created.tag_group_id });
+    }
+    setTags(resolved);
   };
 
   const createMutation = useCreateNoteApiV1NotesPost({
@@ -122,7 +170,7 @@ export const NoteEditorDialog = ({
       kind: kind === '' ? null : kind,
       chapter_ids: chapters.map((option) => option.id),
       highlight_ids: highlightIds,
-      highlight_tag_ids: tags.map((option) => option.id),
+      highlight_tag_ids: tags.map((tag) => tag.id),
     };
     if (note) {
       await updateMutation.mutateAsync({ noteId: note.id, data: payload });
@@ -188,14 +236,11 @@ export const NoteEditorDialog = ({
           onChange={(_, value) => setChapters(value)}
           renderInput={(params) => <TextField {...params} label="Chapters" />}
         />
-        <Autocomplete
-          multiple
-          options={tagOptions}
-          getOptionLabel={(option) => option.name}
-          isOptionEqualToValue={(option, value) => option.id === value.id}
+        <HighlightTagInput
           value={tags}
-          onChange={(_, value) => setTags(value)}
-          renderInput={(params) => <TextField {...params} label="Tags" />}
+          onChange={handleTagsChange}
+          availableTags={book.highlight_tags}
+          isProcessing={createTagMutation.isPending}
         />
       </Box>
     </CommonDialog>

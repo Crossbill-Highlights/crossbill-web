@@ -1,6 +1,6 @@
 """Repository for Note domain entities."""
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.common.value_objects import (
@@ -52,7 +52,7 @@ class NoteRepository:
                 NoteORM.user_id == user_id.value,
                 NoteORM.books.any(BookORM.id == book_id.value),
             )
-            .order_by(NoteORM.created_at.desc())
+            .order_by(func.lower(NoteORM.title))
         )
         if kind is not None:
             stmt = stmt.where(NoteORM.kind == kind.value)
