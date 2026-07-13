@@ -1,8 +1,3 @@
-import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
-import {
-  getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey,
-  useCreateHighlightTagApiV1BooksBookIdHighlightTagPost,
-} from '@/api/generated/highlights/highlights.ts';
 import type { HighlightTagInBook, NoteWithLinks } from '@/api/generated/model';
 import {
   getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey,
@@ -18,6 +13,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
+import { useNoteTagField } from './hooks/useNoteTagField';
 import { NOTE_KIND_LABELS, NOTE_KINDS, type NoteKindValue } from './noteKinds';
 
 interface NoteEditorDialogProps {
@@ -92,56 +88,7 @@ export const NoteEditorDialog = ({
     });
   };
 
-  const createTagMutation = useCreateHighlightTagApiV1BooksBookIdHighlightTagPost({
-    mutation: {
-      onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(book.id),
-        });
-        void queryClient.invalidateQueries({
-          queryKey: getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey(book.id),
-        });
-      },
-      onError: (error) => {
-        console.error('Failed to create tag:', error);
-        showSnackbar('Failed to create tag. Please try again.', 'error');
-      },
-    },
-  });
-
-  /**
-   * Resolve the tag field's value into concrete tags. Typed-in strings that
-   * don't match an existing tag are created immediately (like the highlight
-   * tag field), so the tag exists book-wide; the note links to it on save.
-   */
-  const resolveTags = async (
-    newValue: (HighlightTagInBook | string)[],
-    onChange: (tags: HighlightTagInBook[]) => void
-  ) => {
-    const resolved: HighlightTagInBook[] = [];
-    for (const item of newValue) {
-      if (typeof item !== 'string') {
-        if (!resolved.some((tag) => tag.id === item.id)) {
-          resolved.push(item);
-        }
-        continue;
-      }
-      const name = item.trim();
-      if (!name) continue;
-      const existing =
-        book.highlight_tags.find((tag) => tag.name.toLowerCase() === name.toLowerCase()) ??
-        resolved.find((tag) => tag.name.toLowerCase() === name.toLowerCase());
-      if (existing) {
-        if (!resolved.some((tag) => tag.id === existing.id)) {
-          resolved.push(existing);
-        }
-        continue;
-      }
-      const created = await createTagMutation.mutateAsync({ bookId: book.id, data: { name } });
-      resolved.push({ id: created.id, name: created.name, tag_group_id: created.tag_group_id });
-    }
-    onChange(resolved);
-  };
+  const { resolveTags, isCreating: isCreatingTag } = useNoteTagField(book.id);
 
   const createMutation = useCreateNoteApiV1NotesPost({
     mutation: {
@@ -253,9 +200,11 @@ export const NoteEditorDialog = ({
           render={({ field }) => (
             <HighlightTagInput
               value={field.value}
-              onChange={(newValue) => resolveTags(newValue, field.onChange)}
+              onChange={(newValue) =>
+                resolveTags(newValue, book.highlight_tags).then(field.onChange)
+              }
               availableTags={book.highlight_tags}
-              isProcessing={createTagMutation.isPending}
+              isProcessing={isCreatingTag}
             />
           )}
         />
