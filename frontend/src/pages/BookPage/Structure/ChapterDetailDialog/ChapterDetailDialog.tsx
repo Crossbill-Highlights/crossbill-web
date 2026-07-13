@@ -14,6 +14,7 @@ import {
   useModalSwipeNavigation,
 } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { ProgressBar } from '@/pages/BookPage/Highlights/HighlightViewModal/components/ProgressBar.tsx';
+import { NoteEditorDialog } from '@/pages/BookPage/Notes/NoteEditorDialog';
 import { Box, Button, Tab, Tabs } from '@mui/material';
 import { sumBy } from 'lodash';
 import { useMemo, useState } from 'react';
@@ -64,6 +65,7 @@ export const ChapterDetailDialog = ({
   const [quizOpen, setQuizOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(TAB_CHAPTER_REVIEW);
+  const [chatNoteBody, setChatNoteBody] = useState<string | null>(null);
 
   const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext } =
     useModalHorizontalNavigation({
@@ -195,6 +197,13 @@ export const ChapterDetailDialog = ({
         chapterId={chapter.id}
         chapterName={chapter.name}
         variant={CHAT_VARIANT}
+        onSaveNote={(content) => setChatNoteBody(content)}
+      />
+      <NoteEditorDialog
+        open={chatNoteBody !== null}
+        onClose={() => setChatNoteBody(null)}
+        initialBody={chatNoteBody ?? ''}
+        initialChapterIds={[chapter.id]}
       />
     </>
   );

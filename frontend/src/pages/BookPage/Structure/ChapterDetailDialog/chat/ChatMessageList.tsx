@@ -2,6 +2,8 @@ import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 
+import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip.tsx';
+import { NoteAddIcon } from '@/theme/Icons.tsx';
 import { markdownStyles } from '@/theme/theme';
 
 export interface ChatMessage {
@@ -13,9 +15,15 @@ interface ChatMessageListProps {
   messages: ChatMessage[];
   isLoading: boolean;
   error: string | null;
+  onSaveNote?: (content: string) => void;
 }
 
-export const ChatMessageList = ({ messages, isLoading, error }: ChatMessageListProps) => {
+export const ChatMessageList = ({
+  messages,
+  isLoading,
+  error,
+  onSaveNote,
+}: ChatMessageListProps) => {
   const theme = useTheme();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -49,9 +57,21 @@ export const ChatMessageList = ({ messages, isLoading, error }: ChatMessageListP
           }}
         >
           {msg.role === 'assistant' ? (
-            <Box sx={markdownStyles(theme)}>
-              <ReactMarkdown>{msg.content}</ReactMarkdown>
-            </Box>
+            <>
+              <Box sx={markdownStyles(theme)}>
+                <ReactMarkdown>{msg.content}</ReactMarkdown>
+              </Box>
+              {onSaveNote && (
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
+                  <IconButtonWithTooltip
+                    title="Save as note"
+                    ariaLabel="Save as note"
+                    onClick={() => onSaveNote(msg.content)}
+                    icon={<NoteAddIcon fontSize="small" />}
+                  />
+                </Box>
+              )}
+            </>
           ) : (
             <Typography variant="body1">{msg.content}</Typography>
           )}
