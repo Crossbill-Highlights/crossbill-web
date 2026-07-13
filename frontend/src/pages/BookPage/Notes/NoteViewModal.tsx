@@ -1,3 +1,4 @@
+import type { Highlight } from '@/api/generated/model';
 import {
   getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey,
   useDeleteNoteApiV1NotesNoteIdDelete,
@@ -13,7 +14,7 @@ import { markdownStyles } from '@/theme/theme';
 import { Box, Button, Chip, Stack, Typography, useTheme } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 import { NoteEditorForm, type NoteEditorFormHandle } from './NoteEditorForm';
@@ -98,7 +99,20 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
 
   const chapters = activeNote?.chapters ?? [];
   const highlightTags = activeNote?.highlight_tags ?? [];
-  const highlights = activeNote?.highlights ?? [];
+  // The note detail returns lightweight highlight summaries; resolve them to the
+  // full Highlight objects already loaded on the book so we can render HighlightCard.
+  const highlights = useMemo<Highlight[]>(() => {
+    if (!activeNote?.highlights?.length) return [];
+    const byId = new Map<number, Highlight>();
+    for (const chapter of book.chapters) {
+      for (const highlight of chapter.highlights) {
+        byId.set(highlight.id, highlight);
+      }
+    }
+    return activeNote.highlights
+      .map((summary) => byId.get(summary.id))
+      .filter((highlight): highlight is Highlight => highlight !== undefined);
+  }, [book.chapters, activeNote]);
 
   const footerActions = isEditing ? (
     <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
