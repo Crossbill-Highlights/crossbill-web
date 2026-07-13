@@ -1,6 +1,5 @@
-import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
-
 import { NoteEditorDialog } from './NoteEditorDialog';
+import { NoteViewModal } from './NoteViewModal';
 import type { NoteModalsController } from './hooks/useNoteModals';
 
 interface NoteModalsProps {
@@ -10,25 +9,24 @@ interface NoteModalsProps {
 }
 
 /**
- * Renders the note editor and delete-confirmation dialogs for a
- * `useNoteModals` controller, so each surface (notes tab, chapter section, ...)
- * only wires up the triggers, not the dialogs and delete handlers.
+ * Renders the note create editor and the note detail modal for a `useNoteModals`
+ * controller, so each surface (notes tab, chapter section, ...) only wires up the
+ * triggers, not the dialogs. Editing/deleting an existing note lives inside
+ * `NoteViewModal`.
  */
 export const NoteModals = ({ controller, initialChapterIds }: NoteModalsProps) => (
   <>
     <NoteEditorDialog
       open={controller.editorOpen}
       onClose={controller.closeEditor}
-      note={controller.editingNote}
       initialChapterIds={initialChapterIds}
     />
-    <ConfirmationDialog
-      open={controller.deletingNote !== null}
-      title="Delete note"
-      message={`Delete note "${controller.deletingNote?.title ?? ''}"? This cannot be undone.`}
-      onConfirm={controller.confirmDelete}
-      onClose={controller.cancelDelete}
-      isLoading={controller.isDeleting}
-    />
+    {controller.viewingNote && (
+      <NoteViewModal
+        key={controller.viewingNote.id}
+        note={controller.viewingNote}
+        onClose={controller.closeView}
+      />
+    )}
   </>
 );
