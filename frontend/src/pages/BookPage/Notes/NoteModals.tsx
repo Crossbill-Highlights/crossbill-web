@@ -21,10 +21,10 @@ export const NoteModals = ({ controller, initialChapterIds }: NoteModalsProps) =
       onClose={controller.closeEditor}
       initialChapterIds={initialChapterIds}
     />
-    {controller.viewingNote && (
+    {controller.viewingNoteId !== null && (
       <NoteViewModal
-        key={controller.viewingNote.id}
-        note={controller.viewingNote}
+        key={controller.viewingNoteId}
+        noteId={controller.viewingNoteId}
         onClose={controller.closeView}
       />
     )}

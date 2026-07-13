@@ -1,16 +1,16 @@
-import type { NoteWithLinks } from '@/api/generated/model';
 import {
   getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey,
   useDeleteNoteApiV1NotesNoteIdDelete,
   useGetNoteApiV1NotesNoteIdGet,
 } from '@/api/generated/notes/notes.ts';
+import { Spinner } from '@/components/animations/Spinner.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { markdownStyles } from '@/theme/theme';
-import { Box, Button, Chip, Stack, useTheme } from '@mui/material';
+import { Box, Button, Chip, Stack, Typography, useTheme } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -20,8 +20,8 @@ import { NoteToolbar } from './components/NoteToolbar';
 import { NOTE_KIND_LABELS, type NoteKindValue } from './noteKinds';
 
 interface NoteViewModalProps {
-  /** The list item to display; the detail fetch refreshes its linked summaries. */
-  note: NoteWithLinks;
+  /** Note to display; its full detail (with linked summaries) is fetched by id. */
+  noteId: number;
   onClose: () => void;
 }
 
@@ -30,10 +30,11 @@ interface NoteViewModalProps {
  * shows the full note (content first) with an action toolbar underneath;
  * clicking Edit swaps the same dialog to the note editor form.
  *
- * Mounted only while a note is open (keyed by note id), mirroring the highlight
- * modal — so transient state resets naturally between notes.
+ * Opened by note id (deep-linkable via the `noteId` URL param). Mounted only
+ * while a note is open (keyed by id), mirroring the highlight modal — so
+ * transient state resets naturally between notes.
  */
-export const NoteViewModal = ({ note, onClose }: NoteViewModalProps) => {
+export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
   const theme = useTheme();
   const { book } = useBookPage();
   const { showSnackbar } = useSnackbar();
@@ -44,8 +45,7 @@ export const NoteViewModal = ({ note, onClose }: NoteViewModalProps) => {
   const formRef = useRef<NoteEditorFormHandle>(null);
   const [formStatus, setFormStatus] = useState({ isSaving: false, canSave: false });
 
-  const { data: detail } = useGetNoteApiV1NotesNoteIdGet(note.id);
-  const activeNote = detail ?? note;
+  const { data: activeNote, isLoading, isError } = useGetNoteApiV1NotesNoteIdGet(noteId);
 
   const deleteMutation = useDeleteNoteApiV1NotesNoteIdDelete({
     mutation: {
@@ -64,19 +64,20 @@ export const NoteViewModal = ({ note, onClose }: NoteViewModalProps) => {
   });
 
   const handleCopy = async () => {
+    if (!activeNote) return;
     await navigator.clipboard.writeText(activeNote.body);
     showSnackbar('Note copied to clipboard.', 'success');
   };
 
   const handleConfirmDelete = () => {
-    void deleteMutation.mutateAsync({ noteId: activeNote.id });
+    void deleteMutation.mutateAsync({ noteId });
   };
 
-  const isLoading = deleteMutation.isPending;
+  const isDeleting = deleteMutation.isPending;
 
-  const chapters = activeNote.chapters ?? [];
-  const highlightTags = activeNote.highlight_tags ?? [];
-  const highlights = activeNote.highlights ?? [];
+  const chapters = activeNote?.chapters ?? [];
+  const highlightTags = activeNote?.highlight_tags ?? [];
+  const highlights = activeNote?.highlights ?? [];
 
   const footerActions = isEditing ? (
     <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
@@ -93,7 +94,7 @@ export const NoteViewModal = ({ note, onClose }: NoteViewModalProps) => {
     </Box>
   ) : (
     <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
-      <Button onClick={onClose} disabled={isLoading}>
+      <Button onClick={onClose} disabled={isDeleting}>
         Close
       </Button>
     </Box>
@@ -104,12 +105,16 @@ export const NoteViewModal = ({ note, onClose }: NoteViewModalProps) => {
       open
       onClose={onClose}
       maxWidth="md"
-      isLoading={isEditing ? formStatus.isSaving : isLoading}
-      title={<CommonDialogTitle>{isEditing ? 'Edit note' : activeNote.title}</CommonDialogTitle>}
+      isLoading={isEditing ? formStatus.isSaving : isDeleting}
+      title={
+        <CommonDialogTitle>
+          {isEditing ? 'Edit note' : (activeNote?.title ?? 'Note')}
+        </CommonDialogTitle>
+      }
       footerActions={footerActions}
     >
       <Box mt={2} mb={2}>
-        {isEditing ? (
+        {isEditing && activeNote ? (
           <NoteEditorForm
             ref={formRef}
             open={isEditing}
@@ -117,7 +122,7 @@ export const NoteViewModal = ({ note, onClose }: NoteViewModalProps) => {
             onSaved={() => setIsEditing(false)}
             onStatusChange={setFormStatus}
           />
-        ) : (
+        ) : activeNote ? (
           <Stack gap={2}>
             <Box>
               {activeNote.kind && (
@@ -164,21 +169,27 @@ export const NoteViewModal = ({ note, onClose }: NoteViewModalProps) => {
               onEdit={() => setIsEditing(true)}
               onCopy={() => void handleCopy()}
               onDelete={() => setDeleteConfirmOpen(true)}
-              disabled={isLoading}
+              disabled={isDeleting}
             />
           </Stack>
+        ) : isError ? (
+          <Typography color="text.secondary">
+            This note could not be found. It may have been deleted.
+          </Typography>
+        ) : (
+          isLoading && <Spinner />
         )}
       </Box>
 
       <ConfirmationDialog
         open={deleteConfirmOpen}
         title="Delete note"
-        message={`Delete note "${activeNote.title}"? This cannot be undone.`}
+        message={`Delete note "${activeNote?.title ?? ''}"? This cannot be undone.`}
         confirmText="Delete"
         confirmColor="error"
         onConfirm={handleConfirmDelete}
         onClose={() => setDeleteConfirmOpen(false)}
-        isLoading={isLoading}
+        isLoading={isDeleting}
       />
     </CommonDialog>
   );

@@ -16,7 +16,7 @@ export const NotesSection = ({ chapter, bookId }: NotesSectionProps) => {
   const { data, isLoading } = useGetNotesForBookApiV1BooksBookIdNotesGet(bookId, {
     chapter_id: chapter.id,
   });
-  const noteModals = useNoteModals();
+  const noteModals = useNoteModals({ syncToUrl: false });
 
   // NOTE: the orval axios mutator unwraps the response (`.then(({ data }) => data)`),
   // so the generated GET hook's `data` is the payload itself, not an AxiosResponse.
