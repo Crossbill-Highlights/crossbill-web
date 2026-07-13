@@ -48,6 +48,7 @@ from src.infrastructure.learning.routers import book_flashcards as learning_book
 from src.infrastructure.library.routers import books as library_books
 from src.infrastructure.library.routers import covers as library_covers
 from src.infrastructure.library.routers import ereader as library_ereader
+from src.infrastructure.notes.routers import notes as notes_router
 from src.infrastructure.reading.routers import (
     bookmarks,
     chapter_content,
@@ -402,6 +403,9 @@ app.include_router(users.router, prefix=settings.API_V1_PREFIX)
 
 # Jobs
 app.include_router(job_batches.router, prefix=settings.API_V1_PREFIX)
+
+# Notes
+app.include_router(notes_router.router, prefix=settings.API_V1_PREFIX)
 
 # Common
 app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)

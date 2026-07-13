@@ -6,6 +6,7 @@ from src.containers.identity import IdentityContainer
 from src.containers.jobs import JobsContainer
 from src.containers.learning import LearningContainer
 from src.containers.library import LibraryContainer
+from src.containers.notes import NotesContainer
 from src.containers.reading import ReadingContainer
 from src.containers.shared import SharedContainer
 
@@ -78,6 +79,15 @@ class RootContainer(containers.DeclarativeContainer):
         ebook_text_extraction_service=shared.ebook_text_extraction_service,
         ai_service=shared.ai_service,
         ai_chat_session_repository=shared.ai_chat_session_repository,
+    )
+
+    notes = providers.Container(
+        NotesContainer,
+        note_repository=shared.note_repository,
+        book_repository=shared.book_repository,
+        chapter_repository=shared.chapter_repository,
+        highlight_repository=shared.highlight_repository,
+        highlight_tag_repository=shared.highlight_tag_repository,
     )
 
     job_queue_service = providers.Dependency()
