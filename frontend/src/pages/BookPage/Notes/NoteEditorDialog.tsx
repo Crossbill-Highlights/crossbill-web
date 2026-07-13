@@ -15,7 +15,8 @@ import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { HighlightTagInput } from '@/pages/BookPage/Highlights/HighlightViewModal/components/HighlightTagInput.tsx';
 import { Autocomplete, Box, Button, MenuItem, TextField } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 
 import { NOTE_KIND_LABELS, NOTE_KINDS, type NoteKindValue } from './noteKinds';
 
@@ -34,6 +35,16 @@ interface ChapterOption {
   name: string;
 }
 
+interface NoteFormValues {
+  title: string;
+  body: string;
+  kind: NoteKindValue | '';
+  chapters: ChapterOption[];
+  tags: HighlightTagInBook[];
+}
+
+const EMPTY_FORM: NoteFormValues = { title: '', body: '', kind: '', chapters: [], tags: [] };
+
 export const NoteEditorDialog = ({
   open,
   onClose,
@@ -51,29 +62,26 @@ export const NoteEditorDialog = ({
     name: chapter.name,
   }));
 
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [kind, setKind] = useState<NoteKindValue | ''>('');
-  const [chapters, setChapters] = useState<ChapterOption[]>([]);
-  const [tags, setTags] = useState<HighlightTagInBook[]>([]);
-  const [highlightIds, setHighlightIds] = useState<number[]>([]);
+  const { control, handleSubmit, reset, watch } = useForm<NoteFormValues>({
+    defaultValues: EMPTY_FORM,
+  });
 
   useEffect(() => {
     if (!open) return;
     if (note) {
-      setTitle(note.title);
-      setBody(note.body);
-      setKind((note.kind as NoteKindValue | null) ?? '');
-      setChapters(chapterOptions.filter((option) => note.chapter_ids.includes(option.id)));
-      setTags(book.highlight_tags.filter((tag) => note.highlight_tag_ids.includes(tag.id)));
-      setHighlightIds(note.highlight_ids);
+      reset({
+        title: note.title,
+        body: note.body,
+        kind: (note.kind as NoteKindValue | null) ?? '',
+        chapters: chapterOptions.filter((option) => note.chapter_ids.includes(option.id)),
+        tags: book.highlight_tags.filter((tag) => note.highlight_tag_ids.includes(tag.id)),
+      });
     } else {
-      setTitle('');
-      setBody(initialBody ?? '');
-      setKind('');
-      setChapters(chapterOptions.filter((option) => (initialChapterIds ?? []).includes(option.id)));
-      setTags([]);
-      setHighlightIds(initialHighlightIds ?? []);
+      reset({
+        ...EMPTY_FORM,
+        body: initialBody ?? '',
+        chapters: chapterOptions.filter((option) => (initialChapterIds ?? []).includes(option.id)),
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, note]);
@@ -106,7 +114,10 @@ export const NoteEditorDialog = ({
    * don't match an existing tag are created immediately (like the highlight
    * tag field), so the tag exists book-wide; the note links to it on save.
    */
-  const handleTagsChange = async (newValue: (HighlightTagInBook | string)[]) => {
+  const resolveTags = async (
+    newValue: (HighlightTagInBook | string)[],
+    onChange: (tags: HighlightTagInBook[]) => void
+  ) => {
     const resolved: HighlightTagInBook[] = [];
     for (const item of newValue) {
       if (typeof item !== 'string') {
@@ -126,13 +137,10 @@ export const NoteEditorDialog = ({
         }
         continue;
       }
-      const created = await createTagMutation.mutateAsync({
-        bookId: book.id,
-        data: { name },
-      });
+      const created = await createTagMutation.mutateAsync({ bookId: book.id, data: { name } });
       resolved.push({ id: created.id, name: created.name, tag_group_id: created.tag_group_id });
     }
-    setTags(resolved);
+    onChange(resolved);
   };
 
   const createMutation = useCreateNoteApiV1NotesPost({
@@ -161,16 +169,16 @@ export const NoteEditorDialog = ({
   });
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
-  const canSave = title.trim().length > 0 && !isSaving;
+  const canSave = watch('title').trim().length > 0 && !isSaving;
 
-  const handleSave = async () => {
+  const onSubmit = async (values: NoteFormValues) => {
     const payload = {
-      title: title.trim(),
-      body,
-      kind: kind === '' ? null : kind,
-      chapter_ids: chapters.map((option) => option.id),
-      highlight_ids: highlightIds,
-      highlight_tag_ids: tags.map((tag) => tag.id),
+      title: values.title.trim(),
+      body: values.body,
+      kind: values.kind === '' ? null : values.kind,
+      chapter_ids: values.chapters.map((option) => option.id),
+      highlight_ids: note?.highlight_ids ?? initialHighlightIds ?? [],
+      highlight_tag_ids: values.tags.map((tag) => tag.id),
     };
     if (note) {
       await updateMutation.mutateAsync({ noteId: note.id, data: payload });
@@ -191,56 +199,65 @@ export const NoteEditorDialog = ({
           <Button onClick={onClose} disabled={isSaving}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={() => void handleSave()} disabled={!canSave}>
+          <Button variant="contained" onClick={handleSubmit(onSubmit)} disabled={!canSave}>
             {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </Box>
       }
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-        <TextField
-          label="Title"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          fullWidth
-          autoFocus
+        <Controller
+          name="title"
+          control={control}
+          render={({ field }) => <TextField {...field} label="Title" fullWidth autoFocus />}
         />
-        <TextField
-          select
-          label="Kind"
-          value={kind}
-          onChange={(event) => setKind(event.target.value as NoteKindValue | '')}
-          fullWidth
-        >
-          <MenuItem value="">None</MenuItem>
-          {NOTE_KINDS.map((value) => (
-            <MenuItem key={value} value={value}>
-              {NOTE_KIND_LABELS[value]}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          label="Note (markdown)"
-          value={body}
-          onChange={(event) => setBody(event.target.value)}
-          fullWidth
-          multiline
-          minRows={5}
+        <Controller
+          name="kind"
+          control={control}
+          render={({ field }) => (
+            <TextField {...field} select label="Kind" fullWidth>
+              <MenuItem value="">None</MenuItem>
+              {NOTE_KINDS.map((value) => (
+                <MenuItem key={value} value={value}>
+                  {NOTE_KIND_LABELS[value]}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
         />
-        <Autocomplete
-          multiple
-          options={chapterOptions}
-          getOptionLabel={(option) => option.name}
-          isOptionEqualToValue={(option, value) => option.id === value.id}
-          value={chapters}
-          onChange={(_, value) => setChapters(value)}
-          renderInput={(params) => <TextField {...params} label="Chapters" />}
+        <Controller
+          name="body"
+          control={control}
+          render={({ field }) => (
+            <TextField {...field} label="Note (markdown)" fullWidth multiline minRows={5} />
+          )}
         />
-        <HighlightTagInput
-          value={tags}
-          onChange={handleTagsChange}
-          availableTags={book.highlight_tags}
-          isProcessing={createTagMutation.isPending}
+        <Controller
+          name="chapters"
+          control={control}
+          render={({ field }) => (
+            <Autocomplete
+              multiple
+              options={chapterOptions}
+              getOptionLabel={(option) => option.name}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              value={field.value}
+              onChange={(_, value) => field.onChange(value)}
+              renderInput={(params) => <TextField {...params} label="Chapters" />}
+            />
+          )}
+        />
+        <Controller
+          name="tags"
+          control={control}
+          render={({ field }) => (
+            <HighlightTagInput
+              value={field.value}
+              onChange={(newValue) => resolveTags(newValue, field.onChange)}
+              availableTags={book.highlight_tags}
+              isProcessing={createTagMutation.isPending}
+            />
+          )}
         />
       </Box>
     </CommonDialog>
