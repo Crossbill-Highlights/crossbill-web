@@ -2,6 +2,7 @@ import {
   ChapterListIcon,
   FlashcardsIcon,
   HighlightsIcon,
+  NotesIcon,
   ReadingSessionIcon,
 } from '@/theme/Icons.tsx';
 import type { SvgIconComponent } from '@mui/icons-material';
@@ -10,6 +11,7 @@ export type BookPageRoute =
   | '/book/$bookId/structure'
   | '/book/$bookId/highlights'
   | '/book/$bookId/flashcards'
+  | '/book/$bookId/notes'
   | '/book/$bookId/sessions';
 
 export interface BookPageRouteConfig {
@@ -37,6 +39,12 @@ export const BOOK_PAGE_ROUTES: BookPageRouteConfig[] = [
     segment: 'flashcards',
     label: 'Flashcards',
     icon: FlashcardsIcon,
+  },
+  {
+    to: '/book/$bookId/notes',
+    segment: 'notes',
+    label: 'Notes',
+    icon: NotesIcon,
   },
   {
     to: '/book/$bookId/sessions',
