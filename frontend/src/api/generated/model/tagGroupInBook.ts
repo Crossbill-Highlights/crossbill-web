@@ -6,10 +6,9 @@
  */
 
 /**
- * Minimal highlight tag schema for book responses.
+ * Minimal tag group schema for book responses.
  */
-export interface HighlightTagInBook {
+export interface TagGroupInBook {
   id: number;
   name: string;
-  tag_group_id?: number | null;
 }

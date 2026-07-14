@@ -6,9 +6,9 @@
  */
 
 /**
- * Schema for creating or updating a highlight tag group.
+ * Schema for creating or updating a tag group.
  */
-export interface HighlightTagGroupCreateRequest {
+export interface TagGroupCreateRequest {
   /** ID of existing tag group to update (optional) */
   id?: number | null;
   /** ID of the book this tag group belongs to */

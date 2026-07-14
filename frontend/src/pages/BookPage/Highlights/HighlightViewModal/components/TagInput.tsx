@@ -1,14 +1,14 @@
-import { HighlightTagInBook } from '@/api/generated/model';
+import { TagInBook } from '@/api/generated/model';
 import { BaseTagInputProps, TagAutocomplete } from '@/components/inputs/TagInput';
 
-export interface HighlightTagInputProps extends BaseTagInputProps {
-  value: HighlightTagInBook[];
-  onChange: (newTags: (HighlightTagInBook | string)[]) => void | Promise<void>;
-  availableTags?: HighlightTagInBook[];
+export interface TagInputProps extends BaseTagInputProps {
+  value: TagInBook[];
+  onChange: (newTags: (TagInBook | string)[]) => void | Promise<void>;
+  availableTags?: TagInBook[];
   isProcessing?: boolean;
 }
 
-export const HighlightTagInput = ({
+export const TagInput = ({
   value,
   onChange,
   label = 'Tags',
@@ -18,7 +18,7 @@ export const HighlightTagInput = ({
   availableTags = [],
   isProcessing = false,
   chipAriaDescription = 'Selected tag, click to remove',
-}: HighlightTagInputProps) => {
+}: TagInputProps) => {
   const isDisabled = disabled || isProcessing;
 
   return (

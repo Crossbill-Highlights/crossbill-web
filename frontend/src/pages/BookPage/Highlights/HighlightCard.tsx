@@ -81,7 +81,7 @@ const Footer = ({ highlight, bookmark }: FooterProps) => {
       </Box>
 
       <Box>
-        <TagChipList tags={highlight.highlight_tags} />
+        <TagChipList tags={highlight.tags} />
       </Box>
     </Box>
   );

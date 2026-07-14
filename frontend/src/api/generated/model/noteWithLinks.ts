@@ -20,10 +20,10 @@ export interface NoteWithLinks {
   book_ids: number[];
   chapter_ids: number[];
   highlight_ids: number[];
-  highlight_tag_ids: number[];
+  tag_ids: number[];
   created_at: string;
   updated_at: string;
   chapters?: NoteLinkedChapter[];
   highlights?: NoteLinkedHighlight[];
-  highlight_tags?: NoteLinkedTag[];
+  tags?: NoteLinkedTag[];
 }

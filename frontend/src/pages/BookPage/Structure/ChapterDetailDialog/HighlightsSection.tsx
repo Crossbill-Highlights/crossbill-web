@@ -1,4 +1,4 @@
-import type { Bookmark, ChapterWithHighlights, HighlightTagInBook } from '@/api/generated/model';
+import type { Bookmark, ChapterWithHighlights, TagInBook } from '@/api/generated/model';
 import { HighlightCard } from '@/pages/BookPage/Highlights/HighlightCard.tsx';
 import { HighlightViewModal } from '@/pages/BookPage/Highlights/HighlightViewModal/HighlightViewModal.tsx';
 import { useHighlightModal } from '@/pages/BookPage/Highlights/hooks/useHighlightModal.ts';
@@ -8,7 +8,7 @@ interface HighlightsSectionProps {
   chapter: ChapterWithHighlights;
   bookId: number;
   bookmarksByHighlightId: Record<number, Bookmark>;
-  availableTags: HighlightTagInBook[];
+  availableTags: TagInBook[];
 }
 
 export const HighlightsSection = ({

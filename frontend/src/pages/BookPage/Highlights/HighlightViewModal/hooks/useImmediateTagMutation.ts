@@ -1,10 +1,10 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import {
-  getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey,
+  getGetTagsApiV1BooksBookIdTagsGetQueryKey,
   useAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost,
   useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete,
 } from '@/api/generated/highlights/highlights.ts';
-import type { HighlightTagInBook } from '@/api/generated/model';
+import type { TagInBook } from '@/api/generated/model';
 import { useQueryClient } from '@tanstack/react-query';
 import { filter, map } from 'lodash';
 import { useEffect, useState } from 'react';
@@ -15,7 +15,7 @@ export interface UseImmediateTagMutationParams {
   /** Highlight ID for API calls */
   highlightId: number;
   /** Initial tags for the highlight */
-  initialTags: HighlightTagInBook[];
+  initialTags: TagInBook[];
   /** Snackbar function for error/success notifications */
   showSnackbar: (message: string, severity: 'error' | 'success' | 'info' | 'warning') => void;
 }
@@ -24,19 +24,16 @@ export interface UseImmediateTagMutationReturn {
   /** Whether a mutation is currently processing */
   isProcessing: boolean;
   /** Current list of tags */
-  currentTags: HighlightTagInBook[];
+  currentTags: TagInBook[];
   /** Function to update the tag list - handles add/remove mutations */
-  updateTagList: (newValue: (HighlightTagInBook | string)[]) => Promise<void>;
+  updateTagList: (newValue: (TagInBook | string)[]) => Promise<void>;
 }
 
 const calculateAddedTags = (current: string[], updated: string[]): string[] => {
   return filter(updated, (name) => !current.includes(name));
 };
 
-const calculateRemovedTags = (
-  current: HighlightTagInBook[],
-  updated: string[]
-): HighlightTagInBook[] => {
+const calculateRemovedTags = (current: TagInBook[], updated: string[]): TagInBook[] => {
   return filter(current, (tag) => !updated.includes(tag.name));
 };
 
@@ -52,7 +49,7 @@ const calculateRemovedTags = (
  * const { isProcessing, currentTags, updateTagList } = useImmediateTagMutation({
  *   bookId: 1,
  *   highlightId: 123,
- *   initialTags: highlight.highlight_tags,
+ *   initialTags: highlight.tags,
  *   showSnackbar,
  * });
  * ```
@@ -64,7 +61,7 @@ export const useImmediateTagMutation = ({
   showSnackbar,
 }: UseImmediateTagMutationParams): UseImmediateTagMutationReturn => {
   const queryClient = useQueryClient();
-  const [currentTags, setCurrentTags] = useState<HighlightTagInBook[]>(initialTags);
+  const [currentTags, setCurrentTags] = useState<TagInBook[]>(initialTags);
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
@@ -73,13 +70,13 @@ export const useImmediateTagMutation = ({
 
   const addTagMutation = useAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost({
     mutation: {
-      onSuccess: (data: { highlight_tags: HighlightTagInBook[] }) => {
-        setCurrentTags(data.highlight_tags);
+      onSuccess: (data: { tags: TagInBook[] }) => {
+        setCurrentTags(data.tags);
         void queryClient.invalidateQueries({
           queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
         void queryClient.invalidateQueries({
-          queryKey: getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey(bookId),
+          queryKey: getGetTagsApiV1BooksBookIdTagsGetQueryKey(bookId),
         });
       },
       onError: (error: Error) => {
@@ -92,13 +89,13 @@ export const useImmediateTagMutation = ({
   const removeTagMutation =
     useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete({
       mutation: {
-        onSuccess: (data: { highlight_tags: HighlightTagInBook[] }) => {
-          setCurrentTags(data.highlight_tags);
+        onSuccess: (data: { tags: TagInBook[] }) => {
+          setCurrentTags(data.tags);
           void queryClient.invalidateQueries({
             queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
           });
           void queryClient.invalidateQueries({
-            queryKey: getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey(bookId),
+            queryKey: getGetTagsApiV1BooksBookIdTagsGetQueryKey(bookId),
           });
         },
         onError: (error: Error) => {
@@ -134,7 +131,7 @@ export const useImmediateTagMutation = ({
     }
   };
 
-  const updateTagList = async (newValue: (HighlightTagInBook | string)[]) => {
+  const updateTagList = async (newValue: (TagInBook | string)[]) => {
     const currentTagNames = map(currentTags, (t) => t.name);
     const newTagNames = map(newValue, (v) => (typeof v === 'string' ? v : v.name));
 

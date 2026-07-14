@@ -1,4 +1,4 @@
-import { useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet } from '@/api/generated/highlights/highlights';
+import { useGetTagsApiV1BooksBookIdTagsGet } from '@/api/generated/highlights/highlights';
 import type { ReadingSession } from '@/api/generated/model';
 import { useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet } from '@/api/generated/reading-sessions/reading-sessions';
 import { Spinner } from '@/components/animations/Spinner.tsx';
@@ -29,7 +29,7 @@ export const ReadingSessionsPage = () => {
     [book.bookmarks]
   );
 
-  const { data: tagsResponse } = useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet(book.id);
+  const { data: tagsResponse } = useGetTagsApiV1BooksBookIdTagsGet(book.id);
 
   const { data, isLoading, isError } = useGetBookReadingSessionsApiV1BooksBookIdReadingSessionsGet(
     book.id,

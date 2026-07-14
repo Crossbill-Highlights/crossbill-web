@@ -8,7 +8,7 @@
 /**
  * Schema for associating a tag with a highlight.
  */
-export interface HighlightTagAssociationRequest {
+export interface TagAssociationRequest {
   /** ID of existing tag to associate */
   tag_id?: number | null;
   /** Name of tag to create/associate */

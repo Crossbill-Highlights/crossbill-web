@@ -1,9 +1,9 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import {
-  getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey,
-  useCreateHighlightTagApiV1BooksBookIdHighlightTagPost,
+  getGetTagsApiV1BooksBookIdTagsGetQueryKey,
+  useCreateTagApiV1BooksBookIdTagPost,
 } from '@/api/generated/highlights/highlights.ts';
-import type { HighlightTagInBook } from '@/api/generated/model';
+import type { TagInBook } from '@/api/generated/model';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -20,9 +20,9 @@ import { useQueryClient } from '@tanstack/react-query';
 export interface NoteTagField {
   /** Resolve field values into concrete tags, creating any new ones. */
   resolveTags: (
-    newValue: (HighlightTagInBook | string)[],
-    availableTags: HighlightTagInBook[]
-  ) => Promise<HighlightTagInBook[]>;
+    newValue: (TagInBook | string)[],
+    availableTags: TagInBook[]
+  ) => Promise<TagInBook[]>;
   /** Whether a tag is currently being created. */
   isCreating: boolean;
 }
@@ -31,14 +31,14 @@ export const useNoteTagField = (bookId: number): NoteTagField => {
   const queryClient = useQueryClient();
   const { showSnackbar } = useSnackbar();
 
-  const createTagMutation = useCreateHighlightTagApiV1BooksBookIdHighlightTagPost({
+  const createTagMutation = useCreateTagApiV1BooksBookIdTagPost({
     mutation: {
       onSuccess: () => {
         void queryClient.invalidateQueries({
           queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
         void queryClient.invalidateQueries({
-          queryKey: getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey(bookId),
+          queryKey: getGetTagsApiV1BooksBookIdTagsGetQueryKey(bookId),
         });
       },
       onError: (error) => {
@@ -49,10 +49,10 @@ export const useNoteTagField = (bookId: number): NoteTagField => {
   });
 
   const resolveTags = async (
-    newValue: (HighlightTagInBook | string)[],
-    availableTags: HighlightTagInBook[]
-  ): Promise<HighlightTagInBook[]> => {
-    const resolved: HighlightTagInBook[] = [];
+    newValue: (TagInBook | string)[],
+    availableTags: TagInBook[]
+  ): Promise<TagInBook[]> => {
+    const resolved: TagInBook[] = [];
     for (const item of newValue) {
       if (typeof item !== 'string') {
         if (!resolved.some((tag) => tag.id === item.id)) resolved.push(item);

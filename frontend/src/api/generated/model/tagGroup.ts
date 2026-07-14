@@ -6,9 +6,9 @@
  */
 
 /**
- * Schema for HighlightTagGroup response.
+ * Schema for TagGroup response.
  */
-export interface HighlightTagGroup {
+export interface TagGroup {
   id: number;
   book_id: number;
   /**

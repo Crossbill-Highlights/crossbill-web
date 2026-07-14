@@ -6,12 +6,9 @@
  */
 
 /**
- * Schema for HighlightTag response.
+ * Schema for creating a new tag.
  */
-export interface HighlightTag {
-  id: number;
-  book_id: number;
-  tag_group_id?: number | null;
+export interface TagCreateRequest {
   /**
    * Tag name
    * @minLength 1

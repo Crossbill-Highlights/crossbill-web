@@ -164,7 +164,7 @@ export const FlashcardsSection = ({
         highlight,
         chapterName: chapter.name,
         chapterId: chapter.id,
-        highlightTags: highlight.highlight_tags,
+        tags: highlight.tags,
       }))
     );
 
@@ -175,7 +175,7 @@ export const FlashcardsSection = ({
         highlight: null,
         chapterName: chapter.name,
         chapterId: chapter.id,
-        highlightTags: [],
+        tags: [],
       }));
 
     return [...highlightFlashcards, ...chapterLinkedFlashcards];

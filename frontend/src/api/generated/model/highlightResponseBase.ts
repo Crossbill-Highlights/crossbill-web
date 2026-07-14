@@ -5,7 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { HighlightLabel } from './highlightLabel';
-import type { HighlightTagInBook } from './highlightTagInBook';
+import type { TagInBook } from './tagInBook';
 
 /**
  * Base schema for Highlight response (without flashcards).
@@ -37,8 +37,8 @@ export interface HighlightResponseBase {
   chapter_id: number | null;
   /** Resolved label for this highlight */
   label?: HighlightLabel | null;
-  /** List of highlight tags for this highlight */
-  highlight_tags: HighlightTagInBook[];
+  /** List of tags for this highlight */
+  tags: TagInBook[];
   created_at: string;
   updated_at: string;
 }

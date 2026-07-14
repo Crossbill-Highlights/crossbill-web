@@ -3,7 +3,7 @@ import type {
   ChapterPrereadingResponse,
   ChapterWithHighlights,
   Flashcard,
-  HighlightTagInBook,
+  TagInBook,
 } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
@@ -37,7 +37,7 @@ interface ChapterDetailDialogProps {
   onNavigate: (newIndex: number) => void;
   prereadingByChapterId: Record<number, ChapterPrereadingResponse>;
   bookmarksByHighlightId: Record<number, Bookmark>;
-  availableTags: HighlightTagInBook[];
+  availableTags: TagInBook[];
   bookFlashcards?: Flashcard[];
 }
 

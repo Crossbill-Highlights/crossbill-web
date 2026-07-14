@@ -6,9 +6,9 @@
  */
 
 /**
- * Schema for updating an existing highlight tag.
+ * Schema for updating an existing tag.
  */
-export interface HighlightTagUpdateRequest {
+export interface TagUpdateRequest {
   /** Tag name */
   name?: string | null;
   /** ID of tag group to associate with */

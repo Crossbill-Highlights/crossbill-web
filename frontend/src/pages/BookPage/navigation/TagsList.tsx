@@ -2,9 +2,9 @@ import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/bo
 import {
   useCreateOrUpdateTagGroupApiV1HighlightsTagGroupPost,
   useDeleteTagGroupApiV1HighlightsTagGroupTagGroupIdDelete,
-  useUpdateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost,
+  useUpdateTagApiV1BooksBookIdTagTagIdPost,
 } from '@/api/generated/highlights/highlights.ts';
-import { HighlightTagGroupInBook, HighlightTagInBook } from '@/api/generated/model';
+import { TagGroupInBook, TagInBook } from '@/api/generated/model';
 import { Collapsable } from '@/components/animations/Collapsable.tsx';
 import { AddIcon, DeleteIcon, EditIcon, ExpandMoreIcon, TagIcon } from '@/theme/Icons.tsx';
 import { createAdaptiveHoverStyles, createAdaptiveTouchTarget } from '@/utils/adaptiveHover.ts';
@@ -36,9 +36,9 @@ import { sortBy } from 'lodash';
 import { AnimatePresence, motion } from 'motion/react';
 import { KeyboardEvent, useState } from 'react';
 
-interface HighlightTagsProps {
-  tags: HighlightTagInBook[];
-  tagGroups: HighlightTagGroupInBook[];
+interface TagsProps {
+  tags: TagInBook[];
+  tagGroups: TagGroupInBook[];
   bookId: number;
   selectedTag?: number | null;
   onTagClick: (tagId: number | null) => void;
@@ -47,7 +47,7 @@ interface HighlightTagsProps {
 }
 
 interface DraggableTagProps {
-  tag: HighlightTagInBook;
+  tag: TagInBook;
   selectedTag: number | null | undefined;
   onTagClick: (tagId: number | null) => void;
   isDragOverlay?: boolean;
@@ -160,8 +160,8 @@ const EmptyGroupPlaceholder = ({ message }: { message: string }) => (
 );
 
 interface TagGroupProps {
-  group: HighlightTagGroupInBook;
-  tags: HighlightTagInBook[];
+  group: TagGroupInBook;
+  tags: TagInBook[];
   isProcessing: boolean;
   selectedTag: number | null | undefined;
   onEditSubmit: (groupId: number, value: string) => void;
@@ -223,9 +223,9 @@ const TagGroup = ({
 };
 
 interface UngroupedTagsProps {
-  tags: HighlightTagInBook[];
+  tags: TagInBook[];
   selectedTag: number | null | undefined;
-  activeTag: HighlightTagInBook | null;
+  activeTag: TagInBook | null;
   movingTagId: number | null;
   onTagClick: (tagId: number | null) => void;
 }
@@ -476,7 +476,7 @@ const TagGroupNameEditForm = ({
 };
 
 interface TagGroupHeaderProps {
-  group: HighlightTagGroupInBook;
+  group: TagGroupInBook;
   tagCount: number;
   isExpanded: boolean;
   onToggleCollapse: () => void;
@@ -610,7 +610,7 @@ const useTagMutations = (bookId: number) => {
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const updateTagMutation = useUpdateHighlightTagApiV1BooksBookIdHighlightTagTagIdPost({
+  const updateTagMutation = useUpdateTagApiV1BooksBookIdTagTagIdPost({
     mutation: {
       onMutate: async (variables: {
         bookId: number;
@@ -627,10 +627,10 @@ const useTagMutations = (bookId: number) => {
           getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
           (old: unknown) => {
             if (!old || typeof old !== 'object') return old;
-            const bookData = old as { highlight_tags: HighlightTagInBook[] };
+            const bookData = old as { tags: TagInBook[] };
             return {
               ...bookData,
-              highlight_tags: bookData.highlight_tags.map((tag: HighlightTagInBook) =>
+              tags: bookData.tags.map((tag: TagInBook) =>
                 tag.id === variables.tagId
                   ? { ...tag, tag_group_id: variables.data.tag_group_id }
                   : tag
@@ -640,15 +640,15 @@ const useTagMutations = (bookId: number) => {
         );
         return { previousBook };
       },
-      onSuccess: (updatedTag: HighlightTagInBook) => {
+      onSuccess: (updatedTag: TagInBook) => {
         queryClient.setQueryData(
           getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
           (old: unknown) => {
             if (!old || typeof old !== 'object') return old;
-            const bookData = old as { highlight_tags: HighlightTagInBook[] };
+            const bookData = old as { tags: TagInBook[] };
             return {
               ...bookData,
-              highlight_tags: bookData.highlight_tags.map((tag: HighlightTagInBook) =>
+              tags: bookData.tags.map((tag: TagInBook) =>
                 tag.id === updatedTag.id ? updatedTag : tag
               ),
             };
@@ -766,7 +766,7 @@ const useTagMutations = (bookId: number) => {
   };
 };
 
-export const HighlightTagsList = ({
+export const TagsList = ({
   tags,
   tagGroups,
   bookId,
@@ -774,9 +774,9 @@ export const HighlightTagsList = ({
   onTagClick,
   hideTitle,
   hideEmptyGroups,
-}: HighlightTagsProps) => {
+}: TagsProps) => {
   const [showAddGroup, setShowAddGroup] = useState(false);
-  const [activeTag, setActiveTag] = useState<HighlightTagInBook | null>(null);
+  const [activeTag, setActiveTag] = useState<TagInBook | null>(null);
   const [movingTagId, setMovingTagId] = useState<number | null>(null);
 
   const {
@@ -830,7 +830,7 @@ export const HighlightTagsList = ({
 
     if (!over) return;
 
-    const tag = active.data.current?.tag as HighlightTagInBook;
+    const tag = active.data.current?.tag as TagInBook;
     const dropZoneId = over.id as string;
 
     let newGroupId: number | null = null;

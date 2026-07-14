@@ -124,7 +124,7 @@ export const StructurePage = () => {
           onNavigate={handleDialogNavigate}
           prereadingByChapterId={prereadingByChapterId}
           bookmarksByHighlightId={bookmarksByHighlightId}
-          availableTags={book.highlight_tags}
+          availableTags={book.tags}
           bookFlashcards={book.book_flashcards}
         />
       )}

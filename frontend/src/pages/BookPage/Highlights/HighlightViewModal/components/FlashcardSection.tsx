@@ -118,7 +118,7 @@ export const FlashcardSection = ({
       highlight,
       chapterName: highlight.chapter || '',
       chapterId: highlight.chapter_id || 0,
-      highlightTags: highlight.highlight_tags,
+      tags: highlight.tags,
     })),
     (f) => f.question.toLowerCase()
   );

@@ -6,7 +6,7 @@
  */
 import type { Flashcard } from './flashcard';
 import type { HighlightLabel } from './highlightLabel';
-import type { HighlightTagInBook } from './highlightTagInBook';
+import type { TagInBook } from './tagInBook';
 
 /**
  * Schema for Highlight response with flashcards.
@@ -36,8 +36,8 @@ export interface Highlight {
   chapter_id: number | null;
   /** Resolved label for this highlight */
   label?: HighlightLabel | null;
-  /** List of highlight tags for this highlight */
-  highlight_tags: HighlightTagInBook[];
+  /** List of tags for this highlight */
+  tags: TagInBook[];
   created_at: string;
   updated_at: string;
   /** List of flashcards for this highlight */

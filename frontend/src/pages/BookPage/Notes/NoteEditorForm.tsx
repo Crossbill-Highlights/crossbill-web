@@ -1,4 +1,4 @@
-import type { HighlightTagInBook, NoteWithLinks } from '@/api/generated/model';
+import type { NoteWithLinks, TagInBook } from '@/api/generated/model';
 import {
   getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey,
   useCreateNoteApiV1NotesPost,
@@ -6,7 +6,7 @@ import {
 } from '@/api/generated/notes/notes.ts';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
-import { HighlightTagInput } from '@/pages/BookPage/Highlights/HighlightViewModal/components/HighlightTagInput.tsx';
+import { TagInput } from '@/pages/BookPage/Highlights/HighlightViewModal/components/TagInput.tsx';
 import { Autocomplete, Box, MenuItem, TextField } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { forwardRef, useEffect, useImperativeHandle } from 'react';
@@ -43,7 +43,7 @@ interface NoteFormValues {
   body: string;
   kind: NoteKindValue | '';
   chapters: ChapterOption[];
-  tags: HighlightTagInBook[];
+  tags: TagInBook[];
 }
 
 const EMPTY_FORM: NoteFormValues = { title: '', body: '', kind: '', chapters: [], tags: [] };
@@ -80,7 +80,7 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
           body: note.body,
           kind: (note.kind as NoteKindValue | null) ?? '',
           chapters: chapterOptions.filter((option) => note.chapter_ids.includes(option.id)),
-          tags: book.highlight_tags.filter((tag) => note.highlight_tag_ids.includes(tag.id)),
+          tags: book.tags.filter((tag) => note.tag_ids.includes(tag.id)),
         });
       } else {
         reset({
@@ -141,7 +141,7 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
         kind: values.kind === '' ? null : values.kind,
         chapter_ids: values.chapters.map((option) => option.id),
         highlight_ids: note?.highlight_ids ?? initialHighlightIds ?? [],
-        highlight_tag_ids: values.tags.map((tag) => tag.id),
+        tag_ids: values.tags.map((tag) => tag.id),
       };
       if (note) {
         await updateMutation.mutateAsync({ noteId: note.id, data: payload });
@@ -201,12 +201,10 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
           name="tags"
           control={control}
           render={({ field }) => (
-            <HighlightTagInput
+            <TagInput
               value={field.value}
-              onChange={(newValue) =>
-                resolveTags(newValue, book.highlight_tags).then(field.onChange)
-              }
-              availableTags={book.highlight_tags}
+              onChange={(newValue) => resolveTags(newValue, book.tags).then(field.onChange)}
+              availableTags={book.tags}
               isProcessing={isCreatingTag}
             />
           )}

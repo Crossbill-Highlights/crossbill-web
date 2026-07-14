@@ -20,5 +20,5 @@ export interface NoteUpdateRequest {
   kind?: 'character' | 'term' | 'concept' | 'other' | null;
   chapter_ids?: number[];
   highlight_ids?: number[];
-  highlight_tag_ids?: number[];
+  tag_ids?: number[];
 }
