@@ -76,16 +76,14 @@ def upgrade() -> None:
     )
     op.execute("ALTER TABLE tags RENAME CONSTRAINT fk_highlight_tags_user_id TO fk_tags_user_id")
     op.execute(
-        "ALTER TABLE tags RENAME CONSTRAINT fk_highlight_tags_tag_group_id "
-        "TO fk_tags_tag_group_id"
+        "ALTER TABLE tags RENAME CONSTRAINT fk_highlight_tags_tag_group_id TO fk_tags_tag_group_id"
     )
 
 
 def downgrade() -> None:
     """Restore the highlight_tag names."""
     op.execute(
-        "ALTER TABLE tags RENAME CONSTRAINT fk_tags_tag_group_id "
-        "TO fk_highlight_tags_tag_group_id"
+        "ALTER TABLE tags RENAME CONSTRAINT fk_tags_tag_group_id TO fk_highlight_tags_tag_group_id"
     )
     op.execute("ALTER TABLE tags RENAME CONSTRAINT fk_tags_user_id TO fk_highlight_tags_user_id")
     op.execute(
