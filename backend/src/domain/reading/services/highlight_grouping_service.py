@@ -7,7 +7,7 @@ from src.domain.common.value_objects.position import Position
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.library.entities.chapter import Chapter
 from src.domain.reading.entities.highlight import Highlight
-from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.domain.reading.entities.tag import Tag
 
 
 @dataclass
@@ -16,7 +16,7 @@ class HighlightWithContext:
 
     highlight: Highlight
     chapter: Chapter | None
-    tags: list[HighlightTag]
+    tags: list[Tag]
     flashcards: list[Flashcard]
 
 
@@ -37,9 +37,7 @@ class HighlightGroupingService:
 
     @staticmethod
     def group_by_chapter(
-        highlights_with_context: list[
-            tuple[Highlight, Chapter | None, list[HighlightTag], list[Flashcard]]
-        ],
+        highlights_with_context: list[tuple[Highlight, Chapter | None, list[Tag], list[Flashcard]]],
     ) -> list[ChapterWithHighlights]:
         """
         Group highlights by chapter, sorted by chapter number.

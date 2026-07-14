@@ -6,8 +6,8 @@ from src.domain.common.value_objects import (
     BookId,
     ChapterId,
     HighlightId,
-    HighlightTagId,
     NoteId,
+    TagId,
     UserId,
 )
 from src.domain.notes.entities.note import Note, NoteKind
@@ -27,7 +27,7 @@ class NoteRepositoryProtocol(Protocol):
         kind: NoteKind | None = None,
         chapter_id: ChapterId | None = None,
         highlight_id: HighlightId | None = None,
-        highlight_tag_id: HighlightTagId | None = None,
+        tag_id: TagId | None = None,
     ) -> list[Note]:
         """Find notes linked to a book, with optional filters."""
         ...

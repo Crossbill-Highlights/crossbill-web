@@ -15,7 +15,7 @@ class NotesContainer(containers.DeclarativeContainer):
     book_repository = providers.Dependency()
     chapter_repository = providers.Dependency()
     highlight_repository = providers.Dependency()
-    highlight_tag_repository = providers.Dependency()
+    tag_repository = providers.Dependency()
 
     create_note_use_case = providers.Factory(
         CreateNoteUseCase,
@@ -23,14 +23,14 @@ class NotesContainer(containers.DeclarativeContainer):
         book_repository=book_repository,
         chapter_repository=chapter_repository,
         highlight_repository=highlight_repository,
-        highlight_tag_repository=highlight_tag_repository,
+        tag_repository=tag_repository,
     )
     get_note_use_case = providers.Factory(
         GetNoteUseCase,
         note_repository=note_repository,
         chapter_repository=chapter_repository,
         highlight_repository=highlight_repository,
-        highlight_tag_repository=highlight_tag_repository,
+        tag_repository=tag_repository,
     )
     get_notes_by_book_use_case = providers.Factory(
         GetNotesByBookUseCase,
@@ -38,14 +38,14 @@ class NotesContainer(containers.DeclarativeContainer):
         book_repository=book_repository,
         chapter_repository=chapter_repository,
         highlight_repository=highlight_repository,
-        highlight_tag_repository=highlight_tag_repository,
+        tag_repository=tag_repository,
     )
     update_note_use_case = providers.Factory(
         UpdateNoteUseCase,
         note_repository=note_repository,
         chapter_repository=chapter_repository,
         highlight_repository=highlight_repository,
-        highlight_tag_repository=highlight_tag_repository,
+        tag_repository=tag_repository,
     )
     delete_note_use_case = providers.Factory(
         DeleteNoteUseCase,

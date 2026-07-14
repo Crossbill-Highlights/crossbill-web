@@ -1,5 +1,5 @@
 """
-HighlightTag entity for categorizing highlights.
+Tag entity for categorizing highlights.
 """
 
 from dataclasses import dataclass
@@ -8,14 +8,14 @@ from src.domain.common.entity import Entity
 from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import (
     BookId,
-    HighlightTagGroupId,
-    HighlightTagId,
+    TagGroupId,
+    TagId,
     UserId,
 )
 
 
 @dataclass
-class HighlightTag(Entity[HighlightTagId]):
+class Tag(Entity[TagId]):
     """
     Tag for categorizing highlights within a book.
 
@@ -24,7 +24,7 @@ class HighlightTag(Entity[HighlightTagId]):
     - Tags can optionally belong to groups
     """
 
-    id: HighlightTagId
+    id: TagId
     user_id: UserId
     book_id: BookId
     name: str
@@ -55,7 +55,7 @@ class HighlightTag(Entity[HighlightTagId]):
         """Set or clear the group for this tag."""
         self.group_name = group_name.strip() if group_name else None
 
-    def update_group(self, group_id: HighlightTagGroupId | None) -> None:
+    def update_group(self, group_id: TagGroupId | None) -> None:
         """
         Update the tag's group association.
 
@@ -74,8 +74,8 @@ class HighlightTag(Entity[HighlightTagId]):
         user_id: UserId,
         book_id: BookId,
         name: str,
-        tag_group_id: HighlightTagGroupId | None = None,
-    ) -> "HighlightTag":
+        tag_group_id: TagGroupId | None = None,
+    ) -> "Tag":
         """
         Create a new tag.
 
@@ -86,10 +86,10 @@ class HighlightTag(Entity[HighlightTagId]):
             tag_group_id: Optional group ID to associate with
 
         Returns:
-            New HighlightTag instance
+            New Tag instance
         """
         return cls(
-            id=HighlightTagId.generate(),
+            id=TagId.generate(),
             user_id=user_id,
             book_id=book_id,
             name=name.strip(),
@@ -99,13 +99,13 @@ class HighlightTag(Entity[HighlightTagId]):
     @classmethod
     def create_with_id(
         cls,
-        id: HighlightTagId,
+        id: TagId,
         user_id: UserId,
         book_id: BookId,
         name: str,
         tag_group_id: int | None = None,
         group_name: str | None = None,
-    ) -> "HighlightTag":
+    ) -> "Tag":
         """
         Reconstitute a tag from persistence.
 
@@ -118,7 +118,7 @@ class HighlightTag(Entity[HighlightTagId]):
             group_name: Optional group name
 
         Returns:
-            Reconstituted HighlightTag instance
+            Reconstituted Tag instance
         """
         return cls(
             id=id,

@@ -4,8 +4,8 @@ from collections.abc import Callable
 
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
-from src.application.reading.protocols.highlight_tag_repository import (
-    HighlightTagRepositoryProtocol,
+from src.application.reading.protocols.tag_repository import (
+    TagRepositoryProtocol,
 )
 from src.domain.common.exceptions import EntityNotFoundError, ValidationError
 from src.domain.common.value_objects import UserId
@@ -14,7 +14,7 @@ from src.domain.notes.exceptions import NoteLinkBookMismatchError
 from src.domain.reading.exceptions import (
     ChapterNotFoundError,
     HighlightNotFoundError,
-    HighlightTagNotFoundError,
+    TagNotFoundError,
 )
 
 
@@ -33,10 +33,10 @@ async def validate_link_targets(
     allowed_book_ids: set[int],
     chapter_ids: list[int],
     highlight_ids: list[int],
-    highlight_tag_ids: list[int],
+    tag_ids: list[int],
     chapter_repository: ChapterRepositoryProtocol,
     highlight_repository: HighlightRepositoryProtocol,
-    highlight_tag_repository: HighlightTagRepositoryProtocol,
+    tag_repository: TagRepositoryProtocol,
 ) -> None:
     """Validate that every linked entity exists, is owned, and belongs to a linked book.
 
@@ -61,13 +61,13 @@ async def validate_link_targets(
         "Highlight",
     )
 
-    tags = await highlight_tag_repository.find_by_ids(highlight_tag_ids, user_id)
+    tags = await tag_repository.find_by_ids(tag_ids, user_id)
     _check_links(
-        highlight_tag_ids,
+        tag_ids,
         {tag.id.value: tag.book_id.value for tag in tags},
         allowed_book_ids,
-        HighlightTagNotFoundError,
-        "HighlightTag",
+        TagNotFoundError,
+        "Tag",
     )
 
 

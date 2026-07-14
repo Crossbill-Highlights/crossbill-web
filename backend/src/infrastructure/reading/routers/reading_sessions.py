@@ -171,7 +171,7 @@ async def get_book_reading_sessions(
                     else None,
                     chapter=None,  # Not loaded in this context
                     chapter_number=None,  # Not loaded in this context
-                    highlight_tags=[],  # Not loaded in this context
+                    tags=[],  # Not loaded in this context
                     flashcards=[],  # Not loaded in this context
                 )
             )

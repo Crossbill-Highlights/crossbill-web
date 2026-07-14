@@ -7,8 +7,8 @@ from src.domain.common.value_objects import (
     BookId,
     ChapterId,
     HighlightId,
-    HighlightTagId,
     NoteId,
+    TagId,
     UserId,
 )
 from src.domain.notes.entities.note import Note, NoteKind
@@ -17,8 +17,8 @@ from src.infrastructure.notes.mappers.note_mapper import NoteMapper
 from src.models import Book as BookORM
 from src.models import Chapter as ChapterORM
 from src.models import Highlight as HighlightORM
-from src.models import HighlightTag as HighlightTagORM
 from src.models import Note as NoteORM
+from src.models import Tag as TagORM
 
 
 class NoteRepository:
@@ -44,7 +44,7 @@ class NoteRepository:
         kind: NoteKind | None = None,
         chapter_id: ChapterId | None = None,
         highlight_id: HighlightId | None = None,
-        highlight_tag_id: HighlightTagId | None = None,
+        tag_id: TagId | None = None,
     ) -> list[Note]:
         stmt = (
             select(NoteORM)
@@ -60,10 +60,8 @@ class NoteRepository:
             stmt = stmt.where(NoteORM.chapters.any(ChapterORM.id == chapter_id.value))
         if highlight_id is not None:
             stmt = stmt.where(NoteORM.highlights.any(HighlightORM.id == highlight_id.value))
-        if highlight_tag_id is not None:
-            stmt = stmt.where(
-                NoteORM.highlight_tags.any(HighlightTagORM.id == highlight_tag_id.value)
-            )
+        if tag_id is not None:
+            stmt = stmt.where(NoteORM.tags.any(TagORM.id == tag_id.value))
         result = await self.db.execute(stmt)
         orm_models = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orm_models]
@@ -126,10 +124,8 @@ class NoteRepository:
         else:
             orm_model.highlights = []
 
-        if note.highlight_tag_ids:
-            result = await self.db.execute(
-                select(HighlightTagORM).where(HighlightTagORM.id.in_(note.highlight_tag_ids))
-            )
-            orm_model.highlight_tags = list(result.scalars().all())
+        if note.tag_ids:
+            result = await self.db.execute(select(TagORM).where(TagORM.id.in_(note.tag_ids)))
+            orm_model.tags = list(result.scalars().all())
         else:
-            orm_model.highlight_tags = []
+            orm_model.tags = []

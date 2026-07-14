@@ -10,14 +10,14 @@ from src.application.reading.protocols.highlight_repository import HighlightRepo
 from src.application.reading.protocols.highlight_style_repository import (
     HighlightStyleRepositoryProtocol,
 )
-from src.application.reading.protocols.highlight_tag_repository import (
-    HighlightTagRepositoryProtocol,
-)
 from src.application.reading.protocols.reading_session_repository import (
     ReadingSessionRepositoryProtocol,
 )
-from src.application.reading.use_cases.highlight_tags.get_highlight_tags_for_book_use_case import (
-    GetHighlightTagsForBookUseCase,
+from src.application.reading.protocols.tag_repository import (
+    TagRepositoryProtocol,
+)
+from src.application.reading.use_cases.tags.get_tags_for_book_use_case import (
+    GetTagsForBookUseCase,
 )
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
@@ -43,9 +43,9 @@ class GetBookDetailsUseCase:
         chapter_repository: ChapterRepositoryProtocol,
         bookmark_repository: BookmarkRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
-        highlight_tag_repository: HighlightTagRepositoryProtocol,
+        tag_repository: TagRepositoryProtocol,
         flashcard_repository: FlashcardRepositoryProtocol,
-        highlight_tag_use_case: GetHighlightTagsForBookUseCase,
+        tag_use_case: GetTagsForBookUseCase,
         highlight_grouping_service: HighlightGroupingService,
         reading_session_repository: ReadingSessionRepositoryProtocol,
         highlight_style_repository: HighlightStyleRepositoryProtocol | None = None,
@@ -55,9 +55,9 @@ class GetBookDetailsUseCase:
         self.chapter_repository = chapter_repository
         self.bookmark_repository = bookmark_repository
         self.highlight_repository = highlight_repository
-        self.highlight_tag_repository = highlight_tag_repository
+        self.tag_repository = tag_repository
         self.flashcard_repository = flashcard_repository
-        self.highlight_tag_use_case = highlight_tag_use_case
+        self.tag_use_case = tag_use_case
         self.highlight_grouping_service = highlight_grouping_service
         self.reading_session_repository = reading_session_repository
         self.highlight_style_repository = highlight_style_repository
@@ -91,8 +91,8 @@ class GetBookDetailsUseCase:
         book.mark_as_viewed()
         book = await self.book_repository.save(book)
 
-        # Get highlight tags using use case (from reading context)
-        highlight_tags = await self.highlight_tag_use_case.get_tags(book_id, user_id)
+        # Get tags using use case (from reading context)
+        tags = await self.tag_use_case.get_tags(book_id, user_id)
 
         # Get all highlights for book (returns domain entities)
         highlights_with_context = await self.highlight_repository.search(
@@ -144,8 +144,8 @@ class GetBookDetailsUseCase:
         # Get bookmarks (returns domain entities)
         bookmarks = await self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)
 
-        # Get highlight tag groups
-        highlight_tag_groups = await self.highlight_tag_repository.find_groups_by_book(book_id_vo)
+        # Get tag groups
+        tag_groups = await self.tag_repository.find_groups_by_book(book_id_vo)
 
         # Get flashcards not associated with any highlight (book-level and chapter-level)
         all_flashcards = await self.flashcard_repository.find_by_book(book_id_vo, user_id_vo)
@@ -165,8 +165,8 @@ class GetBookDetailsUseCase:
         # Return domain aggregation
         return BookDetailsAggregation(
             book=book,
-            highlight_tags=highlight_tags,
-            highlight_tag_groups=highlight_tag_groups,
+            tags=tags,
+            tag_groups=tag_groups,
             bookmarks=bookmarks,
             chapters_with_highlights=merged,
             book_flashcards=book_flashcards,

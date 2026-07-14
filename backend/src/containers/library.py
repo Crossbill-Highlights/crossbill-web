@@ -32,7 +32,7 @@ class LibraryContainer(containers.DeclarativeContainer):
     chapter_repository = providers.Dependency()
     bookmark_repository = providers.Dependency()
     highlight_repository = providers.Dependency()
-    highlight_tag_repository = providers.Dependency()
+    tag_repository = providers.Dependency()
     highlight_style_repository = providers.Dependency()
     reading_session_repository = providers.Dependency()
     flashcard_repository = providers.Dependency()
@@ -44,7 +44,7 @@ class LibraryContainer(containers.DeclarativeContainer):
     cover_image_service = providers.Dependency()
 
     # Cross-module dependency from reading
-    get_highlight_tags_for_book_use_case = providers.Dependency()
+    get_tags_for_book_use_case = providers.Dependency()
 
     # Book files
     ebook_upload_use_case = providers.Factory(
@@ -74,9 +74,9 @@ class LibraryContainer(containers.DeclarativeContainer):
         chapter_repository=chapter_repository,
         bookmark_repository=bookmark_repository,
         highlight_repository=highlight_repository,
-        highlight_tag_repository=highlight_tag_repository,
+        tag_repository=tag_repository,
         flashcard_repository=flashcard_repository,
-        highlight_tag_use_case=get_highlight_tags_for_book_use_case,
+        tag_use_case=get_tags_for_book_use_case,
         highlight_grouping_service=highlight_grouping_service,
         reading_session_repository=reading_session_repository,
         highlight_style_repository=highlight_style_repository,

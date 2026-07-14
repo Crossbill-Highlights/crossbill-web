@@ -8,39 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from src.application.learning.use_cases.flashcards.create_flashcard_for_highlight_use_case import (
     CreateFlashcardForHighlightUseCase,
 )
-from src.application.reading.use_cases.highlight_tag_associations.add_tag_to_highlight_by_id_use_case import (
-    AddTagToHighlightByIdUseCase,
-)
-from src.application.reading.use_cases.highlight_tag_associations.add_tag_to_highlight_by_name_use_case import (
-    AddTagToHighlightByNameUseCase,
-)
-from src.application.reading.use_cases.highlight_tag_associations.remove_tag_from_highlight_use_case import (
-    RemoveTagFromHighlightUseCase,
-)
-from src.application.reading.use_cases.highlight_tag_groups.create_highlight_tag_group_use_case import (
-    CreateHighlightTagGroupUseCase,
-)
-from src.application.reading.use_cases.highlight_tag_groups.delete_highlight_tag_group_use_case import (
-    DeleteHighlightTagGroupUseCase,
-)
-from src.application.reading.use_cases.highlight_tag_groups.update_highlight_tag_group_use_case import (
-    UpdateHighlightTagGroupUseCase,
-)
-from src.application.reading.use_cases.highlight_tag_groups.update_tag_group_association_use_case import (
-    UpdateTagGroupAssociationUseCase,
-)
-from src.application.reading.use_cases.highlight_tags.create_highlight_tag_use_case import (
-    CreateHighlightTagUseCase,
-)
-from src.application.reading.use_cases.highlight_tags.delete_highlight_tag_use_case import (
-    DeleteHighlightTagUseCase,
-)
-from src.application.reading.use_cases.highlight_tags.get_highlight_tags_for_book_use_case import (
-    GetHighlightTagsForBookUseCase,
-)
-from src.application.reading.use_cases.highlight_tags.update_highlight_tag_name_use_case import (
-    UpdateHighlightTagNameUseCase,
-)
 from src.application.reading.use_cases.highlights.highlight_delete_use_case import (
     HighlightDeleteUseCase,
 )
@@ -54,9 +21,42 @@ from src.application.reading.use_cases.highlights.highlight_upload_use_case impo
 from src.application.reading.use_cases.highlights.update_highlight_note_use_case import (
     HighlightUpdateNoteUseCase,
 )
+from src.application.reading.use_cases.tag_associations.add_tag_to_highlight_by_id_use_case import (
+    AddTagToHighlightByIdUseCase,
+)
+from src.application.reading.use_cases.tag_associations.add_tag_to_highlight_by_name_use_case import (
+    AddTagToHighlightByNameUseCase,
+)
+from src.application.reading.use_cases.tag_associations.remove_tag_from_highlight_use_case import (
+    RemoveTagFromHighlightUseCase,
+)
+from src.application.reading.use_cases.tag_groups.create_tag_group_use_case import (
+    CreateTagGroupUseCase,
+)
+from src.application.reading.use_cases.tag_groups.delete_tag_group_use_case import (
+    DeleteTagGroupUseCase,
+)
+from src.application.reading.use_cases.tag_groups.update_tag_group_association_use_case import (
+    UpdateTagGroupAssociationUseCase,
+)
+from src.application.reading.use_cases.tag_groups.update_tag_group_use_case import (
+    UpdateTagGroupUseCase,
+)
+from src.application.reading.use_cases.tags.create_tag_use_case import (
+    CreateTagUseCase,
+)
+from src.application.reading.use_cases.tags.delete_tag_use_case import (
+    DeleteTagUseCase,
+)
+from src.application.reading.use_cases.tags.get_tags_for_book_use_case import (
+    GetTagsForBookUseCase,
+)
+from src.application.reading.use_cases.tags.update_tag_name_use_case import (
+    UpdateTagNameUseCase,
+)
 from src.core import container
 from src.database import DatabaseSession
-from src.domain.common.value_objects import HighlightTagId, UserId
+from src.domain.common.value_objects import TagId, UserId
 from src.domain.identity.entities.user import User
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights as ChapterWithHighlightsDomain,
@@ -69,7 +69,7 @@ from src.infrastructure.learning.schemas import (
     FlashcardCreateRequest,
     FlashcardCreateResponse,
 )
-from src.infrastructure.reading.repositories import HighlightTagRepository
+from src.infrastructure.reading.repositories import TagRepository
 from src.infrastructure.reading.schemas import (
     BookHighlightSearchResponse,
     ChapterWithHighlights,
@@ -79,17 +79,17 @@ from src.infrastructure.reading.schemas import (
     HighlightLabel,
     HighlightNoteUpdate,
     HighlightNoteUpdateResponse,
-    HighlightTag,
-    HighlightTagAssociationRequest,
-    HighlightTagCreateRequest,
-    HighlightTagGroup,
-    HighlightTagGroupCreateRequest,
-    HighlightTagInBook,
-    HighlightTagsResponse,
-    HighlightTagUpdateRequest,
     HighlightUploadRequest,
     HighlightUploadResponse,
     PositionResponse,
+    Tag,
+    TagAssociationRequest,
+    TagCreateRequest,
+    TagGroup,
+    TagGroupCreateRequest,
+    TagInBook,
+    TagsResponse,
+    TagUpdateRequest,
 )
 
 router = APIRouter(prefix="", tags=["highlights"])
@@ -186,7 +186,7 @@ async def update_highlight_note(
             detail=f"Highlight with id {highlight_id} not found",
         )
 
-    highlight, flashcards, highlight_tags, labels = result
+    highlight, flashcards, tags, labels = result
 
     resolved = (
         labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
@@ -212,13 +212,13 @@ async def update_highlight_note(
         )
         if highlight.highlight_style_id
         else None,
-        highlight_tags=[
-            HighlightTagInBook(
+        tags=[
+            TagInBook(
                 id=tag.id.value,
                 name=tag.name,
                 tag_group_id=tag.tag_group_id,
             )
-            for tag in highlight_tags
+            for tag in tags
         ],
         flashcards=[
             Flashcard(
@@ -244,19 +244,19 @@ async def update_highlight_note(
 
 @router.post(
     "/highlights/tag_group",
-    response_model=HighlightTagGroup,
+    response_model=TagGroup,
     status_code=status.HTTP_200_OK,
 )
 async def create_or_update_tag_group(
-    request: HighlightTagGroupCreateRequest,
+    request: TagGroupCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    create_use_case: CreateHighlightTagGroupUseCase = Depends(
-        inject_use_case(container.reading.create_highlight_tag_group_use_case)
+    create_use_case: CreateTagGroupUseCase = Depends(
+        inject_use_case(container.reading.create_tag_group_use_case)
     ),
-    update_use_case: UpdateHighlightTagGroupUseCase = Depends(
-        inject_use_case(container.reading.update_highlight_tag_group_use_case)
+    update_use_case: UpdateTagGroupUseCase = Depends(
+        inject_use_case(container.reading.update_tag_group_use_case)
     ),
-) -> HighlightTagGroup:
+) -> TagGroup:
     """
     Create a new tag group or update an existing one.
 
@@ -264,7 +264,7 @@ async def create_or_update_tag_group(
         request: Tag group creation/update request
 
     Returns:
-        Created or updated HighlightTagGroup
+        Created or updated TagGroup
 
     Raises:
         HTTPException: If creation/update fails
@@ -287,7 +287,7 @@ async def create_or_update_tag_group(
         )
 
     # Manually construct response to handle value objects
-    return HighlightTagGroup(
+    return TagGroup(
         id=tag_group.id.value,
         book_id=tag_group.book_id.value,
         name=tag_group.name,
@@ -301,8 +301,8 @@ async def create_or_update_tag_group(
 async def delete_tag_group(
     tag_group_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: DeleteHighlightTagGroupUseCase = Depends(
-        inject_use_case(container.reading.delete_highlight_tag_group_use_case)
+    use_case: DeleteTagGroupUseCase = Depends(
+        inject_use_case(container.reading.delete_tag_group_use_case)
     ),
 ) -> None:
     """
@@ -427,8 +427,8 @@ def _map_chapters_to_schemas(
                     )
                     for fc in hw.flashcards
                 ],
-                highlight_tags=[
-                    HighlightTagInBook(
+                tags=[
+                    TagInBook(
                         id=tag.id.value,
                         name=tag.name,
                         tag_group_id=tag.tag_group_id,
@@ -538,33 +538,33 @@ async def delete_highlights(
 
 
 @router.get(
-    "/books/{book_id}/highlight_tags",
-    response_model=HighlightTagsResponse,
+    "/books/{book_id}/tags",
+    response_model=TagsResponse,
     status_code=status.HTTP_200_OK,
 )
-async def get_highlight_tags(
+async def get_tags(
     book_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: GetHighlightTagsForBookUseCase = Depends(
-        inject_use_case(container.reading.get_highlight_tags_for_book_use_case)
+    use_case: GetTagsForBookUseCase = Depends(
+        inject_use_case(container.reading.get_tags_for_book_use_case)
     ),
-) -> HighlightTagsResponse:
+) -> TagsResponse:
     """
-    Get all highlight tags for a book.
+    Get all tags for a book.
 
     Args:
         book_id: ID of the book
 
     Returns:
-        List of HighlightTags for the book
+        List of Tags for the book
 
     Raises:
         HTTPException: If book is not found
     """
     tags = await use_case.get_tags(book_id, current_user.id.value)
-    return HighlightTagsResponse(
+    return TagsResponse(
         tags=[
-            HighlightTag(
+            Tag(
                 id=tag.id.value,
                 book_id=tag.book_id.value,
                 name=tag.name,
@@ -576,33 +576,31 @@ async def get_highlight_tags(
 
 
 @router.post(
-    "/books/{book_id}/highlight_tag",
-    response_model=HighlightTag,
+    "/books/{book_id}/tag",
+    response_model=Tag,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_highlight_tag(
+async def create_tag(
     book_id: int,
-    request: HighlightTagCreateRequest,
+    request: TagCreateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: CreateHighlightTagUseCase = Depends(
-        inject_use_case(container.reading.create_highlight_tag_use_case)
-    ),
-) -> HighlightTag:
+    use_case: CreateTagUseCase = Depends(inject_use_case(container.reading.create_tag_use_case)),
+) -> Tag:
     """
-    Create a new highlight tag for a book.
+    Create a new tag for a book.
 
     Args:
         book_id: ID of the book
         request: Request containing tag name
 
     Returns:
-        Created HighlightTag
+        Created Tag
 
     Raises:
         HTTPException: If book is not found, tag already exists, or creation fails
     """
     tag = await use_case.create_tag(book_id, request.name, user_id=current_user.id.value)
-    return HighlightTag(
+    return Tag(
         id=tag.id.value,
         book_id=tag.book_id.value,
         name=tag.name,
@@ -611,19 +609,17 @@ async def create_highlight_tag(
 
 
 @router.delete(
-    "/books/{book_id}/highlight_tag/{tag_id}",
+    "/books/{book_id}/tag/{tag_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_highlight_tag(
+async def delete_tag(
     book_id: int,
     tag_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
-    use_case: DeleteHighlightTagUseCase = Depends(
-        inject_use_case(container.reading.delete_highlight_tag_use_case)
-    ),
+    use_case: DeleteTagUseCase = Depends(inject_use_case(container.reading.delete_tag_use_case)),
 ) -> None:
     """
-    Delete a highlight tag from a book.
+    Delete a tag from a book.
 
     This will also remove the tag from all highlights it was associated with.
 
@@ -638,30 +634,30 @@ async def delete_highlight_tag(
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Highlight tag {tag_id} not found",
+            detail=f"Tag {tag_id} not found",
         )
 
 
 @router.post(
-    "/books/{book_id}/highlight_tag/{tag_id}",
-    response_model=HighlightTag,
+    "/books/{book_id}/tag/{tag_id}",
+    response_model=Tag,
     status_code=status.HTTP_200_OK,
 )
-async def update_highlight_tag(
+async def update_tag(
     book_id: int,
     tag_id: int,
-    request: HighlightTagUpdateRequest,
+    request: TagUpdateRequest,
     db: DatabaseSession,
     current_user: Annotated[User, Depends(get_current_user)],
-    tag_use_case: UpdateHighlightTagNameUseCase = Depends(
-        inject_use_case(container.reading.update_highlight_tag_name_use_case)
+    tag_use_case: UpdateTagNameUseCase = Depends(
+        inject_use_case(container.reading.update_tag_name_use_case)
     ),
     group_use_case: UpdateTagGroupAssociationUseCase = Depends(
         inject_use_case(container.reading.update_tag_group_association_use_case)
     ),
-) -> HighlightTag:
+) -> Tag:
     """
-    Update a highlight tag's name and/or tag group association.
+    Update a tag's name and/or tag group association.
 
     Args:
         book_id: ID of the book
@@ -669,7 +665,7 @@ async def update_highlight_tag(
         request: Request containing updated tag information
 
     Returns:
-        Updated HighlightTag
+        Updated Tag
 
     Raises:
         HTTPException: If tag not found, doesn't belong to book, or update fails
@@ -686,8 +682,8 @@ async def update_highlight_tag(
         # TODO: Fix this direct repository call. It is apparently done just so that tag is not
         # undefined before we return from this route.
         # Load tag for group update
-        tag_repo = HighlightTagRepository(db)
-        tag = await tag_repo.find_by_id(HighlightTagId(tag_id), UserId(current_user.id.value))
+        tag_repo = TagRepository(db)
+        tag = await tag_repo.find_by_id(TagId(tag_id), UserId(current_user.id.value))
         if not tag:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -703,7 +699,7 @@ async def update_highlight_tag(
             user_id=current_user.id.value,
         )
 
-    return HighlightTag(
+    return Tag(
         id=tag.id.value,
         book_id=tag.book_id.value,
         name=tag.name,
@@ -719,7 +715,7 @@ async def update_highlight_tag(
 async def add_tag_to_highlight(
     book_id: int,
     highlight_id: int,
-    request: HighlightTagAssociationRequest,
+    request: TagAssociationRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     add_by_id_use_case: AddTagToHighlightByIdUseCase = Depends(
         inject_use_case(container.reading.add_tag_to_highlight_by_id_use_case)
@@ -747,11 +743,11 @@ async def add_tag_to_highlight(
     """
     # Add tag by ID or by name (with get_or_create)
     if request.tag_id is not None:
-        highlight, flashcards, highlight_tags, labels = await add_by_id_use_case.add_tag(
+        highlight, flashcards, tags, labels = await add_by_id_use_case.add_tag(
             highlight_id, request.tag_id, current_user.id.value
         )
     elif request.name is not None:
-        highlight, flashcards, highlight_tags, labels = await add_by_name_use_case.add_tag(
+        highlight, flashcards, tags, labels = await add_by_name_use_case.add_tag(
             book_id, highlight_id, request.name, current_user.id.value
         )
     else:
@@ -784,13 +780,13 @@ async def add_tag_to_highlight(
         )
         if highlight.highlight_style_id
         else None,
-        highlight_tags=[
-            HighlightTagInBook(
+        tags=[
+            TagInBook(
                 id=tag.id.value,
                 name=tag.name,
                 tag_group_id=tag.tag_group_id,
             )
-            for tag in highlight_tags
+            for tag in tags
         ],
         flashcards=[
             Flashcard(
@@ -836,7 +832,7 @@ async def remove_tag_from_highlight(
     Raises:
         HTTPException: If highlight not found or removal fails
     """
-    highlight, flashcards, highlight_tags, labels = await use_case.remove_tag(
+    highlight, flashcards, tags, labels = await use_case.remove_tag(
         highlight_id, tag_id, current_user.id.value
     )
 
@@ -864,13 +860,13 @@ async def remove_tag_from_highlight(
         )
         if highlight.highlight_style_id
         else None,
-        highlight_tags=[
-            HighlightTagInBook(
+        tags=[
+            TagInBook(
                 id=tag.id.value,
                 name=tag.name,
                 tag_group_id=tag.tag_group_id,
             )
-            for tag in highlight_tags
+            for tag in tags
         ],
         flashcards=[
             Flashcard(

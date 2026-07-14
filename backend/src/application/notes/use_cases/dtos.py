@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from src.domain.library.entities.chapter import Chapter
 from src.domain.notes.entities.note import Note
 from src.domain.reading.entities.highlight import Highlight
-from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.domain.reading.entities.tag import Tag
 
 
 @dataclass
@@ -15,4 +15,4 @@ class NoteWithLinkedEntities:
     note: Note
     chapters: list[Chapter]
     highlights: list[Highlight]
-    highlight_tags: list[HighlightTag]
+    tags: list[Tag]

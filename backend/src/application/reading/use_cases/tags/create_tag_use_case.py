@@ -1,30 +1,30 @@
-"""Use case for creating highlight tags."""
+"""Use case for creating tags."""
 
 import structlog
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
-from src.application.reading.protocols.highlight_tag_repository import (
-    HighlightTagRepositoryProtocol,
+from src.application.reading.protocols.tag_repository import (
+    TagRepositoryProtocol,
 )
 from src.domain.common.value_objects.ids import BookId, UserId
-from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.domain.reading.entities.tag import Tag
 from src.domain.reading.exceptions import BookNotFoundError, DuplicateTagNameError
 
 logger = structlog.get_logger(__name__)
 
 
-class CreateHighlightTagUseCase:
-    """Use case for creating highlight tags."""
+class CreateTagUseCase:
+    """Use case for creating tags."""
 
     def __init__(
         self,
-        tag_repository: HighlightTagRepositoryProtocol,
+        tag_repository: TagRepositoryProtocol,
         book_repository: BookRepositoryProtocol,
     ) -> None:
         self.tag_repository = tag_repository
         self.book_repository = book_repository
 
-    async def create_tag(self, book_id: int, name: str, user_id: int) -> HighlightTag:
+    async def create_tag(self, book_id: int, name: str, user_id: int) -> Tag:
         """
         Create a new tag for a book.
 
@@ -53,7 +53,7 @@ class CreateHighlightTagUseCase:
         if existing_tag:
             raise DuplicateTagNameError(name)
 
-        tag = HighlightTag.create(
+        tag = Tag.create(
             user_id=user_id_vo,
             book_id=book_id_vo,
             name=name,
@@ -61,5 +61,5 @@ class CreateHighlightTagUseCase:
 
         tag = await self.tag_repository.save(tag)
 
-        logger.info("created_highlight_tag", tag_id=tag.id.value, book_id=book_id)
+        logger.info("created_tag", tag_id=tag.id.value, book_id=book_id)
         return tag

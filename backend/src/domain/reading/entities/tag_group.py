@@ -2,14 +2,14 @@ from dataclasses import dataclass
 
 from src.domain.common.entity import Entity
 from src.domain.common.exceptions import ValidationError
-from src.domain.common.value_objects.ids import BookId, HighlightTagGroupId
+from src.domain.common.value_objects.ids import BookId, TagGroupId
 
 
 @dataclass
-class HighlightTagGroup(Entity[HighlightTagGroupId]):
-    """Tag group for organizing highlight tags within a book."""
+class TagGroup(Entity[TagGroupId]):
+    """Tag group for organizing tags within a book."""
 
-    id: HighlightTagGroupId
+    id: TagGroupId
     book_id: BookId
     name: str
 
@@ -24,10 +24,10 @@ class HighlightTagGroup(Entity[HighlightTagGroupId]):
         object.__setattr__(self, "name", new_name.strip())
 
     @classmethod
-    def create(cls, book_id: BookId, name: str) -> "HighlightTagGroup":
+    def create(cls, book_id: BookId, name: str) -> "TagGroup":
         """Create a new tag group."""
         return cls(
-            id=HighlightTagGroupId.generate(),
+            id=TagGroupId.generate(),
             book_id=book_id,
             name=name.strip(),
         )
@@ -35,10 +35,10 @@ class HighlightTagGroup(Entity[HighlightTagGroupId]):
     @classmethod
     def create_with_id(
         cls,
-        id: HighlightTagGroupId,
+        id: TagGroupId,
         book_id: BookId,
         name: str,
-    ) -> "HighlightTagGroup":
+    ) -> "TagGroup":
         """Reconstitute a tag group from persistence."""
         return cls(
             id=id,

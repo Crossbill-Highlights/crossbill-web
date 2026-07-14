@@ -40,8 +40,8 @@ from src.models import (
     Chapter,
     Flashcard,
     Highlight,
-    HighlightTag,
-    HighlightTagGroup,
+    Tag,
+    TagGroup,
     User,
 )
 from src.models import (
@@ -290,9 +290,9 @@ async def test_flashcard(db_session: AsyncSession, test_book: Book, test_user: U
 
 
 @pytest.fixture
-async def test_tag_group(db_session: AsyncSession, test_book: Book) -> HighlightTagGroup:
+async def test_tag_group(db_session: AsyncSession, test_book: Book) -> TagGroup:
     """Create a standard test tag group attached to test_book."""
-    tag_group = HighlightTagGroup(book_id=test_book.id, name="Test Group")
+    tag_group = TagGroup(book_id=test_book.id, name="Test Group")
     db_session.add(tag_group)
     await db_session.commit()
     await db_session.refresh(tag_group)
@@ -300,11 +300,9 @@ async def test_tag_group(db_session: AsyncSession, test_book: Book) -> Highlight
 
 
 @pytest.fixture
-async def test_highlight_tag(
-    db_session: AsyncSession, test_book: Book, test_user: User
-) -> HighlightTag:
+async def test_tag(db_session: AsyncSession, test_book: Book, test_user: User) -> Tag:
     """Create a standard test highlight tag attached to test_book."""
-    tag = HighlightTag(
+    tag = Tag(
         book_id=test_book.id,
         user_id=test_user.id,
         name="Test Tag",

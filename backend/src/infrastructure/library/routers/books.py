@@ -35,8 +35,8 @@ from src.infrastructure.reading.schemas import (
     Bookmark,
     Highlight,
     HighlightLabel,
-    HighlightTagGroupInBook,
-    HighlightTagInBook,
+    TagGroupInBook,
+    TagInBook,
 )
 from src.infrastructure.reading.schemas import (
     ChapterWithHighlights as ChapterWithHighlightsSchema,
@@ -99,8 +99,8 @@ def _map_chapters_to_schemas(
                     )
                     for fc in hw.flashcards
                 ],
-                highlight_tags=[
-                    HighlightTagInBook(
+                tags=[
+                    TagInBook(
                         id=tag.id.value,
                         name=tag.name,
                         tag_group_id=tag.tag_group_id,
@@ -160,20 +160,20 @@ def _build_book_details_schema(
         description=agg.book.description,
         language=agg.book.language,
         page_count=agg.book.page_count,
-        highlight_tags=[
-            HighlightTagInBook(
+        tags=[
+            TagInBook(
                 id=tag.id.value,
                 name=tag.name,
                 tag_group_id=tag.tag_group_id,
             )
-            for tag in agg.highlight_tags
+            for tag in agg.tags
         ],
-        highlight_tag_groups=[
-            HighlightTagGroupInBook(
+        tag_groups=[
+            TagGroupInBook(
                 id=group.id.value,
                 name=group.name,
             )
-            for group in agg.highlight_tag_groups
+            for group in agg.tag_groups
         ],
         bookmarks=[
             Bookmark(

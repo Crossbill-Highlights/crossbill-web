@@ -1,30 +1,28 @@
-"""Use case for updating highlight tag names."""
+"""Use case for updating tag names."""
 
 import structlog
 
-from src.application.reading.protocols.highlight_tag_repository import (
-    HighlightTagRepositoryProtocol,
+from src.application.reading.protocols.tag_repository import (
+    TagRepositoryProtocol,
 )
 from src.domain.common import ValidationError
-from src.domain.common.value_objects.ids import BookId, HighlightTagId, UserId
-from src.domain.reading.entities.highlight_tag import HighlightTag
-from src.domain.reading.exceptions import DuplicateTagNameError, HighlightTagNotFoundError
+from src.domain.common.value_objects.ids import BookId, TagId, UserId
+from src.domain.reading.entities.tag import Tag
+from src.domain.reading.exceptions import DuplicateTagNameError, TagNotFoundError
 
 logger = structlog.get_logger(__name__)
 
 
-class UpdateHighlightTagNameUseCase:
-    """Use case for updating highlight tag names."""
+class UpdateTagNameUseCase:
+    """Use case for updating tag names."""
 
     def __init__(
         self,
-        tag_repository: HighlightTagRepositoryProtocol,
+        tag_repository: TagRepositoryProtocol,
     ) -> None:
         self.tag_repository = tag_repository
 
-    async def update_tag_name(
-        self, book_id: int, tag_id: int, new_name: str, user_id: int
-    ) -> HighlightTag:
+    async def update_tag_name(self, book_id: int, tag_id: int, new_name: str, user_id: int) -> Tag:
         """
         Update a tag's name.
 
@@ -38,17 +36,17 @@ class UpdateHighlightTagNameUseCase:
             Updated tag entity
 
         Raises:
-            HighlightTagNotFoundError: If tag not found
+            TagNotFoundError: If tag not found
             ValidationError: If tag doesn't belong to book
             DuplicateTagNameError: If new name already exists
         """
-        tag_id_vo = HighlightTagId(tag_id)
+        tag_id_vo = TagId(tag_id)
         user_id_vo = UserId(user_id)
         book_id_vo = BookId(book_id)
 
         tag = await self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
         if not tag:
-            raise HighlightTagNotFoundError(tag_id)
+            raise TagNotFoundError(tag_id)
 
         if tag.book_id != book_id_vo:
             raise ValidationError(f"Tag {tag_id} does not belong to book {book_id}")
@@ -63,5 +61,5 @@ class UpdateHighlightTagNameUseCase:
         tag.rename(new_name)
         tag = await self.tag_repository.save(tag)
 
-        logger.info("updated_highlight_tag_name", tag_id=tag_id, new_name=new_name)
+        logger.info("updated_tag_name", tag_id=tag_id, new_name=new_name)
         return tag

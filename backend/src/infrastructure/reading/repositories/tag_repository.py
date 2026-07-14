@@ -1,4 +1,4 @@
-"""Repository for HighlightTag and HighlightTagGroup domain entities."""
+"""Repository for Tag and TagGroup domain entities."""
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,33 +7,33 @@ from sqlalchemy.orm import selectinload
 from src.domain.common.value_objects.ids import (
     BookId,
     HighlightId,
-    HighlightTagGroupId,
-    HighlightTagId,
+    TagGroupId,
+    TagId,
     UserId,
 )
-from src.domain.reading.entities.highlight_tag import HighlightTag
-from src.domain.reading.entities.highlight_tag_group import HighlightTagGroup
-from src.infrastructure.reading.mappers.highlight_tag_group_mapper import (
-    HighlightTagGroupMapper,
+from src.domain.reading.entities.tag import Tag
+from src.domain.reading.entities.tag_group import TagGroup
+from src.infrastructure.reading.mappers.tag_group_mapper import (
+    TagGroupMapper,
 )
-from src.infrastructure.reading.mappers.highlight_tag_mapper import HighlightTagMapper
+from src.infrastructure.reading.mappers.tag_mapper import TagMapper
 from src.models import Highlight as HighlightORM
-from src.models import HighlightTag as HighlightTagORM
-from src.models import HighlightTagGroup as HighlightTagGroupORM
-from src.models import highlight_highlight_tags
+from src.models import Tag as TagORM
+from src.models import TagGroup as TagGroupORM
+from src.models import highlight_tags
 
 
-class HighlightTagRepository:
-    """Repository for HighlightTag and HighlightTagGroup domain entities."""
+class TagRepository:
+    """Repository for Tag and TagGroup domain entities."""
 
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
-        self.mapper = HighlightTagMapper()
-        self.group_mapper = HighlightTagGroupMapper()
+        self.mapper = TagMapper()
+        self.group_mapper = TagGroupMapper()
 
     # Tag methods
 
-    async def find_by_id(self, tag_id: HighlightTagId, user_id: UserId) -> HighlightTag | None:
+    async def find_by_id(self, tag_id: TagId, user_id: UserId) -> Tag | None:
         """
         Find a tag by ID and user ID.
 
@@ -44,9 +44,9 @@ class HighlightTagRepository:
         Returns:
             Tag entity if found, None otherwise
         """
-        stmt = select(HighlightTagORM).where(
-            HighlightTagORM.id == tag_id.value,
-            HighlightTagORM.user_id == user_id.value,
+        stmt = select(TagORM).where(
+            TagORM.id == tag_id.value,
+            TagORM.user_id == user_id.value,
         )
         result = await self.db.execute(stmt)
         orm_model = result.scalar_one_or_none()
@@ -54,7 +54,7 @@ class HighlightTagRepository:
 
     async def find_by_book_and_name(
         self, book_id: BookId, name: str, user_id: UserId
-    ) -> HighlightTag | None:
+    ) -> Tag | None:
         """
         Find a tag by book, name, and user.
 
@@ -66,16 +66,16 @@ class HighlightTagRepository:
         Returns:
             Tag entity if found, None otherwise
         """
-        stmt = select(HighlightTagORM).where(
-            HighlightTagORM.book_id == book_id.value,
-            HighlightTagORM.name == name,
-            HighlightTagORM.user_id == user_id.value,
+        stmt = select(TagORM).where(
+            TagORM.book_id == book_id.value,
+            TagORM.name == name,
+            TagORM.user_id == user_id.value,
         )
         result = await self.db.execute(stmt)
         orm_model = result.scalar_one_or_none()
         return self.mapper.to_domain(orm_model) if orm_model else None
 
-    async def find_by_book(self, book_id: BookId, user_id: UserId) -> list[HighlightTag]:
+    async def find_by_book(self, book_id: BookId, user_id: UserId) -> list[Tag]:
         """
         Get all tags for a book that have active highlight associations.
 
@@ -89,22 +89,22 @@ class HighlightTagRepository:
             List of tag entities
         """
         stmt = (
-            select(HighlightTagORM)
-            .join(highlight_highlight_tags)
+            select(TagORM)
+            .join(highlight_tags)
             .join(HighlightORM)
             .where(
-                HighlightTagORM.book_id == book_id.value,
-                HighlightTagORM.user_id == user_id.value,
+                TagORM.book_id == book_id.value,
+                TagORM.user_id == user_id.value,
                 HighlightORM.deleted_at.is_(None),
             )
             .distinct()
-            .order_by(HighlightTagORM.name)
+            .order_by(TagORM.name)
         )
         result = await self.db.execute(stmt)
         orm_models = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orm_models]
 
-    async def find_by_ids(self, tag_ids: list[int], user_id: UserId) -> list[HighlightTag]:
+    async def find_by_ids(self, tag_ids: list[int], user_id: UserId) -> list[Tag]:
         """
         Get tags by their ids, scoped to the user.
 
@@ -120,15 +120,15 @@ class HighlightTagRepository:
         """
         if not tag_ids:
             return []
-        stmt = select(HighlightTagORM).where(
-            HighlightTagORM.id.in_(tag_ids),
-            HighlightTagORM.user_id == user_id.value,
+        stmt = select(TagORM).where(
+            TagORM.id.in_(tag_ids),
+            TagORM.user_id == user_id.value,
         )
         result = await self.db.execute(stmt)
         orm_models = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orm_models]
 
-    async def save(self, tag: HighlightTag) -> HighlightTag:
+    async def save(self, tag: Tag) -> Tag:
         """
         Save a tag entity.
 
@@ -146,7 +146,7 @@ class HighlightTagRepository:
             await self.db.refresh(orm_model)
             return self.mapper.to_domain(orm_model)
         # Update existing
-        stmt = select(HighlightTagORM).where(HighlightTagORM.id == tag.id.value)
+        stmt = select(TagORM).where(TagORM.id == tag.id.value)
         result = await self.db.execute(stmt)
         existing_orm = result.scalar_one()
         self.mapper.to_orm(tag, existing_orm)
@@ -154,7 +154,7 @@ class HighlightTagRepository:
         await self.db.refresh(existing_orm)
         return self.mapper.to_domain(existing_orm)
 
-    async def delete(self, tag_id: HighlightTagId, user_id: UserId) -> bool:
+    async def delete(self, tag_id: TagId, user_id: UserId) -> bool:
         """
         Delete a tag.
 
@@ -166,9 +166,9 @@ class HighlightTagRepository:
             True if deleted, False if not found
         """
         result = await self.db.execute(
-            select(HighlightTagORM).where(
-                HighlightTagORM.id == tag_id.value,
-                HighlightTagORM.user_id == user_id.value,
+            select(TagORM).where(
+                TagORM.id == tag_id.value,
+                TagORM.user_id == user_id.value,
             )
         )
         tag_orm = result.scalar_one_or_none()
@@ -182,7 +182,7 @@ class HighlightTagRepository:
 
     # Tag group methods
 
-    async def find_groups_by_book(self, book_id: BookId) -> list[HighlightTagGroup]:
+    async def find_groups_by_book(self, book_id: BookId) -> list[TagGroup]:
         """
         Find all tag groups for a book.
 
@@ -193,17 +193,15 @@ class HighlightTagRepository:
             List of tag group entities, ordered by name
         """
         stmt = (
-            select(HighlightTagGroupORM)
-            .where(HighlightTagGroupORM.book_id == book_id.value)
-            .order_by(HighlightTagGroupORM.name)
+            select(TagGroupORM)
+            .where(TagGroupORM.book_id == book_id.value)
+            .order_by(TagGroupORM.name)
         )
         result = await self.db.execute(stmt)
         orm_models = result.scalars().all()
         return [self.group_mapper.to_domain(orm) for orm in orm_models]
 
-    async def find_group_by_id(
-        self, group_id: HighlightTagGroupId, book_id: BookId
-    ) -> HighlightTagGroup | None:
+    async def find_group_by_id(self, group_id: TagGroupId, book_id: BookId) -> TagGroup | None:
         """
         Find a tag group by ID and book ID.
 
@@ -214,15 +212,15 @@ class HighlightTagRepository:
         Returns:
             Group entity if found, None otherwise
         """
-        stmt = select(HighlightTagGroupORM).where(
-            HighlightTagGroupORM.id == group_id.value,
-            HighlightTagGroupORM.book_id == book_id.value,
+        stmt = select(TagGroupORM).where(
+            TagGroupORM.id == group_id.value,
+            TagGroupORM.book_id == book_id.value,
         )
         result = await self.db.execute(stmt)
         orm_model = result.scalar_one_or_none()
         return self.group_mapper.to_domain(orm_model) if orm_model else None
 
-    async def find_group_by_name(self, book_id: BookId, name: str) -> HighlightTagGroup | None:
+    async def find_group_by_name(self, book_id: BookId, name: str) -> TagGroup | None:
         """
         Find a tag group by book and name.
 
@@ -233,15 +231,15 @@ class HighlightTagRepository:
         Returns:
             Group entity if found, None otherwise
         """
-        stmt = select(HighlightTagGroupORM).where(
-            HighlightTagGroupORM.book_id == book_id.value,
-            HighlightTagGroupORM.name == name,
+        stmt = select(TagGroupORM).where(
+            TagGroupORM.book_id == book_id.value,
+            TagGroupORM.name == name,
         )
         result = await self.db.execute(stmt)
         orm_model = result.scalar_one_or_none()
         return self.group_mapper.to_domain(orm_model) if orm_model else None
 
-    async def save_group(self, group: HighlightTagGroup) -> HighlightTagGroup:
+    async def save_group(self, group: TagGroup) -> TagGroup:
         """
         Save a tag group entity.
 
@@ -259,7 +257,7 @@ class HighlightTagRepository:
             await self.db.refresh(orm_model)
             return self.group_mapper.to_domain(orm_model)
         # Update existing
-        stmt = select(HighlightTagGroupORM).where(HighlightTagGroupORM.id == group.id.value)
+        stmt = select(TagGroupORM).where(TagGroupORM.id == group.id.value)
         result = await self.db.execute(stmt)
         existing_orm = result.scalar_one()
         self.group_mapper.to_orm(group, existing_orm)
@@ -267,7 +265,7 @@ class HighlightTagRepository:
         await self.db.refresh(existing_orm)
         return self.group_mapper.to_domain(existing_orm)
 
-    async def delete_group(self, group_id: HighlightTagGroupId) -> bool:
+    async def delete_group(self, group_id: TagGroupId) -> bool:
         """
         Delete a tag group.
 
@@ -277,9 +275,7 @@ class HighlightTagRepository:
         Returns:
             True if deleted, False if not found
         """
-        result = await self.db.execute(
-            select(HighlightTagGroupORM).where(HighlightTagGroupORM.id == group_id.value)
-        )
+        result = await self.db.execute(select(TagGroupORM).where(TagGroupORM.id == group_id.value))
         group_orm = result.scalar_one_or_none()
 
         if not group_orm:
@@ -292,7 +288,7 @@ class HighlightTagRepository:
     # Tag-Highlight association methods
 
     async def add_tag_to_highlight(
-        self, highlight_id: HighlightId, tag_id: HighlightTagId, user_id: UserId
+        self, highlight_id: HighlightId, tag_id: TagId, user_id: UserId
     ) -> bool:
         """
         Add a tag to a highlight (manages the many-to-many association).
@@ -308,7 +304,7 @@ class HighlightTagRepository:
         # Verify ownership and get ORM models
         result = await self.db.execute(
             select(HighlightORM)
-            .options(selectinload(HighlightORM.highlight_tags))
+            .options(selectinload(HighlightORM.tags))
             .where(
                 HighlightORM.id == highlight_id.value,
                 HighlightORM.user_id == user_id.value,
@@ -317,9 +313,9 @@ class HighlightTagRepository:
         highlight_orm = result.scalar_one_or_none()
 
         result = await self.db.execute(
-            select(HighlightTagORM).where(
-                HighlightTagORM.id == tag_id.value,
-                HighlightTagORM.user_id == user_id.value,
+            select(TagORM).where(
+                TagORM.id == tag_id.value,
+                TagORM.user_id == user_id.value,
             )
         )
         tag_orm = result.scalar_one_or_none()
@@ -328,15 +324,15 @@ class HighlightTagRepository:
             return False
 
         # Add association if not already present
-        if tag_orm not in highlight_orm.highlight_tags:
-            highlight_orm.highlight_tags.append(tag_orm)
+        if tag_orm not in highlight_orm.tags:
+            highlight_orm.tags.append(tag_orm)
             await self.db.commit()
             return True
 
         return False
 
     async def remove_tag_from_highlight(
-        self, highlight_id: HighlightId, tag_id: HighlightTagId, user_id: UserId
+        self, highlight_id: HighlightId, tag_id: TagId, user_id: UserId
     ) -> bool:
         """
         Remove a tag from a highlight (removes the many-to-many association).
@@ -352,7 +348,7 @@ class HighlightTagRepository:
         # Verify ownership and get ORM models
         result = await self.db.execute(
             select(HighlightORM)
-            .options(selectinload(HighlightORM.highlight_tags))
+            .options(selectinload(HighlightORM.tags))
             .where(
                 HighlightORM.id == highlight_id.value,
                 HighlightORM.user_id == user_id.value,
@@ -361,9 +357,9 @@ class HighlightTagRepository:
         highlight_orm = result.scalar_one_or_none()
 
         result = await self.db.execute(
-            select(HighlightTagORM).where(
-                HighlightTagORM.id == tag_id.value,
-                HighlightTagORM.user_id == user_id.value,
+            select(TagORM).where(
+                TagORM.id == tag_id.value,
+                TagORM.user_id == user_id.value,
             )
         )
         tag_orm = result.scalar_one_or_none()
@@ -372,14 +368,14 @@ class HighlightTagRepository:
             return False
 
         # Remove association if present
-        if tag_orm in highlight_orm.highlight_tags:
-            highlight_orm.highlight_tags.remove(tag_orm)
+        if tag_orm in highlight_orm.tags:
+            highlight_orm.tags.remove(tag_orm)
             await self.db.commit()
             return True
 
         return False
 
-    async def check_group_exists(self, group_id: HighlightTagGroupId) -> bool:
+    async def check_group_exists(self, group_id: TagGroupId) -> bool:
         """
         Check if a tag group exists (regardless of book).
 
@@ -389,6 +385,6 @@ class HighlightTagRepository:
         Returns:
             True if the group exists, False otherwise
         """
-        stmt = select(HighlightTagGroupORM.id).where(HighlightTagGroupORM.id == group_id.value)
+        stmt = select(TagGroupORM.id).where(TagGroupORM.id == group_id.value)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none() is not None

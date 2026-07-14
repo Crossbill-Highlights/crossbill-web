@@ -1,32 +1,32 @@
 """
-Use case for creating a new highlight tag group.
+Use case for creating a new tag group.
 """
 
 import structlog
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
-from src.application.reading.protocols.highlight_tag_repository import (
-    HighlightTagRepositoryProtocol,
+from src.application.reading.protocols.tag_repository import (
+    TagRepositoryProtocol,
 )
 from src.domain.common.value_objects.ids import BookId, UserId
-from src.domain.reading.entities.highlight_tag_group import HighlightTagGroup
+from src.domain.reading.entities.tag_group import TagGroup
 from src.domain.reading.exceptions import BookNotFoundError, DuplicateTagGroupNameError
 
 logger = structlog.get_logger(__name__)
 
 
-class CreateHighlightTagGroupUseCase:
-    """Use case for creating a new highlight tag group."""
+class CreateTagGroupUseCase:
+    """Use case for creating a new tag group."""
 
     def __init__(
         self,
-        tag_repository: HighlightTagRepositoryProtocol,
+        tag_repository: TagRepositoryProtocol,
         book_repository: BookRepositoryProtocol,
     ) -> None:
         self.tag_repository = tag_repository
         self.book_repository = book_repository
 
-    async def create_group(self, book_id: int, name: str, user_id: int) -> HighlightTagGroup:
+    async def create_group(self, book_id: int, name: str, user_id: int) -> TagGroup:
         """
         Create a new tag group.
 
@@ -55,7 +55,7 @@ class CreateHighlightTagGroupUseCase:
         if existing:
             raise DuplicateTagGroupNameError(name)
 
-        group = HighlightTagGroup.create(book_id=book_id_vo, name=name)
+        group = TagGroup.create(book_id=book_id_vo, name=name)
         group = await self.tag_repository.save_group(group)
 
         logger.info("created_tag_group", group_id=group.id.value, book_id=book_id)

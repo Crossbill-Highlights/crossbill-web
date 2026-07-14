@@ -10,14 +10,14 @@ from src.application.reading.protocols.highlight_repository import (
 from src.application.reading.protocols.highlight_style_repository import (
     HighlightStyleRepositoryProtocol,
 )
-from src.application.reading.protocols.highlight_tag_repository import (
-    HighlightTagRepositoryProtocol,
+from src.application.reading.protocols.tag_repository import (
+    TagRepositoryProtocol,
 )
 from src.domain.common.exceptions import ValidationError
-from src.domain.common.value_objects.ids import BookId, HighlightId, HighlightTagId, UserId
+from src.domain.common.value_objects.ids import BookId, HighlightId, TagId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.reading.entities.highlight import Highlight
-from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.domain.reading.entities.tag import Tag
 from src.domain.reading.exceptions import HighlightNotFoundError
 from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
@@ -33,7 +33,7 @@ class AddTagToHighlightByNameUseCase:
     def __init__(
         self,
         highlight_repository: HighlightRepositoryProtocol,
-        tag_repository: HighlightTagRepositoryProtocol,
+        tag_repository: TagRepositoryProtocol,
         highlight_style_repository: HighlightStyleRepositoryProtocol | None = None,
         highlight_style_resolver: HighlightStyleResolver | None = None,
     ) -> None:
@@ -44,7 +44,7 @@ class AddTagToHighlightByNameUseCase:
 
     async def add_tag(
         self, book_id: int, highlight_id: int, tag_name: str, user_id: int
-    ) -> tuple[Highlight, list[Flashcard], list[HighlightTag], dict[int, ResolvedLabel]]:
+    ) -> tuple[Highlight, list[Flashcard], list[Tag], dict[int, ResolvedLabel]]:
         """
         Add tag by name, creating if it doesn't exist (get-or-create pattern).
 
@@ -78,7 +78,7 @@ class AddTagToHighlightByNameUseCase:
         tag = await self.tag_repository.find_by_book_and_name(book_id_vo, tag_name, user_id_vo)
         if not tag:
             # Create new tag
-            tag = HighlightTag.create(
+            tag = Tag.create(
                 user_id=user_id_vo,
                 book_id=book_id_vo,
                 name=tag_name,
@@ -89,7 +89,7 @@ class AddTagToHighlightByNameUseCase:
 
         # Persist association via repository
         tag = await self.tag_repository.save(tag)
-        tag_id_vo = HighlightTagId(tag.id.value)
+        tag_id_vo = TagId(tag.id.value)
         added = await self.tag_repository.add_tag_to_highlight(
             highlight_id_vo, tag_id_vo, user_id_vo
         )

@@ -1,10 +1,10 @@
-"""Pydantic schemas for HighlightTag API request/response validation."""
+"""Pydantic schemas for Tag API request/response validation."""
 
 from pydantic import BaseModel, Field
 
 
-class HighlightTag(BaseModel):
-    """Schema for HighlightTag response."""
+class Tag(BaseModel):
+    """Schema for Tag response."""
 
     id: int
     book_id: int
@@ -14,8 +14,8 @@ class HighlightTag(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class HighlightTagInBook(BaseModel):
-    """Minimal highlight tag schema for book responses."""
+class TagInBook(BaseModel):
+    """Minimal tag schema for book responses."""
 
     id: int
     name: str
@@ -24,19 +24,19 @@ class HighlightTagInBook(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class HighlightTagCreateRequest(BaseModel):
-    """Schema for creating a new highlight tag."""
+class TagCreateRequest(BaseModel):
+    """Schema for creating a new tag."""
 
     name: str = Field(..., min_length=1, max_length=100, description="Tag name")
 
 
-class HighlightTagsResponse(BaseModel):
-    """Schema for list of highlight tags response."""
+class TagsResponse(BaseModel):
+    """Schema for list of tags response."""
 
-    tags: list[HighlightTag] = Field(..., description="List of highlight tags")
+    tags: list[Tag] = Field(..., description="List of tags")
 
 
-class HighlightTagAssociationRequest(BaseModel):
+class TagAssociationRequest(BaseModel):
     """Schema for associating a tag with a highlight."""
 
     tag_id: int | None = Field(None, description="ID of existing tag to associate")
@@ -45,15 +45,15 @@ class HighlightTagAssociationRequest(BaseModel):
     )
 
 
-class HighlightTagUpdateRequest(BaseModel):
-    """Schema for updating an existing highlight tag."""
+class TagUpdateRequest(BaseModel):
+    """Schema for updating an existing tag."""
 
     name: str | None = Field(None, min_length=1, max_length=100, description="Tag name")
     tag_group_id: int | None = Field(None, description="ID of tag group to associate with")
 
 
-class HighlightTagGroup(BaseModel):
-    """Schema for HighlightTagGroup response."""
+class TagGroup(BaseModel):
+    """Schema for TagGroup response."""
 
     id: int
     book_id: int
@@ -62,8 +62,8 @@ class HighlightTagGroup(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class HighlightTagGroupInBook(BaseModel):
-    """Minimal highlight tag group schema for book responses."""
+class TagGroupInBook(BaseModel):
+    """Minimal tag group schema for book responses."""
 
     id: int
     name: str
@@ -71,8 +71,8 @@ class HighlightTagGroupInBook(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class HighlightTagGroupCreateRequest(BaseModel):
-    """Schema for creating or updating a highlight tag group."""
+class TagGroupCreateRequest(BaseModel):
+    """Schema for creating or updating a tag group."""
 
     id: int | None = Field(None, description="ID of existing tag group to update (optional)")
     book_id: int = Field(..., description="ID of the book this tag group belongs to")

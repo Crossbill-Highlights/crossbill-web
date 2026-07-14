@@ -25,7 +25,7 @@ class NoteLinkedHighlight(BaseModel):
 
 
 class NoteLinkedTag(BaseModel):
-    """Lightweight summary of a highlight tag linked to a note."""
+    """Lightweight summary of a tag linked to a note."""
 
     id: int
     name: str
@@ -42,7 +42,7 @@ class Note(BaseModel):
     book_ids: list[int]
     chapter_ids: list[int]
     highlight_ids: list[int]
-    highlight_tag_ids: list[int]
+    tag_ids: list[int]
     created_at: datetime
     updated_at: datetime
 
@@ -52,7 +52,7 @@ class NoteWithLinks(Note):
 
     chapters: list[NoteLinkedChapter] = Field(default_factory=list)
     highlights: list[NoteLinkedHighlight] = Field(default_factory=list)
-    highlight_tags: list[NoteLinkedTag] = Field(default_factory=list)
+    tags: list[NoteLinkedTag] = Field(default_factory=list)
 
 
 class NoteCreateRequest(BaseModel):
@@ -64,7 +64,7 @@ class NoteCreateRequest(BaseModel):
     book_id: int = Field(..., description="Book this note is created in")
     chapter_ids: list[int] = Field(default_factory=list)
     highlight_ids: list[int] = Field(default_factory=list)
-    highlight_tag_ids: list[int] = Field(default_factory=list)
+    tag_ids: list[int] = Field(default_factory=list)
 
 
 class NoteCreateResponse(BaseModel):
@@ -83,7 +83,7 @@ class NoteUpdateRequest(BaseModel):
     kind: NoteKindLiteral | None = Field(None, description="Optional note kind")
     chapter_ids: list[int] = Field(default_factory=list)
     highlight_ids: list[int] = Field(default_factory=list)
-    highlight_tag_ids: list[int] = Field(default_factory=list)
+    tag_ids: list[int] = Field(default_factory=list)
 
 
 class NoteUpdateResponse(BaseModel):

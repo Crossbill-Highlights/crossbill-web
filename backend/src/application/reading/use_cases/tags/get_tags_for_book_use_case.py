@@ -1,26 +1,26 @@
-"""Use case for getting highlight tags for a book."""
+"""Use case for getting tags for a book."""
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
-from src.application.reading.protocols.highlight_tag_repository import (
-    HighlightTagRepositoryProtocol,
+from src.application.reading.protocols.tag_repository import (
+    TagRepositoryProtocol,
 )
 from src.domain.common.value_objects.ids import BookId, UserId
-from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.domain.reading.entities.tag import Tag
 from src.domain.reading.exceptions import BookNotFoundError
 
 
-class GetHighlightTagsForBookUseCase:
-    """Use case for getting highlight tags for a book."""
+class GetTagsForBookUseCase:
+    """Use case for getting tags for a book."""
 
     def __init__(
         self,
-        tag_repository: HighlightTagRepositoryProtocol,
+        tag_repository: TagRepositoryProtocol,
         book_repository: BookRepositoryProtocol,
     ) -> None:
         self.tag_repository = tag_repository
         self.book_repository = book_repository
 
-    async def get_tags(self, book_id: int, user_id: int) -> list[HighlightTag]:
+    async def get_tags(self, book_id: int, user_id: int) -> list[Tag]:
         """
         Get all tags for a book.
 

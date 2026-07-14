@@ -5,7 +5,7 @@ from src.application.reading.protocols.highlight_style_repository import (
 from src.domain.common.value_objects import HighlightId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.reading.entities.highlight import Highlight
-from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.domain.reading.entities.tag import Tag
 from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
     ResolvedLabel,
@@ -25,7 +25,7 @@ class HighlightUpdateNoteUseCase:
 
     async def update_note(
         self, highlight_id: int, user_id: int, note: str | None
-    ) -> tuple[Highlight, list[Flashcard], list[HighlightTag], dict[int, ResolvedLabel]] | None:
+    ) -> tuple[Highlight, list[Flashcard], list[Tag], dict[int, ResolvedLabel]] | None:
         """
         Update a highlight's note field.
 
@@ -37,7 +37,7 @@ class HighlightUpdateNoteUseCase:
             note: New note text (or None to clear)
 
         Returns:
-            Tuple of (Updated Highlight, Flashcards, HighlightTags, Labels) or None if not found
+            Tuple of (Updated Highlight, Flashcards, Tags, Labels) or None if not found
         """
         # Convert primitives to value objects
         highlight_id_vo = HighlightId(highlight_id)

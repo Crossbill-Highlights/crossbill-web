@@ -10,14 +10,14 @@ from src.application.reading.protocols.highlight_repository import (
 from src.application.reading.protocols.highlight_style_repository import (
     HighlightStyleRepositoryProtocol,
 )
-from src.application.reading.protocols.highlight_tag_repository import (
-    HighlightTagRepositoryProtocol,
+from src.application.reading.protocols.tag_repository import (
+    TagRepositoryProtocol,
 )
-from src.domain.common.value_objects.ids import HighlightId, HighlightTagId, UserId
+from src.domain.common.value_objects.ids import HighlightId, TagId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.reading.entities.highlight import Highlight
-from src.domain.reading.entities.highlight_tag import HighlightTag
-from src.domain.reading.exceptions import HighlightNotFoundError, HighlightTagNotFoundError
+from src.domain.reading.entities.tag import Tag
+from src.domain.reading.exceptions import HighlightNotFoundError, TagNotFoundError
 from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
     ResolvedLabel,
@@ -32,7 +32,7 @@ class AddTagToHighlightByIdUseCase:
     def __init__(
         self,
         highlight_repository: HighlightRepositoryProtocol,
-        tag_repository: HighlightTagRepositoryProtocol,
+        tag_repository: TagRepositoryProtocol,
         highlight_style_repository: HighlightStyleRepositoryProtocol | None = None,
         highlight_style_resolver: HighlightStyleResolver | None = None,
     ) -> None:
@@ -43,7 +43,7 @@ class AddTagToHighlightByIdUseCase:
 
     async def add_tag(
         self, highlight_id: int, tag_id: int, user_id: int
-    ) -> tuple[Highlight, list[Flashcard], list[HighlightTag], dict[int, ResolvedLabel]]:
+    ) -> tuple[Highlight, list[Flashcard], list[Tag], dict[int, ResolvedLabel]]:
         """
         Add an existing tag to a highlight.
 
@@ -59,7 +59,7 @@ class AddTagToHighlightByIdUseCase:
             ValueError: If highlight or tag not found
         """
         highlight_id_vo = HighlightId(highlight_id)
-        tag_id_vo = HighlightTagId(tag_id)
+        tag_id_vo = TagId(tag_id)
         user_id_vo = UserId(user_id)
 
         # Load entities
@@ -69,7 +69,7 @@ class AddTagToHighlightByIdUseCase:
 
         tag = await self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
         if not tag:
-            raise HighlightTagNotFoundError(tag_id)
+            raise TagNotFoundError(tag_id)
 
         # Use domain entity to validate
         highlight.add_tag(tag)

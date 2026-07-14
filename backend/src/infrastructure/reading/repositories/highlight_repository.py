@@ -24,13 +24,13 @@ from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.chapter import Chapter
 from src.domain.reading.entities.highlight import Highlight
-from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.domain.reading.entities.tag import Tag
 from src.infrastructure.common.sql import LIKE_ESCAPE_CHAR, escape_like_pattern
 from src.infrastructure.learning.mappers.flashcard_mapper import FlashcardMapper
 from src.infrastructure.library.mappers.book_mapper import BookMapper
 from src.infrastructure.library.mappers.chapter_mapper import ChapterMapper
 from src.infrastructure.reading.mappers.highlight_mapper import HighlightMapper
-from src.infrastructure.reading.mappers.highlight_tag_mapper import HighlightTagMapper
+from src.infrastructure.reading.mappers.tag_mapper import TagMapper
 from src.models import Bookmark as BookmarkORM
 from src.models import Flashcard as FlashcardORM
 from src.models import Highlight as HighlightORM
@@ -53,7 +53,7 @@ class HighlightRepository:
         self.mapper = HighlightMapper()
         self.book_mapper = BookMapper()
         self.chapter_mapper = ChapterMapper()
-        self.highlight_tag_mapper = HighlightTagMapper()
+        self.tag_mapper = TagMapper()
         self.flashcard_mapper = FlashcardMapper()
 
     async def find_by_id(self, highlight_id: HighlightId, user_id: UserId) -> Highlight | None:
@@ -95,7 +95,7 @@ class HighlightRepository:
 
     async def find_by_id_with_relations(
         self, highlight_id: HighlightId, user_id: UserId
-    ) -> tuple[Highlight, list[Flashcard], list[HighlightTag]] | None:
+    ) -> tuple[Highlight, list[Flashcard], list[Tag]] | None:
         """
         Load highlight by ID with its flashcards and tags eagerly loaded.
 
@@ -104,13 +104,13 @@ class HighlightRepository:
             user_id: User ID for authorization check
 
         Returns:
-            Tuple of (Highlight, list[Flashcard], list[HighlightTag]) if found, None otherwise
+            Tuple of (Highlight, list[Flashcard], list[Tag]) if found, None otherwise
         """
         stmt = (
             select(HighlightORM)
             .options(
                 joinedload(HighlightORM.flashcards),
-                joinedload(HighlightORM.highlight_tags),
+                joinedload(HighlightORM.tags),
             )
             .where(HighlightORM.id == highlight_id.value)
             .where(HighlightORM.user_id == user_id.value)
@@ -123,11 +123,9 @@ class HighlightRepository:
 
         highlight = self.mapper.to_domain(orm_model)
         flashcards = [self.flashcard_mapper.to_domain(fc_orm) for fc_orm in orm_model.flashcards]
-        highlight_tags = [
-            self.highlight_tag_mapper.to_domain(tag_orm) for tag_orm in orm_model.highlight_tags
-        ]
+        tags = [self.tag_mapper.to_domain(tag_orm) for tag_orm in orm_model.tags]
 
-        return highlight, flashcards, highlight_tags
+        return highlight, flashcards, tags
 
     async def save(self, highlight: Highlight) -> Highlight:
         """
@@ -237,7 +235,7 @@ class HighlightRepository:
         user_id: UserId,
         book_id: BookId | None = None,
         limit: int = 100,
-    ) -> list[tuple[Highlight, Book, Chapter | None, list[HighlightTag], list[Flashcard]]]:
+    ) -> list[tuple[Highlight, Book, Chapter | None, list[Tag], list[Flashcard]]]:
         """
         Search for highlights using full-text search (PostgreSQL) or LIKE (SQLite).
 
@@ -250,7 +248,7 @@ class HighlightRepository:
             limit: Maximum number of results to return (default 100)
 
         Returns:
-            List of tuples containing (Highlight, Book, Chapter or None, list[HighlightTag], list[Flashcard])
+            List of tuples containing (Highlight, Book, Chapter or None, list[Tag], list[Flashcard])
         """
         # Check database type
         dialect_name = self.db.bind.dialect.name
@@ -262,7 +260,7 @@ class HighlightRepository:
             .options(
                 joinedload(HighlightORM.book),
                 joinedload(HighlightORM.chapter),
-                joinedload(HighlightORM.highlight_tags),
+                joinedload(HighlightORM.tags),
                 joinedload(HighlightORM.flashcards),
             )
             .where(
@@ -308,10 +306,7 @@ class HighlightRepository:
                 self.chapter_mapper.to_domain(highlight_orm.chapter)
                 if highlight_orm.chapter
                 else None,
-                [
-                    self.highlight_tag_mapper.to_domain(tag_orm)
-                    for tag_orm in highlight_orm.highlight_tags
-                ],
+                [self.tag_mapper.to_domain(tag_orm) for tag_orm in highlight_orm.tags],
                 [self.flashcard_mapper.to_domain(fc_orm) for fc_orm in highlight_orm.flashcards],
             )
             for highlight_orm in results
@@ -406,7 +401,7 @@ class HighlightRepository:
 
     async def find_by_ids_with_tags(
         self, highlight_ids: list[HighlightId], user_id: UserId
-    ) -> list[tuple[Highlight, Chapter | None, list[HighlightTag]]]:
+    ) -> list[tuple[Highlight, Chapter | None, list[Tag]]]:
         """
         Get highlights by IDs with tags and chapters.
 
@@ -415,7 +410,7 @@ class HighlightRepository:
             user_id: The user ID for ownership verification
 
         Returns:
-            List of tuples (Highlight, Chapter | None, list[HighlightTag])
+            List of tuples (Highlight, Chapter | None, list[Tag])
         """
         if not highlight_ids:
             return []
@@ -425,7 +420,7 @@ class HighlightRepository:
         stmt = (
             select(HighlightORM)
             .options(
-                joinedload(HighlightORM.highlight_tags),
+                joinedload(HighlightORM.tags),
                 joinedload(HighlightORM.chapter),
             )
             .where(
@@ -442,7 +437,7 @@ class HighlightRepository:
             (
                 self.mapper.to_domain(h_orm),
                 self.chapter_mapper.to_domain(h_orm.chapter) if h_orm.chapter else None,
-                [self.highlight_tag_mapper.to_domain(tag_orm) for tag_orm in h_orm.highlight_tags],
+                [self.tag_mapper.to_domain(tag_orm) for tag_orm in h_orm.tags],
             )
             for h_orm in highlight_orms
         ]

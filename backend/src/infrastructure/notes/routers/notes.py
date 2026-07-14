@@ -47,7 +47,7 @@ def note_entity_to_schema(entity: NoteEntity) -> Note:
         book_ids=entity.book_ids,
         chapter_ids=entity.chapter_ids,
         highlight_ids=entity.highlight_ids,
-        highlight_tag_ids=entity.highlight_tag_ids,
+        tag_ids=entity.tag_ids,
         created_at=entity.created_at,
         updated_at=entity.updated_at,
     )
@@ -67,9 +67,7 @@ def note_with_links_to_schema(dto: NoteWithLinkedEntities) -> NoteWithLinks:
             )
             for highlight in dto.highlights
         ],
-        highlight_tags=[
-            NoteLinkedTag(id=tag.id.value, name=tag.name) for tag in dto.highlight_tags
-        ],
+        tags=[NoteLinkedTag(id=tag.id.value, name=tag.name) for tag in dto.tags],
     )
 
 
@@ -91,7 +89,7 @@ async def create_note(
         book_id=request.book_id,
         chapter_ids=request.chapter_ids,
         highlight_ids=request.highlight_ids,
-        highlight_tag_ids=request.highlight_tag_ids,
+        tag_ids=request.tag_ids,
     )
     return NoteCreateResponse(
         success=True,
@@ -125,7 +123,7 @@ async def get_notes_for_book(
     kind: Annotated[NoteKindLiteral | None, Query()] = None,
     chapter_id: Annotated[int | None, Query()] = None,
     highlight_id: Annotated[int | None, Query()] = None,
-    highlight_tag_id: Annotated[int | None, Query()] = None,
+    tag_id: Annotated[int | None, Query()] = None,
     use_case: GetNotesByBookUseCase = Depends(
         inject_use_case(container.notes.get_notes_by_book_use_case)
     ),
@@ -136,7 +134,7 @@ async def get_notes_for_book(
         kind=kind,
         chapter_id=chapter_id,
         highlight_id=highlight_id,
-        highlight_tag_id=highlight_tag_id,
+        tag_id=tag_id,
     )
     return NotesResponse(notes=[note_with_links_to_schema(dto) for dto in dtos])
 
@@ -160,7 +158,7 @@ async def update_note(
         kind=request.kind,
         chapter_ids=request.chapter_ids,
         highlight_ids=request.highlight_ids,
-        highlight_tag_ids=request.highlight_tag_ids,
+        tag_ids=request.tag_ids,
     )
     return NoteUpdateResponse(
         success=True,

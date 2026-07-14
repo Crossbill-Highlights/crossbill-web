@@ -1,30 +1,30 @@
 """
-Use case for updating a highlight tag group's name.
+Use case for updating a tag group's name.
 """
 
 import structlog
 
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
-from src.application.reading.protocols.highlight_tag_repository import (
-    HighlightTagRepositoryProtocol,
+from src.application.reading.protocols.tag_repository import (
+    TagRepositoryProtocol,
 )
-from src.domain.common.value_objects.ids import BookId, HighlightTagGroupId, UserId
-from src.domain.reading.entities.highlight_tag_group import HighlightTagGroup
+from src.domain.common.value_objects.ids import BookId, TagGroupId, UserId
+from src.domain.reading.entities.tag_group import TagGroup
 from src.domain.reading.exceptions import (
     BookNotFoundError,
     DuplicateTagGroupNameError,
-    HighlightTagGroupNotFoundError,
+    TagGroupNotFoundError,
 )
 
 logger = structlog.get_logger(__name__)
 
 
-class UpdateHighlightTagGroupUseCase:
-    """Use case for updating a highlight tag group's name."""
+class UpdateTagGroupUseCase:
+    """Use case for updating a tag group's name."""
 
     def __init__(
         self,
-        tag_repository: HighlightTagRepositoryProtocol,
+        tag_repository: TagRepositoryProtocol,
         book_repository: BookRepositoryProtocol,
     ) -> None:
         self.tag_repository = tag_repository
@@ -32,7 +32,7 @@ class UpdateHighlightTagGroupUseCase:
 
     async def update_group(
         self, group_id: int, book_id: int, new_name: str, user_id: int
-    ) -> HighlightTagGroup:
+    ) -> TagGroup:
         """
         Update a tag group's name.
 
@@ -47,10 +47,10 @@ class UpdateHighlightTagGroupUseCase:
 
         Raises:
             BookNotFoundError: If book not found
-            HighlightTagGroupNotFoundError: If group not found
+            TagGroupNotFoundError: If group not found
             DuplicateTagGroupNameError: If new name already exists
         """
-        group_id_vo = HighlightTagGroupId(group_id)
+        group_id_vo = TagGroupId(group_id)
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
@@ -61,7 +61,7 @@ class UpdateHighlightTagGroupUseCase:
         # Load group and verify it belongs to the correct book
         group = await self.tag_repository.find_group_by_id(group_id_vo, book_id_vo)
         if not group:
-            raise HighlightTagGroupNotFoundError(group_id)
+            raise TagGroupNotFoundError(group_id)
 
         # Check for duplicate (if name changed)
         if new_name.strip() != group.name:

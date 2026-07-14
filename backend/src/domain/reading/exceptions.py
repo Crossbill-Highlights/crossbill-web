@@ -69,11 +69,11 @@ class DuplicateHighlightError(ConflictError):
         )
 
 
-class HighlightTagNotFoundError(EntityNotFoundError):
-    """Raised when a highlight tag cannot be found."""
+class TagNotFoundError(EntityNotFoundError):
+    """Raised when a tag cannot be found."""
 
     def __init__(self, tag_id: int) -> None:
-        super().__init__("HighlightTag", tag_id)
+        super().__init__("Tag", tag_id)
 
 
 class DuplicateTagNameError(ConflictError):
@@ -86,11 +86,11 @@ class DuplicateTagNameError(ConflictError):
         )
 
 
-class HighlightTagGroupNotFoundError(EntityNotFoundError):
-    """Raised when a highlight tag group cannot be found."""
+class TagGroupNotFoundError(EntityNotFoundError):
+    """Raised when a tag group cannot be found."""
 
     def __init__(self, group_id: int) -> None:
-        super().__init__("HighlightTagGroup", group_id)
+        super().__init__("TagGroup", group_id)
 
 
 class DuplicateTagGroupNameError(ConflictError):

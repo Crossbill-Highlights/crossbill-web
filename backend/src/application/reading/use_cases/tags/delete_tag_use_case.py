@@ -1,22 +1,22 @@
-"""Use case for deleting highlight tags."""
+"""Use case for deleting tags."""
 
 import structlog
 
-from src.application.reading.protocols.highlight_tag_repository import (
-    HighlightTagRepositoryProtocol,
+from src.application.reading.protocols.tag_repository import (
+    TagRepositoryProtocol,
 )
-from src.domain.common.value_objects.ids import HighlightTagId, UserId
-from src.domain.reading.exceptions import HighlightTagNotFoundError
+from src.domain.common.value_objects.ids import TagId, UserId
+from src.domain.reading.exceptions import TagNotFoundError
 
 logger = structlog.get_logger(__name__)
 
 
-class DeleteHighlightTagUseCase:
-    """Use case for deleting highlight tags."""
+class DeleteTagUseCase:
+    """Use case for deleting tags."""
 
     def __init__(
         self,
-        tag_repository: HighlightTagRepositoryProtocol,
+        tag_repository: TagRepositoryProtocol,
     ) -> None:
         self.tag_repository = tag_repository
 
@@ -35,7 +35,7 @@ class DeleteHighlightTagUseCase:
         Raises:
             NotFoundError: If tag doesn't belong to book
         """
-        tag_id_vo = HighlightTagId(tag_id)
+        tag_id_vo = TagId(tag_id)
         user_id_vo = UserId(user_id)
 
         tag = await self.tag_repository.find_by_id(tag_id_vo, user_id_vo)
@@ -43,10 +43,10 @@ class DeleteHighlightTagUseCase:
             return False
 
         if tag.book_id.value != book_id:
-            raise HighlightTagNotFoundError(tag_id)
+            raise TagNotFoundError(tag_id)
 
         success = await self.tag_repository.delete(tag_id_vo, user_id_vo)
         if success:
-            logger.info("deleted_highlight_tag", tag_id=tag_id, book_id=book_id)
+            logger.info("deleted_tag", tag_id=tag_id, book_id=book_id)
 
         return success

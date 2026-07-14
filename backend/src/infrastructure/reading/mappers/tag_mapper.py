@@ -1,16 +1,16 @@
-"""Mapper for HighlightTag ORM ↔ Domain conversion."""
+"""Mapper for Tag ORM ↔ Domain conversion."""
 
 from sqlalchemy import inspect
 
-from src.domain.common.value_objects.ids import BookId, HighlightTagId, UserId
-from src.domain.reading.entities.highlight_tag import HighlightTag
-from src.models import HighlightTag as HighlightTagORM
+from src.domain.common.value_objects.ids import BookId, TagId, UserId
+from src.domain.reading.entities.tag import Tag
+from src.models import Tag as TagORM
 
 
-class HighlightTagMapper:
-    """Mapper for HighlightTag ORM ↔ Domain conversion."""
+class TagMapper:
+    """Mapper for Tag ORM ↔ Domain conversion."""
 
-    def to_domain(self, orm_model: HighlightTagORM) -> HighlightTag:
+    def to_domain(self, orm_model: TagORM) -> Tag:
         """Convert ORM model to domain entity."""
         # Get tag_group_id from ORM
         tag_group_id = orm_model.tag_group_id
@@ -21,8 +21,8 @@ class HighlightTagMapper:
         if "tag_group" not in insp.unloaded and orm_model.tag_group:
             group_name = orm_model.tag_group.name
 
-        return HighlightTag.create_with_id(
-            id=HighlightTagId(orm_model.id),
+        return Tag.create_with_id(
+            id=TagId(orm_model.id),
             user_id=UserId(orm_model.user_id),
             book_id=BookId(orm_model.book_id),
             name=orm_model.name,
@@ -30,9 +30,7 @@ class HighlightTagMapper:
             group_name=group_name,
         )
 
-    def to_orm(
-        self, domain_entity: HighlightTag, orm_model: HighlightTagORM | None = None
-    ) -> HighlightTagORM:
+    def to_orm(self, domain_entity: Tag, orm_model: TagORM | None = None) -> TagORM:
         """Convert domain entity to ORM model."""
         if orm_model:
             # Update existing
@@ -43,7 +41,7 @@ class HighlightTagMapper:
             return orm_model
 
         # Create new
-        return HighlightTagORM(
+        return TagORM(
             id=domain_entity.id.value if domain_entity.id.value != 0 else None,
             user_id=domain_entity.user_id.value,
             book_id=domain_entity.book_id.value,

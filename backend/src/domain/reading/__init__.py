@@ -1,11 +1,11 @@
 """Reading module domain layer."""
 
-from .entities import Highlight, HighlightTag, ReadingSession
+from .entities import Highlight, ReadingSession, Tag
 from .services import HighlightDeduplicationService
 
 __all__ = [
     "Highlight",
     "HighlightDeduplicationService",
-    "HighlightTag",
     "ReadingSession",
+    "Tag",
 ]

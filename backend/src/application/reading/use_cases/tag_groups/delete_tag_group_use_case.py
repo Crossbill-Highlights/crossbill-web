@@ -1,23 +1,23 @@
 """
-Use case for deleting a highlight tag group.
+Use case for deleting a tag group.
 """
 
 import structlog
 
-from src.application.reading.protocols.highlight_tag_repository import (
-    HighlightTagRepositoryProtocol,
+from src.application.reading.protocols.tag_repository import (
+    TagRepositoryProtocol,
 )
-from src.domain.common.value_objects.ids import HighlightTagGroupId
+from src.domain.common.value_objects.ids import TagGroupId
 
 logger = structlog.get_logger(__name__)
 
 
-class DeleteHighlightTagGroupUseCase:
-    """Use case for deleting a highlight tag group."""
+class DeleteTagGroupUseCase:
+    """Use case for deleting a tag group."""
 
     def __init__(
         self,
-        tag_repository: HighlightTagRepositoryProtocol,
+        tag_repository: TagRepositoryProtocol,
     ) -> None:
         self.tag_repository = tag_repository
 
@@ -32,7 +32,7 @@ class DeleteHighlightTagGroupUseCase:
         Returns:
             True if deleted, False if not found
         """
-        group_id_vo = HighlightTagGroupId(group_id)
+        group_id_vo = TagGroupId(group_id)
 
         success = await self.tag_repository.delete_group(group_id_vo)
         if success:

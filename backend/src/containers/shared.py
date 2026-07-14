@@ -35,7 +35,7 @@ from src.infrastructure.reading.repositories import (
     BookmarkRepository,
     HighlightRepository,
     HighlightStyleRepository,
-    HighlightTagRepository,
+    TagRepository,
 )
 from src.infrastructure.reading.repositories.chapter_prereading_repository import (
     ChapterPrereadingRepository,
@@ -68,7 +68,7 @@ class SharedContainer(containers.DeclarativeContainer):
     book_repository = providers.Factory(BookRepository, db=db)
     bookmark_repository = providers.Factory(BookmarkRepository, db=db)
     highlight_repository = providers.Factory(HighlightRepository, db=db)
-    highlight_tag_repository = providers.Factory(HighlightTagRepository, db=db)
+    tag_repository = providers.Factory(TagRepository, db=db)
     chapter_repository = providers.Factory(ChapterRepository, db=db)
     note_repository = providers.Factory(NoteRepository, db=db)
     reading_session_repository = providers.Factory(ReadingSessionRepository, db=db)

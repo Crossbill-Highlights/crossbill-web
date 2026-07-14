@@ -4,10 +4,10 @@ from src.application.library.protocols.chapter_repository import ChapterReposito
 from src.application.notes.protocols.note_repository import NoteRepositoryProtocol
 from src.application.notes.use_cases.dtos import NoteWithLinkedEntities
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
-from src.application.reading.protocols.highlight_tag_repository import (
-    HighlightTagRepositoryProtocol,
+from src.application.reading.protocols.tag_repository import (
+    TagRepositoryProtocol,
 )
-from src.domain.common.value_objects import ChapterId, HighlightId, HighlightTagId, NoteId, UserId
+from src.domain.common.value_objects import ChapterId, HighlightId, NoteId, TagId, UserId
 from src.domain.notes.exceptions import NoteNotFoundError
 
 
@@ -19,12 +19,12 @@ class GetNoteUseCase:
         note_repository: NoteRepositoryProtocol,
         chapter_repository: ChapterRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
-        highlight_tag_repository: HighlightTagRepositoryProtocol,
+        tag_repository: TagRepositoryProtocol,
     ) -> None:
         self.note_repository = note_repository
         self.chapter_repository = chapter_repository
         self.highlight_repository = highlight_repository
-        self.highlight_tag_repository = highlight_tag_repository
+        self.tag_repository = tag_repository
 
     async def get_note(self, note_id: int, user_id: int) -> NoteWithLinkedEntities:
         user_id_vo = UserId(user_id)
@@ -47,15 +47,15 @@ class GetNoteUseCase:
             if highlight and highlight.deleted_at is None:
                 highlights.append(highlight)
 
-        highlight_tags = []
-        for tag_id in note.highlight_tag_ids:
-            tag = await self.highlight_tag_repository.find_by_id(HighlightTagId(tag_id), user_id_vo)
+        tags = []
+        for tag_id in note.tag_ids:
+            tag = await self.tag_repository.find_by_id(TagId(tag_id), user_id_vo)
             if tag:
-                highlight_tags.append(tag)
+                tags.append(tag)
 
         return NoteWithLinkedEntities(
             note=note,
             chapters=chapters,
             highlights=highlights,
-            highlight_tags=highlight_tags,
+            tags=tags,
         )
