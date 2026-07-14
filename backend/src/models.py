@@ -22,25 +22,6 @@ from sqlalchemy.types import JSON
 
 from src.database import Base
 
-# Association table for many-to-many relationship between books and tags
-book_tags = Table(
-    "book_tags",
-    Base.metadata,
-    Column(
-        "book_id", Integer, ForeignKey("books.id", ondelete="CASCADE"), primary_key=True, index=True
-    ),
-    Column(
-        "tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True, index=True
-    ),
-    Column(
-        "created_at",
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False,
-    ),
-)
-
-
 # Association table for many-to-many relationship between highlights and highlight_tags
 highlight_highlight_tags = Table(
     "highlight_highlight_tags",
@@ -196,7 +177,6 @@ class User(Base):
 
     # Relationships
     books: Mapped[list["Book"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    tags: Mapped[list["Tag"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     highlights: Mapped[list["Highlight"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
@@ -287,9 +267,6 @@ class Book(Base):
     )
     chapters: Mapped[list["Chapter"]] = relationship(
         back_populates="book", cascade="all, delete-orphan"
-    )
-    tags: Mapped[list["Tag"]] = relationship(
-        secondary=book_tags, back_populates="books", lazy="selectin"
     )
     highlight_tags: Mapped[list["HighlightTag"]] = relationship(
         back_populates="book", cascade="all, delete-orphan"
@@ -475,40 +452,6 @@ class Highlight(Base):
     def __repr__(self) -> str:
         """String representation of Highlight."""
         return f"<Highlight(id={self.id}, text='{self.text[:50]}...', book_id={self.book_id})>"
-
-
-class Tag(Base):
-    """Tag model for categorizing books."""
-
-    __tablename__ = "tags"
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
-    )
-    name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    created_at: Mapped[dt] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    updated_at: Mapped[dt] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False,
-    )
-
-    # Relationships
-    user: Mapped["User"] = relationship(back_populates="tags")
-    books: Mapped[list["Book"]] = relationship(
-        secondary=book_tags, back_populates="tags", lazy="selectin"
-    )
-
-    # Unique constraint: tag names are unique per user
-    __table_args__ = (UniqueConstraint("user_id", "name", name="uq_tag_user_name"),)
-
-    def __repr__(self) -> str:
-        """String representation of Tag."""
-        return f"<Tag(id={self.id}, name='{self.name}')>"
 
 
 class HighlightTagGroup(Base):

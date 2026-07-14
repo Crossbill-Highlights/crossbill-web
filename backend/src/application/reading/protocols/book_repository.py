@@ -2,7 +2,6 @@ from typing import Protocol
 
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.library.entities.book import Book
-from src.domain.library.entities.tag import Tag
 
 
 class BookRepositoryProtocol(Protocol):
@@ -16,7 +15,7 @@ class BookRepositoryProtocol(Protocol):
 
     async def get_recently_viewed_books(
         self, user_id: UserId, limit: int = 10
-    ) -> list[tuple[Book, int, int, list[Tag]]]: ...
+    ) -> list[tuple[Book, int, int]]: ...
 
     async def get_books_with_counts(
         self,
@@ -25,4 +24,4 @@ class BookRepositoryProtocol(Protocol):
         limit: int = 100,
         include_only_with_flashcards: bool = False,
         search_text: str | None = None,
-    ) -> tuple[list[tuple[Book, int, int, list[Tag]]], int]: ...
+    ) -> tuple[list[tuple[Book, int, int]], int]: ...

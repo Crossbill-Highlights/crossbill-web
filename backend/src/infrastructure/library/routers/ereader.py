@@ -62,7 +62,6 @@ async def create_book(
         description=book_data.description,
         language=book_data.language,
         page_count=book_data.page_count,
-        keywords=book_data.keywords,
     )
     await create_use_case.create_book(create_input, current_user.id.value)
 

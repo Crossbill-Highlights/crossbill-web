@@ -9,16 +9,13 @@ from src.infrastructure.library.schemas.book_schemas import (
     EpubUploadResponse,
     EreaderBookMetadata,
     RecentlyViewedBooksResponse,
-    TagInBook,
 )
 from src.infrastructure.library.schemas.chapter_schemas import Chapter, ChapterBase
-from src.infrastructure.library.schemas.tag_schemas import BookUpdateRequest, Tag
 
 __all__ = [
     "Book",
     "BookBase",
     "BookCreate",
-    "BookUpdateRequest",
     "BookWithHighlightCount",
     "BooksListResponse",
     "Chapter",
@@ -26,6 +23,4 @@ __all__ = [
     "EpubUploadResponse",
     "EreaderBookMetadata",
     "RecentlyViewedBooksResponse",
-    "Tag",
-    "TagInBook",
 ]

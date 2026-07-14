@@ -19,7 +19,6 @@ class BookDetailsAggregation:
     """Aggregated book data for detail view."""
 
     book: Book
-    tags: list[Any]  # Legacy ORM models (temporary)
     highlight_tags: list[Any]  # Legacy ORM models (temporary)
     highlight_tag_groups: list[Any]  # Legacy ORM models (temporary)
     bookmarks: list[Any]  # Legacy ORM models (temporary)

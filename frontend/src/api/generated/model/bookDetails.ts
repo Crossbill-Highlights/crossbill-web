@@ -10,7 +10,6 @@ import type { Flashcard } from './flashcard';
 import type { HighlightTagGroupInBook } from './highlightTagGroupInBook';
 import type { HighlightTagInBook } from './highlightTagInBook';
 import type { PositionResponse } from './positionResponse';
-import type { TagInBook } from './tagInBook';
 
 /**
  * Schema for detailed Book response with chapters and highlights.
@@ -28,8 +27,6 @@ export interface BookDetails {
   description?: string | null;
   language?: string | null;
   page_count?: number | null;
-  /** List of tags for this book */
-  tags: TagInBook[];
   /** List of highlight tags for this book */
   highlight_tags: HighlightTagInBook[];
   /** List of highlight tag groups for this book */

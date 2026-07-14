@@ -5,9 +5,6 @@ import logging
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
-from src.application.library.use_cases.book_tag_associations.get_book_tags_use_case import (
-    GetBookTagsUseCase,
-)
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.application.reading.protocols.highlight_style_repository import (
@@ -48,7 +45,6 @@ class GetBookDetailsUseCase:
         highlight_repository: HighlightRepositoryProtocol,
         highlight_tag_repository: HighlightTagRepositoryProtocol,
         flashcard_repository: FlashcardRepositoryProtocol,
-        get_book_tags_use_case: GetBookTagsUseCase,
         highlight_tag_use_case: GetHighlightTagsForBookUseCase,
         highlight_grouping_service: HighlightGroupingService,
         reading_session_repository: ReadingSessionRepositoryProtocol,
@@ -61,7 +57,6 @@ class GetBookDetailsUseCase:
         self.highlight_repository = highlight_repository
         self.highlight_tag_repository = highlight_tag_repository
         self.flashcard_repository = flashcard_repository
-        self.get_book_tags_use_case = get_book_tags_use_case
         self.highlight_tag_use_case = highlight_tag_use_case
         self.highlight_grouping_service = highlight_grouping_service
         self.reading_session_repository = reading_session_repository
@@ -149,9 +144,6 @@ class GetBookDetailsUseCase:
         # Get bookmarks (returns domain entities)
         bookmarks = await self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)
 
-        # Get tags using use case
-        tags = await self.get_book_tags_use_case.get_tags(book_id, user_id)
-
         # Get highlight tag groups
         highlight_tag_groups = await self.highlight_tag_repository.find_groups_by_book(book_id_vo)
 
@@ -173,7 +165,6 @@ class GetBookDetailsUseCase:
         # Return domain aggregation
         return BookDetailsAggregation(
             book=book,
-            tags=tags,
             highlight_tags=highlight_tags,
             highlight_tag_groups=highlight_tag_groups,
             bookmarks=bookmarks,

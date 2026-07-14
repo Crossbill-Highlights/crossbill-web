@@ -31,6 +31,4 @@ export interface BookCreate {
    * @maxLength 255
    */
   client_book_id: string;
-  /** Keywords from ebook metadata (will be converted to tags) */
-  keywords?: string[] | null;
 }

@@ -1,13 +1,10 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.library.entities.book import Book
-from src.domain.library.entities.tag import Tag
 from src.infrastructure.common.sql import LIKE_ESCAPE_CHAR, escape_like_pattern
 from src.infrastructure.library.mappers.book_mapper import BookMapper
-from src.infrastructure.library.mappers.tag_mapper import TagMapper
 from src.models import Book as BookORM
 from src.models import Flashcard as FlashcardORM
 from src.models import Highlight as HighlightORM
@@ -19,7 +16,6 @@ class BookRepository:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.mapper = BookMapper()
-        self.tag_mapper = TagMapper()
 
     async def find_by_client_book_id(self, client_book_id: str, user_id: UserId) -> Book | None:
         """
@@ -88,7 +84,7 @@ class BookRepository:
 
     async def get_recently_viewed_books(
         self, user_id: UserId, limit: int = 10
-    ) -> list[tuple[Book, int, int, list[Tag]]]:
+    ) -> list[tuple[Book, int, int]]:
         """
         Get recently viewed books with their highlight and flashcard counts.
 
@@ -99,7 +95,7 @@ class BookRepository:
             limit: Maximum number of books to return (default: 10)
 
         Returns:
-            List of tuples containing (Book entity, highlight_count, flashcard_count, list[Tag])
+            List of tuples containing (Book entity, highlight_count, flashcard_count)
             ordered by last_viewed DESC.
         """
         # Subquery for highlight counts (excluding soft-deleted highlights)
@@ -125,7 +121,6 @@ class BookRepository:
 
         stmt = (
             select(BookORM, highlight_count_subq, flashcard_count_subq)
-            .options(selectinload(BookORM.tags))
             .where(
                 BookORM.user_id == user_id.value,
                 BookORM.last_viewed.isnot(None),
@@ -137,13 +132,12 @@ class BookRepository:
         result = await self.db.execute(stmt)
         results = result.all()
 
-        # Convert ORM models to domain entities with counts and tags
+        # Convert ORM models to domain entities with counts
         return [
             (
                 self.mapper.to_domain(book_orm),
                 highlight_count,
                 flashcard_count,
-                [self.tag_mapper.to_domain(tag_orm) for tag_orm in book_orm.tags],
             )
             for book_orm, highlight_count, flashcard_count in results
         ]
@@ -155,7 +149,7 @@ class BookRepository:
         limit: int = 100,
         include_only_with_flashcards: bool = False,
         search_text: str | None = None,
-    ) -> tuple[list[tuple[Book, int, int, list[Tag]]], int]:
+    ) -> tuple[list[tuple[Book, int, int]], int]:
         """
         Get books with their highlight and flashcard counts for a specific user.
 
@@ -169,8 +163,8 @@ class BookRepository:
             search_text: Optional text to search for in book title or author (case-insensitive)
 
         Returns:
-            tuple[list[tuple[Book, highlight_count, flashcard_count, list[Tag]]], total_count]:
-                (list of (book, highlight_count, flashcard_count, tags) tuples, total count)
+            tuple[list[tuple[Book, highlight_count, flashcard_count]], total_count]:
+                (list of (book, highlight_count, flashcard_count) tuples, total count)
         """
         # Build base filter conditions - always filter by user
         filters = [BookORM.user_id == user_id.value]
@@ -215,7 +209,6 @@ class BookRepository:
         # Main query for books with both counts
         stmt = (
             select(BookORM, highlight_count_subq, flashcard_count_subq)
-            .options(selectinload(BookORM.tags))
             .where(*filters)
             .order_by(BookORM.title)
             .offset(offset)
@@ -225,14 +218,13 @@ class BookRepository:
         result = await self.db.execute(stmt)
         results = result.all()
 
-        # Convert ORM models to domain entities with counts and tags
+        # Convert ORM models to domain entities with counts
         return (
             [
                 (
                     self.mapper.to_domain(book_orm),
                     highlight_count,
                     flashcard_count,
-                    [self.tag_mapper.to_domain(tag_orm) for tag_orm in book_orm.tags],
                 )
                 for book_orm, highlight_count, flashcard_count in results
             ],

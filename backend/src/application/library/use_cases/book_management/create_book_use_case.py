@@ -4,9 +4,6 @@ import logging
 
 from src.application.library.dtos import CreateBookInput
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
-from src.application.library.use_cases.book_tag_associations.add_tags_to_book_use_case import (
-    AddTagsToBookUseCase,
-)
 from src.domain.common.value_objects import UserId
 from src.domain.library.entities.book import Book
 
@@ -19,10 +16,8 @@ class CreateBookUseCase:
     def __init__(
         self,
         book_repository: BookRepositoryProtocol,
-        add_tags_to_book_use_case: AddTagsToBookUseCase,
     ) -> None:
         self.book_repository = book_repository
-        self.add_tags_to_book_use_case = add_tags_to_book_use_case
 
     async def create_book(self, book_data: CreateBookInput, user_id: int) -> tuple[Book, bool]:
         """
@@ -62,11 +57,5 @@ class CreateBookUseCase:
 
         # Save book
         book = await self.book_repository.save(book)
-
-        # Add tags using use case
-        if book_data.keywords:
-            await self.add_tags_to_book_use_case.add_tags(
-                book.id.value, book_data.keywords, user_id
-            )
 
         return book, True

@@ -11,7 +11,6 @@ from .ids import (
     NoteId,
     PrereadingContentId,
     ReadingSessionId,
-    TagId,
     UserId,
 )
 from .position import Position
@@ -31,7 +30,6 @@ __all__ = [
     "PositionIndex",
     "PrereadingContentId",
     "ReadingSessionId",
-    "TagId",
     "UserId",
     "XPoint",
     "XPointRange",

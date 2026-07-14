@@ -5,7 +5,6 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PositionResponse } from './positionResponse';
-import type { TagInBook } from './tagInBook';
 
 /**
  * Schema for Book with highlight and flashcard counts.
@@ -33,8 +32,6 @@ export interface BookWithHighlightCount {
    * @minimum 0
    */
   flashcard_count?: number;
-  /** List of tags for this book */
-  tags: TagInBook[];
   /** End position of the book (total document length) */
   end_position?: PositionResponse | null;
   created_at: string;

@@ -1,6 +1,5 @@
 import type { BookDetails } from '@/api/generated/model';
 import { BookCover } from '@/components/BookCover.tsx';
-import { BookTagList } from '@/pages/BookPage/BookTitle/BookTagList.tsx';
 import { EditIcon } from '@/theme/Icons.tsx';
 import { Box, Button, LinearProgress, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
@@ -126,8 +125,6 @@ export const BookTitle = ({ book }: BookTitleProps) => {
           </Box>
 
           <BookStatsStrip book={book} />
-
-          <BookTagList tags={book.tags} />
         </Box>
       </Box>
 

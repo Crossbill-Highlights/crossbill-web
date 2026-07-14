@@ -13,9 +13,6 @@ from src.application.library.use_cases.book_management.delete_book_use_case impo
 from src.application.library.use_cases.book_management.get_book_details_use_case import (
     GetBookDetailsUseCase,
 )
-from src.application.library.use_cases.book_management.update_book_use_case import (
-    UpdateBookUseCase,
-)
 from src.application.library.use_cases.book_queries.get_books_with_counts_use_case import (
     GetBooksWithCountsUseCase,
 )
@@ -24,15 +21,6 @@ from src.application.library.use_cases.book_queries.get_ereader_metadata_use_cas
 )
 from src.application.library.use_cases.book_queries.get_recently_viewed_books_use_case import (
     GetRecentlyViewedBooksUseCase,
-)
-from src.application.library.use_cases.book_tag_associations.add_tags_to_book_use_case import (
-    AddTagsToBookUseCase,
-)
-from src.application.library.use_cases.book_tag_associations.get_book_tags_use_case import (
-    GetBookTagsUseCase,
-)
-from src.application.library.use_cases.book_tag_associations.replace_book_tags_use_case import (
-    ReplaceBookTagsUseCase,
 )
 
 
@@ -47,7 +35,6 @@ class LibraryContainer(containers.DeclarativeContainer):
     highlight_tag_repository = providers.Dependency()
     highlight_style_repository = providers.Dependency()
     reading_session_repository = providers.Dependency()
-    tag_repository = providers.Dependency()
     flashcard_repository = providers.Dependency()
     file_repository = providers.Dependency()
     highlight_grouping_service = providers.Dependency()
@@ -58,23 +45,6 @@ class LibraryContainer(containers.DeclarativeContainer):
 
     # Cross-module dependency from reading
     get_highlight_tags_for_book_use_case = providers.Dependency()
-
-    # Book tag associations (needed by create/update book)
-    add_tags_to_book_use_case = providers.Factory(
-        AddTagsToBookUseCase,
-        tag_repository=tag_repository,
-        book_repository=book_repository,
-    )
-    replace_book_tags_use_case = providers.Factory(
-        ReplaceBookTagsUseCase,
-        tag_repository=tag_repository,
-        book_repository=book_repository,
-    )
-    get_book_tags_use_case = providers.Factory(
-        GetBookTagsUseCase,
-        tag_repository=tag_repository,
-        book_repository=book_repository,
-    )
 
     # Book files
     ebook_upload_use_case = providers.Factory(
@@ -97,7 +67,6 @@ class LibraryContainer(containers.DeclarativeContainer):
     create_book_use_case = providers.Factory(
         CreateBookUseCase,
         book_repository=book_repository,
-        add_tags_to_book_use_case=add_tags_to_book_use_case,
     )
     get_book_details_use_case = providers.Factory(
         GetBookDetailsUseCase,
@@ -107,19 +76,11 @@ class LibraryContainer(containers.DeclarativeContainer):
         highlight_repository=highlight_repository,
         highlight_tag_repository=highlight_tag_repository,
         flashcard_repository=flashcard_repository,
-        get_book_tags_use_case=get_book_tags_use_case,
         highlight_tag_use_case=get_highlight_tags_for_book_use_case,
         highlight_grouping_service=highlight_grouping_service,
         reading_session_repository=reading_session_repository,
         highlight_style_repository=highlight_style_repository,
         highlight_style_resolver=highlight_style_resolver,
-    )
-    update_book_use_case = providers.Factory(
-        UpdateBookUseCase,
-        book_repository=book_repository,
-        highlight_repository=highlight_repository,
-        flashcard_repository=flashcard_repository,
-        replace_book_tags_use_case=replace_book_tags_use_case,
     )
     delete_book_use_case = providers.Factory(
         DeleteBookUseCase,

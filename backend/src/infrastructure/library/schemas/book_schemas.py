@@ -29,9 +29,6 @@ class BookCreate(BookBase):
         max_length=255,
         description="Client-provided stable book identifier for deduplication",
     )
-    keywords: list[str] | None = Field(
-        None, description="Keywords from ebook metadata (will be converted to tags)"
-    )
 
 
 class Book(BookBase):
@@ -42,15 +39,6 @@ class Book(BookBase):
     created_at: datetime
     updated_at: datetime
     last_viewed: datetime | None = None
-
-    model_config = {"from_attributes": True}
-
-
-class TagInBook(BaseModel):
-    """Minimal tag schema for book responses."""
-
-    id: int
-    name: str
 
     model_config = {"from_attributes": True}
 
@@ -70,7 +58,6 @@ class BookWithHighlightCount(BaseModel):
     page_count: int | None = None
     highlight_count: int = Field(..., ge=0, description="Number of highlights for this book")
     flashcard_count: int = Field(0, ge=0, description="Number of flashcards for this book")
-    tags: list[TagInBook] = Field(..., description="List of tags for this book")
     end_position: PositionResponse | None = Field(
         None, description="End position of the book (total document length)"
     )

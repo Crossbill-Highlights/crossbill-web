@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, Field, model_validator
 
 from src.infrastructure.common.schemas.position_schemas import PositionResponse
-from src.infrastructure.library.schemas.book_schemas import TagInBook
 from src.infrastructure.reading.schemas.bookmark_schemas import Bookmark
 from src.infrastructure.reading.schemas.highlight_tag_schemas import (
     HighlightTagGroupInBook,
@@ -180,7 +179,6 @@ class BookDetails(BaseModel):
     description: str | None = None
     language: str | None = None
     page_count: int | None = None
-    tags: list[TagInBook] = Field(..., description="List of tags for this book")
     highlight_tags: list[HighlightTagInBook] = Field(
         ..., description="List of highlight tags for this book"
     )

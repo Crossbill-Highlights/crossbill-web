@@ -55,7 +55,6 @@ class RootContainer(containers.DeclarativeContainer):
         highlight_tag_repository=shared.highlight_tag_repository,
         highlight_style_repository=shared.highlight_style_repository,
         reading_session_repository=shared.reading_session_repository,
-        tag_repository=shared.tag_repository,
         flashcard_repository=shared.flashcard_repository,
         file_repository=shared.file_repository,
         highlight_grouping_service=shared.highlight_grouping_service,
