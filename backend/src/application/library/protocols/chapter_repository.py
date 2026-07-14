@@ -13,6 +13,10 @@ class ChapterRepositoryProtocol(Protocol):
         """Find a chapter by ID with ownership verification."""
         ...
 
+    async def find_by_ids(self, chapter_ids: list[int], user_id: UserId) -> list[Chapter]:
+        """Find chapters by ids with ownership verification."""
+        ...
+
     async def find_all_by_book(self, book_id: BookId, user_id: UserId) -> list[Chapter]:
         """Find all chapters for a book, ordered by chapter_number."""
         ...

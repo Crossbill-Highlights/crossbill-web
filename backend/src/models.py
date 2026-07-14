@@ -94,6 +94,88 @@ reading_session_highlights = Table(
 )
 
 
+# Association tables for many-to-many relationships between notes and other entities
+note_books = Table(
+    "note_books",
+    Base.metadata,
+    Column(
+        "note_id", Integer, ForeignKey("notes.id", ondelete="CASCADE"), primary_key=True, index=True
+    ),
+    Column(
+        "book_id", Integer, ForeignKey("books.id", ondelete="CASCADE"), primary_key=True, index=True
+    ),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    ),
+)
+
+note_chapters = Table(
+    "note_chapters",
+    Base.metadata,
+    Column(
+        "note_id", Integer, ForeignKey("notes.id", ondelete="CASCADE"), primary_key=True, index=True
+    ),
+    Column(
+        "chapter_id",
+        Integer,
+        ForeignKey("chapters.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    ),
+)
+
+note_highlights = Table(
+    "note_highlights",
+    Base.metadata,
+    Column(
+        "note_id", Integer, ForeignKey("notes.id", ondelete="CASCADE"), primary_key=True, index=True
+    ),
+    Column(
+        "highlight_id",
+        Integer,
+        ForeignKey("highlights.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    ),
+)
+
+note_highlight_tags = Table(
+    "note_highlight_tags",
+    Base.metadata,
+    Column(
+        "note_id", Integer, ForeignKey("notes.id", ondelete="CASCADE"), primary_key=True, index=True
+    ),
+    Column(
+        "highlight_tag_id",
+        Integer,
+        ForeignKey("highlight_tags.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    ),
+)
+
+
 class User(Base):
     """User model for multi-user support."""
 
@@ -705,3 +787,38 @@ class AIChatSession(Base):
 from src.infrastructure.jobs.orm.job_batch_model import (  # noqa: E402
     JobBatchModel,  # noqa: F401  # pyright: ignore[reportUnusedImport]
 )
+
+
+class Note(Base):
+    """User-authored note about terms, characters, or concepts in books."""
+
+    __tablename__ = "notes"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    kind: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+    created_at: Mapped[dt] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[dt] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    # Relationships (one-directional; notes are always queried from the note side)
+    books: Mapped[list["Book"]] = relationship(secondary=note_books, lazy="selectin")
+    chapters: Mapped[list["Chapter"]] = relationship(secondary=note_chapters, lazy="selectin")
+    highlights: Mapped[list["Highlight"]] = relationship(secondary=note_highlights, lazy="selectin")
+    highlight_tags: Mapped[list["HighlightTag"]] = relationship(
+        secondary=note_highlight_tags, lazy="selectin"
+    )
+
+    def __repr__(self) -> str:
+        """String representation of Note."""
+        return f"<Note(id={self.id}, title='{self.title}', kind={self.kind})>"

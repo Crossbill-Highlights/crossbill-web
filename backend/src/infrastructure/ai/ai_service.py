@@ -1,7 +1,9 @@
+from collections.abc import Sequence
 from datetime import UTC, datetime
 
 import structlog
-from pydantic_ai import ModelMessagesTypeAdapter
+from pydantic_ai import Agent, ModelMessage, ModelMessagesTypeAdapter
+from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
 from pydantic_core import to_jsonable_python
 
 from src.application.ai.ai_usage_context import AIUsageContext
@@ -14,6 +16,7 @@ from src.application.reading.protocols.ai_prereading_service import (
 from src.domain.ai.entities.ai_usage_record import AIUsageRecord
 from src.domain.common.types import SerializedMessageHistory
 from src.infrastructure.ai.ai_agents import (
+    get_chat_agent,
     get_flashcard_agent,
     get_prereading_agent,
     get_quiz_agent,
@@ -93,18 +96,27 @@ class AIService:
         )
         return [AIFlashcardSuggestion(question=s.question, answer=s.answer) for s in result.output]
 
-    async def start_quiz(
-        self, chapter_content: str, question_count: int, usage_context: AIUsageContext
+    async def _respond(
+        self,
+        agent: Agent[None, str],
+        usage_context: AIUsageContext,
+        prompt: str,
+        message_history: Sequence[ModelMessage] | None = None,
     ) -> tuple[str, SerializedMessageHistory]:
-        agent = get_quiz_agent()
-        prompt = f"The reader wants to be quizzed on this chapter. Ask {question_count} questions total.\n\n--- CHAPTER CONTENT ---\n{chapter_content}"
-        result = await agent.run(prompt)
+        result = await agent.run(user_prompt=prompt, message_history=message_history)
         usage = result.usage()
         await self._save_usage(
             usage_context, result.response.model_name, usage.input_tokens, usage.output_tokens
         )
         serialized: SerializedMessageHistory = to_jsonable_python(result.all_messages())
         return result.output, serialized
+
+    async def start_quiz(
+        self, chapter_content: str, question_count: int, usage_context: AIUsageContext
+    ) -> tuple[str, SerializedMessageHistory]:
+        agent = get_quiz_agent()
+        prompt = f"The reader wants to be quizzed on this chapter. Ask {question_count} questions total.\n\n--- CHAPTER CONTENT ---\n{chapter_content}"
+        return await self._respond(agent, usage_context, prompt=prompt)
 
     async def continue_quiz(
         self,
@@ -114,10 +126,39 @@ class AIService:
     ) -> tuple[str, SerializedMessageHistory]:
         agent = get_quiz_agent()
         restored = ModelMessagesTypeAdapter.validate_python(message_history)
-        result = await agent.run(user_message, message_history=restored)
-        usage = result.usage()
-        await self._save_usage(
-            usage_context, result.response.model_name, usage.input_tokens, usage.output_tokens
+        return await self._respond(
+            agent, usage_context, prompt=user_message, message_history=restored
         )
-        serialized: SerializedMessageHistory = to_jsonable_python(result.all_messages())
-        return result.output, serialized
+
+    def seed_chat_context(
+        self, chapter_content: str, assistant_opener: str
+    ) -> SerializedMessageHistory:
+        """Build an initial chat history seeded with the chapter content, without
+        calling the model. The content is stored as the opening user turn (paired
+        with the fixed opener as the assistant turn) so that later continue_chat
+        calls have the chapter in context."""
+        prompt = f"The reader wants to chat about the contents of this chapter.\n\n--- CHAPTER CONTENT ---\n{chapter_content}"
+        messages: list[ModelMessage] = [
+            ModelRequest(parts=[UserPromptPart(content=prompt)]),
+            ModelResponse(parts=[TextPart(content=assistant_opener)]),
+        ]
+        return to_jsonable_python(messages)
+
+    async def start_chat(
+        self, chapter_content: str, usage_context: AIUsageContext
+    ) -> tuple[str, SerializedMessageHistory]:
+        agent = get_chat_agent()
+        prompt = f"The reader wants chat about contents of this chapter.\n\n--- CHAPTER CONTENT ---\n{chapter_content}"
+        return await self._respond(agent, usage_context, prompt=prompt)
+
+    async def continue_chat(
+        self,
+        user_message: str,
+        message_history: SerializedMessageHistory,
+        usage_context: AIUsageContext,
+    ) -> tuple[str, SerializedMessageHistory]:
+        agent = get_chat_agent()
+        restored = ModelMessagesTypeAdapter.validate_python(message_history)
+        return await self._respond(
+            agent, usage_context, prompt=user_message, message_history=restored
+        )

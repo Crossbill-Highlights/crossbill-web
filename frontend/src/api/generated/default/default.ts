@@ -22,7 +22,7 @@ import type { ApiRootApiV1Get200, HealthHealthGet200 } from '.././model';
 import { axiosInstance } from '../../axios-instance';
 
 /**
- * Health check endpoint.
+ * Health check endpoint. Exempt from rate limit so probes never trip it.
  * @summary Health
  */
 export const healthHealthGet = (signal?: AbortSignal) => {

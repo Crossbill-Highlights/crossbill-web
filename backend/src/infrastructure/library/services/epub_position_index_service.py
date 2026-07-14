@@ -7,6 +7,7 @@ from ebooklib import epub
 from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
 
 from src.domain.common.value_objects.position_index import PositionIndex
+from src.infrastructure.common.memory import trims_memory
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 class EpubPositionIndexService:
     """Builds a position index by walking EPUB DOM in document order."""
 
+    @trims_memory
     def build_position_index(self, epub_content: bytes) -> PositionIndex:
         """
         Build a position index from an EPUB file.

@@ -16,6 +16,7 @@ interface ChapterReviewSectionProps {
   bookId: number;
   prereadingSummary?: ChapterPrereadingResponse;
   onStartQuiz: () => void;
+  onStartChat: () => void;
 }
 
 export const ChapterReviewSection = ({
@@ -23,6 +24,7 @@ export const ChapterReviewSection = ({
   bookId,
   prereadingSummary,
   onStartQuiz,
+  onStartChat,
 }: ChapterReviewSectionProps) => {
   const queryClient = useQueryClient();
 
@@ -147,8 +149,9 @@ export const ChapterReviewSection = ({
         </CollapsibleSection>
       )}
 
-      <Box sx={{ py: 1 }}>
+      <Box sx={{ py: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
         <AIActionButton text="Quiz me" onClick={onStartQuiz} />
+        <AIActionButton text="Chat about the chapter" onClick={onStartChat} />
       </Box>
     </AIFeature>
   );

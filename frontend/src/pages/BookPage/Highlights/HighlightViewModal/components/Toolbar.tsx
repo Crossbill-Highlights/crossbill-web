@@ -14,6 +14,7 @@ import {
   FlashcardsFilledIcon,
   FlashcardsIcon,
   LinkIcon,
+  NoteAddIcon,
   NotesIcon,
 } from '@/theme/Icons.tsx';
 import { Box } from '@mui/material';
@@ -29,6 +30,7 @@ interface ToolbarProps {
   onNoteToggle: () => void;
   flashcardVisible: boolean;
   onFlashcardToggle: () => void;
+  onAddToNote: (anchorEl: HTMLElement) => void;
   onDelete: () => void;
   disabled?: boolean;
 }
@@ -42,6 +44,7 @@ export const Toolbar = ({
   onNoteToggle,
   flashcardVisible,
   onFlashcardToggle,
+  onAddToNote,
   onDelete,
   disabled = false,
 }: ToolbarProps) => {
@@ -101,6 +104,13 @@ export const Toolbar = ({
         disabled={isDisabled}
         ariaLabel={flashcardVisible ? 'Hide flashcards' : 'Show flashcards'}
         icon={flashcardVisible ? <FlashcardsFilledIcon /> : <FlashcardsIcon />}
+      />
+      <IconButtonWithTooltip
+        title="Add to note"
+        onClick={(event) => onAddToNote(event.currentTarget as HTMLElement)}
+        disabled={isDisabled}
+        ariaLabel="Add to note"
+        icon={<NoteAddIcon />}
       />
       <IconButtonWithTooltip
         title="Delete highlight"

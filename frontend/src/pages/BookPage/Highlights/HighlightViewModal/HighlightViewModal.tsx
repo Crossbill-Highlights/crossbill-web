@@ -3,7 +3,17 @@ import {
   getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey,
   useDeleteHighlightsApiV1BooksBookIdHighlightDelete,
 } from '@/api/generated/highlights/highlights.ts';
-import type { Bookmark, Highlight, HighlightTagInBook } from '@/api/generated/model';
+import type {
+  Bookmark,
+  Highlight,
+  HighlightTagInBook,
+  NoteUpdateRequest,
+  NoteWithLinks,
+} from '@/api/generated/model';
+import {
+  getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey,
+  useUpdateNoteApiV1NotesNoteIdPut,
+} from '@/api/generated/notes/notes.ts';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { CommonDialogHorizontalNavigation } from '@/components/dialogs/CommonDialogHorizontalNavigation.tsx';
@@ -13,13 +23,15 @@ import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHoriz
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { HighlightTagInput } from '@/pages/BookPage/Highlights/HighlightViewModal/components/HighlightTagInput.tsx';
 import { useImmediateTagMutation } from '@/pages/BookPage/Highlights/HighlightViewModal/hooks/useImmediateTagMutation.ts';
-import { Box, Button, Stack } from '@mui/material';
+import { NoteEditorDialog } from '@/pages/BookPage/Notes/NoteEditorDialog.tsx';
+import { Box, Button, Menu, MenuItem, Stack } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { HighlightContent } from '../../common/HighlightContent.tsx';
 import { FlashcardSection } from './components/FlashcardSection.tsx';
 import { HighlightNote } from './components/HighlightNote.tsx';
 import { LabelEditorPopover } from './components/LabelEditorPopover.tsx';
+import { NotePickerDialog } from './components/NotePickerDialog.tsx';
 import { ProgressBar } from './components/ProgressBar.tsx';
 import { Toolbar } from './components/Toolbar.tsx';
 import { useVisibilityToggle } from './hooks/useVisibilityToggle.ts';
@@ -51,6 +63,9 @@ export const HighlightViewModal = ({
   const { showSnackbar } = useSnackbar();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [labelAnchorEl, setLabelAnchorEl] = useState<HTMLElement | null>(null);
+  const [noteMenuAnchor, setNoteMenuAnchor] = useState<HTMLElement | null>(null);
+  const [noteEditorOpen, setNoteEditorOpen] = useState(false);
+  const [notePickerOpen, setNotePickerOpen] = useState(false);
 
   const currentBookmark = bookmarksByHighlightId[highlight.id] ?? undefined;
 
@@ -94,6 +109,22 @@ export const HighlightViewModal = ({
     },
   });
 
+  const updateNoteMutation = useUpdateNoteApiV1NotesNoteIdPut({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({
+          queryKey: getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey(bookId),
+        });
+        setNotePickerOpen(false);
+        showSnackbar('Highlight added to note.', 'success');
+      },
+      onError: (error: Error) => {
+        console.error('Failed to add highlight to note:', error);
+        showSnackbar('Failed to add highlight to note. Please try again.', 'error');
+      },
+    },
+  });
+
   const handleDelete = () => {
     setDeleteConfirmOpen(true);
   };
@@ -122,6 +153,18 @@ export const HighlightViewModal = ({
     }
   };
 
+  const handleAddToExistingNote = async (note: NoteWithLinks) => {
+    const payload: NoteUpdateRequest = {
+      title: note.title,
+      body: note.body,
+      kind: note.kind as NoteUpdateRequest['kind'],
+      chapter_ids: note.chapter_ids,
+      highlight_ids: [...new Set([...note.highlight_ids, highlight.id])],
+      highlight_tag_ids: note.highlight_tag_ids,
+    };
+    await updateNoteMutation.mutateAsync({ noteId: note.id, data: payload });
+  };
+
   const isLoading = deleteHighlightMutation.isPending;
 
   const titleText = highlight.chapter ? `${highlight.chapter}` : 'Highlight';
@@ -140,6 +183,7 @@ export const HighlightViewModal = ({
           onNoteToggle={handleNoteToggle}
           flashcardVisible={flashcardVisible}
           onFlashcardToggle={handleFlashcardToggle}
+          onAddToNote={(anchor) => setNoteMenuAnchor(anchor)}
           onDelete={handleDelete}
           disabled={isLoading}
         />
@@ -224,6 +268,43 @@ export const HighlightViewModal = ({
           bookId={bookId}
         />
       )}
+
+      <Menu
+        anchorEl={noteMenuAnchor}
+        open={noteMenuAnchor !== null}
+        onClose={() => setNoteMenuAnchor(null)}
+      >
+        <MenuItem
+          onClick={() => {
+            setNoteMenuAnchor(null);
+            setNoteEditorOpen(true);
+          }}
+        >
+          Create new note
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setNoteMenuAnchor(null);
+            setNotePickerOpen(true);
+          }}
+        >
+          Add to existing note
+        </MenuItem>
+      </Menu>
+
+      <NoteEditorDialog
+        open={noteEditorOpen}
+        onClose={() => setNoteEditorOpen(false)}
+        initialHighlightIds={[highlight.id]}
+        initialChapterIds={highlight.chapter_id ? [highlight.chapter_id] : []}
+      />
+
+      <NotePickerDialog
+        open={notePickerOpen}
+        onClose={() => setNotePickerOpen(false)}
+        bookId={bookId}
+        onSelect={(note) => void handleAddToExistingNote(note)}
+      />
     </CommonDialog>
   );
 };

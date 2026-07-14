@@ -12,6 +12,7 @@ export {
   ExpandMore as ExpandMoreIcon,
   FilterList as FilterListIcon,
   Menu as MenuIcon,
+  MoreHoriz as MoreIcon,
   KeyboardArrowUp as ScrollToTopIcon,
 } from '@mui/icons-material';
 
@@ -39,6 +40,7 @@ export {
   Delete as DeleteIcon,
   Edit as EditIcon,
   Link as LinkIcon,
+  NoteAdd as NoteAddIcon,
   Refresh as RegenerateIcon,
   SwapVert as SortIcon,
 } from '@mui/icons-material';

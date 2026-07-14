@@ -15,6 +15,7 @@ from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
 
 from src.domain.common.value_objects.xpoint import XPoint
 from src.domain.library.exceptions import XPointNavigationError
+from src.infrastructure.common.memory import trims_memory
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 class EpubTextExtractionService:
     """Infrastructure service for extracting text from EPUB files."""
 
+    @trims_memory
     def extract_text(
         self,
         epub_content: bytes,
@@ -120,6 +122,7 @@ class EpubTextExtractionService:
             return "".join(body[0].itertext())
         return ""
 
+    @trims_memory
     def extract_chapter_text(
         self,
         epub_content: bytes,
