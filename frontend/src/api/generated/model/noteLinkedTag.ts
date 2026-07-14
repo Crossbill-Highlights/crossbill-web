@@ -6,7 +6,7 @@
  */
 
 /**
- * Lightweight summary of a highlight tag linked to a note.
+ * Lightweight summary of a tag linked to a note.
  */
 export interface NoteLinkedTag {
   id: number;

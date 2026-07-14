@@ -22,28 +22,9 @@ from sqlalchemy.types import JSON
 
 from src.database import Base
 
-# Association table for many-to-many relationship between books and tags
-book_tags = Table(
-    "book_tags",
-    Base.metadata,
-    Column(
-        "book_id", Integer, ForeignKey("books.id", ondelete="CASCADE"), primary_key=True, index=True
-    ),
-    Column(
-        "tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True, index=True
-    ),
-    Column(
-        "created_at",
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False,
-    ),
-)
-
-
-# Association table for many-to-many relationship between highlights and highlight_tags
-highlight_highlight_tags = Table(
-    "highlight_highlight_tags",
+# Association table for many-to-many relationship between highlights and tags
+highlight_tags = Table(
+    "highlight_tags",
     Base.metadata,
     Column(
         "highlight_id",
@@ -53,9 +34,9 @@ highlight_highlight_tags = Table(
         index=True,
     ),
     Column(
-        "highlight_tag_id",
+        "tag_id",
         Integer,
-        ForeignKey("highlight_tags.id", ondelete="CASCADE"),
+        ForeignKey("tags.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
     ),
@@ -154,16 +135,16 @@ note_highlights = Table(
     ),
 )
 
-note_highlight_tags = Table(
-    "note_highlight_tags",
+note_tags = Table(
+    "note_tags",
     Base.metadata,
     Column(
         "note_id", Integer, ForeignKey("notes.id", ondelete="CASCADE"), primary_key=True, index=True
     ),
     Column(
-        "highlight_tag_id",
+        "tag_id",
         Integer,
-        ForeignKey("highlight_tags.id", ondelete="CASCADE"),
+        ForeignKey("tags.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
     ),
@@ -196,16 +177,13 @@ class User(Base):
 
     # Relationships
     books: Mapped[list["Book"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    tags: Mapped[list["Tag"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     highlights: Mapped[list["Highlight"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
     highlight_styles: Mapped[list["HighlightStyle"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
-    highlight_tags: Mapped[list["HighlightTag"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
-    )
+    tags: Mapped[list["Tag"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     flashcards: Mapped[list["Flashcard"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
@@ -288,16 +266,11 @@ class Book(Base):
     chapters: Mapped[list["Chapter"]] = relationship(
         back_populates="book", cascade="all, delete-orphan"
     )
-    tags: Mapped[list["Tag"]] = relationship(
-        secondary=book_tags, back_populates="books", lazy="selectin"
-    )
-    highlight_tags: Mapped[list["HighlightTag"]] = relationship(
-        back_populates="book", cascade="all, delete-orphan"
-    )
+    tags: Mapped[list["Tag"]] = relationship(back_populates="book", cascade="all, delete-orphan")
     highlight_styles: Mapped[list["HighlightStyle"]] = relationship(
         back_populates="book", cascade="all, delete-orphan"
     )
-    highlight_tag_groups: Mapped[list["HighlightTagGroup"]] = relationship(
+    tag_groups: Mapped[list["TagGroup"]] = relationship(
         back_populates="book", cascade="all, delete-orphan", lazy="selectin"
     )
     bookmarks: Mapped[list["Bookmark"]] = relationship(
@@ -454,8 +427,8 @@ class Highlight(Base):
     book: Mapped["Book"] = relationship(back_populates="highlights")
     chapter: Mapped["Chapter | None"] = relationship(back_populates="highlights")
     highlight_style_rel: Mapped["HighlightStyle | None"] = relationship(back_populates="highlights")
-    highlight_tags: Mapped[list["HighlightTag"]] = relationship(
-        secondary=highlight_highlight_tags, back_populates="highlights", lazy="selectin"
+    tags: Mapped[list["Tag"]] = relationship(
+        secondary=highlight_tags, back_populates="highlights", lazy="selectin"
     )
     bookmarks: Mapped[list["Bookmark"]] = relationship(
         back_populates="highlight", cascade="all, delete-orphan"
@@ -477,14 +450,52 @@ class Highlight(Base):
         return f"<Highlight(id={self.id}, text='{self.text[:50]}...', book_id={self.book_id})>"
 
 
+class TagGroup(Base):
+    """TagGroup model for grouping tags within a book."""
+
+    __tablename__ = "tag_groups"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    book_id: Mapped[int] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    created_at: Mapped[dt] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[dt] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    # Relationships
+    book: Mapped["Book"] = relationship(back_populates="tag_groups")
+    tags: Mapped[list["Tag"]] = relationship(back_populates="tag_group")
+
+    # Unique constraint: tag group names are unique within a book
+    __table_args__ = (UniqueConstraint("book_id", "name", name="uq_tag_group_book_name"),)
+
+    def __repr__(self) -> str:
+        """String representation of TagGroup."""
+        return f"<TagGroup(id={self.id}, name='{self.name}', book_id={self.book_id})>"
+
+
 class Tag(Base):
-    """Tag model for categorizing books."""
+    """Tag model for categorizing highlights within a book."""
 
     __tablename__ = "tags"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    book_id: Mapped[int] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    tag_group_id: Mapped[int | None] = mapped_column(
+        ForeignKey("tag_groups.id", ondelete="SET NULL"), index=True, nullable=True
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     created_at: Mapped[dt] = mapped_column(
@@ -499,94 +510,18 @@ class Tag(Base):
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="tags")
-    books: Mapped[list["Book"]] = relationship(
-        secondary=book_tags, back_populates="tags", lazy="selectin"
-    )
-
-    # Unique constraint: tag names are unique per user
-    __table_args__ = (UniqueConstraint("user_id", "name", name="uq_tag_user_name"),)
-
-    def __repr__(self) -> str:
-        """String representation of Tag."""
-        return f"<Tag(id={self.id}, name='{self.name}')>"
-
-
-class HighlightTagGroup(Base):
-    """HighlightTagGroup model for grouping highlight tags within a book."""
-
-    __tablename__ = "highlight_tag_groups"
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    book_id: Mapped[int] = mapped_column(
-        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
-    )
-    name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    created_at: Mapped[dt] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    updated_at: Mapped[dt] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False,
-    )
-
-    # Relationships
-    book: Mapped["Book"] = relationship(back_populates="highlight_tag_groups")
-    highlight_tags: Mapped[list["HighlightTag"]] = relationship(back_populates="tag_group")
-
-    # Unique constraint: tag group names are unique within a book
-    __table_args__ = (UniqueConstraint("book_id", "name", name="uq_highlight_tag_group_book_name"),)
-
-    def __repr__(self) -> str:
-        """String representation of HighlightTagGroup."""
-        return f"<HighlightTagGroup(id={self.id}, name='{self.name}', book_id={self.book_id})>"
-
-
-class HighlightTag(Base):
-    """HighlightTag model for categorizing highlights within a book."""
-
-    __tablename__ = "highlight_tags"
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
-    )
-    book_id: Mapped[int] = mapped_column(
-        ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
-    )
-    tag_group_id: Mapped[int | None] = mapped_column(
-        ForeignKey("highlight_tag_groups.id", ondelete="SET NULL"), index=True, nullable=True
-    )
-    name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    created_at: Mapped[dt] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    updated_at: Mapped[dt] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False,
-    )
-
-    # Relationships
-    user: Mapped["User"] = relationship(back_populates="highlight_tags")
-    book: Mapped["Book"] = relationship(back_populates="highlight_tags")
-    tag_group: Mapped["HighlightTagGroup | None"] = relationship(
-        back_populates="highlight_tags", lazy="selectin"
-    )
+    book: Mapped["Book"] = relationship(back_populates="tags")
+    tag_group: Mapped["TagGroup | None"] = relationship(back_populates="tags", lazy="selectin")
     highlights: Mapped[list["Highlight"]] = relationship(
-        secondary=highlight_highlight_tags, back_populates="highlight_tags", lazy="selectin"
+        secondary=highlight_tags, back_populates="tags", lazy="selectin"
     )
 
     # Unique constraint: tag names are unique within a book per user
-    __table_args__ = (
-        UniqueConstraint("user_id", "book_id", "name", name="uq_highlight_tag_user_book_name"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "book_id", "name", name="uq_tag_user_book_name"),)
 
     def __repr__(self) -> str:
-        """String representation of HighlightTag."""
-        return f"<HighlightTag(id={self.id}, name='{self.name}', book_id={self.book_id})>"
+        """String representation of Tag."""
+        return f"<Tag(id={self.id}, name='{self.name}', book_id={self.book_id})>"
 
 
 class Bookmark(Base):
@@ -815,9 +750,7 @@ class Note(Base):
     books: Mapped[list["Book"]] = relationship(secondary=note_books, lazy="selectin")
     chapters: Mapped[list["Chapter"]] = relationship(secondary=note_chapters, lazy="selectin")
     highlights: Mapped[list["Highlight"]] = relationship(secondary=note_highlights, lazy="selectin")
-    highlight_tags: Mapped[list["HighlightTag"]] = relationship(
-        secondary=note_highlight_tags, lazy="selectin"
-    )
+    tags: Mapped[list["Tag"]] = relationship(secondary=note_tags, lazy="selectin")
 
     def __repr__(self) -> str:
         """String representation of Note."""

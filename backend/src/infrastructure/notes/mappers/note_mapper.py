@@ -21,7 +21,7 @@ class NoteMapper:
             book_ids=[book.id for book in orm_model.books],
             chapter_ids=[chapter.id for chapter in orm_model.chapters],
             highlight_ids=[highlight.id for highlight in orm_model.highlights],
-            highlight_tag_ids=[tag.id for tag in orm_model.highlight_tags],
+            tag_ids=[tag.id for tag in orm_model.tags],
         )
 
     def to_orm(self, domain_entity: Note, orm_model: NoteORM | None = None) -> NoteORM:

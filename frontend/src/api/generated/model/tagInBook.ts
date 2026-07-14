@@ -11,4 +11,5 @@
 export interface TagInBook {
   id: number;
   name: string;
+  tag_group_id?: number | null;
 }

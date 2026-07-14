@@ -7,9 +7,8 @@
 import type { Bookmark } from './bookmark';
 import type { ChapterWithHighlights } from './chapterWithHighlights';
 import type { Flashcard } from './flashcard';
-import type { HighlightTagGroupInBook } from './highlightTagGroupInBook';
-import type { HighlightTagInBook } from './highlightTagInBook';
 import type { PositionResponse } from './positionResponse';
+import type { TagGroupInBook } from './tagGroupInBook';
 import type { TagInBook } from './tagInBook';
 
 /**
@@ -30,10 +29,8 @@ export interface BookDetails {
   page_count?: number | null;
   /** List of tags for this book */
   tags: TagInBook[];
-  /** List of highlight tags for this book */
-  highlight_tags: HighlightTagInBook[];
-  /** List of highlight tag groups for this book */
-  highlight_tag_groups: HighlightTagGroupInBook[];
+  /** List of tag groups for this book */
+  tag_groups: TagGroupInBook[];
   /** List of bookmarks for this book */
   bookmarks: Bookmark[];
   /** Book-level flashcards not associated with any highlight */

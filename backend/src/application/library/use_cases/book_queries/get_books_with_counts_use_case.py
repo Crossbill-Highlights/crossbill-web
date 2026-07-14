@@ -3,7 +3,6 @@
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.domain.common.value_objects.ids import UserId
 from src.domain.library.entities.book import Book
-from src.domain.library.entities.tag import Tag
 
 
 class GetBooksWithCountsUseCase:
@@ -23,12 +22,12 @@ class GetBooksWithCountsUseCase:
         limit: int = 100,
         include_only_with_flashcards: bool = False,
         search_text: str | None = None,
-    ) -> tuple[list[tuple[Book, int, int, list[Tag]]], int]:
+    ) -> tuple[list[tuple[Book, int, int]], int]:
         """
         Get books with their highlight and flashcard counts.
 
         Returns:
-            tuple[list[tuple[Book, highlight_count, flashcard_count, list[Tag]]], total_count]
+            tuple[list[tuple[Book, highlight_count, flashcard_count]], total_count]
         """
         user_id_vo = UserId(user_id)
         return await self.book_repository.get_books_with_counts(

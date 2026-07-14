@@ -10,7 +10,7 @@ from src.application.reading.protocols.highlight_style_repository import (
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.library.entities.chapter import Chapter
 from src.domain.reading.entities.highlight import Highlight
-from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.domain.reading.entities.tag import Tag
 from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
@@ -63,7 +63,7 @@ class GetFlashcardsByBookUseCase:
 
         highlight_ids = [fc.highlight_id for fc in flashcards if fc.highlight_id is not None]
 
-        highlight_map: dict[int, tuple[Highlight, Chapter | None, list[HighlightTag]]] = {}
+        highlight_map: dict[int, tuple[Highlight, Chapter | None, list[Tag]]] = {}
         if highlight_ids:
             highlights_data = await self.highlight_repository.find_by_ids_with_tags(
                 highlight_ids, user_id_vo
@@ -83,7 +83,7 @@ class GetFlashcardsByBookUseCase:
 
             result.append(
                 FlashcardWithHighlight(
-                    flashcard=fc, highlight=highlight, chapter=chapter, highlight_tags=tags
+                    flashcard=fc, highlight=highlight, chapter=chapter, tags=tags
                 )
             )
 

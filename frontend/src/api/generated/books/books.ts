@@ -22,8 +22,6 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
   BookDetails,
-  BookUpdateRequest,
-  BookWithHighlightCount,
   BooksListResponse,
   GetBooksApiV1BooksGetParams,
   GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams,
@@ -460,98 +458,6 @@ export function useGetBookDetailsApiV1BooksBookIdGet<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
-/**
- * Update book information.
-
-Currently supports updating tags only. The tags will be replaced with the provided list.
-
-Args:
-    book_id: ID of the book to update
-    request: Book update request containing tags
-
-Returns:
-    Updated book with highlight count and tags
-
-Raises:
-    HTTPException: If book is not found or update fails
- * @summary Update Book
- */
-export const updateBookApiV1BooksBookIdPost = (
-  bookId: number,
-  bookUpdateRequest: BookUpdateRequest,
-  signal?: AbortSignal
-) => {
-  return axiosInstance<BookWithHighlightCount>({
-    url: `/api/v1/books/${bookId}`,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    data: bookUpdateRequest,
-    signal,
-  });
-};
-
-export const getUpdateBookApiV1BooksBookIdPostMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateBookApiV1BooksBookIdPost>>,
-    TError,
-    { bookId: number; data: BookUpdateRequest },
-    TContext
-  >;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof updateBookApiV1BooksBookIdPost>>,
-  TError,
-  { bookId: number; data: BookUpdateRequest },
-  TContext
-> => {
-  const mutationKey = ['updateBookApiV1BooksBookIdPost'];
-  const { mutation: mutationOptions } = options
-    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey } };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updateBookApiV1BooksBookIdPost>>,
-    { bookId: number; data: BookUpdateRequest }
-  > = (props) => {
-    const { bookId, data } = props ?? {};
-
-    return updateBookApiV1BooksBookIdPost(bookId, data);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type UpdateBookApiV1BooksBookIdPostMutationResult = NonNullable<
-  Awaited<ReturnType<typeof updateBookApiV1BooksBookIdPost>>
->;
-export type UpdateBookApiV1BooksBookIdPostMutationBody = BookUpdateRequest;
-export type UpdateBookApiV1BooksBookIdPostMutationError = HTTPValidationError;
-
-/**
- * @summary Update Book
- */
-export const useUpdateBookApiV1BooksBookIdPost = <TError = HTTPValidationError, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof updateBookApiV1BooksBookIdPost>>,
-      TError,
-      { bookId: number; data: BookUpdateRequest },
-      TContext
-    >;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof updateBookApiV1BooksBookIdPost>>,
-  TError,
-  { bookId: number; data: BookUpdateRequest },
-  TContext
-> => {
-  return useMutation(getUpdateBookApiV1BooksBookIdPostMutationOptions(options), queryClient);
-};
 /**
  * Delete a book and all its contents (hard delete).
 

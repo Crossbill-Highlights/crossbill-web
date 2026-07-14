@@ -23,7 +23,7 @@ from src.infrastructure.learning.schemas import (
 from src.infrastructure.reading.schemas import (
     HighlightLabel,
     HighlightResponseBase,
-    HighlightTagInBook,
+    TagInBook,
 )
 
 router = APIRouter(prefix="/books", tags=["flashcards"])
@@ -121,7 +121,7 @@ async def get_flashcards_for_book(
         fc = dto.flashcard
         highlight = dto.highlight
         chapter = dto.chapter
-        tags = dto.highlight_tags
+        tags = dto.tags
 
         # Convert highlight to Pydantic schema if present
         highlight_schema = None
@@ -153,8 +153,8 @@ async def get_flashcards_for_book(
                 else None,
                 created_at=highlight.created_at,
                 updated_at=highlight.updated_at,
-                highlight_tags=[
-                    HighlightTagInBook(
+                tags=[
+                    TagInBook(
                         id=tag.id.value,
                         name=tag.name,
                         tag_group_id=tag.tag_group_id,

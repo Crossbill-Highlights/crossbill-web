@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.library.entities.chapter import Chapter
 from src.domain.reading.entities.highlight import Highlight
-from src.domain.reading.entities.highlight_tag import HighlightTag
+from src.domain.reading.entities.tag import Tag
 
 
 @dataclass
@@ -15,4 +15,4 @@ class FlashcardWithHighlight:
     flashcard: Flashcard
     highlight: Highlight | None
     chapter: Chapter | None
-    highlight_tags: list[HighlightTag]
+    tags: list[Tag]

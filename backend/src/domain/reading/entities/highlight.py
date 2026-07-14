@@ -25,7 +25,7 @@ from src.domain.common.value_objects import (
 from src.domain.common.value_objects.position import Position
 
 if TYPE_CHECKING:
-    from src.domain.reading.entities.highlight_tag import HighlightTag
+    from src.domain.reading.entities.tag import Tag
 
 
 @dataclass
@@ -133,7 +133,7 @@ class Highlight(AggregateRoot[HighlightId]):
         """Associate this highlight with a chapter."""
         self.chapter_id = chapter_id
 
-    def add_tag(self, tag: HighlightTag) -> None:
+    def add_tag(self, tag: Tag) -> None:
         """
         Add a tag to this highlight (domain validation).
 

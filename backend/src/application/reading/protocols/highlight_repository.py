@@ -6,7 +6,7 @@ from src.domain.common.value_objects.position import Position
 from src.domain.learning.entities import Flashcard
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.chapter import Chapter
-from src.domain.reading import Highlight, HighlightTag
+from src.domain.reading import Highlight, Tag
 
 
 class HighlightRepositoryProtocol(Protocol):
@@ -16,11 +16,11 @@ class HighlightRepositoryProtocol(Protocol):
 
     async def find_by_id_with_relations(
         self, highlight_id: HighlightId, user_id: UserId
-    ) -> tuple[Highlight, list[Flashcard], list[HighlightTag]] | None: ...
+    ) -> tuple[Highlight, list[Flashcard], list[Tag]] | None: ...
 
     async def find_by_ids_with_tags(
         self, highlight_ids: list[HighlightId], user_id: UserId
-    ) -> list[tuple[Highlight, Chapter | None, list[HighlightTag]]]: ...
+    ) -> list[tuple[Highlight, Chapter | None, list[Tag]]]: ...
 
     async def find_by_book_id(self, book_id: BookId, user_id: UserId) -> list[Highlight]: ...
 
@@ -42,7 +42,7 @@ class HighlightRepositoryProtocol(Protocol):
         user_id: UserId,
         book_id: BookId | None = None,
         limit: int = 100,
-    ) -> list[tuple[Highlight, Book, Chapter | None, list[HighlightTag], list[Flashcard]]]: ...
+    ) -> list[tuple[Highlight, Book, Chapter | None, list[Tag], list[Flashcard]]]: ...
 
     async def save(self, highlight: Highlight) -> Highlight: ...
 

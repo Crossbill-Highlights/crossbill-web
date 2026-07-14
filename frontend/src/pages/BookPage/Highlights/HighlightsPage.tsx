@@ -1,13 +1,13 @@
 import {
-  useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet,
+  useGetTagsApiV1BooksBookIdTagsGet,
   useSearchBookHighlightsApiV1BooksBookIdHighlightsGet,
 } from '@/api/generated/highlights/highlights.ts';
 import type {
   Bookmark,
   ChapterWithHighlights,
   Highlight,
-  HighlightTagGroupInBook,
-  HighlightTagInBook,
+  TagGroupInBook,
+  TagInBook,
 } from '@/api/generated/model';
 import { scrollToElementWithHighlight } from '@/components/animations/scrollUtils';
 import { SearchBar } from '@/components/inputs/SearchBar.tsx';
@@ -25,7 +25,7 @@ import { BookmarkList } from '../navigation/BookmarkList.tsx';
 import { ChapterNav, type ChapterNavigationData } from '../navigation/ChapterNav.tsx';
 import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
 import { HighlightLabelsList } from '../navigation/HighlightLabelsList.tsx';
-import { HighlightTagsList } from '../navigation/HighlightTagsList.tsx';
+import { TagsList } from '../navigation/TagsList.tsx';
 import { HighlightsList, type ChapterData } from './HighlightsList.tsx';
 import { HighlightViewModal } from './HighlightViewModal';
 
@@ -56,7 +56,7 @@ export const HighlightsPage = () => {
   }, [urlLabelId]);
 
   // Fetch available tags for the highlight modal
-  const { data: tagsResponse } = useGetHighlightTagsApiV1BooksBookIdHighlightTagsGet(book.id);
+  const { data: tagsResponse } = useGetTagsApiV1BooksBookIdTagsGet(book.id);
 
   // Navigation callbacks
   const handleSearch = useCallback(
@@ -172,7 +172,7 @@ export const HighlightsPage = () => {
     handleModalNavigate,
   } = useHighlightModal({ allHighlights, isMobile: !isDesktop });
 
-  const tags = book.highlight_tags;
+  const tags = book.tags;
 
   const navData = useHighlightsPageData(chapters);
 
@@ -195,7 +195,7 @@ export const HighlightsPage = () => {
   const filterTabs = useHighlightsFilterTabs({
     navChapters: navData.chapters,
     tags,
-    tagGroups: book.highlight_tag_groups,
+    tagGroups: book.tag_groups,
     bookId: book.id,
     bookmarks: book.bookmarks,
     allHighlights,
@@ -216,7 +216,7 @@ export const HighlightsPage = () => {
         createPortal(
           <HighlightsSidebar
             tags={tags}
-            tagGroups={book.highlight_tag_groups}
+            tagGroups={book.tag_groups}
             bookId={book.id}
             selectedTagId={selectedTagId}
             onTagClick={handleTagClick}
@@ -341,8 +341,8 @@ export const HighlightsPage = () => {
 // --- Extracted subcomponents ---
 
 interface HighlightsSidebarProps {
-  tags: HighlightTagInBook[];
-  tagGroups: HighlightTagGroupInBook[];
+  tags: TagInBook[];
+  tagGroups: TagGroupInBook[];
   bookId: number;
   selectedTagId: number | undefined;
   onTagClick: (tagId: number | null) => void;
@@ -362,7 +362,7 @@ const HighlightsSidebar = ({
   <>
     <Divider sx={{ mb: 4 }} />
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <HighlightTagsList
+      <TagsList
         tags={tags}
         tagGroups={tagGroups}
         bookId={bookId}
@@ -380,8 +380,8 @@ const HighlightsSidebar = ({
 
 interface UseHighlightsFilterTabsParams {
   navChapters: ChapterNavigationData[];
-  tags: HighlightTagInBook[];
-  tagGroups: HighlightTagGroupInBook[];
+  tags: TagInBook[];
+  tagGroups: TagGroupInBook[];
   bookId: number;
   bookmarks: Bookmark[];
   allHighlights: Highlight[];
@@ -429,7 +429,7 @@ const useHighlightsFilterTabs = ({
         label: 'Tags',
         content: (
           <Box>
-            <HighlightTagsList
+            <TagsList
               tags={tags}
               tagGroups={tagGroups}
               bookId={bookId}
@@ -536,7 +536,7 @@ function filterChaptersByTag(
     .map((chapter) => ({
       ...chapter,
       highlights: chapter.highlights.filter((highlight) =>
-        highlight.highlight_tags.some((tag) => tag.id === selectedTagId)
+        highlight.tags.some((tag) => tag.id === selectedTagId)
       ),
     }))
     .filter((chapter) => chapter.highlights.length > 0);

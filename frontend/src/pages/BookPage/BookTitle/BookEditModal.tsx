@@ -1,25 +1,14 @@
-import {
-  getGetBookDetailsApiV1BooksBookIdGetQueryKey,
-  getGetBooksApiV1BooksGetQueryKey,
-  useDeleteBookApiV1BooksBookIdDelete,
-  useUpdateBookApiV1BooksBookIdPost,
-} from '@/api/generated/books/books.ts';
+import { useDeleteBookApiV1BooksBookIdDelete } from '@/api/generated/books/books.ts';
 import { BookDetails } from '@/api/generated/model';
 import { BookCover } from '@/components/BookCover.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
-import { TagFormInput } from '@/components/inputs/TagInput.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { DeleteIcon } from '@/theme/Icons.tsx';
 import { Box, Button, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-
-interface BookEditFormData {
-  tags: string[];
-}
+import { useState } from 'react';
 
 interface BookEditModalProps {
   book: BookDetails;
@@ -32,29 +21,6 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
   const navigate = useNavigate();
   const { showSnackbar } = useSnackbar();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const { control, handleSubmit, reset } = useForm<BookEditFormData>({
-    defaultValues: {
-      tags: book.tags.map((tag) => tag.name),
-    },
-  });
-
-  const updateBookMutation = useUpdateBookApiV1BooksBookIdPost({
-    mutation: {
-      onSuccess: async () => {
-        // Invalidate and refetch both the books list and the specific book details
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: getGetBooksApiV1BooksGetQueryKey() }),
-          queryClient.invalidateQueries({
-            queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(book.id),
-          }),
-        ]);
-        onClose();
-      },
-      onError: (error) => {
-        console.error('Error updating book:', error);
-      },
-    },
-  });
 
   const deleteBookMutation = useDeleteBookApiV1BooksBookIdDelete({
     mutation: {
@@ -75,27 +41,6 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
     },
   });
 
-  // Reset form when modal opens - always use the latest book data
-  useEffect(() => {
-    if (open) {
-      reset({
-        tags: book.tags.map((tag) => tag.name),
-      });
-      updateBookMutation.reset(); // Reset mutation state
-    }
-    // Only run when modal opens - reset and updateBookMutation are stable/not needed in deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
-  const onSubmit = (data: BookEditFormData) => {
-    updateBookMutation.mutate({
-      bookId: book.id,
-      data: {
-        tags: data.tags,
-      },
-    });
-  };
-
   const handleDelete = () => {
     setDeleteConfirmOpen(true);
   };
@@ -105,41 +50,28 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
     deleteBookMutation.mutate({ bookId: book.id });
   };
 
-  const isSaving = updateBookMutation.isPending;
   const isDeleting = deleteBookMutation.isPending;
-  const isLoading = isSaving || isDeleting;
-  const error = updateBookMutation.error;
 
   return (
     <CommonDialog
       open={open}
       onClose={onClose}
       maxWidth="sm"
-      isLoading={isLoading}
-      title="Edit Book"
+      isLoading={isDeleting}
+      title="Manage Book"
       footerActions={
         <>
           <Button
             onClick={handleDelete}
             color="error"
             startIcon={<DeleteIcon />}
-            disabled={isLoading}
+            disabled={isDeleting}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button onClick={onClose} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit(onSubmit)}
-              variant="contained"
-              disabled={isLoading}
-              color="primary"
-            >
-              {isSaving ? 'Saving...' : 'Save'}
-            </Button>
-          </Box>
+          <Button onClick={onClose} disabled={isDeleting}>
+            Close
+          </Button>
         </>
       }
     >
@@ -177,17 +109,6 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
             )}
           </Box>
         </Box>
-
-        <Box>
-          <TagFormInput control={control} name="tags" disabled={isLoading} />
-        </Box>
-
-        {/* Error Message */}
-        {error && (
-          <Typography color="error" variant="body2">
-            Failed to update book
-          </Typography>
-        )}
       </Box>
 
       <ConfirmationDialog

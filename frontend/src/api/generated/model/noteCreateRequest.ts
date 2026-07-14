@@ -22,5 +22,5 @@ export interface NoteCreateRequest {
   book_id: number;
   chapter_ids?: number[];
   highlight_ids?: number[];
-  highlight_tag_ids?: number[];
+  tag_ids?: number[];
 }

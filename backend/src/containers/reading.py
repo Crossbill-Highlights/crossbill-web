@@ -36,39 +36,6 @@ from src.application.reading.use_cases.highlight_labels.get_global_highlight_lab
 from src.application.reading.use_cases.highlight_labels.update_highlight_label_use_case import (
     UpdateHighlightLabelUseCase,
 )
-from src.application.reading.use_cases.highlight_tag_associations.add_tag_to_highlight_by_id_use_case import (
-    AddTagToHighlightByIdUseCase,
-)
-from src.application.reading.use_cases.highlight_tag_associations.add_tag_to_highlight_by_name_use_case import (
-    AddTagToHighlightByNameUseCase,
-)
-from src.application.reading.use_cases.highlight_tag_associations.remove_tag_from_highlight_use_case import (
-    RemoveTagFromHighlightUseCase,
-)
-from src.application.reading.use_cases.highlight_tag_groups.create_highlight_tag_group_use_case import (
-    CreateHighlightTagGroupUseCase,
-)
-from src.application.reading.use_cases.highlight_tag_groups.delete_highlight_tag_group_use_case import (
-    DeleteHighlightTagGroupUseCase,
-)
-from src.application.reading.use_cases.highlight_tag_groups.update_highlight_tag_group_use_case import (
-    UpdateHighlightTagGroupUseCase,
-)
-from src.application.reading.use_cases.highlight_tag_groups.update_tag_group_association_use_case import (
-    UpdateTagGroupAssociationUseCase,
-)
-from src.application.reading.use_cases.highlight_tags.create_highlight_tag_use_case import (
-    CreateHighlightTagUseCase,
-)
-from src.application.reading.use_cases.highlight_tags.delete_highlight_tag_use_case import (
-    DeleteHighlightTagUseCase,
-)
-from src.application.reading.use_cases.highlight_tags.get_highlight_tags_for_book_use_case import (
-    GetHighlightTagsForBookUseCase,
-)
-from src.application.reading.use_cases.highlight_tags.update_highlight_tag_name_use_case import (
-    UpdateHighlightTagNameUseCase,
-)
 from src.application.reading.use_cases.highlights.highlight_delete_use_case import (
     HighlightDeleteUseCase,
 )
@@ -90,6 +57,39 @@ from src.application.reading.use_cases.reading_sessions.reading_session_query_us
 from src.application.reading.use_cases.reading_sessions.reading_session_upload_use_case import (
     ReadingSessionUploadUseCase,
 )
+from src.application.reading.use_cases.tag_associations.add_tag_to_highlight_by_id_use_case import (
+    AddTagToHighlightByIdUseCase,
+)
+from src.application.reading.use_cases.tag_associations.add_tag_to_highlight_by_name_use_case import (
+    AddTagToHighlightByNameUseCase,
+)
+from src.application.reading.use_cases.tag_associations.remove_tag_from_highlight_use_case import (
+    RemoveTagFromHighlightUseCase,
+)
+from src.application.reading.use_cases.tag_groups.create_tag_group_use_case import (
+    CreateTagGroupUseCase,
+)
+from src.application.reading.use_cases.tag_groups.delete_tag_group_use_case import (
+    DeleteTagGroupUseCase,
+)
+from src.application.reading.use_cases.tag_groups.update_tag_group_association_use_case import (
+    UpdateTagGroupAssociationUseCase,
+)
+from src.application.reading.use_cases.tag_groups.update_tag_group_use_case import (
+    UpdateTagGroupUseCase,
+)
+from src.application.reading.use_cases.tags.create_tag_use_case import (
+    CreateTagUseCase,
+)
+from src.application.reading.use_cases.tags.delete_tag_use_case import (
+    DeleteTagUseCase,
+)
+from src.application.reading.use_cases.tags.get_tags_for_book_use_case import (
+    GetTagsForBookUseCase,
+)
+from src.application.reading.use_cases.tags.update_tag_name_use_case import (
+    UpdateTagNameUseCase,
+)
 
 
 class ReadingContainer(containers.DeclarativeContainer):
@@ -99,7 +99,7 @@ class ReadingContainer(containers.DeclarativeContainer):
     book_repository = providers.Dependency()
     bookmark_repository = providers.Dependency()
     highlight_repository = providers.Dependency()
-    highlight_tag_repository = providers.Dependency()
+    tag_repository = providers.Dependency()
     chapter_repository = providers.Dependency()
     reading_session_repository = providers.Dependency()
     chapter_prereading_repository = providers.Dependency()
@@ -159,65 +159,65 @@ class ReadingContainer(containers.DeclarativeContainer):
         highlight_style_repository=highlight_style_repository,
     )
 
-    # Highlight tags
-    create_highlight_tag_use_case = providers.Factory(
-        CreateHighlightTagUseCase,
-        tag_repository=highlight_tag_repository,
+    # Tags
+    create_tag_use_case = providers.Factory(
+        CreateTagUseCase,
+        tag_repository=tag_repository,
         book_repository=book_repository,
     )
-    delete_highlight_tag_use_case = providers.Factory(
-        DeleteHighlightTagUseCase,
-        tag_repository=highlight_tag_repository,
+    delete_tag_use_case = providers.Factory(
+        DeleteTagUseCase,
+        tag_repository=tag_repository,
     )
-    update_highlight_tag_name_use_case = providers.Factory(
-        UpdateHighlightTagNameUseCase,
-        tag_repository=highlight_tag_repository,
+    update_tag_name_use_case = providers.Factory(
+        UpdateTagNameUseCase,
+        tag_repository=tag_repository,
     )
-    get_highlight_tags_for_book_use_case = providers.Factory(
-        GetHighlightTagsForBookUseCase,
-        tag_repository=highlight_tag_repository,
+    get_tags_for_book_use_case = providers.Factory(
+        GetTagsForBookUseCase,
+        tag_repository=tag_repository,
         book_repository=book_repository,
     )
 
-    # Highlight tag groups
-    create_highlight_tag_group_use_case = providers.Factory(
-        CreateHighlightTagGroupUseCase,
-        tag_repository=highlight_tag_repository,
+    # Tag groups
+    create_tag_group_use_case = providers.Factory(
+        CreateTagGroupUseCase,
+        tag_repository=tag_repository,
         book_repository=book_repository,
     )
-    update_highlight_tag_group_use_case = providers.Factory(
-        UpdateHighlightTagGroupUseCase,
-        tag_repository=highlight_tag_repository,
+    update_tag_group_use_case = providers.Factory(
+        UpdateTagGroupUseCase,
+        tag_repository=tag_repository,
         book_repository=book_repository,
     )
-    delete_highlight_tag_group_use_case = providers.Factory(
-        DeleteHighlightTagGroupUseCase,
-        tag_repository=highlight_tag_repository,
+    delete_tag_group_use_case = providers.Factory(
+        DeleteTagGroupUseCase,
+        tag_repository=tag_repository,
     )
     update_tag_group_association_use_case = providers.Factory(
         UpdateTagGroupAssociationUseCase,
-        tag_repository=highlight_tag_repository,
+        tag_repository=tag_repository,
     )
 
-    # Highlight tag associations
+    # Tag associations
     add_tag_to_highlight_by_id_use_case = providers.Factory(
         AddTagToHighlightByIdUseCase,
         highlight_repository=highlight_repository,
-        tag_repository=highlight_tag_repository,
+        tag_repository=tag_repository,
         highlight_style_repository=highlight_style_repository,
         highlight_style_resolver=highlight_style_resolver,
     )
     add_tag_to_highlight_by_name_use_case = providers.Factory(
         AddTagToHighlightByNameUseCase,
         highlight_repository=highlight_repository,
-        tag_repository=highlight_tag_repository,
+        tag_repository=tag_repository,
         highlight_style_repository=highlight_style_repository,
         highlight_style_resolver=highlight_style_resolver,
     )
     remove_tag_from_highlight_use_case = providers.Factory(
         RemoveTagFromHighlightUseCase,
         highlight_repository=highlight_repository,
-        tag_repository=highlight_tag_repository,
+        tag_repository=tag_repository,
         highlight_style_repository=highlight_style_repository,
         highlight_style_resolver=highlight_style_resolver,
     )

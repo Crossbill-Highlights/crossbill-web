@@ -1,14 +1,14 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import {
-  getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey,
+  getGetTagsApiV1BooksBookIdTagsGetQueryKey,
   useDeleteHighlightsApiV1BooksBookIdHighlightDelete,
 } from '@/api/generated/highlights/highlights.ts';
 import type {
   Bookmark,
   Highlight,
-  HighlightTagInBook,
   NoteUpdateRequest,
   NoteWithLinks,
+  TagInBook,
 } from '@/api/generated/model';
 import {
   getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey,
@@ -21,7 +21,7 @@ import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
-import { HighlightTagInput } from '@/pages/BookPage/Highlights/HighlightViewModal/components/HighlightTagInput.tsx';
+import { TagInput } from '@/pages/BookPage/Highlights/HighlightViewModal/components/TagInput.tsx';
 import { useImmediateTagMutation } from '@/pages/BookPage/Highlights/HighlightViewModal/hooks/useImmediateTagMutation.ts';
 import { NoteEditorDialog } from '@/pages/BookPage/Notes/NoteEditorDialog.tsx';
 import { Box, Button, Menu, MenuItem, Stack } from '@mui/material';
@@ -41,7 +41,7 @@ export interface HighlightViewModalProps {
   bookId: number;
   open: boolean;
   onClose: (lastViewedHighlightId?: number) => void;
-  availableTags: HighlightTagInBook[];
+  availableTags: TagInBook[];
   bookmarksByHighlightId: Record<number, Bookmark>;
   allHighlights?: Highlight[];
   currentIndex?: number;
@@ -72,7 +72,7 @@ export const HighlightViewModal = ({
   const { isProcessing, currentTags, updateTagList } = useImmediateTagMutation({
     bookId,
     highlightId: highlight.id,
-    initialTags: highlight.highlight_tags,
+    initialTags: highlight.tags,
     showSnackbar,
   });
 
@@ -142,7 +142,7 @@ export const HighlightViewModal = ({
       queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
     });
     void queryClient.invalidateQueries({
-      queryKey: getGetHighlightTagsApiV1BooksBookIdHighlightTagsGetQueryKey(bookId),
+      queryKey: getGetTagsApiV1BooksBookIdTagsGetQueryKey(bookId),
     });
     onClose(highlight.id);
   };
@@ -160,7 +160,7 @@ export const HighlightViewModal = ({
       kind: note.kind as NoteUpdateRequest['kind'],
       chapter_ids: note.chapter_ids,
       highlight_ids: [...new Set([...note.highlight_ids, highlight.id])],
-      highlight_tag_ids: note.highlight_tag_ids,
+      tag_ids: note.tag_ids,
     };
     await updateNoteMutation.mutateAsync({ noteId: note.id, data: payload });
   };
@@ -187,7 +187,7 @@ export const HighlightViewModal = ({
           onDelete={handleDelete}
           disabled={isLoading}
         />
-        <HighlightTagInput
+        <TagInput
           value={currentTags}
           onChange={updateTagList}
           availableTags={availableTags}

@@ -56,14 +56,12 @@ class TestNoteUpdate:
 
     def test_replace_links(self) -> None:
         note = make_note(chapter_ids=[10], highlight_ids=[20])
-        note.replace_links(
-            book_ids=[1], chapter_ids=[11, 12], highlight_ids=[], highlight_tag_ids=[30]
-        )
+        note.replace_links(book_ids=[1], chapter_ids=[11, 12], highlight_ids=[], tag_ids=[30])
         assert note.chapter_ids == [11, 12]
         assert note.highlight_ids == []
-        assert note.highlight_tag_ids == [30]
+        assert note.tag_ids == [30]
 
     def test_replace_links_requires_book(self) -> None:
         note = make_note()
         with pytest.raises(DomainError, match="at least one book"):
-            note.replace_links(book_ids=[], chapter_ids=[], highlight_ids=[], highlight_tag_ids=[])
+            note.replace_links(book_ids=[], chapter_ids=[], highlight_ids=[], tag_ids=[])

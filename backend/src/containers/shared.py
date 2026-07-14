@@ -22,7 +22,6 @@ from src.infrastructure.library.repositories import BookRepository
 from src.infrastructure.library.repositories.chapter_repository import ChapterRepository
 from src.infrastructure.library.repositories.file_repository import FileRepository
 from src.infrastructure.library.repositories.s3_file_repository import S3FileRepository
-from src.infrastructure.library.repositories.tag_repository import TagRepository
 from src.infrastructure.library.services.cover_image_service import CoverImageService
 from src.infrastructure.library.services.epub_parser_service import EpubParserService
 from src.infrastructure.library.services.epub_position_index_service import (
@@ -36,7 +35,7 @@ from src.infrastructure.reading.repositories import (
     BookmarkRepository,
     HighlightRepository,
     HighlightStyleRepository,
-    HighlightTagRepository,
+    TagRepository,
 )
 from src.infrastructure.reading.repositories.chapter_prereading_repository import (
     ChapterPrereadingRepository,
@@ -69,11 +68,10 @@ class SharedContainer(containers.DeclarativeContainer):
     book_repository = providers.Factory(BookRepository, db=db)
     bookmark_repository = providers.Factory(BookmarkRepository, db=db)
     highlight_repository = providers.Factory(HighlightRepository, db=db)
-    highlight_tag_repository = providers.Factory(HighlightTagRepository, db=db)
+    tag_repository = providers.Factory(TagRepository, db=db)
     chapter_repository = providers.Factory(ChapterRepository, db=db)
     note_repository = providers.Factory(NoteRepository, db=db)
     reading_session_repository = providers.Factory(ReadingSessionRepository, db=db)
-    tag_repository = providers.Factory(TagRepository, db=db)
     flashcard_repository = providers.Factory(FlashcardRepository, db=db)
     chapter_prereading_repository = providers.Factory(ChapterPrereadingRepository, db=db)
     highlight_style_repository = providers.Factory(HighlightStyleRepository, db=db)

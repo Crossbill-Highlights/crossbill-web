@@ -20,8 +20,7 @@ class BookDetailsAggregation:
 
     book: Book
     tags: list[Any]  # Legacy ORM models (temporary)
-    highlight_tags: list[Any]  # Legacy ORM models (temporary)
-    highlight_tag_groups: list[Any]  # Legacy ORM models (temporary)
+    tag_groups: list[Any]  # Legacy ORM models (temporary)
     bookmarks: list[Any]  # Legacy ORM models (temporary)
     chapters_with_highlights: list[ChapterWithHighlights]
     book_flashcards: list[Flashcard] = field(default_factory=list)

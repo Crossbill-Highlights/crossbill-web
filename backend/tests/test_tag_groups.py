@@ -28,7 +28,7 @@ class TestCreateTagGroup:
         assert "id" in data
 
         # Verify in database
-        result = await db_session.execute(select(models.HighlightTagGroup).filter_by(id=data["id"]))
+        result = await db_session.execute(select(models.TagGroup).filter_by(id=data["id"]))
         tag_group = result.scalar_one_or_none()
         assert tag_group is not None
         assert tag_group.name == "Important Themes"
@@ -38,7 +38,7 @@ class TestCreateTagGroup:
         self,
         client: AsyncClient,
         db_session: AsyncSession,
-        test_tag_group: models.HighlightTagGroup,
+        test_tag_group: models.TagGroup,
     ) -> None:
         """Test successful update of a tag group."""
         response = await client.post(
@@ -61,7 +61,7 @@ class TestCreateTagGroup:
         assert test_tag_group.name == "New Name"
 
     async def test_create_tag_group_duplicate_name(
-        self, client: AsyncClient, test_tag_group: models.HighlightTagGroup
+        self, client: AsyncClient, test_tag_group: models.TagGroup
     ) -> None:
         """Test creating tag group with duplicate name returns 409 error."""
         # Try to create another tag group with same name
@@ -100,11 +100,11 @@ class TestCreateTagGroup:
         client: AsyncClient,
         db_session: AsyncSession,
         test_book: models.Book,
-        test_tag_group: models.HighlightTagGroup,
+        test_tag_group: models.TagGroup,
     ) -> None:
         """Test updating tag group to a name that already exists."""
         # Create a second tag group
-        tag_group2 = models.HighlightTagGroup(book_id=test_book.id, name="Different Name")
+        tag_group2 = models.TagGroup(book_id=test_book.id, name="Different Name")
         db_session.add(tag_group2)
         await db_session.commit()
         await db_session.refresh(tag_group2)
@@ -121,7 +121,7 @@ class TestCreateTagGroup:
         self,
         client: AsyncClient,
         db_session: AsyncSession,
-        test_tag_group: models.HighlightTagGroup,
+        test_tag_group: models.TagGroup,
         test_user: models.User,
     ) -> None:
         """Test updating tag group with mismatched book_id."""
@@ -149,7 +149,7 @@ class TestDeleteTagGroup:
         self,
         client: AsyncClient,
         db_session: AsyncSession,
-        test_tag_group: models.HighlightTagGroup,
+        test_tag_group: models.TagGroup,
     ) -> None:
         """Test successful deletion of a tag group."""
         tag_group_id = test_tag_group.id
@@ -159,9 +159,7 @@ class TestDeleteTagGroup:
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
         # Verify deletion
-        result = await db_session.execute(
-            select(models.HighlightTagGroup).filter_by(id=tag_group_id)
-        )
+        result = await db_session.execute(select(models.TagGroup).filter_by(id=tag_group_id))
         deleted_group = result.scalar_one_or_none()
         assert deleted_group is None
 
@@ -170,18 +168,18 @@ class TestDeleteTagGroup:
         client: AsyncClient,
         db_session: AsyncSession,
         test_book: models.Book,
-        test_tag_group: models.HighlightTagGroup,
+        test_tag_group: models.TagGroup,
         test_user: models.User,
     ) -> None:
         """Test deleting tag group sets tags' tag_group_id to NULL."""
         # Create tags associated with the tag group
-        tag1 = models.HighlightTag(
+        tag1 = models.Tag(
             book_id=test_book.id,
             user_id=test_user.id,
             name="Tag 1",
             tag_group_id=test_tag_group.id,
         )
-        tag2 = models.HighlightTag(
+        tag2 = models.Tag(
             book_id=test_book.id,
             user_id=test_user.id,
             name="Tag 2",
@@ -211,42 +209,42 @@ class TestDeleteTagGroup:
 
 
 class TestUpdateTag:
-    """Test suite for POST /books/:id/highlight_tag/:id endpoint."""
+    """Test suite for POST /books/:id/tag/:id endpoint."""
 
     async def test_update_tag_add_to_group(
         self,
         client: AsyncClient,
         db_session: AsyncSession,
         test_book: models.Book,
-        test_tag_group: models.HighlightTagGroup,
-        test_highlight_tag: models.HighlightTag,
+        test_tag_group: models.TagGroup,
+        test_tag: models.Tag,
     ) -> None:
         """Test adding a tag to a tag group."""
         response = await client.post(
-            f"/api/v1/books/{test_book.id}/highlight_tag/{test_highlight_tag.id}",
+            f"/api/v1/books/{test_book.id}/tag/{test_tag.id}",
             json={"tag_group_id": test_tag_group.id},
         )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["id"] == test_highlight_tag.id
+        assert data["id"] == test_tag.id
         assert data["tag_group_id"] == test_tag_group.id
 
         # Verify in database
-        await db_session.refresh(test_highlight_tag)
-        assert test_highlight_tag.tag_group_id == test_tag_group.id
+        await db_session.refresh(test_tag)
+        assert test_tag.tag_group_id == test_tag_group.id
 
     async def test_update_tag_remove_from_group(
         self,
         client: AsyncClient,
         db_session: AsyncSession,
         test_book: models.Book,
-        test_tag_group: models.HighlightTagGroup,
+        test_tag_group: models.TagGroup,
         test_user: models.User,
     ) -> None:
         """Test removing a tag from a tag group."""
         # Create a tag that's already in a group
-        tag = models.HighlightTag(
+        tag = models.Tag(
             book_id=test_book.id,
             user_id=test_user.id,
             name="Important",
@@ -258,7 +256,7 @@ class TestUpdateTag:
 
         # Update tag to remove from group
         response = await client.post(
-            f"/api/v1/books/{test_book.id}/highlight_tag/{tag.id}",
+            f"/api/v1/books/{test_book.id}/tag/{tag.id}",
             json={"tag_group_id": None},
         )
 
@@ -276,53 +274,53 @@ class TestUpdateTag:
         client: AsyncClient,
         db_session: AsyncSession,
         test_book: models.Book,
-        test_highlight_tag: models.HighlightTag,
+        test_tag: models.Tag,
     ) -> None:
         """Test renaming a tag."""
         response = await client.post(
-            f"/api/v1/books/{test_book.id}/highlight_tag/{test_highlight_tag.id}",
+            f"/api/v1/books/{test_book.id}/tag/{test_tag.id}",
             json={"name": "New Name"},
         )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["id"] == test_highlight_tag.id
+        assert data["id"] == test_tag.id
         assert data["name"] == "New Name"
 
         # Verify in database
-        await db_session.refresh(test_highlight_tag)
-        assert test_highlight_tag.name == "New Name"
+        await db_session.refresh(test_tag)
+        assert test_tag.name == "New Name"
 
     async def test_update_tag_rename_and_add_to_group(
         self,
         client: AsyncClient,
         db_session: AsyncSession,
         test_book: models.Book,
-        test_tag_group: models.HighlightTagGroup,
-        test_highlight_tag: models.HighlightTag,
+        test_tag_group: models.TagGroup,
+        test_tag: models.Tag,
     ) -> None:
         """Test renaming a tag and adding it to a group."""
         response = await client.post(
-            f"/api/v1/books/{test_book.id}/highlight_tag/{test_highlight_tag.id}",
+            f"/api/v1/books/{test_book.id}/tag/{test_tag.id}",
             json={"name": "New Name", "tag_group_id": test_tag_group.id},
         )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["id"] == test_highlight_tag.id
+        assert data["id"] == test_tag.id
         assert data["name"] == "New Name"
         assert data["tag_group_id"] == test_tag_group.id
 
         # Verify in database
-        await db_session.refresh(test_highlight_tag)
-        assert test_highlight_tag.name == "New Name"
-        assert test_highlight_tag.tag_group_id == test_tag_group.id
+        await db_session.refresh(test_tag)
+        assert test_tag.name == "New Name"
+        assert test_tag.tag_group_id == test_tag_group.id
 
     async def test_update_tag_wrong_book(
         self,
         client: AsyncClient,
         db_session: AsyncSession,
-        test_highlight_tag: models.HighlightTag,
+        test_tag: models.Tag,
         test_user: models.User,
     ) -> None:
         """Test updating tag with wrong book_id."""
@@ -336,18 +334,18 @@ class TestUpdateTag:
 
         # Try to update with wrong book_id
         response = await client.post(
-            f"/api/v1/books/{book2.id}/highlight_tag/{test_highlight_tag.id}",
+            f"/api/v1/books/{book2.id}/tag/{test_tag.id}",
             json={"name": "New Name"},
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     async def test_update_tag_nonexistent_group(
-        self, client: AsyncClient, test_book: models.Book, test_highlight_tag: models.HighlightTag
+        self, client: AsyncClient, test_book: models.Book, test_tag: models.Tag
     ) -> None:
         """Test updating tag with non-existent tag group."""
         response = await client.post(
-            f"/api/v1/books/{test_book.id}/highlight_tag/{test_highlight_tag.id}",
+            f"/api/v1/books/{test_book.id}/tag/{test_tag.id}",
             json={"tag_group_id": 99999},
         )
 
@@ -365,8 +363,8 @@ class TestBookDetailsWithTagGroups:
     ) -> None:
         """Test that book details include tag groups."""
         # Create tag groups
-        tag_group1 = models.HighlightTagGroup(book_id=test_book.id, name="Themes")
-        tag_group2 = models.HighlightTagGroup(book_id=test_book.id, name="Characters")
+        tag_group1 = models.TagGroup(book_id=test_book.id, name="Themes")
+        tag_group2 = models.TagGroup(book_id=test_book.id, name="Characters")
         db_session.add_all([tag_group1, tag_group2])
         await db_session.commit()
 
@@ -375,11 +373,11 @@ class TestBookDetailsWithTagGroups:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "highlight_tag_groups" in data
-        assert len(data["highlight_tag_groups"]) == 2
+        assert "tag_groups" in data
+        assert len(data["tag_groups"]) == 2
 
         # Check tag group names (should be sorted alphabetically)
-        tag_group_names = [tg["name"] for tg in data["highlight_tag_groups"]]
+        tag_group_names = [tg["name"] for tg in data["tag_groups"]]
         assert "Themes" in tag_group_names
         assert "Characters" in tag_group_names
 
@@ -388,18 +386,18 @@ class TestBookDetailsWithTagGroups:
         client: AsyncClient,
         db_session: AsyncSession,
         test_book: models.Book,
-        test_tag_group: models.HighlightTagGroup,
+        test_tag_group: models.TagGroup,
         test_user: models.User,
     ) -> None:
         """Test that tags in book details include tag_group_id."""
         # Create tags
-        tag1 = models.HighlightTag(
+        tag1 = models.Tag(
             book_id=test_book.id,
             user_id=test_user.id,
             name="Tag 1",
             tag_group_id=test_tag_group.id,
         )
-        tag2 = models.HighlightTag(
+        tag2 = models.Tag(
             book_id=test_book.id, user_id=test_user.id, name="Tag 2", tag_group_id=None
         )
         db_session.add_all([tag1, tag2])
@@ -415,7 +413,7 @@ class TestBookDetailsWithTagGroups:
             datetime_str="2024-01-15 14:30:22",
         )
 
-        highlight.highlight_tags.extend([tag1, tag2])
+        highlight.tags.extend([tag1, tag2])
         await db_session.commit()
 
         # Get book details
@@ -425,8 +423,8 @@ class TestBookDetailsWithTagGroups:
         data = response.json()
 
         # Check tags include tag_group_id
-        assert "highlight_tags" in data
-        tag_map = {tag["name"]: tag for tag in data["highlight_tags"]}
+        assert "tags" in data
+        tag_map = {tag["name"]: tag for tag in data["tags"]}
 
         if "Tag 1" in tag_map:
             assert tag_map["Tag 1"]["tag_group_id"] == test_tag_group.id
@@ -442,7 +440,7 @@ class TestCascadeDelete:
         client: AsyncClient,
         db_session: AsyncSession,
         test_book: models.Book,
-        test_tag_group: models.HighlightTagGroup,
+        test_tag_group: models.TagGroup,
     ) -> None:
         """Test that deleting a book also deletes its tag groups."""
         tag_group_id = test_tag_group.id
@@ -454,6 +452,6 @@ class TestCascadeDelete:
 
         # Verify tag group was cascade-deleted via raw SQL to bypass identity map
         result = await db_session.execute(
-            text("SELECT id FROM highlight_tag_groups WHERE id = :id"), {"id": tag_group_id}
+            text("SELECT id FROM tag_groups WHERE id = :id"), {"id": tag_group_id}
         )
         assert result.scalar_one_or_none() is None

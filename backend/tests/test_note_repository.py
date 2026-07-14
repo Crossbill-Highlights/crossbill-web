@@ -9,8 +9,8 @@ from src.domain.common.value_objects import (
     BookId,
     ChapterId,
     HighlightId,
-    HighlightTagId,
     NoteId,
+    TagId,
     UserId,
 )
 from src.domain.notes.entities.note import Note, NoteKind
@@ -62,18 +62,18 @@ class TestNoteRepositorySave:
         test_user: models.User,
         test_book: models.Book,
         test_highlight: models.Highlight,
-        test_highlight_tag: models.HighlightTag,
+        test_tag: models.Tag,
     ) -> None:
         note = Note.create(
             user_id=UserId(test_user.id),
             title="Stoicism",
             book_ids=[test_book.id],
             highlight_ids=[test_highlight.id],
-            highlight_tag_ids=[test_highlight_tag.id],
+            tag_ids=[test_tag.id],
         )
         saved = await note_repository.save(note)
         assert saved.highlight_ids == [test_highlight.id]
-        assert saved.highlight_tag_ids == [test_highlight_tag.id]
+        assert saved.tag_ids == [test_tag.id]
 
     async def test_update_replaces_links_and_content(
         self,
@@ -86,7 +86,7 @@ class TestNoteRepositorySave:
             book_ids=saved_note.book_ids,
             chapter_ids=[],
             highlight_ids=[test_highlight.id],
-            highlight_tag_ids=[],
+            tag_ids=[],
         )
         updated = await note_repository.save(saved_note)
         assert updated.title == "Rodion"
@@ -194,30 +194,30 @@ class TestNoteRepositoryFind:
         assert [n.id for n in matching] == [saved.id]
         assert empty == []
 
-    async def test_find_by_book_filters_by_highlight_tag(
+    async def test_find_by_book_filters_by_tag(
         self,
         note_repository: NoteRepository,
         test_user: models.User,
         test_book: models.Book,
-        test_highlight_tag: models.HighlightTag,
+        test_tag: models.Tag,
     ) -> None:
         note = Note.create(
             user_id=UserId(test_user.id),
             title="Stoicism",
             book_ids=[test_book.id],
-            highlight_tag_ids=[test_highlight_tag.id],
+            tag_ids=[test_tag.id],
         )
         saved = await note_repository.save(note)
 
         matching = await note_repository.find_by_book(
             BookId(test_book.id),
             UserId(test_user.id),
-            highlight_tag_id=HighlightTagId(test_highlight_tag.id),
+            tag_id=TagId(test_tag.id),
         )
         empty = await note_repository.find_by_book(
             BookId(test_book.id),
             UserId(test_user.id),
-            highlight_tag_id=HighlightTagId(99999),
+            tag_id=TagId(99999),
         )
         assert [n.id for n in matching] == [saved.id]
         assert empty == []

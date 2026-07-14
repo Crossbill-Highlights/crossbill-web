@@ -6,11 +6,10 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, Field, model_validator
 
 from src.infrastructure.common.schemas.position_schemas import PositionResponse
-from src.infrastructure.library.schemas.book_schemas import TagInBook
 from src.infrastructure.reading.schemas.bookmark_schemas import Bookmark
-from src.infrastructure.reading.schemas.highlight_tag_schemas import (
-    HighlightTagGroupInBook,
-    HighlightTagInBook,
+from src.infrastructure.reading.schemas.tag_schemas import (
+    TagGroupInBook,
+    TagInBook,
 )
 
 if TYPE_CHECKING:
@@ -63,9 +62,7 @@ class HighlightResponseBase(HighlightBase):
     book_id: int
     chapter_id: int | None
     label: HighlightLabel | None = Field(None, description="Resolved label for this highlight")
-    highlight_tags: list[HighlightTagInBook] = Field(
-        ..., description="List of highlight tags for this highlight"
-    )
+    tags: list[TagInBook] = Field(..., description="List of tags for this highlight")
     created_at: dt
     updated_at: dt
 
@@ -181,12 +178,7 @@ class BookDetails(BaseModel):
     language: str | None = None
     page_count: int | None = None
     tags: list[TagInBook] = Field(..., description="List of tags for this book")
-    highlight_tags: list[HighlightTagInBook] = Field(
-        ..., description="List of highlight tags for this book"
-    )
-    highlight_tag_groups: list[HighlightTagGroupInBook] = Field(
-        ..., description="List of highlight tag groups for this book"
-    )
+    tag_groups: list[TagGroupInBook] = Field(..., description="List of tag groups for this book")
     bookmarks: list[Bookmark] = Field(..., description="List of bookmarks for this book")
     book_flashcards: list[Flashcard] = Field(
         default_factory=list,

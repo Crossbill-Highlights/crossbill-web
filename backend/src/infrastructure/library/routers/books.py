@@ -4,15 +4,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from starlette import status
 
-from src.application.library.dtos import UpdateBookInput
 from src.application.library.use_cases.book_management.delete_book_use_case import (
     DeleteBookUseCase,
 )
 from src.application.library.use_cases.book_management.get_book_details_use_case import (
     GetBookDetailsUseCase,
-)
-from src.application.library.use_cases.book_management.update_book_use_case import (
-    UpdateBookUseCase,
 )
 from src.application.library.use_cases.book_queries.get_books_with_counts_use_case import (
     GetBooksWithCountsUseCase,
@@ -31,18 +27,16 @@ from src.infrastructure.identity import get_current_user
 from src.infrastructure.learning.schemas import Flashcard
 from src.infrastructure.library.schemas import (
     BooksListResponse,
-    BookUpdateRequest,
     BookWithHighlightCount,
     RecentlyViewedBooksResponse,
-    TagInBook,
 )
 from src.infrastructure.reading.schemas import (
     BookDetails,
     Bookmark,
     Highlight,
     HighlightLabel,
-    HighlightTagGroupInBook,
-    HighlightTagInBook,
+    TagGroupInBook,
+    TagInBook,
 )
 from src.infrastructure.reading.schemas import (
     ChapterWithHighlights as ChapterWithHighlightsSchema,
@@ -105,8 +99,8 @@ def _map_chapters_to_schemas(
                     )
                     for fc in hw.flashcards
                 ],
-                highlight_tags=[
-                    HighlightTagInBook(
+                tags=[
+                    TagInBook(
                         id=tag.id.value,
                         name=tag.name,
                         tag_group_id=tag.tag_group_id,
@@ -166,21 +160,20 @@ def _build_book_details_schema(
         description=agg.book.description,
         language=agg.book.language,
         page_count=agg.book.page_count,
-        tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in agg.tags],
-        highlight_tags=[
-            HighlightTagInBook(
+        tags=[
+            TagInBook(
                 id=tag.id.value,
                 name=tag.name,
                 tag_group_id=tag.tag_group_id,
             )
-            for tag in agg.highlight_tags
+            for tag in agg.tags
         ],
-        highlight_tag_groups=[
-            HighlightTagGroupInBook(
+        tag_groups=[
+            TagGroupInBook(
                 id=group.id.value,
                 name=group.name,
             )
-            for group in agg.highlight_tag_groups
+            for group in agg.tag_groups
         ],
         bookmarks=[
             Bookmark(
@@ -265,7 +258,6 @@ async def get_books(
             page_count=book.page_count,
             highlight_count=highlight_count,
             flashcard_count=flashcard_count,
-            tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
             end_position=PositionResponse(
                 index=book.end_position.index,
                 char_index=book.end_position.char_index,
@@ -276,7 +268,7 @@ async def get_books(
             updated_at=book.updated_at,
             last_viewed=book.last_viewed,
         )
-        for book, highlight_count, flashcard_count, tags in results
+        for book, highlight_count, flashcard_count in results
     ]
 
     return BooksListResponse(books=books_list, total=total, offset=offset, limit=limit)
@@ -324,7 +316,6 @@ async def get_recently_viewed_books(
             page_count=book.page_count,
             highlight_count=highlight_count,
             flashcard_count=flashcard_count,
-            tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
             end_position=PositionResponse(
                 index=book.end_position.index,
                 char_index=book.end_position.char_index,
@@ -335,7 +326,7 @@ async def get_recently_viewed_books(
             updated_at=book.updated_at,
             last_viewed=book.last_viewed,
         )
-        for book, highlight_count, flashcard_count, tags in results
+        for book, highlight_count, flashcard_count in results
     ]
 
     return RecentlyViewedBooksResponse(books=books_list)
@@ -363,62 +354,6 @@ async def get_book_details(
     """
     agg = await use_case.get_book_details(book_id, current_user.id.value)
     return _build_book_details_schema(agg, agg.labels)
-
-
-@router.post(
-    "/{book_id}",
-    response_model=BookWithHighlightCount,
-    status_code=status.HTTP_200_OK,
-)
-async def update_book(
-    book_id: int,
-    request: BookUpdateRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
-    use_case: UpdateBookUseCase = Depends(inject_use_case(container.library.update_book_use_case)),
-) -> BookWithHighlightCount:
-    """
-    Update book information.
-
-    Currently supports updating tags only. The tags will be replaced with the provided list.
-
-    Args:
-        book_id: ID of the book to update
-        request: Book update request containing tags
-
-    Returns:
-        Updated book with highlight count and tags
-
-    Raises:
-        HTTPException: If book is not found or update fails
-    """
-    update_input = UpdateBookInput(tags=request.tags)
-    book, highlight_count, flashcard_count, tags = await use_case.update_book(
-        book_id, update_input, current_user.id.value
-    )
-    return BookWithHighlightCount(
-        id=book.id.value,
-        client_book_id=book.client_book_id,
-        title=book.title,
-        author=book.author,
-        isbn=book.isbn,
-        cover_file=book.cover_file,
-        cover_blurhash=book.cover_blurhash,
-        description=book.description,
-        language=book.language,
-        page_count=book.page_count,
-        highlight_count=highlight_count,
-        flashcard_count=flashcard_count,
-        tags=[TagInBook(id=tag.id.value, name=tag.name) for tag in tags],
-        end_position=PositionResponse(
-            index=book.end_position.index,
-            char_index=book.end_position.char_index,
-        )
-        if book.end_position
-        else None,
-        created_at=book.created_at,
-        updated_at=book.updated_at,
-        last_viewed=book.last_viewed,
-    )
 
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -8,7 +8,7 @@ export interface FlashcardWithContext extends Flashcard {
   highlight: Highlight | null;
   chapterName: string;
   chapterId: number | null;
-  highlightTags: { id: number; name: string }[];
+  tags: { id: number; name: string }[];
 }
 
 export interface FlashcardChapterData {

@@ -468,7 +468,7 @@ class TestGetBookDetails:
         assert len(data["chapters"][0]["highlights"]) == 1
         assert data["chapters"][0]["highlights"][0]["text"] == "Active Highlight"
 
-    async def test_get_book_details_includes_highlight_tags(
+    async def test_get_book_details_includes_tags(
         self,
         client: AsyncClient,
         db_session: AsyncSession,
@@ -488,16 +488,16 @@ class TestGetBookDetails:
         )
 
         # Create highlight tags for the book
-        tag1 = models.HighlightTag(book_id=book.id, user_id=DEFAULT_USER_ID, name="Important")
-        tag2 = models.HighlightTag(book_id=book.id, user_id=DEFAULT_USER_ID, name="Review")
+        tag1 = models.Tag(book_id=book.id, user_id=DEFAULT_USER_ID, name="Important")
+        tag2 = models.Tag(book_id=book.id, user_id=DEFAULT_USER_ID, name="Review")
         db_session.add_all([tag1, tag2])
         await db_session.commit()
         await db_session.refresh(tag1)
         await db_session.refresh(tag2)
 
         # Associate tags with the highlight
-        highlight.highlight_tags.append(tag1)
-        highlight.highlight_tags.append(tag2)
+        highlight.tags.append(tag1)
+        highlight.tags.append(tag2)
         await db_session.commit()
 
         response = await client.get(f"/api/v1/books/{book.id}")
@@ -510,10 +510,10 @@ class TestGetBookDetails:
         assert len(data["chapters"][0]["highlights"]) == 1
 
         highlight_data = data["chapters"][0]["highlights"][0]
-        assert "highlight_tags" in highlight_data
-        assert len(highlight_data["highlight_tags"]) == 2
+        assert "tags" in highlight_data
+        assert len(highlight_data["tags"]) == 2
 
-        tag_names = [tag["name"] for tag in highlight_data["highlight_tags"]]
+        tag_names = [tag["name"] for tag in highlight_data["tags"]]
         assert "Important" in tag_names
         assert "Review" in tag_names
 

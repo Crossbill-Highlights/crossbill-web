@@ -144,26 +144,26 @@ class TestCreateNote:
         self,
         client: AsyncClient,
         test_book: models.Book,
-        test_highlight_tag: models.HighlightTag,
+        test_tag: models.Tag,
     ) -> None:
         response = await client.post(
             "/api/v1/notes",
             json={
                 "title": "X",
                 "book_id": test_book.id,
-                "highlight_tag_ids": [test_highlight_tag.id],
+                "tag_ids": [test_tag.id],
             },
         )
         assert response.status_code == status.HTTP_201_CREATED
         note = response.json()["note"]
-        assert note["highlight_tag_ids"] == [test_highlight_tag.id]
+        assert note["tag_ids"] == [test_tag.id]
 
     async def test_create_note_tag_not_found(
         self, client: AsyncClient, test_book: models.Book
     ) -> None:
         response = await client.post(
             "/api/v1/notes",
-            json={"title": "X", "book_id": test_book.id, "highlight_tag_ids": [99999]},
+            json={"title": "X", "book_id": test_book.id, "tag_ids": [99999]},
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -193,7 +193,7 @@ class TestGetNote:
         assert data["title"] == "Raskolnikov"
         assert data["chapters"] == [{"id": test_chapter.id, "name": test_chapter.name}]
         assert data["highlights"] == []
-        assert data["highlight_tags"] == []
+        assert data["tags"] == []
 
     async def test_get_note_not_found(self, client: AsyncClient) -> None:
         response = await client.get("/api/v1/notes/99999")
@@ -204,7 +204,7 @@ class TestGetNote:
         client: AsyncClient,
         test_book: models.Book,
         test_highlight: models.Highlight,
-        test_highlight_tag: models.HighlightTag,
+        test_tag: models.Tag,
     ) -> None:
         create = await client.post(
             "/api/v1/notes",
@@ -212,7 +212,7 @@ class TestGetNote:
                 "title": "Raskolnikov",
                 "book_id": test_book.id,
                 "highlight_ids": [test_highlight.id],
-                "highlight_tag_ids": [test_highlight_tag.id],
+                "tag_ids": [test_tag.id],
             },
         )
         note_id = create.json()["note"]["id"]
@@ -221,9 +221,7 @@ class TestGetNote:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["highlights"] == [{"id": test_highlight.id, "text": test_highlight.text}]
-        assert data["highlight_tags"] == [
-            {"id": test_highlight_tag.id, "name": test_highlight_tag.name}
-        ]
+        assert data["tags"] == [{"id": test_tag.id, "name": test_tag.name}]
 
     async def test_get_note_cross_user_not_found(
         self, client: AsyncClient, db_session: AsyncSession
@@ -309,7 +307,7 @@ class TestGetNotesForBook:
         # A tag linked to a note but NOT to any highlight must still appear in
         # the note's tag summary in the list response.
         tag_resp = await client.post(
-            f"/api/v1/books/{test_book.id}/highlight_tag",
+            f"/api/v1/books/{test_book.id}/tag",
             json={"name": "note-only"},
         )
         assert tag_resp.status_code in (200, 201), tag_resp.text
@@ -320,14 +318,14 @@ class TestGetNotesForBook:
             json={
                 "title": "Concept",
                 "book_id": test_book.id,
-                "highlight_tag_ids": [tag_id],
+                "tag_ids": [tag_id],
             },
         )
 
         response = await client.get(f"/api/v1/books/{test_book.id}/notes")
         note = next(n for n in response.json()["notes"] if n["title"] == "Concept")
-        assert note["highlight_tag_ids"] == [tag_id]
-        assert [t["id"] for t in note["highlight_tags"]] == [tag_id]
+        assert note["tag_ids"] == [tag_id]
+        assert [t["id"] for t in note["tags"]] == [tag_id]
 
     async def test_list_notes_includes_link_summaries(
         self,
@@ -400,7 +398,7 @@ class TestUpdateNote:
         # Simulate the note editor: create a brand-new highlight tag, then
         # PUT the note referencing that tag's id.
         tag_resp = await client.post(
-            f"/api/v1/books/{test_book.id}/highlight_tag",
+            f"/api/v1/books/{test_book.id}/tag",
             json={"name": "freshly-created"},
         )
         assert tag_resp.status_code in (200, 201), tag_resp.text
@@ -414,15 +412,15 @@ class TestUpdateNote:
                 "kind": "character",
                 "chapter_ids": [],
                 "highlight_ids": [],
-                "highlight_tag_ids": [tag_id],
+                "tag_ids": [tag_id],
             },
         )
         assert put_resp.status_code == status.HTTP_200_OK, put_resp.text
-        assert put_resp.json()["note"]["highlight_tag_ids"] == [tag_id]
+        assert put_resp.json()["note"]["tag_ids"] == [tag_id]
 
         get_resp = await client.get(f"/api/v1/notes/{note_id}")
-        assert get_resp.json()["highlight_tag_ids"] == [tag_id]
-        assert [t["id"] for t in get_resp.json()["highlight_tags"]] == [tag_id]
+        assert get_resp.json()["tag_ids"] == [tag_id]
+        assert [t["id"] for t in get_resp.json()["tags"]] == [tag_id]
 
     async def test_update_note_fields_and_links(
         self,
@@ -438,7 +436,7 @@ class TestUpdateNote:
                 "kind": "character",
                 "chapter_ids": [],
                 "highlight_ids": [test_highlight.id],
-                "highlight_tag_ids": [],
+                "tag_ids": [],
             },
         )
         assert response.status_code == status.HTTP_200_OK

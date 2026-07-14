@@ -47,7 +47,7 @@ class Note(AggregateRoot[NoteId]):
     book_ids: list[int] = field(default_factory=list)
     chapter_ids: list[int] = field(default_factory=list)
     highlight_ids: list[int] = field(default_factory=list)
-    highlight_tag_ids: list[int] = field(default_factory=list)
+    tag_ids: list[int] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         """Validate invariants."""
@@ -66,14 +66,14 @@ class Note(AggregateRoot[NoteId]):
         book_ids: list[int],
         chapter_ids: list[int],
         highlight_ids: list[int],
-        highlight_tag_ids: list[int],
+        tag_ids: list[int],
     ) -> None:
         """Replace all link sets."""
         self._validate_books(book_ids)
         self.book_ids = list(book_ids)
         self.chapter_ids = list(chapter_ids)
         self.highlight_ids = list(highlight_ids)
-        self.highlight_tag_ids = list(highlight_tag_ids)
+        self.tag_ids = list(tag_ids)
 
     @staticmethod
     def _validate_title(title: str) -> None:
@@ -95,7 +95,7 @@ class Note(AggregateRoot[NoteId]):
         kind: NoteKind | None = None,
         chapter_ids: list[int] | None = None,
         highlight_ids: list[int] | None = None,
-        highlight_tag_ids: list[int] | None = None,
+        tag_ids: list[int] | None = None,
     ) -> Note:
         """Create a new note (ID will be 0 until persisted)."""
         return cls(
@@ -107,7 +107,7 @@ class Note(AggregateRoot[NoteId]):
             book_ids=list(book_ids),
             chapter_ids=list(chapter_ids or []),
             highlight_ids=list(highlight_ids or []),
-            highlight_tag_ids=list(highlight_tag_ids or []),
+            tag_ids=list(tag_ids or []),
         )
 
     @classmethod
@@ -123,7 +123,7 @@ class Note(AggregateRoot[NoteId]):
         book_ids: list[int],
         chapter_ids: list[int],
         highlight_ids: list[int],
-        highlight_tag_ids: list[int],
+        tag_ids: list[int],
     ) -> Note:
         """Reconstitute a note from persistence."""
         return cls(
@@ -137,5 +137,5 @@ class Note(AggregateRoot[NoteId]):
             book_ids=book_ids,
             chapter_ids=chapter_ids,
             highlight_ids=highlight_ids,
-            highlight_tag_ids=highlight_tag_ids,
+            tag_ids=tag_ids,
         )

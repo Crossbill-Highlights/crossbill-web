@@ -1,6 +1,5 @@
 import { Autocomplete, Box, Chip, TextField, Typography } from '@mui/material';
 import { useRef } from 'react';
-import { Control, Controller, FieldValues, Path } from 'react-hook-form';
 
 /**
  * Base props shared by both form and immediate modes of TagInput
@@ -122,50 +121,5 @@ export const TagAutocomplete = <T,>({
         }}
       />
     </Box>
-  );
-};
-
-interface TagFormInputProps<T extends FieldValues> extends BaseTagInputProps {
-  control: Control<T>;
-  name: Path<T>;
-  availableTags?: string[];
-}
-
-/**
- * TagInput component for react hook form
- */
-export const TagFormInput = <T extends FieldValues>({
-  control,
-  name,
-  label = 'Tags',
-  placeholder = 'Add tags...',
-  helperText = 'Press Enter to add a tag',
-  disabled = false,
-  availableTags = [],
-  blurOnSelect = false,
-  preventParentNavigation = false,
-  chipAriaDescription = 'Selected tag, click to remove',
-}: TagFormInputProps<T>) => {
-  return (
-    <Controller
-      name={name}
-      control={control}
-      render={({ field }) => (
-        <TagAutocomplete
-          value={field.value}
-          onChange={field.onChange}
-          onBlur={field.onBlur}
-          options={availableTags}
-          disabled={disabled}
-          blurOnSelect={blurOnSelect}
-          placeholder={placeholder}
-          helperText={helperText}
-          preventParentNavigation={preventParentNavigation}
-          chipAriaDescription={chipAriaDescription}
-          getOptionLabel={(option) => (typeof option === 'string' ? option : String(option))}
-          label={label}
-        />
-      )}
-    />
   );
 };

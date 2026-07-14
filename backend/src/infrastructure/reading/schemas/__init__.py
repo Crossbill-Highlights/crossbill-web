@@ -26,17 +26,6 @@ from src.infrastructure.reading.schemas.highlight_schemas import (
     HighlightUploadRequest,
     HighlightUploadResponse,
 )
-from src.infrastructure.reading.schemas.highlight_tag_schemas import (
-    HighlightTag,
-    HighlightTagAssociationRequest,
-    HighlightTagCreateRequest,
-    HighlightTagGroup,
-    HighlightTagGroupCreateRequest,
-    HighlightTagGroupInBook,
-    HighlightTagInBook,
-    HighlightTagsResponse,
-    HighlightTagUpdateRequest,
-)
 from src.infrastructure.reading.schemas.reading_session_schemas import (
     ReadingSession,
     ReadingSessionAISummaryResponse,
@@ -44,6 +33,17 @@ from src.infrastructure.reading.schemas.reading_session_schemas import (
     ReadingSessionUploadRequest,
     ReadingSessionUploadResponse,
     ReadingSessionUploadSessionItem,
+)
+from src.infrastructure.reading.schemas.tag_schemas import (
+    Tag,
+    TagAssociationRequest,
+    TagCreateRequest,
+    TagGroup,
+    TagGroupCreateRequest,
+    TagGroupInBook,
+    TagInBook,
+    TagsResponse,
+    TagUpdateRequest,
 )
 
 __all__ = [
@@ -66,15 +66,6 @@ __all__ = [
     "HighlightNoteUpdate",
     "HighlightNoteUpdateResponse",
     "HighlightResponseBase",
-    "HighlightTag",
-    "HighlightTagAssociationRequest",
-    "HighlightTagCreateRequest",
-    "HighlightTagGroup",
-    "HighlightTagGroupCreateRequest",
-    "HighlightTagGroupInBook",
-    "HighlightTagInBook",
-    "HighlightTagUpdateRequest",
-    "HighlightTagsResponse",
     "HighlightUploadRequest",
     "HighlightUploadResponse",
     "PositionResponse",
@@ -84,4 +75,13 @@ __all__ = [
     "ReadingSessionUploadResponse",
     "ReadingSessionUploadSessionItem",
     "ReadingSessionsResponse",
+    "Tag",
+    "TagAssociationRequest",
+    "TagCreateRequest",
+    "TagGroup",
+    "TagGroupCreateRequest",
+    "TagGroupInBook",
+    "TagInBook",
+    "TagUpdateRequest",
+    "TagsResponse",
 ]

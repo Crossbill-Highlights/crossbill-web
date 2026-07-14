@@ -33,7 +33,7 @@ class RootContainer(containers.DeclarativeContainer):
         book_repository=shared.book_repository,
         bookmark_repository=shared.bookmark_repository,
         highlight_repository=shared.highlight_repository,
-        highlight_tag_repository=shared.highlight_tag_repository,
+        tag_repository=shared.tag_repository,
         chapter_repository=shared.chapter_repository,
         reading_session_repository=shared.reading_session_repository,
         chapter_prereading_repository=shared.chapter_prereading_repository,
@@ -52,10 +52,9 @@ class RootContainer(containers.DeclarativeContainer):
         chapter_repository=shared.chapter_repository,
         bookmark_repository=shared.bookmark_repository,
         highlight_repository=shared.highlight_repository,
-        highlight_tag_repository=shared.highlight_tag_repository,
+        tag_repository=shared.tag_repository,
         highlight_style_repository=shared.highlight_style_repository,
         reading_session_repository=shared.reading_session_repository,
-        tag_repository=shared.tag_repository,
         flashcard_repository=shared.flashcard_repository,
         file_repository=shared.file_repository,
         highlight_grouping_service=shared.highlight_grouping_service,
@@ -63,7 +62,7 @@ class RootContainer(containers.DeclarativeContainer):
         epub_parser_service=shared.epub_parser_service,
         epub_position_index_service=shared.epub_position_index_service,
         cover_image_service=shared.cover_image_service,
-        get_highlight_tags_for_book_use_case=reading.get_highlight_tags_for_book_use_case,
+        get_tags_for_book_use_case=reading.get_tags_for_book_use_case,
     )
 
     learning = providers.Container(
@@ -87,7 +86,7 @@ class RootContainer(containers.DeclarativeContainer):
         book_repository=shared.book_repository,
         chapter_repository=shared.chapter_repository,
         highlight_repository=shared.highlight_repository,
-        highlight_tag_repository=shared.highlight_tag_repository,
+        tag_repository=shared.tag_repository,
     )
 
     job_queue_service = providers.Dependency()

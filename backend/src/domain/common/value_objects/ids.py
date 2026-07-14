@@ -74,36 +74,6 @@ class ReadingSessionId(EntityId):
 
 
 @dataclass(frozen=True)
-class HighlightTagId(EntityId):
-    """Strongly-typed highlight tag identifier."""
-
-    value: int
-
-    def __post_init__(self) -> None:
-        if self.value < 0:
-            raise ValueError("HighlightTagId must be non-negative")
-
-    @classmethod
-    def generate(cls) -> "HighlightTagId":
-        return cls(0)  # Database assigns real ID
-
-
-@dataclass(frozen=True)
-class HighlightTagGroupId(EntityId):
-    """Strongly-typed highlight tag group identifier."""
-
-    value: int
-
-    def __post_init__(self) -> None:
-        if self.value < 0:
-            raise ValueError("HighlightTagGroupId must be non-negative")
-
-    @classmethod
-    def generate(cls) -> "HighlightTagGroupId":
-        return cls(0)  # Database assigns real ID
-
-
-@dataclass(frozen=True)
 class TagId(EntityId):
     """Strongly-typed tag identifier."""
 
@@ -112,6 +82,25 @@ class TagId(EntityId):
     def __post_init__(self) -> None:
         if self.value < 0:
             raise ValueError("TagId must be non-negative")
+
+    @classmethod
+    def generate(cls) -> "TagId":
+        return cls(0)  # Database assigns real ID
+
+
+@dataclass(frozen=True)
+class TagGroupId(EntityId):
+    """Strongly-typed tag group identifier."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("TagGroupId must be non-negative")
+
+    @classmethod
+    def generate(cls) -> "TagGroupId":
+        return cls(0)  # Database assigns real ID
 
 
 @dataclass(frozen=True)

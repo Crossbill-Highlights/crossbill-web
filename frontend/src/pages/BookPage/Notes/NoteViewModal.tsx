@@ -98,7 +98,7 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
   const isDeleting = deleteMutation.isPending;
 
   const chapters = activeNote?.chapters ?? [];
-  const highlightTags = activeNote?.highlight_tags ?? [];
+  const tags = activeNote?.tags ?? [];
   // The note detail returns lightweight highlight summaries; resolve them to the
   // full Highlight objects already loaded on the book so we can render HighlightCard.
   const highlights = useMemo<Highlight[]>(() => {
@@ -172,9 +172,9 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
                   <ReactMarkdown>{activeNote.body}</ReactMarkdown>
                 </Box>
               )}
-              {highlightTags.length > 0 && (
+              {tags.length > 0 && (
                 <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: 'wrap', gap: 0.5 }}>
-                  {highlightTags.map((tag) => (
+                  {tags.map((tag) => (
                     <Chip
                       key={`tag-${tag.id}`}
                       size="small"

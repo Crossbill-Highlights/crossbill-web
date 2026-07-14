@@ -2,8 +2,8 @@ import type {
   ChapterWithHighlights,
   Flashcard,
   Highlight,
-  HighlightTagGroupInBook,
-  HighlightTagInBook,
+  TagGroupInBook,
+  TagInBook,
 } from '@/api/generated/model';
 import { scrollToElementWithHighlight } from '@/components/animations/scrollUtils';
 import { SearchBar } from '@/components/inputs/SearchBar.tsx';
@@ -18,7 +18,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FilterFab } from '../common/FilterFab.tsx';
 import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
-import { HighlightTagsList } from '../navigation/HighlightTagsList.tsx';
+import { TagsList } from '../navigation/TagsList.tsx';
 import {
   FlashcardChapterList,
   type FlashcardChapterData,
@@ -102,7 +102,7 @@ export const FlashcardsPage = () => {
           highlight: highlight,
           chapterName: chapter.name || 'Unknown Chapter',
           chapterId: chapter.id,
-          highlightTags: highlight.highlight_tags,
+          tags: highlight.tags,
         }))
       )
     );
@@ -116,7 +116,7 @@ export const FlashcardsPage = () => {
         ? (chapterNameMap[fc.chapter_id] ?? 'Unknown Chapter')
         : 'Book Flashcards',
       chapterId: fc.chapter_id ?? null,
-      highlightTags: [],
+      tags: [],
     }));
 
     return [...highlightFlashcards, ...bookLevelFlashcards];
@@ -128,7 +128,7 @@ export const FlashcardsPage = () => {
 
     // Filter by tag
     if (selectedTagId) {
-      result = result.filter((fc) => fc.highlightTags.some((tag) => tag.id === selectedTagId));
+      result = result.filter((fc) => fc.tags.some((tag) => tag.id === selectedTagId));
     }
 
     // Filter by search (question or answer)
@@ -198,16 +198,12 @@ export const FlashcardsPage = () => {
       : 'No flashcards yet. Create flashcards from your highlights to start studying.';
   }, [searchText, selectedTagId]);
 
-  const navData = useFlashcardsPageData(
-    allFlashcardsWithContext,
-    flashcardChapters,
-    book.highlight_tags
-  );
+  const navData = useFlashcardsPageData(allFlashcardsWithContext, flashcardChapters, book.tags);
 
   const filterTabs = useFlashcardsFilterTabs({
     navChapters: navData.chapters,
     tags: navData.tags,
-    tagGroups: book.highlight_tag_groups,
+    tagGroups: book.tag_groups,
     bookId: book.id,
     selectedTagId,
     handleChapterClick,
@@ -223,7 +219,7 @@ export const FlashcardsPage = () => {
         createPortal(
           <FlashcardsSidebar
             tags={navData.tags}
-            tagGroups={book.highlight_tag_groups}
+            tagGroups={book.tag_groups}
             bookId={book.id}
             selectedTagId={selectedTagId}
             onTagClick={handleTagClick}
@@ -331,8 +327,8 @@ export const FlashcardsPage = () => {
 // --- Extracted subcomponents ---
 
 interface FlashcardsSidebarProps {
-  tags: HighlightTagInBook[];
-  tagGroups: HighlightTagGroupInBook[];
+  tags: TagInBook[];
+  tagGroups: TagGroupInBook[];
   bookId: number;
   selectedTagId: number | undefined;
   onTagClick: (tagId: number | null) => void;
@@ -347,7 +343,7 @@ const FlashcardsSidebar = ({
 }: FlashcardsSidebarProps) => (
   <>
     <Divider sx={{ mb: 4 }} />
-    <HighlightTagsList
+    <TagsList
       tags={tags}
       tagGroups={tagGroups}
       bookId={bookId}
@@ -360,8 +356,8 @@ const FlashcardsSidebar = ({
 
 interface UseFlashcardsFilterTabsParams {
   navChapters: ChapterNavigationData[];
-  tags: HighlightTagInBook[];
-  tagGroups: HighlightTagGroupInBook[];
+  tags: TagInBook[];
+  tagGroups: TagGroupInBook[];
   bookId: number;
   selectedTagId: number | undefined;
   handleChapterClick: (chapterId: number) => void;
@@ -398,7 +394,7 @@ const useFlashcardsFilterTabs = ({
       {
         label: 'Tags',
         content: (
-          <HighlightTagsList
+          <TagsList
             tags={tags}
             tagGroups={tagGroups}
             bookId={bookId}
@@ -430,14 +426,14 @@ const useFlashcardsFilterTabs = ({
 const useFlashcardsPageData = (
   allFlashcardsWithContext: FlashcardWithContext[],
   chapters: FlashcardChapterData[],
-  tagsInBook: HighlightTagInBook[] | undefined
+  tagsInBook: TagInBook[] | undefined
 ) => {
   const tagsWithFlashcards = useMemo(() => {
     if (!tagsInBook) return [];
 
     const tagIdsWithFlashcards = new Set<number>();
     allFlashcardsWithContext.forEach((fc) =>
-      fc.highlightTags.forEach((tag) => tagIdsWithFlashcards.add(tag.id))
+      fc.tags.forEach((tag) => tagIdsWithFlashcards.add(tag.id))
     );
 
     return tagsInBook.filter((tag) => tagIdsWithFlashcards.has(tag.id));

@@ -18,7 +18,7 @@ import { createPortal } from 'react-dom';
 
 import { FilterFab } from '../common/FilterFab.tsx';
 import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
-import { HighlightTagsList } from '../navigation/HighlightTagsList.tsx';
+import { TagsList } from '../navigation/TagsList.tsx';
 import { NoteCard } from './NoteCard';
 import { NoteModals } from './NoteModals';
 import { useNoteModals } from './hooks/useNoteModals';
@@ -59,7 +59,7 @@ export const NotesPage = () => {
   const params: GetNotesForBookApiV1BooksBookIdNotesGetParams = {
     kind: (kind as NoteKindValue | undefined) ?? undefined,
     chapter_id: chapterId,
-    highlight_tag_id: selectedTagId,
+    tag_id: selectedTagId,
   };
   const { data, isLoading, isError } = useGetNotesForBookApiV1BooksBookIdNotesGet(book.id, params);
   const noteModals = useNoteModals();
@@ -84,9 +84,9 @@ export const NotesPage = () => {
     {
       label: 'Tags',
       content: (
-        <HighlightTagsList
-          tags={book.highlight_tags}
-          tagGroups={book.highlight_tag_groups}
+        <TagsList
+          tags={book.tags}
+          tagGroups={book.tag_groups}
           bookId={book.id}
           selectedTag={selectedTagId}
           onTagClick={(id) => {
@@ -107,9 +107,9 @@ export const NotesPage = () => {
         createPortal(
           <>
             <Divider sx={{ mb: 4 }} />
-            <HighlightTagsList
-              tags={book.highlight_tags}
-              tagGroups={book.highlight_tag_groups}
+            <TagsList
+              tags={book.tags}
+              tagGroups={book.tag_groups}
               bookId={book.id}
               selectedTag={selectedTagId}
               onTagClick={handleTagClick}
