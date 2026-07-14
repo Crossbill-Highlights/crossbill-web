@@ -21,18 +21,18 @@ migrate-new: ## Create a new migration (usage: make migrate-new msg="description
 	cd backend && uv run alembic revision --autogenerate -m "$(msg)"
 
 lint: ## Run ruff linter and pyright type checker on backend
-	cd backend && uv run ruff check src tests
+	cd backend && uv run ruff check .
 	cd backend && uv run pyright
 	cd backend && uv run --no-sync lint-imports
 
 lint-fix: ## Run ruff linter and pyright type checker on backend
-	cd backend && uv run ruff check --fix src tests
+	cd backend && uv run ruff check --fix .
 	cd backend && uv run pyright
 	cd backend && uv run --no-sync lint-imports
-	cd backend && uv run ruff format src tests
+	cd backend && uv run ruff format .
 
 format: ## Format backend code with ruff
-	cd backend && uv run ruff format src tests
+	cd backend && uv run ruff format .
 
 release-nightly: ## Build and push nightly Docker image to Docker Hub
 	./scripts/build-for-docker-hub.sh
