@@ -6,7 +6,7 @@ import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { FlashcardCard } from '@/pages/BookPage/Flashcards/FlashcardCard.tsx';
 import { FlashcardWithContext } from '@/pages/BookPage/Flashcards/FlashcardChapterList.tsx';
 import { DeleteIcon, EditIcon } from '@/theme/Icons.tsx';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useState } from 'react';
 
 export interface FlashcardListCardProps {
@@ -14,6 +14,8 @@ export interface FlashcardListCardProps {
   bookId: number;
   onEdit: () => void;
   showSourceHighlight?: boolean;
+  /** Query keys to invalidate on delete, in addition to the book details query. */
+  additionalInvalidateKeys?: QueryKey[];
 }
 
 export const FlashcardListCard = ({
@@ -21,6 +23,7 @@ export const FlashcardListCard = ({
   bookId,
   onEdit,
   showSourceHighlight = true,
+  additionalInvalidateKeys = [],
 }: FlashcardListCardProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -33,6 +36,9 @@ export const FlashcardListCard = ({
         void queryClient.invalidateQueries({
           queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
+        for (const queryKey of additionalInvalidateKeys) {
+          void queryClient.invalidateQueries({ queryKey });
+        }
       },
       onError: (error) => {
         console.error('Failed to delete flashcard:', error);

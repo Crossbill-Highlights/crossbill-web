@@ -9,6 +9,7 @@ import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { useVisibilityToggle } from '@/hooks/useVisibilityToggle.ts';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { markdownStyles } from '@/theme/theme';
 import { Box, Button, Chip, Stack, Typography, useTheme } from '@mui/material';
@@ -18,6 +19,7 @@ import { useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 import { NoteEditorForm, type NoteEditorFormHandle } from './NoteEditorForm';
+import { NoteFlashcardSection } from './components/NoteFlashcardSection';
 import { NoteLinkTabs } from './components/NoteLinkTabs';
 import { NoteToolbar } from './components/NoteToolbar';
 import { NOTE_KIND_LABELS, type NoteKindValue } from './noteKinds';
@@ -68,6 +70,11 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
   const [formStatus, setFormStatus] = useState({ isSaving: false, canSave: false });
 
   const { data: activeNote, isLoading, isError } = useGetNoteApiV1NotesNoteIdGet(noteId);
+
+  const { visible: flashcardsVisible, toggle: toggleFlashcards } = useVisibilityToggle(
+    noteId,
+    !!activeNote?.flashcards?.length
+  );
 
   const deleteMutation = useDeleteNoteApiV1NotesNoteIdDelete({
     mutation: {
@@ -189,6 +196,14 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
               onEdit={() => setIsEditing(true)}
               onCopy={() => void handleCopy()}
               onDelete={() => setDeleteConfirmOpen(true)}
+              flashcardVisible={flashcardsVisible}
+              onFlashcardToggle={toggleFlashcards}
+              disabled={isDeleting}
+            />
+            <NoteFlashcardSection
+              note={activeNote}
+              bookId={book.id}
+              visible={flashcardsVisible}
               disabled={isDeleting}
             />
             {(highlights.length > 0 || chapters.length > 0) && (

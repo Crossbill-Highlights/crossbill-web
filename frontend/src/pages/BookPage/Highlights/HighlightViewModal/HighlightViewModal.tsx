@@ -21,6 +21,7 @@ import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { useVisibilityToggle } from '@/hooks/useVisibilityToggle.ts';
 import { TagInput } from '@/pages/BookPage/Highlights/HighlightViewModal/components/TagInput.tsx';
 import { useImmediateTagMutation } from '@/pages/BookPage/Highlights/HighlightViewModal/hooks/useImmediateTagMutation.ts';
 import { NoteEditorDialog } from '@/pages/BookPage/Notes/NoteEditorDialog.tsx';
@@ -28,13 +29,12 @@ import { Box, Button, Menu, MenuItem, Stack } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { HighlightContent } from '../../common/HighlightContent.tsx';
-import { FlashcardSection } from './components/FlashcardSection.tsx';
+import { HighlightFlashcardSection } from './components/HighlightFlashcardSection.tsx';
 import { HighlightNote } from './components/HighlightNote.tsx';
 import { LabelEditorPopover } from './components/LabelEditorPopover.tsx';
 import { NotePickerDialog } from './components/NotePickerDialog.tsx';
 import { ProgressBar } from './components/ProgressBar.tsx';
 import { Toolbar } from './components/Toolbar.tsx';
-import { useVisibilityToggle } from './hooks/useVisibilityToggle.ts';
 
 export interface HighlightViewModalProps {
   highlight: Highlight;
@@ -201,7 +201,7 @@ export const HighlightViewModal = ({
           visible={noteVisible}
           disabled={isLoading}
         />
-        <FlashcardSection
+        <HighlightFlashcardSection
           highlight={highlight}
           bookId={bookId}
           visible={flashcardVisible}

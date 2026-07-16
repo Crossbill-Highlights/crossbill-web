@@ -1,0 +1,84 @@
+import {
+  useCreateFlashcardForNoteApiV1NotesNoteIdFlashcardsPost,
+  useGetNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet,
+} from '@/api/generated/flashcards/flashcards.ts';
+import type { NoteWithLinks } from '@/api/generated/model';
+import { getGetNoteApiV1NotesNoteIdGetQueryKey } from '@/api/generated/notes/notes.ts';
+import type { FlashcardWithContext } from '@/pages/BookPage/Flashcards/FlashcardChapterList.tsx';
+import { FlashcardSection } from '@/pages/BookPage/Flashcards/FlashcardSection.tsx';
+import { useAIFlashcardSuggestions } from '@/pages/BookPage/Flashcards/hooks/useAIFlashcardSuggestions.ts';
+import { useFlashcardMutations } from '@/pages/BookPage/Flashcards/hooks/useFlashcardMutations.ts';
+import { sortBy } from 'lodash';
+
+interface NoteFlashcardSectionProps {
+  note: NoteWithLinks;
+  bookId: number;
+  visible: boolean;
+  disabled?: boolean;
+}
+
+/** Wires the shared FlashcardSection to a note's cards and endpoints. */
+export const NoteFlashcardSection = ({
+  note,
+  bookId,
+  visible,
+  disabled = false,
+}: NoteFlashcardSectionProps) => {
+  const noteQueryKey = getGetNoteApiV1NotesNoteIdGetQueryKey(note.id);
+
+  const createFlashcardMutation = useCreateFlashcardForNoteApiV1NotesNoteIdFlashcardsPost();
+  const { isProcessing, saveFlashcard, updateFlashcard } = useFlashcardMutations({
+    bookId,
+    additionalInvalidateKeys: [noteQueryKey],
+    createFlashcard: (question, answer) =>
+      createFlashcardMutation.mutateAsync({
+        noteId: note.id,
+        // The note may link several books; file the card under the one being viewed
+        data: { question, answer, book_id: bookId },
+      }),
+  });
+
+  const { refetch } = useGetNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet(
+    note.id,
+    {
+      query: {
+        enabled: false,
+      },
+    }
+  );
+  const { isLoading, suggestions, fetchSuggestions, removeSuggestion } = useAIFlashcardSuggestions(
+    async () => {
+      const result = await refetch();
+      if (result.error) throw result.error;
+      return result.data;
+    }
+  );
+
+  const flashcardsWithContext: FlashcardWithContext[] = sortBy(
+    (note.flashcards ?? []).map((flashcard) => ({
+      ...flashcard,
+      highlight: null,
+      chapterName: '',
+      chapterId: flashcard.chapter_id ?? null,
+      tags: [],
+    })),
+    (f) => f.question.toLowerCase()
+  );
+
+  return (
+    <FlashcardSection
+      flashcards={flashcardsWithContext}
+      bookId={bookId}
+      visible={visible}
+      disabled={disabled}
+      isProcessing={isProcessing}
+      onSaveFlashcard={saveFlashcard}
+      onUpdateFlashcard={updateFlashcard}
+      suggestions={suggestions}
+      suggestionsLoading={isLoading}
+      onFetchSuggestions={fetchSuggestions}
+      onRemoveSuggestion={removeSuggestion}
+      additionalInvalidateKeys={[noteQueryKey]}
+    />
+  );
+};
