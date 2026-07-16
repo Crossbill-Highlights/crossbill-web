@@ -5,6 +5,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, StringConstraints
 
+from src.infrastructure.learning.schemas import Flashcard
+
 NoteKindLiteral = Literal["character", "term", "concept", "other"]
 
 NoteTitle = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -53,6 +55,9 @@ class NoteWithLinks(Note):
     chapters: list[NoteLinkedChapter] = Field(default_factory=list)
     highlights: list[NoteLinkedHighlight] = Field(default_factory=list)
     tags: list[NoteLinkedTag] = Field(default_factory=list)
+    # Only populated on the single-note detail endpoint; list responses
+    # return empty arrays.
+    flashcards: list[Flashcard] = Field(default_factory=list)
 
 
 class NoteCreateRequest(BaseModel):

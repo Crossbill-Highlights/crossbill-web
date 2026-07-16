@@ -16,6 +16,7 @@ from src.domain.identity import User
 from src.domain.notes.entities.note import Note as NoteEntity
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity import get_current_user
+from src.infrastructure.learning.schemas import Flashcard
 from src.infrastructure.notes.schemas import (
     Note,
     NoteCreateRequest,
@@ -68,6 +69,19 @@ def note_with_links_to_schema(dto: NoteWithLinkedEntities) -> NoteWithLinks:
             for highlight in dto.highlights
         ],
         tags=[NoteLinkedTag(id=tag.id.value, name=tag.name) for tag in dto.tags],
+        flashcards=[
+            Flashcard(
+                id=fc.id.value,
+                user_id=fc.user_id.value,
+                book_id=fc.book_id.value,
+                highlight_id=fc.highlight_id.value if fc.highlight_id else None,
+                chapter_id=fc.chapter_id.value if fc.chapter_id else None,
+                note_id=fc.note_id.value if fc.note_id else None,
+                question=fc.question,
+                answer=fc.answer,
+            )
+            for fc in dto.flashcards
+        ],
     )
 
 

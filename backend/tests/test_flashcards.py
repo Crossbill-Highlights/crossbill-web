@@ -129,6 +129,133 @@ class TestCreateFlashcardForBook:
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
+class TestCreateFlashcardForNote:
+    """Test suite for POST /notes/:id/flashcards endpoint."""
+
+    async def _create_note(
+        self, client: AsyncClient, book_id: int, title: str = "Test note"
+    ) -> int:
+        response = await client.post(
+            "/api/v1/notes",
+            json={"title": title, "body": "Note body", "book_id": book_id},
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        return response.json()["note"]["id"]
+
+    async def test_create_flashcard_success(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        test_book: models.Book,
+        test_user: models.User,
+    ) -> None:
+        """Test successful creation of a flashcard for a note."""
+        note_id = await self._create_note(client, test_book.id)
+
+        response = await client.post(
+            f"/api/v1/notes/{note_id}/flashcards",
+            json={"question": "What is this note about?", "answer": "Note content"},
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        data = response.json()
+        assert data["success"] is True
+        flashcard = data["flashcard"]
+        assert flashcard["question"] == "What is this note about?"
+        assert flashcard["answer"] == "Note content"
+        assert flashcard["note_id"] == note_id
+        assert flashcard["book_id"] == test_book.id  # defaults to the note's book
+        assert flashcard["highlight_id"] is None
+        assert flashcard["user_id"] == test_user.id
+
+        result = await db_session.execute(select(models.Flashcard).filter_by(id=flashcard["id"]))
+        db_flashcard = result.scalar_one_or_none()
+        assert db_flashcard is not None
+        assert db_flashcard.note_id == note_id
+
+    async def test_create_flashcard_with_explicit_book_id(
+        self, client: AsyncClient, test_book: models.Book
+    ) -> None:
+        """Test creating a note flashcard with an explicit linked book_id."""
+        note_id = await self._create_note(client, test_book.id)
+
+        response = await client.post(
+            f"/api/v1/notes/{note_id}/flashcards",
+            json={"question": "Q", "answer": "A", "book_id": test_book.id},
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["flashcard"]["book_id"] == test_book.id
+
+    async def test_create_flashcard_with_unlinked_book_id(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        test_book: models.Book,
+        test_user: models.User,
+    ) -> None:
+        """Test that a book_id not linked to the note is rejected."""
+        note_id = await self._create_note(client, test_book.id)
+        other_book = models.Book(user_id=test_user.id, title="Other book")
+        db_session.add(other_book)
+        await db_session.commit()
+        await db_session.refresh(other_book)
+
+        response = await client.post(
+            f"/api/v1/notes/{note_id}/flashcards",
+            json={"question": "Q", "answer": "A", "book_id": other_book.id},
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    async def test_create_flashcard_note_not_found(self, client: AsyncClient) -> None:
+        """Test creating a flashcard for non-existent note."""
+        response = await client.post(
+            "/api/v1/notes/99999/flashcards",
+            json={"question": "What is this?", "answer": "Answer"},
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    async def test_create_flashcard_empty_question(
+        self, client: AsyncClient, test_book: models.Book
+    ) -> None:
+        """Test creating a note flashcard with empty question fails."""
+        note_id = await self._create_note(client, test_book.id)
+
+        response = await client.post(
+            f"/api/v1/notes/{note_id}/flashcards",
+            json={"question": "", "answer": "Test answer"},
+        )
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+    async def test_flashcard_survives_note_deletion(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        test_book: models.Book,
+    ) -> None:
+        """Deleting a note keeps its flashcards as book-level cards (note_id nulled)."""
+        book_id = test_book.id
+        note_id = await self._create_note(client, book_id)
+        response = await client.post(
+            f"/api/v1/notes/{note_id}/flashcards",
+            json={"question": "Q", "answer": "A"},
+        )
+        flashcard_id = response.json()["flashcard"]["id"]
+
+        response = await client.delete(f"/api/v1/notes/{note_id}")
+        assert response.status_code == status.HTTP_200_OK
+
+        db_session.expire_all()
+        result = await db_session.execute(select(models.Flashcard).filter_by(id=flashcard_id))
+        db_flashcard = result.scalar_one_or_none()
+        assert db_flashcard is not None
+        assert db_flashcard.note_id is None
+        assert db_flashcard.book_id == book_id
+
+
 class TestGetFlashcardsForBook:
     """Test suite for GET /books/:id/flashcards endpoint."""
 

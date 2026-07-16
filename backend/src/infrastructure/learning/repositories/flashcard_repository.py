@@ -3,7 +3,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.domain.common.value_objects.ids import BookId, FlashcardId, UserId
+from src.domain.common.value_objects.ids import BookId, FlashcardId, NoteId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
 from src.infrastructure.learning.mappers.flashcard_mapper import FlashcardMapper
 from src.models import Flashcard as FlashcardORM
@@ -50,6 +50,29 @@ class FlashcardRepository:
             select(FlashcardORM)
             .where(
                 FlashcardORM.book_id == book_id.value,
+                FlashcardORM.user_id == user_id.value,
+            )
+            .order_by(FlashcardORM.created_at.desc())
+        )
+        result = await self.db.execute(stmt)
+        orm_models = result.scalars().all()
+        return [self.mapper.to_domain(orm) for orm in orm_models]
+
+    async def find_by_note(self, note_id: NoteId, user_id: UserId) -> list[Flashcard]:
+        """
+        Get all flashcards linked to a note.
+
+        Args:
+            note_id: The note ID
+            user_id: The user ID for ownership verification
+
+        Returns:
+            List of flashcard entities ordered by created_at DESC
+        """
+        stmt = (
+            select(FlashcardORM)
+            .where(
+                FlashcardORM.note_id == note_id.value,
                 FlashcardORM.user_id == user_id.value,
             )
             .order_by(FlashcardORM.created_at.desc())

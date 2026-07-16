@@ -567,6 +567,10 @@ class Flashcard(Base):
     chapter_id: Mapped[int | None] = mapped_column(
         ForeignKey("chapters.id", ondelete="CASCADE"), index=True, nullable=True
     )
+    # SET NULL: notes are hard-deleted; the flashcard survives as a book-level card
+    note_id: Mapped[int | None] = mapped_column(
+        ForeignKey("notes.id", ondelete="SET NULL"), index=True, nullable=True
+    )
     question: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[dt] = mapped_column(

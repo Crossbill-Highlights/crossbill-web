@@ -11,6 +11,7 @@ class Flashcard(BaseModel):
     book_id: int
     highlight_id: int | None
     chapter_id: int | None = None
+    note_id: int | None = None
 
     question: str = Field(..., min_length=1, description="Question text for the flashcard")
     answer: str = Field(..., min_length=1, description="Answer text for the flashcard")
@@ -24,6 +25,20 @@ class FlashcardCreateRequest(BaseModel):
     question: str = Field(..., min_length=1, description="Question text for the flashcard")
     answer: str = Field(..., min_length=1, description="Answer text for the flashcard")
     chapter_id: int | None = Field(None, description="Optional chapter ID to associate with")
+
+
+class NoteFlashcardCreateRequest(BaseModel):
+    """Schema for creating a new flashcard linked to a note."""
+
+    question: str = Field(..., min_length=1, description="Question text for the flashcard")
+    answer: str = Field(..., min_length=1, description="Answer text for the flashcard")
+    book_id: int | None = Field(
+        None,
+        description=(
+            "Book (must be linked to the note) to file the flashcard under; "
+            "defaults to the note's first book"
+        ),
+    )
 
 
 class FlashcardCreateResponse(BaseModel):

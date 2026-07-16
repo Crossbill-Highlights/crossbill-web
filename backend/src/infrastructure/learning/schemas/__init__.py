@@ -13,6 +13,7 @@ from src.infrastructure.learning.schemas.flashcard_schemas import (
     FlashcardUpdateRequest,
     FlashcardUpdateResponse,
     HighlightFlashcardSuggestionsResponse,
+    NoteFlashcardCreateRequest,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "FlashcardWithHighlight",
     "FlashcardsWithHighlightsResponse",
     "HighlightFlashcardSuggestionsResponse",
+    "NoteFlashcardCreateRequest",
 ]
