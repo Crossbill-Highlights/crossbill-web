@@ -1,5 +1,13 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
-import { useUpdateHighlightNoteApiV1HighlightsHighlightIdNotePost } from '@/api/generated/highlights/highlights.ts';
+import {
+  getSearchBookHighlightsApiV1BooksBookIdHighlightsGetQueryKey,
+  useUpdateHighlightNoteApiV1HighlightsHighlightIdNotePost,
+} from '@/api/generated/highlights/highlights.ts';
+import type {
+  BookDetails,
+  BookHighlightSearchResponse,
+  ChapterWithHighlights,
+} from '@/api/generated/model';
 import { Collapsable } from '@/components/animations/Collapsable.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { Box, Button, TextField, Typography } from '@mui/material';
@@ -61,6 +69,27 @@ export const HighlightNote = ({
   );
 };
 
+/**
+ * Return a copy of `chapters` with the note of the given highlight replaced.
+ * The chapter/highlight objects are only cloned along the affected path so
+ * downstream memoized selectors recompute for the changed highlight.
+ */
+const withPatchedHighlightNote = (
+  chapters: ChapterWithHighlights[],
+  highlightId: number,
+  note: string | null
+): ChapterWithHighlights[] =>
+  chapters.map((chapter) =>
+    chapter.highlights.some((highlight) => highlight.id === highlightId)
+      ? {
+          ...chapter,
+          highlights: chapter.highlights.map((highlight) =>
+            highlight.id === highlightId ? { ...highlight, note } : highlight
+          ),
+        }
+      : chapter
+  );
+
 const useNoteMutations = (
   bookId: number,
   highlightId: number,
@@ -71,7 +100,30 @@ const useNoteMutations = (
 
   const updateNoteMutation = useUpdateHighlightNoteApiV1HighlightsHighlightIdNotePost({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (response) => {
+        const note = response.highlight.note ?? null;
+
+        // Update the cached highlight in place so the new note shows immediately
+        // in every view (highlight cards, the modal's highlight data) without
+        // waiting for a refetch. The modal can be driven either by the book
+        // details query or by the search query, so patch both.
+        queryClient.setQueryData<BookDetails>(
+          getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
+          (old) =>
+            old
+              ? { ...old, chapters: withPatchedHighlightNote(old.chapters, highlightId, note) }
+              : old
+        );
+        queryClient.setQueriesData<BookHighlightSearchResponse>(
+          { queryKey: getSearchBookHighlightsApiV1BooksBookIdHighlightsGetQueryKey(bookId) },
+          (old) =>
+            old
+              ? { ...old, chapters: withPatchedHighlightNote(old.chapters, highlightId, note) }
+              : old
+        );
+
+        // Keep the server as the source of truth for anything the in-place
+        // patch didn't cover.
         void queryClient.invalidateQueries({
           queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
         });
