@@ -6,15 +6,9 @@
  */
 
 /**
- * Schema for Flashcard response (without embedded highlight).
+ * Schema for creating a new flashcard linked to a note.
  */
-export interface Flashcard {
-  id: number;
-  user_id: number;
-  book_id: number;
-  highlight_id: number | null;
-  chapter_id?: number | null;
-  note_id?: number | null;
+export interface NoteFlashcardCreateRequest {
   /**
    * Question text for the flashcard
    * @minLength 1
@@ -25,4 +19,6 @@ export interface Flashcard {
    * @minLength 1
    */
   answer: string;
+  /** Book (must be linked to the note) to file the flashcard under; defaults to the note's first book */
+  book_id?: number | null;
 }

@@ -15,6 +15,7 @@ export interface FlashcardWithHighlight {
   book_id: number;
   highlight_id: number | null;
   chapter_id?: number | null;
+  note_id?: number | null;
   /**
    * Question text for the flashcard
    * @minLength 1

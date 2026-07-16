@@ -29,6 +29,7 @@ import type {
   FlashcardsWithHighlightsResponse,
   HTTPValidationError,
   HighlightFlashcardSuggestionsResponse,
+  NoteFlashcardCreateRequest,
 } from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
@@ -940,6 +941,307 @@ export function useGetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcard
   const queryOptions =
     getGetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGetQueryOptions(
       chapterId,
+      options
+    );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Create a flashcard linked to a note.
+
+The flashcard is filed under the requested book (which must be linked to
+the note), or the note's first book when no book is given.
+
+Args:
+    note_id: ID of the note
+    request: Request containing question, answer and optional book_id
+    use_case: Use case injected via dependency container
+
+Returns:
+    Created flashcard
+
+Raises:
+    HTTPException: If note not found or book is not linked to the note
+ * @summary Create Flashcard For Note
+ */
+export const createFlashcardForNoteApiV1NotesNoteIdFlashcardsPost = (
+  noteId: number,
+  noteFlashcardCreateRequest: NoteFlashcardCreateRequest,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<FlashcardCreateResponse>({
+    url: `/api/v1/notes/${noteId}/flashcards`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: noteFlashcardCreateRequest,
+    signal,
+  });
+};
+
+export const getCreateFlashcardForNoteApiV1NotesNoteIdFlashcardsPostMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFlashcardForNoteApiV1NotesNoteIdFlashcardsPost>>,
+    TError,
+    { noteId: number; data: NoteFlashcardCreateRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createFlashcardForNoteApiV1NotesNoteIdFlashcardsPost>>,
+  TError,
+  { noteId: number; data: NoteFlashcardCreateRequest },
+  TContext
+> => {
+  const mutationKey = ['createFlashcardForNoteApiV1NotesNoteIdFlashcardsPost'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createFlashcardForNoteApiV1NotesNoteIdFlashcardsPost>>,
+    { noteId: number; data: NoteFlashcardCreateRequest }
+  > = (props) => {
+    const { noteId, data } = props ?? {};
+
+    return createFlashcardForNoteApiV1NotesNoteIdFlashcardsPost(noteId, data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateFlashcardForNoteApiV1NotesNoteIdFlashcardsPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createFlashcardForNoteApiV1NotesNoteIdFlashcardsPost>>
+>;
+export type CreateFlashcardForNoteApiV1NotesNoteIdFlashcardsPostMutationBody =
+  NoteFlashcardCreateRequest;
+export type CreateFlashcardForNoteApiV1NotesNoteIdFlashcardsPostMutationError = HTTPValidationError;
+
+/**
+ * @summary Create Flashcard For Note
+ */
+export const useCreateFlashcardForNoteApiV1NotesNoteIdFlashcardsPost = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createFlashcardForNoteApiV1NotesNoteIdFlashcardsPost>>,
+      TError,
+      { noteId: number; data: NoteFlashcardCreateRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof createFlashcardForNoteApiV1NotesNoteIdFlashcardsPost>>,
+  TError,
+  { noteId: number; data: NoteFlashcardCreateRequest },
+  TContext
+> => {
+  return useMutation(
+    getCreateFlashcardForNoteApiV1NotesNoteIdFlashcardsPostMutationOptions(options),
+    queryClient
+  );
+};
+/**
+ * Get AI-generated flashcard suggestions for a note.
+
+Suggestions are generated from the note's title, body and the text of
+its linked highlights.
+
+Args:
+    note_id: ID of the note
+    current_user: Authenticated user
+    use_case: Use case injected via dependency container
+
+Returns:
+    HighlightFlashcardSuggestionsResponse with list of flashcard suggestions
+
+Raises:
+    HTTPException 404: If note not found or not owned by user
+ * @summary Get Note Flashcard Suggestions
+ */
+export const getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet = (
+  noteId: number,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<HighlightFlashcardSuggestionsResponse>({
+    url: `/api/v1/notes/${noteId}/flashcard_suggestions`,
+    method: 'GET',
+    signal,
+  });
+};
+
+export const getGetNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGetQueryKey = (
+  noteId: number
+) => {
+  return [`/api/v1/notes/${noteId}/flashcard_suggestions`] as const;
+};
+
+export const getGetNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGetQueryOptions = <
+  TData = Awaited<
+    ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  noteId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+        >,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGetQueryKey(noteId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>>
+  > = ({ signal }) =>
+    getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet(noteId, signal);
+
+  return { queryKey, queryFn, enabled: !!noteId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGetQueryResult =
+  NonNullable<
+    Awaited<ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>>
+  >;
+export type GetNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGetQueryError =
+  HTTPValidationError;
+
+export function useGetNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet<
+  TData = Awaited<
+    ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  noteId: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<
+            ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+          >,
+          TError,
+          Awaited<
+            ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+          >
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet<
+  TData = Awaited<
+    ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  noteId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+        >,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<
+            ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+          >,
+          TError,
+          Awaited<
+            ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+          >
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet<
+  TData = Awaited<
+    ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  noteId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+        >,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Note Flashcard Suggestions
+ */
+
+export function useGetNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet<
+  TData = Awaited<
+    ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+  >,
+  TError = HTTPValidationError,
+>(
+  noteId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<
+          ReturnType<typeof getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet>
+        >,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions =
+    getGetNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGetQueryOptions(
+      noteId,
       options
     );
 
