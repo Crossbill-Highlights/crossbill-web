@@ -13,15 +13,16 @@ import { sortBy } from 'lodash';
 interface NoteFlashcardSectionProps {
   note: NoteWithLinks;
   bookId: number;
-  visible: boolean;
   disabled?: boolean;
 }
 
-/** Wires the shared FlashcardSection to a note's cards and endpoints. */
+/**
+ * Wires the shared FlashcardSection to a note's cards and endpoints. Rendered
+ * inside the note dialog's Flashcards tab, so it is always visible.
+ */
 export const NoteFlashcardSection = ({
   note,
   bookId,
-  visible,
   disabled = false,
 }: NoteFlashcardSectionProps) => {
   const noteQueryKey = getGetNoteApiV1NotesNoteIdGetQueryKey(note.id);
@@ -69,7 +70,7 @@ export const NoteFlashcardSection = ({
     <FlashcardSection
       flashcards={flashcardsWithContext}
       bookId={bookId}
-      visible={visible}
+      visible={true}
       disabled={disabled}
       isProcessing={isProcessing}
       onSaveFlashcard={saveFlashcard}

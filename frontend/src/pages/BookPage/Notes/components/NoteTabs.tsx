@@ -1,30 +1,38 @@
-import type { Highlight, NoteLinkedChapter } from '@/api/generated/model';
+import type { Highlight, NoteLinkedChapter, NoteWithLinks } from '@/api/generated/model';
 import { HighlightCard } from '@/pages/BookPage/Highlights/HighlightCard.tsx';
+import { NoteFlashcardSection } from '@/pages/BookPage/Notes/components/NoteFlashcardSection.tsx';
 import { Box, List, ListItemButton, ListItemText, Stack, Tab, Tabs } from '@mui/material';
 import { type ReactElement, useState } from 'react';
 
-interface NoteLinkTabsProps {
+interface NoteTabsProps {
+  note: NoteWithLinks;
+  bookId: number;
   highlights: Highlight[];
   chapters: NoteLinkedChapter[];
   onOpenHighlight: (highlightId: number) => void;
   onOpenChapter: (chapterId: number) => void;
+  disabled?: boolean;
 }
 
 const formatTabLabel = (label: string, count: number) =>
   count > 0 ? `${label} (${count})` : label;
 
 /**
- * Tabs listing a note's linked entities (highlights, chapters). The Highlights
- * tab reuses the shared `HighlightCard`; the Chapters tab lists clickable rows.
- * Only tabs whose entity type has items are rendered, mirroring
- * `ChapterDetailDialog`'s tabbed composition.
+ * Tabs for a note's secondary content: linked highlights, linked chapters and
+ * the note's flashcards. The Highlights tab reuses the shared `HighlightCard`;
+ * the Chapters tab lists clickable rows. Highlights/Chapters tabs render only
+ * when non-empty, but the Flashcards tab is always present so a card can be
+ * created — mirroring `ChapterDetailDialog`'s tabbed composition.
  */
-export const NoteLinkTabs = ({
+export const NoteTabs = ({
+  note,
+  bookId,
   highlights,
   chapters,
   onOpenHighlight,
   onOpenChapter,
-}: NoteLinkTabsProps) => {
+  disabled = false,
+}: NoteTabsProps) => {
   const tabs = [
     highlights.length > 0 && {
       key: 'highlights',
@@ -51,6 +59,11 @@ export const NoteLinkTabs = ({
           ))}
         </List>
       ),
+    },
+    {
+      key: 'flashcards',
+      label: formatTabLabel('Flashcards', note.flashcards?.length ?? 0),
+      content: <NoteFlashcardSection note={note} bookId={bookId} disabled={disabled} />,
     },
   ].filter((tab): tab is { key: string; label: string; content: ReactElement } => tab !== false);
 
