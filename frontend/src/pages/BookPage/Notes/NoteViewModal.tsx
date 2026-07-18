@@ -11,6 +11,7 @@ import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx'
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { markdownStyles } from '@/theme/theme';
+import { copyUrlWithSearchParam } from '@/utils/clipboard.ts';
 import { Box, Button, Chip, Stack, Typography, useTheme } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -90,6 +91,16 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
     if (!activeNote) return;
     await navigator.clipboard.writeText(activeNote.body);
     showSnackbar('Note copied to clipboard.', 'success');
+  };
+
+  // Copy a link that works from any context: `noteId` is only a validated
+  // search param on the notes route, so build the URL on that route.
+  const handleCopyLink = async () => {
+    await copyUrlWithSearchParam(
+      'noteId',
+      noteId,
+      `${window.location.origin}/book/${book.id}/notes`
+    );
   };
 
   const handleConfirmDelete = () => {
@@ -189,6 +200,7 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
               )}
             </Box>
             <NoteToolbar
+              onCopyLink={() => void handleCopyLink()}
               onEdit={() => setIsEditing(true)}
               onCopy={() => void handleCopy()}
               onDelete={() => setDeleteConfirmOpen(true)}

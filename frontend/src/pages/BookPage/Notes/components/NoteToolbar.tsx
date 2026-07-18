@@ -1,16 +1,30 @@
 import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip.tsx';
 import { DialogToolbar } from '@/components/dialogs/DialogToolbar.tsx';
-import { CopyIcon, DeleteIcon, EditIcon } from '@/theme/Icons.tsx';
+import { CopyIcon, DeleteIcon, EditIcon, LinkIcon } from '@/theme/Icons.tsx';
 
 interface NoteToolbarProps {
+  onCopyLink: () => void;
   onEdit: () => void;
   onCopy: () => void;
   onDelete: () => void;
   disabled?: boolean;
 }
 
-export const NoteToolbar = ({ onEdit, onCopy, onDelete, disabled = false }: NoteToolbarProps) => (
+export const NoteToolbar = ({
+  onCopyLink,
+  onEdit,
+  onCopy,
+  onDelete,
+  disabled = false,
+}: NoteToolbarProps) => (
   <DialogToolbar>
+    <IconButtonWithTooltip
+      title="Copy link"
+      ariaLabel="Copy link to note"
+      onClick={onCopyLink}
+      disabled={disabled}
+      icon={<LinkIcon />}
+    />
     <IconButtonWithTooltip
       title="Edit note"
       ariaLabel="Edit note"
