@@ -3,13 +3,7 @@ import { HoverableCardActionArea } from '@/components/cards/HoverableCardActionA
 import { MetadataRow } from '@/components/cards/MetadataRow.tsx';
 import { TagChipList } from '@/components/TagChipList.tsx';
 import { LabelIndicator } from '@/pages/BookPage/common/LabelIndicator.tsx';
-import {
-  BookmarkFilledIcon,
-  DateIcon,
-  FlashcardsIcon,
-  NotesIcon,
-  QuoteIcon,
-} from '@/theme/Icons.tsx';
+import { BookmarkFilledIcon, DateIcon, FlashcardsIcon, QuoteIcon } from '@/theme/Icons.tsx';
 import { Box, Typography } from '@mui/material';
 
 export interface HighlightCardProps {
@@ -66,9 +60,6 @@ const Footer = ({ highlight, bookmark }: FooterProps) => {
             highlight.page && `Page ${highlight.page}`,
             hasBookmark && (
               <BookmarkFilledIcon sx={{ fontSize: 16, verticalAlign: 'middle', ml: 1, mt: -0.5 }} />
-            ),
-            highlight.note && (
-              <NotesIcon sx={{ fontSize: 16, verticalAlign: 'middle', ml: 1, mt: -0.5 }} />
             ),
             !!highlight.flashcards.length && (
               <>

@@ -137,7 +137,6 @@ async def get_flashcards_for_book(
                 book_id=highlight.book_id.value,
                 chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
                 text=highlight.text,
-                note=highlight.note,
                 page=highlight.page,
                 datetime=highlight.datetime,
                 chapter=chapter.name if chapter else None,

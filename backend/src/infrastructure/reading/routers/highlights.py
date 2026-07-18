@@ -18,9 +18,6 @@ from src.application.reading.use_cases.highlights.highlight_upload_use_case impo
     HighlightUploadData,
     HighlightUploadUseCase,
 )
-from src.application.reading.use_cases.highlights.update_highlight_note_use_case import (
-    HighlightUpdateNoteUseCase,
-)
 from src.application.reading.use_cases.tag_associations.add_tag_to_highlight_by_id_use_case import (
     AddTagToHighlightByIdUseCase,
 )
@@ -77,8 +74,6 @@ from src.infrastructure.reading.schemas import (
     HighlightDeleteRequest,
     HighlightDeleteResponse,
     HighlightLabel,
-    HighlightNoteUpdate,
-    HighlightNoteUpdateResponse,
     HighlightUploadRequest,
     HighlightUploadResponse,
     PositionResponse,
@@ -130,7 +125,6 @@ async def upload_highlights(
             start_xpoint=h.start_xpoint,
             end_xpoint=h.end_xpoint,
             page=h.page,
-            note=h.note,
             color=h.color,
             drawer=h.drawer,
         )
@@ -149,96 +143,6 @@ async def upload_highlights(
         book_id=0,  # TODO: Return actual book_id from service if needed
         highlights_created=created,
         highlights_skipped=skipped,
-    )
-
-
-@router.post(
-    "/highlights/{highlight_id}/note",
-    response_model=HighlightNoteUpdateResponse,
-    status_code=status.HTTP_200_OK,
-)
-async def update_highlight_note(
-    highlight_id: int,
-    request: HighlightNoteUpdate,
-    current_user: Annotated[User, Depends(get_current_user)],
-    use_case: HighlightUpdateNoteUseCase = Depends(
-        inject_use_case(container.reading.highlight_update_note_use_case)
-    ),
-) -> HighlightNoteUpdateResponse:
-    """
-    Update the note field of a highlight.
-
-    Args:
-        highlight_id: ID of the highlight to update
-        request: Note update request
-
-    Returns:
-        HighlightNoteUpdateResponse with the updated highlight
-
-    Raises:
-        HTTPException: If highlight not found or update fails
-    """
-    result = await use_case.update_note(highlight_id, current_user.id.value, request.note)
-
-    if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Highlight with id {highlight_id} not found",
-        )
-
-    highlight, flashcards, tags, labels = result
-
-    resolved = (
-        labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
-    )
-
-    # Build response from domain entities
-    highlight_schema = Highlight(
-        id=highlight.id.value,
-        book_id=highlight.book_id.value,
-        chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
-        text=highlight.text,
-        chapter=None,  # We don't have chapter name loaded
-        chapter_number=None,
-        page=highlight.page,
-        note=highlight.note,
-        datetime=highlight.datetime,
-        label=HighlightLabel(
-            highlight_style_id=highlight.highlight_style_id.value
-            if highlight.highlight_style_id
-            else None,
-            text=resolved.label if resolved else None,
-            ui_color=resolved.ui_color if resolved else None,
-        )
-        if highlight.highlight_style_id
-        else None,
-        tags=[
-            TagInBook(
-                id=tag.id.value,
-                name=tag.name,
-                tag_group_id=tag.tag_group_id,
-            )
-            for tag in tags
-        ],
-        flashcards=[
-            Flashcard(
-                id=fc.id.value,
-                user_id=fc.user_id.value,
-                book_id=fc.book_id.value,
-                highlight_id=fc.highlight_id.value if fc.highlight_id else None,
-                question=fc.question,
-                answer=fc.answer,
-            )
-            for fc in flashcards
-        ],
-        created_at=highlight.created_at,
-        updated_at=highlight.updated_at,
-    )
-
-    return HighlightNoteUpdateResponse(
-        success=True,
-        message="Note updated successfully",
-        highlight=highlight_schema,
     )
 
 
@@ -407,7 +311,6 @@ def _map_chapters_to_schemas(
                 chapter=chapter.name if chapter else None,
                 chapter_number=chapter.chapter_number if chapter else None,
                 page=h.page,
-                note=h.note,
                 datetime=h.datetime,
                 label=HighlightLabel(
                     highlight_style_id=h.highlight_style_id.value if h.highlight_style_id else None,
@@ -769,7 +672,6 @@ async def add_tag_to_highlight(
         chapter=None,
         chapter_number=None,
         page=highlight.page,
-        note=highlight.note,
         datetime=highlight.datetime,
         label=HighlightLabel(
             highlight_style_id=highlight.highlight_style_id.value
@@ -849,7 +751,6 @@ async def remove_tag_from_highlight(
         chapter=None,
         chapter_number=None,
         page=highlight.page,
-        note=highlight.note,
         datetime=highlight.datetime,
         label=HighlightLabel(
             highlight_style_id=highlight.highlight_style_id.value

@@ -78,7 +78,6 @@ def _map_chapters_to_schemas(
                 chapter=chapter.name if chapter else None,
                 chapter_number=chapter.chapter_number if chapter else None,
                 page=h.page,
-                note=h.note,
                 datetime=h.datetime,
                 label=HighlightLabel(
                     highlight_style_id=h.highlight_style_id.value if h.highlight_style_id else None,

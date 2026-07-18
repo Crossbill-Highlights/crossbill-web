@@ -11,11 +11,7 @@ import {
   BookmarkIcon,
   CopyIcon,
   DeleteIcon,
-  FlashcardsFilledIcon,
-  FlashcardsIcon,
   LinkIcon,
-  NoteAddIcon,
-  NotesIcon,
 } from '@/theme/Icons.tsx';
 import { Box } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
@@ -26,11 +22,6 @@ interface ToolbarProps {
   bookId: number;
   highlightText: string;
   bookmark?: Bookmark;
-  noteVisible: boolean;
-  onNoteToggle: () => void;
-  flashcardVisible: boolean;
-  onFlashcardToggle: () => void;
-  onAddToNote: (anchorEl: HTMLElement) => void;
   onDelete: () => void;
   disabled?: boolean;
 }
@@ -40,11 +31,6 @@ export const Toolbar = ({
   bookId,
   highlightText,
   bookmark,
-  noteVisible,
-  onNoteToggle,
-  flashcardVisible,
-  onFlashcardToggle,
-  onAddToNote,
   onDelete,
   disabled = false,
 }: ToolbarProps) => {
@@ -90,27 +76,6 @@ export const Toolbar = ({
         disabled={isDisabled}
         ariaLabel={bookmark ? 'Remove bookmark' : 'Add bookmark'}
         icon={bookmark ? <BookmarkFilledIcon /> : <BookmarkIcon />}
-      />
-      <IconButtonWithTooltip
-        title={noteVisible ? 'Hide note' : 'Show note'}
-        onClick={onNoteToggle}
-        disabled={isDisabled}
-        ariaLabel={noteVisible ? 'Hide note' : 'Show note'}
-        icon={<NotesIcon />}
-      />
-      <IconButtonWithTooltip
-        title={flashcardVisible ? 'Hide flashcards' : 'Show flashcards'}
-        onClick={onFlashcardToggle}
-        disabled={isDisabled}
-        ariaLabel={flashcardVisible ? 'Hide flashcards' : 'Show flashcards'}
-        icon={flashcardVisible ? <FlashcardsFilledIcon /> : <FlashcardsIcon />}
-      />
-      <IconButtonWithTooltip
-        title="Add to note"
-        onClick={(event) => onAddToNote(event.currentTarget as HTMLElement)}
-        disabled={isDisabled}
-        ariaLabel="Add to note"
-        icon={<NoteAddIcon />}
       />
       <IconButtonWithTooltip
         title="Delete highlight"

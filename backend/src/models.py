@@ -395,7 +395,6 @@ class Highlight(Base):
     )
     text: Mapped[str] = mapped_column(Text, nullable=False)
     page: Mapped[int | None] = mapped_column(nullable=True)
-    note: Mapped[str | None] = mapped_column(Text, nullable=True)
     start_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
     end_xpoint: Mapped[str | None] = mapped_column(Text, nullable=True)
     position: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)

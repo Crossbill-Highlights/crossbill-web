@@ -45,9 +45,6 @@ from src.application.reading.use_cases.highlights.highlight_search_use_case impo
 from src.application.reading.use_cases.highlights.highlight_upload_use_case import (
     HighlightUploadUseCase,
 )
-from src.application.reading.use_cases.highlights.update_highlight_note_use_case import (
-    HighlightUpdateNoteUseCase,
-)
 from src.application.reading.use_cases.reading_sessions.reading_session_ai_summary_use_case import (
     ReadingSessionAISummaryUseCase,
 )
@@ -141,12 +138,6 @@ class ReadingContainer(containers.DeclarativeContainer):
         HighlightDeleteUseCase,
         book_repository=book_repository,
         highlight_repository=highlight_repository,
-    )
-    highlight_update_note_use_case = providers.Factory(
-        HighlightUpdateNoteUseCase,
-        highlight_repository=highlight_repository,
-        highlight_style_repository=highlight_style_repository,
-        highlight_style_resolver=highlight_style_resolver,
     )
     highlight_upload_use_case = providers.Factory(
         HighlightUploadUseCase,

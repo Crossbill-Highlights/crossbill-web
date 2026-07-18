@@ -27,7 +27,6 @@ class HighlightBase(BaseModel):
     chapter: str | None = Field(None, max_length=500, description="Chapter name")
     chapter_number: int | None = Field(None, ge=1, description="Chapter order number from TOC")
     page: int | None = Field(None, ge=0, description="Page number")
-    note: str | None = Field(None, description="Note/annotation")
     datetime: str = Field(..., min_length=1, max_length=50, description="KOReader datetime format")
 
 
@@ -253,17 +252,3 @@ class BookHighlightSearchResponse(BaseModel):
         ..., description="Chapters containing matching highlights"
     )
     total: int = Field(..., ge=0, description="Total number of matching highlights")
-
-
-class HighlightNoteUpdate(BaseModel):
-    """Schema for updating a highlight's note."""
-
-    note: str | None = Field(None, description="Note/annotation text (null to clear)")
-
-
-class HighlightNoteUpdateResponse(BaseModel):
-    """Schema for highlight note update response."""
-
-    success: bool = Field(..., description="Whether the update was successful")
-    message: str = Field(..., description="Response message")
-    highlight: Highlight = Field(..., description="Updated highlight")
