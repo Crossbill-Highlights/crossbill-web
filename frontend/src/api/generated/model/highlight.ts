@@ -23,8 +23,6 @@ export interface Highlight {
   chapter_number?: number | null;
   /** Page number */
   page?: number | null;
-  /** Note/annotation */
-  note?: string | null;
   /**
    * KOReader datetime format
    * @minLength 1

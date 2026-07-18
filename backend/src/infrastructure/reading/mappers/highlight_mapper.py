@@ -57,7 +57,6 @@ class HighlightMapper:
             highlight_style_id=HighlightStyleId(orm_model.highlight_style_id)
             if orm_model.highlight_style_id
             else None,
-            note=orm_model.note,
             deleted_at=orm_model.deleted_at,
         )
 
@@ -97,7 +96,6 @@ class HighlightMapper:
             orm_model.text = domain_entity.text
             orm_model.content_hash = domain_entity.content_hash.value
             orm_model.page = domain_entity.page
-            orm_model.note = domain_entity.note
             orm_model.start_xpoint = start_xpoint
             orm_model.end_xpoint = end_xpoint
             orm_model.position = (
@@ -121,7 +119,6 @@ class HighlightMapper:
             highlight_style_id=domain_entity.highlight_style_id.value
             if domain_entity.highlight_style_id
             else None,
-            note=domain_entity.note,
             start_xpoint=start_xpoint,
             end_xpoint=end_xpoint,
             datetime=datetime_str,

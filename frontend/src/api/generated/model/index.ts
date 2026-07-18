@@ -48,8 +48,6 @@ export * from './highlightLabel';
 export * from './highlightLabelCreate';
 export * from './highlightLabelInBook';
 export * from './highlightLabelUpdate';
-export * from './highlightNoteUpdate';
-export * from './highlightNoteUpdateResponse';
 export * from './highlightResponseBase';
 export * from './highlightUploadRequest';
 export * from './highlightUploadResponse';

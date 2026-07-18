@@ -40,7 +40,6 @@ class Highlight(AggregateRoot[HighlightId]):
     - Content hash is computed from text (for deduplication)
     - Soft deletion is supported (deleted_at timestamp)
     - Tags can be added/removed
-    - Notes can be updated
     """
 
     # Identity
@@ -60,9 +59,6 @@ class Highlight(AggregateRoot[HighlightId]):
 
     # Style
     highlight_style_id: HighlightStyleId | None = None
-
-    # Annotation
-    note: str | None = None
 
     # Metadata
     datetime: str = ""  # KOReader datetime string
@@ -85,10 +81,6 @@ class Highlight(AggregateRoot[HighlightId]):
     def is_deleted(self) -> bool:
         """Check if this highlight has been soft-deleted."""
         return self.deleted_at is not None
-
-    def has_note(self) -> bool:
-        """Check if this highlight has an associated note."""
-        return self.note is not None and len(self.note.strip()) > 0
 
     def has_position_info(self) -> bool:
         """Check if this highlight has position information (xpoints or page)."""
@@ -119,15 +111,6 @@ class Highlight(AggregateRoot[HighlightId]):
             raise DomainError(f"Highlight {self.id} is not deleted")
 
         self.deleted_at = None
-
-    def update_note(self, note: str | None) -> None:
-        """
-        Update the note attached to this highlight.
-
-        Args:
-            note: New note text, or None to remove note
-        """
-        self.note = note.strip() if note else None
 
     def associate_with_chapter(self, chapter_id: ChapterId) -> None:
         """Associate this highlight with a chapter."""
@@ -162,7 +145,6 @@ class Highlight(AggregateRoot[HighlightId]):
         page: int | None = None,
         position: Position | None = None,
         highlight_style_id: HighlightStyleId | None = None,
-        note: str | None = None,
     ) -> Highlight:
         """
         Factory method for creating a new highlight.
@@ -175,7 +157,6 @@ class Highlight(AggregateRoot[HighlightId]):
             xpoints: Optional XPoint range for precise position
             page: Optional page number
             position: Optional Position for document-order location
-            note: Optional note/annotation
 
         Returns:
             New Highlight instance
@@ -197,7 +178,6 @@ class Highlight(AggregateRoot[HighlightId]):
             page=page,
             position=position,
             highlight_style_id=highlight_style_id,
-            note=note.strip() if note else None,
             datetime=datetime_str,
             created_at=now,
             updated_at=now,
@@ -220,7 +200,6 @@ class Highlight(AggregateRoot[HighlightId]):
         page: int | None = None,
         position: Position | None = None,
         highlight_style_id: HighlightStyleId | None = None,
-        note: str | None = None,
         deleted_at: dt_module.datetime | None = None,
     ) -> Highlight:
         """
@@ -238,7 +217,6 @@ class Highlight(AggregateRoot[HighlightId]):
             page=page,
             position=position,
             highlight_style_id=highlight_style_id,
-            note=note,
             datetime=datetime_str,
             created_at=created_at,
             updated_at=updated_at,

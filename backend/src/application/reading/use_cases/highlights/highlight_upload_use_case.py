@@ -40,7 +40,6 @@ class HighlightUploadData:
     start_xpoint: str | None = None
     end_xpoint: str | None = None
     page: int | None = None
-    note: str | None = None
     color: str | None = None
     drawer: str | None = None
 
@@ -190,7 +189,6 @@ class HighlightUploadUseCase:
                 page=data.page,
                 position=position,
                 highlight_style_id=highlight_style.id,
-                note=data.note,
             )
             new_highlights.append(highlight)
 

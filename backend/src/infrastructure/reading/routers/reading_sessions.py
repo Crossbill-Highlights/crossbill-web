@@ -156,7 +156,6 @@ async def get_book_reading_sessions(
                     chapter_id=highlight.chapter_id.value if highlight.chapter_id else None,
                     text=highlight.text,
                     page=highlight.page,
-                    note=highlight.note,
                     datetime=highlight.datetime,
                     created_at=highlight.created_at,
                     updated_at=highlight.updated_at,
