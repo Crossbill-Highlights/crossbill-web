@@ -252,4 +252,3 @@ class BookHighlightSearchResponse(BaseModel):
         ..., description="Chapters containing matching highlights"
     )
     total: int = Field(..., ge=0, description="Total number of matching highlights")
-
