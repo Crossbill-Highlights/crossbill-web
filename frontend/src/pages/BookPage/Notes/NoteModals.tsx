@@ -6,6 +6,8 @@ interface NoteModalsProps {
   controller: NoteModalsController;
   /** Pre-link created notes to these chapters (e.g. from the chapter section). */
   initialChapterIds?: number[];
+  /** Pre-link created notes to these highlights (e.g. from the highlight modal). */
+  initialHighlightIds?: number[];
 }
 
 /**
@@ -14,12 +16,17 @@ interface NoteModalsProps {
  * triggers, not the dialogs. Editing/deleting an existing note lives inside
  * `NoteViewModal`.
  */
-export const NoteModals = ({ controller, initialChapterIds }: NoteModalsProps) => (
+export const NoteModals = ({
+  controller,
+  initialChapterIds,
+  initialHighlightIds,
+}: NoteModalsProps) => (
   <>
     <NoteEditorDialog
       open={controller.editorOpen}
       onClose={controller.closeEditor}
       initialChapterIds={initialChapterIds}
+      initialHighlightIds={initialHighlightIds}
     />
     {controller.viewingNoteId !== null && (
       <NoteViewModal

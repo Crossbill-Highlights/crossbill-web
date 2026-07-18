@@ -10,15 +10,16 @@ import { sortBy } from 'lodash';
 interface HighlightFlashcardSectionProps {
   highlight: Highlight;
   bookId: number;
-  visible: boolean;
   disabled?: boolean;
 }
 
-/** Wires the shared FlashcardSection to a highlight's cards and endpoints. */
+/**
+ * Wires the shared FlashcardSection to a highlight's cards and endpoints.
+ * Rendered inside the highlight modal's Flashcards tab, so it is always visible.
+ */
 export const HighlightFlashcardSection = ({
   highlight,
   bookId,
-  visible,
   disabled = false,
 }: HighlightFlashcardSectionProps) => {
   const createFlashcardMutation =
@@ -64,7 +65,7 @@ export const HighlightFlashcardSection = ({
     <FlashcardSection
       flashcards={flashcardsWithContext}
       bookId={bookId}
-      visible={visible}
+      visible={true}
       disabled={disabled}
       isProcessing={isProcessing}
       onSaveFlashcard={saveFlashcard}
