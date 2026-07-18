@@ -1,0 +1,39 @@
+import type {
+  FlashcardSuggestionItem,
+  HighlightFlashcardSuggestionsResponse,
+} from '@/api/generated/model';
+import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { useState } from 'react';
+
+/**
+ * Holds AI flashcard suggestion state for an entity view modal.
+ * The fetcher is source-specific (highlight, note, ...) and provided by the caller.
+ */
+export const useAIFlashcardSuggestions = (
+  fetchFn: () => Promise<HighlightFlashcardSuggestionsResponse | undefined>
+) => {
+  const { showSnackbar } = useSnackbar();
+  const [isLoading, setIsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<FlashcardSuggestionItem[]>([]);
+
+  const fetchSuggestions = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchFn();
+      if (data?.suggestions) {
+        setSuggestions(data.suggestions);
+      }
+    } catch (error) {
+      console.error('Failed to fetch flashcard suggestions:', error);
+      showSnackbar('Failed to fetch suggestions. Please try again.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const removeSuggestion = (index: number) => {
+    setSuggestions((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  return { isLoading, suggestions, fetchSuggestions, removeSuggestion };
+};

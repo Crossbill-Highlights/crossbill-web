@@ -12,6 +12,9 @@ from src.application.learning.use_cases.flashcards.create_flashcard_for_book_use
 from src.application.learning.use_cases.flashcards.create_flashcard_for_highlight_use_case import (
     CreateFlashcardForHighlightUseCase,
 )
+from src.application.learning.use_cases.flashcards.create_flashcard_for_note_use_case import (
+    CreateFlashcardForNoteUseCase,
+)
 from src.application.learning.use_cases.flashcards.delete_flashcard_use_case import (
     DeleteFlashcardUseCase,
 )
@@ -23,6 +26,9 @@ from src.application.learning.use_cases.flashcards.get_flashcard_suggestions_use
 )
 from src.application.learning.use_cases.flashcards.get_flashcards_by_book_use_case import (
     GetFlashcardsByBookUseCase,
+)
+from src.application.learning.use_cases.flashcards.get_note_flashcard_suggestions_use_case import (
+    GetNoteFlashcardSuggestionsUseCase,
 )
 from src.application.learning.use_cases.flashcards.update_flashcard_use_case import (
     UpdateFlashcardUseCase,
@@ -50,6 +56,7 @@ class LearningContainer(containers.DeclarativeContainer):
     ebook_text_extraction_service = providers.Dependency()
     ai_service = providers.Dependency()
     ai_chat_session_repository = providers.Dependency()
+    note_repository = providers.Dependency()
 
     # Flashcards
     create_flashcard_for_highlight_use_case = providers.Factory(
@@ -62,6 +69,11 @@ class LearningContainer(containers.DeclarativeContainer):
         flashcard_repository=flashcard_repository,
         book_repository=book_repository,
         chapter_repository=chapter_repository,
+    )
+    create_flashcard_for_note_use_case = providers.Factory(
+        CreateFlashcardForNoteUseCase,
+        flashcard_repository=flashcard_repository,
+        note_repository=note_repository,
     )
     get_flashcards_by_book_use_case = providers.Factory(
         GetFlashcardsByBookUseCase,
@@ -89,6 +101,12 @@ class LearningContainer(containers.DeclarativeContainer):
     get_chapter_flashcard_suggestions_use_case = providers.Factory(
         GetChapterFlashcardSuggestionsUseCase,
         chapter_prereading_repository=chapter_prereading_repository,
+        ai_flashcard_service=ai_service,
+    )
+    get_note_flashcard_suggestions_use_case = providers.Factory(
+        GetNoteFlashcardSuggestionsUseCase,
+        note_repository=note_repository,
+        highlight_repository=highlight_repository,
         ai_flashcard_service=ai_service,
     )
 

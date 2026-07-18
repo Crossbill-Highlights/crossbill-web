@@ -1,7 +1,8 @@
 """DTOs for note use cases."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.library.entities.chapter import Chapter
 from src.domain.notes.entities.note import Note
 from src.domain.reading.entities.highlight import Highlight
@@ -16,3 +17,6 @@ class NoteWithLinkedEntities:
     chapters: list[Chapter]
     highlights: list[Highlight]
     tags: list[Tag]
+    # Only populated by the single-note detail use case; list responses
+    # intentionally leave this empty.
+    flashcards: list[Flashcard] = field(default_factory=list)

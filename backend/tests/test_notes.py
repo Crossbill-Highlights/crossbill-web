@@ -194,6 +194,34 @@ class TestGetNote:
         assert data["chapters"] == [{"id": test_chapter.id, "name": test_chapter.name}]
         assert data["highlights"] == []
         assert data["tags"] == []
+        assert data["flashcards"] == []
+
+    async def test_get_note_includes_flashcards(
+        self,
+        client: AsyncClient,
+        test_book: models.Book,
+    ) -> None:
+        create = await client.post(
+            "/api/v1/notes",
+            json={"title": "Raskolnikov", "book_id": test_book.id},
+        )
+        note_id = create.json()["note"]["id"]
+
+        flashcard_response = await client.post(
+            f"/api/v1/notes/{note_id}/flashcards",
+            json={"question": "Who is Raskolnikov?", "answer": "The protagonist"},
+        )
+        assert flashcard_response.status_code == status.HTTP_201_CREATED
+        flashcard_id = flashcard_response.json()["flashcard"]["id"]
+
+        response = await client.get(f"/api/v1/notes/{note_id}")
+        assert response.status_code == status.HTTP_200_OK
+        flashcards = response.json()["flashcards"]
+        assert len(flashcards) == 1
+        assert flashcards[0]["id"] == flashcard_id
+        assert flashcards[0]["question"] == "Who is Raskolnikov?"
+        assert flashcards[0]["note_id"] == note_id
+        assert flashcards[0]["book_id"] == test_book.id
 
     async def test_get_note_not_found(self, client: AsyncClient) -> None:
         response = await client.get("/api/v1/notes/99999")

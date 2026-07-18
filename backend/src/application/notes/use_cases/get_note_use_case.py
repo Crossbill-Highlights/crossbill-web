@@ -1,5 +1,6 @@
 """Use case for retrieving a single note with linked entities."""
 
+from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
 from src.application.notes.protocols.note_repository import NoteRepositoryProtocol
 from src.application.notes.use_cases.dtos import NoteWithLinkedEntities
@@ -20,11 +21,13 @@ class GetNoteUseCase:
         chapter_repository: ChapterRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
         tag_repository: TagRepositoryProtocol,
+        flashcard_repository: FlashcardRepositoryProtocol,
     ) -> None:
         self.note_repository = note_repository
         self.chapter_repository = chapter_repository
         self.highlight_repository = highlight_repository
         self.tag_repository = tag_repository
+        self.flashcard_repository = flashcard_repository
 
     async def get_note(self, note_id: int, user_id: int) -> NoteWithLinkedEntities:
         user_id_vo = UserId(user_id)
@@ -53,9 +56,12 @@ class GetNoteUseCase:
             if tag:
                 tags.append(tag)
 
+        flashcards = await self.flashcard_repository.find_by_note(NoteId(note_id), user_id_vo)
+
         return NoteWithLinkedEntities(
             note=note,
             chapters=chapters,
             highlights=highlights,
             tags=tags,
+            flashcards=flashcards,
         )

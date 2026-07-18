@@ -4,6 +4,7 @@
  * crossbill API
  * OpenAPI spec version: 0.1.0
  */
+import type { Flashcard } from './flashcard';
 import type { NoteLinkedChapter } from './noteLinkedChapter';
 import type { NoteLinkedHighlight } from './noteLinkedHighlight';
 import type { NoteLinkedTag } from './noteLinkedTag';
@@ -26,4 +27,5 @@ export interface NoteWithLinks {
   chapters?: NoteLinkedChapter[];
   highlights?: NoteLinkedHighlight[];
   tags?: NoteLinkedTag[];
+  flashcards?: Flashcard[];
 }

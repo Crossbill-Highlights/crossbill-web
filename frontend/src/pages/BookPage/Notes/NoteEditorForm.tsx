@@ -1,5 +1,6 @@
 import type { NoteWithLinks, TagInBook } from '@/api/generated/model';
 import {
+  getGetNoteApiV1NotesNoteIdGetQueryKey,
   getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey,
   useCreateNoteApiV1NotesPost,
   useUpdateNoteApiV1NotesNoteIdPut,
@@ -98,6 +99,12 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
       void queryClient.invalidateQueries({
         queryKey: getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey(book.id),
       });
+      // Refresh the single-note detail so the view dialog reflects edits immediately.
+      if (note) {
+        void queryClient.invalidateQueries({
+          queryKey: getGetNoteApiV1NotesNoteIdGetQueryKey(note.id),
+        });
+      }
     };
 
     const { resolveTags, isCreating: isCreatingTag } = useNoteTagField(book.id);

@@ -60,6 +60,7 @@ export * from './note';
 export * from './noteCreateRequest';
 export * from './noteCreateResponse';
 export * from './noteDeleteResponse';
+export * from './noteFlashcardCreateRequest';
 export * from './noteLinkedChapter';
 export * from './noteLinkedHighlight';
 export * from './noteLinkedTag';

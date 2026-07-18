@@ -7,7 +7,14 @@ from datetime import datetime
 
 from src.domain.common.entity import Entity
 from src.domain.common.exceptions import DomainError
-from src.domain.common.value_objects import BookId, ChapterId, FlashcardId, HighlightId, UserId
+from src.domain.common.value_objects import (
+    BookId,
+    ChapterId,
+    FlashcardId,
+    HighlightId,
+    NoteId,
+    UserId,
+)
 
 
 @dataclass
@@ -17,7 +24,7 @@ class Flashcard(Entity[FlashcardId]):
 
     Business Rules:
     - Question and answer cannot be empty
-    - Flashcard can optionally be linked to a highlight
+    - Flashcard can optionally be linked to a highlight, chapter, or note
     - Flashcard must be associated with a book
     """
 
@@ -28,6 +35,7 @@ class Flashcard(Entity[FlashcardId]):
     answer: str
     highlight_id: HighlightId | None = None
     chapter_id: ChapterId | None = None
+    note_id: NoteId | None = None
 
     def __post_init__(self) -> None:
         """Validate invariants."""
@@ -73,6 +81,7 @@ class Flashcard(Entity[FlashcardId]):
         answer: str,
         highlight_id: HighlightId | None = None,
         chapter_id: ChapterId | None = None,
+        note_id: NoteId | None = None,
     ) -> "Flashcard":
         """Create a new flashcard (ID will be 0 until persisted)."""
         return cls(
@@ -83,6 +92,7 @@ class Flashcard(Entity[FlashcardId]):
             answer=answer.strip(),
             highlight_id=highlight_id,
             chapter_id=chapter_id,
+            note_id=note_id,
         )
 
     @classmethod
@@ -97,6 +107,7 @@ class Flashcard(Entity[FlashcardId]):
         updated_at: datetime,
         highlight_id: HighlightId | None = None,
         chapter_id: ChapterId | None = None,
+        note_id: NoteId | None = None,
     ) -> "Flashcard":
         """Reconstitute a flashcard from persistence."""
         return cls(
@@ -107,4 +118,5 @@ class Flashcard(Entity[FlashcardId]):
             answer=answer,
             highlight_id=highlight_id,
             chapter_id=chapter_id,
+            note_id=note_id,
         )

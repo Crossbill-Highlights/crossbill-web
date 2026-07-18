@@ -18,7 +18,7 @@ import { useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 import { NoteEditorForm, type NoteEditorFormHandle } from './NoteEditorForm';
-import { NoteLinkTabs } from './components/NoteLinkTabs';
+import { NoteTabs } from './components/NoteTabs';
 import { NoteToolbar } from './components/NoteToolbar';
 import { NOTE_KIND_LABELS, type NoteKindValue } from './noteKinds';
 
@@ -191,14 +191,15 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
               onDelete={() => setDeleteConfirmOpen(true)}
               disabled={isDeleting}
             />
-            {(highlights.length > 0 || chapters.length > 0) && (
-              <NoteLinkTabs
-                highlights={highlights}
-                chapters={chapters}
-                onOpenHighlight={handleOpenHighlight}
-                onOpenChapter={handleOpenChapter}
-              />
-            )}
+            <NoteTabs
+              note={activeNote}
+              bookId={book.id}
+              highlights={highlights}
+              chapters={chapters}
+              onOpenHighlight={handleOpenHighlight}
+              onOpenChapter={handleOpenChapter}
+              disabled={isDeleting}
+            />
           </Stack>
         ) : isError ? (
           <Typography color="text.secondary">

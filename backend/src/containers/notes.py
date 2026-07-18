@@ -16,6 +16,7 @@ class NotesContainer(containers.DeclarativeContainer):
     chapter_repository = providers.Dependency()
     highlight_repository = providers.Dependency()
     tag_repository = providers.Dependency()
+    flashcard_repository = providers.Dependency()
 
     create_note_use_case = providers.Factory(
         CreateNoteUseCase,
@@ -31,6 +32,7 @@ class NotesContainer(containers.DeclarativeContainer):
         chapter_repository=chapter_repository,
         highlight_repository=highlight_repository,
         tag_repository=tag_repository,
+        flashcard_repository=flashcard_repository,
     )
     get_notes_by_book_use_case = providers.Factory(
         GetNotesByBookUseCase,

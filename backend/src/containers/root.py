@@ -78,6 +78,7 @@ class RootContainer(containers.DeclarativeContainer):
         ebook_text_extraction_service=shared.ebook_text_extraction_service,
         ai_service=shared.ai_service,
         ai_chat_session_repository=shared.ai_chat_session_repository,
+        note_repository=shared.note_repository,
     )
 
     notes = providers.Container(
@@ -87,6 +88,7 @@ class RootContainer(containers.DeclarativeContainer):
         chapter_repository=shared.chapter_repository,
         highlight_repository=shared.highlight_repository,
         tag_repository=shared.tag_repository,
+        flashcard_repository=shared.flashcard_repository,
     )
 
     job_queue_service = providers.Dependency()
