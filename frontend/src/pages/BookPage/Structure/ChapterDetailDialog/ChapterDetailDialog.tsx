@@ -9,13 +9,14 @@ import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { CommonDialogHorizontalNavigation } from '@/components/dialogs/CommonDialogHorizontalNavigation.tsx';
 import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
+import { DialogTabs, type DialogTabItem } from '@/components/dialogs/DialogTabs.tsx';
 import { ProgressBar } from '@/components/dialogs/ProgressBar.tsx';
 import {
   useModalHorizontalNavigation,
   useModalSwipeNavigation,
 } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { NoteEditorDialog } from '@/pages/BookPage/Notes/NoteEditorDialog';
-import { Box, Button, Tab, Tabs } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { sumBy } from 'lodash';
 import { useMemo, useState } from 'react';
 import { ChapterReviewSection } from './ChapterReviewSection.tsx';
@@ -41,14 +42,6 @@ interface ChapterDetailDialogProps {
   bookFlashcards?: Flashcard[];
 }
 
-const TAB_CHAPTER_REVIEW = 0;
-const TAB_HIGHLIGHTS = 1;
-const TAB_FLASHCARDS = 2;
-const TAB_NOTES = 3;
-
-const formatTabLabel = (label: string, count: number) =>
-  count > 0 ? `${label} (${count})` : label;
-
 export const ChapterDetailDialog = ({
   open,
   onClose,
@@ -64,7 +57,9 @@ export const ChapterDetailDialog = ({
 }: ChapterDetailDialogProps) => {
   const [quizOpen, setQuizOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(TAB_CHAPTER_REVIEW);
+  // Lifted out of DialogTabs so the active tab survives chapter navigation
+  // (the tab content remounts inside the chapter-keyed FadeInOut).
+  const [activeTab, setActiveTab] = useState(0);
   const [chatNoteBody, setChatNoteBody] = useState<string | null>(null);
 
   const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext } =
@@ -98,6 +93,53 @@ export const ChapterDetailDialog = ({
 
   const title = <CommonDialogTitle>{chapter.name}</CommonDialogTitle>;
 
+  const tabs: DialogTabItem[] = [
+    {
+      key: 'review',
+      label: 'Chapter review',
+      content: (
+        <ChapterReviewSection
+          chapterId={chapter.id}
+          bookId={bookId}
+          prereadingSummary={prereadingSummary}
+          onStartQuiz={() => setQuizOpen(true)}
+          onStartChat={() => setChatOpen(true)}
+        />
+      ),
+    },
+    {
+      key: 'highlights',
+      label: 'Highlights',
+      count: highlightCount,
+      content: (
+        <HighlightsSection
+          chapter={chapter}
+          bookId={bookId}
+          bookmarksByHighlightId={bookmarksByHighlightId}
+          availableTags={availableTags}
+        />
+      ),
+    },
+    {
+      key: 'flashcards',
+      label: 'Flashcards',
+      count: flashcardCount,
+      content: (
+        <FlashcardsSection
+          chapter={chapter}
+          bookId={bookId}
+          prereadingSummary={prereadingSummary}
+          bookFlashcards={bookFlashcards}
+        />
+      ),
+    },
+    {
+      key: 'notes',
+      label: 'Notes',
+      content: <NotesSection chapter={chapter} bookId={bookId} />,
+    },
+  ];
+
   const renderContent = () => (
     <Box>
       <Box {...summarySwipeHandlers}>
@@ -106,53 +148,12 @@ export const ChapterDetailDialog = ({
 
       <ChapterToolbar chapterId={chapter.id} bookId={bookId} hasSummary={!!prereadingSummary} />
 
-      <Tabs
-        value={activeTab}
-        onChange={(_, newValue: number) => setActiveTab(newValue)}
-        variant="scrollable"
-        scrollButtons="auto"
-        sx={{ borderBottom: 1, borderColor: 'divider', mt: 1 }}
-        onTouchStart={(e) => e.stopPropagation()}
-        onTouchMove={(e) => e.stopPropagation()}
-        onTouchEnd={(e) => e.stopPropagation()}
-      >
-        <Tab label="Chapter review" />
-        <Tab label={formatTabLabel('Highlights', highlightCount)} />
-        <Tab label={formatTabLabel('Flashcards', flashcardCount)} />
-        <Tab label="Notes" />
-      </Tabs>
-
-      <Box sx={{ pt: 2, pb: 2 }} {...tabSwipeHandlers}>
-        {activeTab === TAB_CHAPTER_REVIEW && (
-          <ChapterReviewSection
-            chapterId={chapter.id}
-            bookId={bookId}
-            prereadingSummary={prereadingSummary}
-            onStartQuiz={() => setQuizOpen(true)}
-            onStartChat={() => setChatOpen(true)}
-          />
-        )}
-
-        {activeTab === TAB_HIGHLIGHTS && (
-          <HighlightsSection
-            chapter={chapter}
-            bookId={bookId}
-            bookmarksByHighlightId={bookmarksByHighlightId}
-            availableTags={availableTags}
-          />
-        )}
-
-        {activeTab === TAB_FLASHCARDS && (
-          <FlashcardsSection
-            chapter={chapter}
-            bookId={bookId}
-            prereadingSummary={prereadingSummary}
-            bookFlashcards={bookFlashcards}
-          />
-        )}
-
-        {activeTab === TAB_NOTES && <NotesSection chapter={chapter} bookId={bookId} />}
-      </Box>
+      <DialogTabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        panelSwipeHandlers={tabSwipeHandlers}
+      />
     </Box>
   );
 
