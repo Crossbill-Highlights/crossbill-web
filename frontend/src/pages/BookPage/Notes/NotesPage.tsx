@@ -58,7 +58,7 @@ export const NotesPage = () => {
   // NOTE: the orval axios mutator unwraps the response (`.then(({ data }) => data)`),
   // so the generated GET hook's `data` is the payload itself, not an AxiosResponse.
   const notes = data?.notes ?? [];
-  const noteModals = useNoteModals();
+  const noteModals = useNoteModals({ allNotes: notes });
 
   const handleKindFilter = (value: NoteKindValue | null) => {
     void navigate({ search: (prev) => ({ ...prev, kind: value ?? undefined }) });

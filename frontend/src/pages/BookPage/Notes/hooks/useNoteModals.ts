@@ -6,6 +6,8 @@ import { useCallback, useRef, useState } from 'react';
 
 interface UseNoteModalsOptions {
   syncToUrl?: boolean;
+  /** Ordered notes for prev/next navigation in the view modal (e.g. the filtered list). */
+  allNotes?: NoteWithLinks[];
 }
 
 export interface NoteModalsController {
@@ -15,10 +17,14 @@ export interface NoteModalsController {
   closeEditor: () => void;
   viewingNoteId: number | null;
   closeView: () => void;
+  /** Index of the viewed note in `allNotes`; -1 when unknown (no navigation). */
+  currentNoteIndex: number;
+  totalCount: number;
+  handleModalNavigate: (newIndex: number) => void;
 }
 
 export const useNoteModals = (options: UseNoteModalsOptions = {}): NoteModalsController => {
-  const { syncToUrl = true } = options;
+  const { syncToUrl = true, allNotes = [] } = options;
   const queryClient = useQueryClient();
 
   const [editorOpen, setEditorOpen] = useState(false);
@@ -66,6 +72,21 @@ export const useNoteModals = (options: UseNoteModalsOptions = {}): NoteModalsCon
     }
   }, [setNoteId, syncToUrl]);
 
+  const currentNoteIndex =
+    viewingNoteId === null ? -1 : allNotes.findIndex((note) => note.id === viewingNoteId);
+
+  // Seed the detail cache like openView so navigation renders instantly, and
+  // replace the history entry so Back closes the modal instead of stepping
+  // through every viewed note.
+  const handleModalNavigate = useCallback(
+    (newIndex: number) => {
+      const note = allNotes[newIndex]!;
+      queryClient.setQueryData(getGetNoteApiV1NotesNoteIdGetQueryKey(note.id), note);
+      setNoteId(note.id, true);
+    },
+    [allNotes, queryClient, setNoteId]
+  );
+
   return {
     openCreate: () => setEditorOpen(true),
     openView,
@@ -73,5 +94,8 @@ export const useNoteModals = (options: UseNoteModalsOptions = {}): NoteModalsCon
     closeEditor: () => setEditorOpen(false),
     viewingNoteId,
     closeView,
+    currentNoteIndex,
+    totalCount: allNotes.length,
+    handleModalNavigate,
   };
 };
