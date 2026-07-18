@@ -20,6 +20,7 @@ import ReactMarkdown from 'react-markdown';
 import { NoteEditorForm, type NoteEditorFormHandle } from './NoteEditorForm';
 import { NoteTabs } from './components/NoteTabs';
 import { NoteToolbar } from './components/NoteToolbar';
+import { useNoteLinks } from './hooks/useNoteLinks';
 import { NOTE_KIND_LABELS, type NoteKindValue } from './noteKinds';
 
 interface NoteViewModalProps {
@@ -94,6 +95,8 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
   const handleConfirmDelete = () => {
     void deleteMutation.mutateAsync({ noteId });
   };
+
+  const noteLinks = useNoteLinks({ bookId: book.id });
 
   const isDeleting = deleteMutation.isPending;
 
@@ -198,7 +201,11 @@ export const NoteViewModal = ({ noteId, onClose }: NoteViewModalProps) => {
               chapters={chapters}
               onOpenHighlight={handleOpenHighlight}
               onOpenChapter={handleOpenChapter}
-              disabled={isDeleting}
+              onUnlinkHighlight={(highlightId) =>
+                noteLinks.unlinkHighlight(activeNote, highlightId)
+              }
+              onUnlinkChapter={(chapterId) => noteLinks.unlinkChapter(activeNote, chapterId)}
+              disabled={isDeleting || noteLinks.isPending}
             />
           </Stack>
         ) : isError ? (

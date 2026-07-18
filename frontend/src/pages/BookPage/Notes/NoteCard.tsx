@@ -1,6 +1,7 @@
 import type { NoteWithLinks } from '@/api/generated/model';
 import { markdownStyles } from '@/theme/theme';
 import { Box, Chip, Stack, styled, Typography, useTheme } from '@mui/material';
+import type { ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 import { NOTE_KIND_LABELS, type NoteKindValue } from './noteKinds';
@@ -8,6 +9,11 @@ import { NOTE_KIND_LABELS, type NoteKindValue } from './noteKinds';
 interface NoteCardProps {
   note: NoteWithLinks;
   onClick: () => void;
+  /**
+   * Right-aligned action in the title row (e.g. an unlink button). The whole
+   * card is clickable, so the action must stopPropagation on its own click.
+   */
+  action?: ReactNode;
 }
 
 const NoteStyled = styled(Box)(({ theme }) => ({
@@ -26,7 +32,7 @@ const NoteStyled = styled(Box)(({ theme }) => ({
   },
 }));
 
-export const NoteCard = ({ note, onClick }: NoteCardProps) => {
+export const NoteCard = ({ note, onClick, action }: NoteCardProps) => {
   const theme = useTheme();
 
   return (
@@ -35,15 +41,20 @@ export const NoteCard = ({ note, onClick }: NoteCardProps) => {
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(event) => {
+        // Ignore keys bubbling from the action button — only the card itself.
+        if (event.target !== event.currentTarget) return;
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           onClick();
         }
       }}
     >
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
-        <Typography variant="h3">{note.title}</Typography>
-        {note.kind && <Chip size="small" label={NOTE_KIND_LABELS[note.kind as NoteKindValue]} />}
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.5 }}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography variant="h3">{note.title}</Typography>
+          {note.kind && <Chip size="small" label={NOTE_KIND_LABELS[note.kind as NoteKindValue]} />}
+        </Stack>
+        {action}
       </Stack>
       {note.body && (
         <Box

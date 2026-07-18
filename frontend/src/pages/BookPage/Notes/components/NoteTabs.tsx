@@ -1,7 +1,19 @@
 import type { Highlight, NoteLinkedChapter, NoteWithLinks } from '@/api/generated/model';
 import { HighlightCard } from '@/pages/BookPage/Highlights/HighlightCard.tsx';
 import { NoteFlashcardSection } from '@/pages/BookPage/Notes/components/NoteFlashcardSection.tsx';
-import { Box, List, ListItemButton, ListItemText, Stack, Tab, Tabs } from '@mui/material';
+import { LinkOffIcon } from '@/theme/Icons.tsx';
+import {
+  Box,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Stack,
+  Tab,
+  Tabs,
+  Tooltip,
+} from '@mui/material';
 import { type ReactElement, useState } from 'react';
 
 interface NoteTabsProps {
@@ -11,6 +23,8 @@ interface NoteTabsProps {
   chapters: NoteLinkedChapter[];
   onOpenHighlight: (highlightId: number) => void;
   onOpenChapter: (chapterId: number) => void;
+  onUnlinkHighlight?: (highlightId: number) => void;
+  onUnlinkChapter?: (chapterId: number) => void;
   disabled?: boolean;
 }
 
@@ -31,6 +45,8 @@ export const NoteTabs = ({
   chapters,
   onOpenHighlight,
   onOpenChapter,
+  onUnlinkHighlight,
+  onUnlinkChapter,
   disabled = false,
 }: NoteTabsProps) => {
   const tabs = [
@@ -40,9 +56,22 @@ export const NoteTabs = ({
       content: (
         <Stack component="ul" sx={{ gap: 2, listStyle: 'none', p: 0, m: 0 }}>
           {highlights.map((highlight) => (
-            <li key={highlight.id}>
+            <Box component="li" key={highlight.id} sx={{ position: 'relative' }}>
               <HighlightCard highlight={highlight} onOpenModal={onOpenHighlight} />
-            </li>
+              {onUnlinkHighlight && (
+                <Tooltip title="Unlink from note">
+                  <IconButton
+                    aria-label="Unlink highlight"
+                    size="small"
+                    disabled={disabled}
+                    onClick={() => onUnlinkHighlight(highlight.id)}
+                    sx={{ position: 'absolute', top: 8, right: 8 }}
+                  >
+                    <LinkOffIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
           ))}
         </Stack>
       ),
@@ -53,9 +82,29 @@ export const NoteTabs = ({
       content: (
         <List disablePadding>
           {chapters.map((chapter) => (
-            <ListItemButton key={chapter.id} onClick={() => onOpenChapter(chapter.id)}>
-              <ListItemText primary={chapter.name} />
-            </ListItemButton>
+            <ListItem
+              key={chapter.id}
+              disablePadding
+              secondaryAction={
+                onUnlinkChapter && (
+                  <Tooltip title="Unlink from note">
+                    <IconButton
+                      edge="end"
+                      aria-label="Unlink chapter"
+                      size="small"
+                      disabled={disabled}
+                      onClick={() => onUnlinkChapter(chapter.id)}
+                    >
+                      <LinkOffIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )
+              }
+            >
+              <ListItemButton onClick={() => onOpenChapter(chapter.id)}>
+                <ListItemText primary={chapter.name} />
+              </ListItemButton>
+            </ListItem>
           ))}
         </List>
       ),
