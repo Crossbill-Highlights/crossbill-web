@@ -40,6 +40,7 @@ export {
   Delete as DeleteIcon,
   Edit as EditIcon,
   Link as LinkIcon,
+  LinkOff as LinkOffIcon,
   NoteAdd as NoteAddIcon,
   Refresh as RegenerateIcon,
   SwapVert as SortIcon,
