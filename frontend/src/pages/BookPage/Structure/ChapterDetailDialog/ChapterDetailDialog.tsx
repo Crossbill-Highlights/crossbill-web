@@ -5,6 +5,7 @@ import type {
   Flashcard,
   TagInBook,
 } from '@/api/generated/model';
+import { useGetNotesForBookApiV1BooksBookIdNotesGet } from '@/api/generated/notes/notes.ts';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { CommonDialogHorizontalNavigation } from '@/components/dialogs/CommonDialogHorizontalNavigation.tsx';
@@ -15,6 +16,7 @@ import {
   useModalHorizontalNavigation,
   useModalSwipeNavigation,
 } from '@/components/dialogs/useModalHorizontalNavigation.ts';
+import { LinkedNotesSection } from '@/pages/BookPage/Notes/components/LinkedNotesSection.tsx';
 import { NoteEditorDialog } from '@/pages/BookPage/Notes/NoteEditorDialog';
 import { Box, Button } from '@mui/material';
 import { sumBy } from 'lodash';
@@ -25,7 +27,6 @@ import { ChatDialog } from './ChatDialog.tsx';
 import { CHAT_VARIANT, QUIZ_VARIANT } from './chatVariants.ts';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
 import { HighlightsSection } from './HighlightsSection.tsx';
-import { NotesSection } from './NotesSection.tsx';
 import { PrereadingSummarySection } from './PrereadingSummarySection.tsx';
 
 interface ChapterDetailDialogProps {
@@ -84,6 +85,14 @@ export const ChapterDetailDialog = ({
 
   const prereadingSummary = prereadingByChapterId[chapter.id];
 
+  const { data: notesData, isLoading: notesLoading } = useGetNotesForBookApiV1BooksBookIdNotesGet(
+    bookId,
+    { chapter_id: chapter.id }
+  );
+  // NOTE: the orval axios mutator unwraps the response (`.then(({ data }) => data)`),
+  // so the generated GET hook's `data` is the payload itself, not an AxiosResponse.
+  const notes = notesData?.notes ?? [];
+
   const highlightCount = chapter.highlights.length;
   const flashcardCount = useMemo(() => {
     const fromHighlights = sumBy(chapter.highlights, (h) => h.flashcards.length);
@@ -136,7 +145,15 @@ export const ChapterDetailDialog = ({
     {
       key: 'notes',
       label: 'Notes',
-      content: <NotesSection chapter={chapter} bookId={bookId} />,
+      count: notes.length,
+      content: (
+        <LinkedNotesSection
+          bookId={bookId}
+          target={{ kind: 'chapter', id: chapter.id }}
+          notes={notes}
+          isLoading={notesLoading}
+        />
+      ),
     },
   ];
 

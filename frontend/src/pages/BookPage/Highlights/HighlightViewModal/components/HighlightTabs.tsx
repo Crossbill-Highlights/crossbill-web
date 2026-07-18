@@ -1,8 +1,8 @@
 import type { Highlight } from '@/api/generated/model';
 import { useGetNotesForBookApiV1BooksBookIdNotesGet } from '@/api/generated/notes/notes.ts';
 import { DialogTabs, type DialogTabItem } from '@/components/dialogs/DialogTabs.tsx';
+import { LinkedNotesSection } from '@/pages/BookPage/Notes/components/LinkedNotesSection.tsx';
 import { HighlightFlashcardSection } from './HighlightFlashcardSection.tsx';
-import { HighlightNotesSection } from './HighlightNotesSection.tsx';
 
 interface HighlightTabsProps {
   highlight: Highlight;
@@ -28,9 +28,9 @@ export const HighlightTabs = ({ highlight, bookId, disabled = false }: Highlight
       label: 'Notes',
       count: notes.length,
       content: (
-        <HighlightNotesSection
-          highlight={highlight}
+        <LinkedNotesSection
           bookId={bookId}
+          target={{ kind: 'highlight', id: highlight.id, chapterId: highlight.chapter_id }}
           notes={notes}
           isLoading={isLoading}
           disabled={disabled}
