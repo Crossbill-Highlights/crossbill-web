@@ -6,7 +6,6 @@ import { FlashcardListCard } from '@/pages/BookPage/Flashcards/FlashcardListCard
 import { FlashcardSuggestions } from '@/pages/BookPage/Flashcards/FlashcardSuggestions.tsx';
 import { Box, Stack, Typography } from '@mui/material';
 import type { QueryKey } from '@tanstack/react-query';
-import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 
 /**
@@ -18,7 +17,6 @@ interface FlashcardSectionProps {
   /** Existing cards, pre-mapped and pre-sorted by the caller. */
   flashcards: FlashcardWithContext[];
   bookId: number;
-  visible: boolean;
   disabled?: boolean;
   isProcessing: boolean;
   /** Creates a card; resolves true on success (form is cleared only then). */
@@ -79,7 +77,6 @@ const FlashcardsList = ({
 export const FlashcardSection = ({
   flashcards,
   bookId,
-  visible,
   disabled = false,
   isProcessing,
   onSaveFlashcard,
@@ -127,54 +124,40 @@ export const FlashcardSection = ({
   };
 
   return (
-    <AnimatePresence initial={false}>
-      {visible && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.2, ease: 'easeInOut' }}
-          style={{ overflow: 'hidden' }}
-        >
-          <Box>
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              Flashcards
-            </Typography>
+    <Box>
+      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+        Flashcards
+      </Typography>
 
-            <FlashcardsList
-              flashcardsWithContext={flashcards}
-              bookId={bookId}
-              onEdit={handleEditFlashcard}
-              additionalInvalidateKeys={additionalInvalidateKeys}
-            />
+      <FlashcardsList
+        flashcardsWithContext={flashcards}
+        bookId={bookId}
+        onEdit={handleEditFlashcard}
+        additionalInvalidateKeys={additionalInvalidateKeys}
+      />
 
-            <CreateFlashcardForm
-              question={question}
-              answer={answer}
-              onQuestionChange={setQuestion}
-              onAnswerChange={setAnswer}
-              editingFlashcardId={editingFlashcardId}
-              isDisabled={disabled || isProcessing}
-              isProcessing={isProcessing}
-              onSave={handleSave}
-              onCancelEdit={handleCancelEdit}
-            />
+      <CreateFlashcardForm
+        question={question}
+        answer={answer}
+        onQuestionChange={setQuestion}
+        onAnswerChange={setAnswer}
+        editingFlashcardId={editingFlashcardId}
+        isDisabled={disabled || isProcessing}
+        isProcessing={isProcessing}
+        onSave={handleSave}
+        onCancelEdit={handleCancelEdit}
+      />
 
-            <AIFeature>
-              <FlashcardSuggestions
-                suggestions={suggestions}
-                isLoading={suggestionsLoading}
-                disabled={disabled}
-                onFetchSuggestions={() => void onFetchSuggestions()}
-                onAcceptSuggestion={(suggestion, index) =>
-                  void handleAcceptSuggestion(suggestion, index)
-                }
-                onRejectSuggestion={onRemoveSuggestion}
-              />
-            </AIFeature>
-          </Box>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      <AIFeature>
+        <FlashcardSuggestions
+          suggestions={suggestions}
+          isLoading={suggestionsLoading}
+          disabled={disabled}
+          onFetchSuggestions={() => void onFetchSuggestions()}
+          onAcceptSuggestion={(suggestion, index) => void handleAcceptSuggestion(suggestion, index)}
+          onRejectSuggestion={onRemoveSuggestion}
+        />
+      </AIFeature>
+    </Box>
   );
 };

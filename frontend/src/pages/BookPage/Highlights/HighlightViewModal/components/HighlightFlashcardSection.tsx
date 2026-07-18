@@ -65,7 +65,6 @@ export const HighlightFlashcardSection = ({
     <FlashcardSection
       flashcards={flashcardsWithContext}
       bookId={bookId}
-      visible={true}
       disabled={disabled}
       isProcessing={isProcessing}
       onSaveFlashcard={saveFlashcard}
