@@ -43,8 +43,15 @@ export const Toolbar = ({
     showSnackbar
   );
 
+  // Copy a link that works from any context: `highlightId` is only a validated
+  // search param on the highlights route, so build the URL on that route —
+  // copying the current URL from e.g. the chapter dialog would be a dead link.
   const handleCopyLink = async () => {
-    await copyUrlWithSearchParam('highlightId', highlightId);
+    await copyUrlWithSearchParam(
+      'highlightId',
+      highlightId,
+      `${window.location.origin}/book/${bookId}/highlights`
+    );
   };
 
   const handleCopyContent = async () => {
