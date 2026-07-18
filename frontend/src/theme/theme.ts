@@ -51,7 +51,7 @@ const customColors = {
 
   // Background colors
   backgrounds: {
-    subtle: 'rgba(0, 0, 0, 0.05)', // Very subtle background (dialog ProgressBar track, markdown code blocks)
+    subtle: 'rgba(0, 0, 0, 0.05)', // Very subtle background (dialog ProgressBar track, markdown code blocks, chat bubbles)
   },
 };
 
