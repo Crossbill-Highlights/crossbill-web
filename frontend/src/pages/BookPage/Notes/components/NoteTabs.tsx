@@ -1,19 +1,8 @@
 import type { Highlight, NoteLinkedChapter, NoteWithLinks } from '@/api/generated/model';
+import { UnlinkButton } from '@/components/buttons/UnlinkButton.tsx';
 import { HighlightCard } from '@/pages/BookPage/Highlights/HighlightCard.tsx';
 import { NoteFlashcardSection } from '@/pages/BookPage/Notes/components/NoteFlashcardSection.tsx';
-import { LinkOffIcon } from '@/theme/Icons.tsx';
-import {
-  Box,
-  IconButton,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Stack,
-  Tab,
-  Tabs,
-  Tooltip,
-} from '@mui/material';
+import { Box, List, ListItem, ListItemButton, ListItemText, Stack, Tab, Tabs } from '@mui/material';
 import { type ReactElement, useState } from 'react';
 
 interface NoteTabsProps {
@@ -59,17 +48,12 @@ export const NoteTabs = ({
             <Box component="li" key={highlight.id} sx={{ position: 'relative' }}>
               <HighlightCard highlight={highlight} onOpenModal={onOpenHighlight} />
               {onUnlinkHighlight && (
-                <Tooltip title="Unlink from note">
-                  <IconButton
-                    aria-label="Unlink highlight"
-                    size="small"
-                    disabled={disabled}
-                    onClick={() => onUnlinkHighlight(highlight.id)}
-                    sx={{ position: 'absolute', top: 8, right: 8 }}
-                  >
-                    <LinkOffIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
+                <UnlinkButton
+                  title="Unlink from note"
+                  disabled={disabled}
+                  onClick={() => onUnlinkHighlight(highlight.id)}
+                  sx={{ position: 'absolute', top: 8, right: 8 }}
+                />
               )}
             </Box>
           ))}
@@ -87,17 +71,12 @@ export const NoteTabs = ({
               disablePadding
               secondaryAction={
                 onUnlinkChapter && (
-                  <Tooltip title="Unlink from note">
-                    <IconButton
-                      edge="end"
-                      aria-label="Unlink chapter"
-                      size="small"
-                      disabled={disabled}
-                      onClick={() => onUnlinkChapter(chapter.id)}
-                    >
-                      <LinkOffIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                  <UnlinkButton
+                    edge="end"
+                    title="Unlink from note"
+                    disabled={disabled}
+                    onClick={() => onUnlinkChapter(chapter.id)}
+                  />
                 )
               }
             >

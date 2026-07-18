@@ -1,13 +1,14 @@
 import type { ChapterWithHighlights } from '@/api/generated/model';
 import { useGetNotesForBookApiV1BooksBookIdNotesGet } from '@/api/generated/notes/notes.ts';
 import { Spinner } from '@/components/animations/Spinner.tsx';
+import { UnlinkButton } from '@/components/buttons/UnlinkButton.tsx';
 import { NoteCard } from '@/pages/BookPage/Notes/NoteCard';
 import { NoteModals } from '@/pages/BookPage/Notes/NoteModals';
 import { NotePickerDialog } from '@/pages/BookPage/Notes/components/NotePickerDialog.tsx';
 import { useNoteLinks } from '@/pages/BookPage/Notes/hooks/useNoteLinks';
 import { useNoteModals } from '@/pages/BookPage/Notes/hooks/useNoteModals';
-import { AddIcon, LinkIcon, LinkOffIcon } from '@/theme/Icons.tsx';
-import { Box, Button, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import { AddIcon, LinkIcon } from '@/theme/Icons.tsx';
+import { Box, Button, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
 
 interface NotesSectionProps {
@@ -62,19 +63,11 @@ export const NotesSection = ({ chapter, bookId }: NotesSectionProps) => {
               note={note}
               onClick={() => noteModals.openView(note)}
               action={
-                <Tooltip title="Unlink from chapter">
-                  <IconButton
-                    aria-label="Unlink note"
-                    size="small"
-                    disabled={isDisabled}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      noteLinks.unlinkChapter(note, chapter.id);
-                    }}
-                  >
-                    <LinkOffIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
+                <UnlinkButton
+                  title="Unlink from chapter"
+                  disabled={isDisabled}
+                  onClick={() => noteLinks.unlinkChapter(note, chapter.id)}
+                />
               }
             />
           </li>
