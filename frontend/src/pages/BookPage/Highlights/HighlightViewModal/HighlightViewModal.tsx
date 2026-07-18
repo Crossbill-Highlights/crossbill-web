@@ -9,6 +9,7 @@ import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { CommonDialogHorizontalNavigation } from '@/components/dialogs/CommonDialogHorizontalNavigation.tsx';
 import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
+import { ProgressBar } from '@/components/dialogs/ProgressBar.tsx';
 import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { TagInput } from '@/pages/BookPage/Highlights/HighlightViewModal/components/TagInput.tsx';
@@ -19,7 +20,6 @@ import { useState } from 'react';
 import { HighlightContent } from '../../common/HighlightContent.tsx';
 import { HighlightTabs } from './components/HighlightTabs.tsx';
 import { LabelEditorPopover } from './components/LabelEditorPopover.tsx';
-import { ProgressBar } from './components/ProgressBar.tsx';
 import { Toolbar } from './components/Toolbar.tsx';
 
 export interface HighlightViewModalProps {
@@ -153,7 +153,7 @@ export const HighlightViewModal = ({
         ) : undefined
       }
       footerActions={
-        <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
           <Button onClick={handleClose} disabled={isLoading}>
             Close
           </Button>

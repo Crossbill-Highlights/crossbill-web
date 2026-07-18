@@ -9,11 +9,11 @@ import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { CommonDialogHorizontalNavigation } from '@/components/dialogs/CommonDialogHorizontalNavigation.tsx';
 import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
+import { ProgressBar } from '@/components/dialogs/ProgressBar.tsx';
 import {
   useModalHorizontalNavigation,
   useModalSwipeNavigation,
 } from '@/components/dialogs/useModalHorizontalNavigation.ts';
-import { ProgressBar } from '@/pages/BookPage/Highlights/HighlightViewModal/components/ProgressBar.tsx';
 import { NoteEditorDialog } from '@/pages/BookPage/Notes/NoteEditorDialog';
 import { Box, Button, Tab, Tabs } from '@mui/material';
 import { sumBy } from 'lodash';
@@ -169,7 +169,7 @@ export const ChapterDetailDialog = ({
           ) : undefined
         }
         footerActions={
-          <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
             <Button onClick={onClose}>Close</Button>
           </Box>
         }

@@ -1,6 +1,6 @@
 import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip.tsx';
+import { DialogToolbar } from '@/components/dialogs/DialogToolbar.tsx';
 import { CopyIcon, DeleteIcon, EditIcon } from '@/theme/Icons.tsx';
-import { Box } from '@mui/material';
 
 interface NoteToolbarProps {
   onEdit: () => void;
@@ -10,7 +10,7 @@ interface NoteToolbarProps {
 }
 
 export const NoteToolbar = ({ onEdit, onCopy, onDelete, disabled = false }: NoteToolbarProps) => (
-  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+  <DialogToolbar>
     <IconButtonWithTooltip
       title="Edit note"
       ariaLabel="Edit note"
@@ -32,5 +32,5 @@ export const NoteToolbar = ({ onEdit, onCopy, onDelete, disabled = false }: Note
       disabled={disabled}
       icon={<DeleteIcon />}
     />
-  </Box>
+  </DialogToolbar>
 );

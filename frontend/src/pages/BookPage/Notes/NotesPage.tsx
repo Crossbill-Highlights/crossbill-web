@@ -1,17 +1,10 @@
 import type { GetNotesForBookApiV1BooksBookIdNotesGetParams } from '@/api/generated/model';
 import { useGetNotesForBookApiV1BooksBookIdNotesGet } from '@/api/generated/notes/notes.ts';
+import { CardList } from '@/components/CardList.tsx';
 import { Spinner } from '@/components/animations/Spinner.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { AddIcon } from '@/theme/Icons.tsx';
-import {
-  Box,
-  Button,
-  Divider,
-  Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Divider, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -62,6 +55,9 @@ export const NotesPage = () => {
     tag_id: selectedTagId,
   };
   const { data, isLoading, isError } = useGetNotesForBookApiV1BooksBookIdNotesGet(book.id, params);
+  // NOTE: the orval axios mutator unwraps the response (`.then(({ data }) => data)`),
+  // so the generated GET hook's `data` is the payload itself, not an AxiosResponse.
+  const notes = data?.notes ?? [];
   const noteModals = useNoteModals();
 
   const handleKindFilter = (value: NoteKindValue | null) => {
@@ -75,10 +71,6 @@ export const NotesPage = () => {
       replace: true,
     });
   };
-
-  // NOTE: the orval axios mutator unwraps the response (`.then(({ data }) => data)`),
-  // so the generated GET hook's `data` is the payload itself, not an AxiosResponse.
-  const notes = data?.notes ?? [];
 
   const filterTabs: FilterTab[] = [
     {
@@ -140,13 +132,13 @@ export const NotesPage = () => {
         </Typography>
       )}
 
-      <Stack component="ul" sx={{ gap: 2, listStyle: 'none', p: 0, m: 0 }}>
+      <CardList>
         {notes.map((note) => (
           <li key={note.id}>
             <NoteCard note={note} onClick={() => noteModals.openView(note)} />
           </li>
         ))}
-      </Stack>
+      </CardList>
 
       {!isDesktop &&
         fabContainerEl &&
