@@ -8,10 +8,17 @@ interface NotePickerDialogProps {
   open: boolean;
   onClose: () => void;
   bookId: number;
+  title: string;
   onSelect: (note: NoteWithLinks) => void;
 }
 
-export const NotePickerDialog = ({ open, onClose, bookId, onSelect }: NotePickerDialogProps) => {
+export const NotePickerDialog = ({
+  open,
+  onClose,
+  bookId,
+  title,
+  onSelect,
+}: NotePickerDialogProps) => {
   const { data, isLoading } = useGetNotesForBookApiV1BooksBookIdNotesGet(bookId, undefined, {
     query: { enabled: open },
   });
@@ -21,7 +28,7 @@ export const NotePickerDialog = ({ open, onClose, bookId, onSelect }: NotePicker
   const notes = data?.notes ?? [];
 
   return (
-    <CommonDialog open={open} onClose={onClose} title="Add highlight to note" maxWidth="sm">
+    <CommonDialog open={open} onClose={onClose} title={title} maxWidth="sm">
       {isLoading && <Spinner />}
       {!isLoading && notes.length === 0 && (
         <Typography color="text.secondary">No notes in this book yet.</Typography>
