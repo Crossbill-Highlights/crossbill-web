@@ -1,7 +1,8 @@
 import type { FlashcardSuggestionItem } from '@/api/generated/model';
 import { AIActionButton } from '@/components/buttons/AIActionButton';
+import { CardList } from '@/components/CardList.tsx';
 import { FlashcardSuggestionCard } from '@/pages/BookPage/Flashcards/FlashcardSuggestionCard.tsx';
-import { Box, CircularProgress, Stack, Typography } from '@mui/material';
+import { Box, CircularProgress, Typography } from '@mui/material';
 
 interface FlashcardSuggestionsProps {
   suggestions: FlashcardSuggestionItem[];
@@ -41,16 +42,7 @@ export const FlashcardSuggestions = ({
       )}
 
       {!isLoading && suggestions.length > 0 && (
-        <Stack
-          component="ul"
-          sx={{
-            gap: 2,
-            listStyle: 'none',
-            p: 0,
-            m: 0,
-            mb: 2,
-          }}
-        >
+        <CardList sx={{ mb: 2 }}>
           {suggestions.map((suggestion, index) => (
             <li key={index}>
               <FlashcardSuggestionCard
@@ -61,7 +53,7 @@ export const FlashcardSuggestions = ({
               />
             </li>
           ))}
-        </Stack>
+        </CardList>
       )}
     </>
   );
