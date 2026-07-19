@@ -5,9 +5,9 @@ import {
   useCreateNoteApiV1NotesPost,
   useUpdateNoteApiV1NotesNoteIdPut,
 } from '@/api/generated/notes/notes.ts';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
-import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { TagInput } from '@/pages/BookPage/Highlights/HighlightViewModal/components/TagInput.tsx';
+import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
+import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { Autocomplete, Box, MenuItem, TextField } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { forwardRef, useEffect, useImperativeHandle } from 'react';
@@ -61,7 +61,7 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
     ref
   ) {
     const { book } = useBookPage();
-    const { showSnackbar } = useSnackbar();
+    const { mutationErrorHandler } = useBookMutationHelpers(book.id);
     const queryClient = useQueryClient();
 
     const chapterOptions: ChapterOption[] = book.chapters.map((chapter) => ({
@@ -115,10 +115,7 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
           invalidateNotes();
           onSaved();
         },
-        onError: (error) => {
-          console.error('Failed to create note:', error);
-          showSnackbar('Failed to create note. Please try again.', 'error');
-        },
+        onError: mutationErrorHandler('create note'),
       },
     });
     const updateMutation = useUpdateNoteApiV1NotesNoteIdPut({
@@ -127,10 +124,7 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
           invalidateNotes();
           onSaved();
         },
-        onError: (error) => {
-          console.error('Failed to update note:', error);
-          showSnackbar('Failed to update note. Please try again.', 'error');
-        },
+        onError: mutationErrorHandler('update note'),
       },
     });
 

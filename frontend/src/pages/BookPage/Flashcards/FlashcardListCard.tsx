@@ -1,10 +1,9 @@
-import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/generated/flashcards/flashcards.ts';
 import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
-import { FlashcardCard } from '@/pages/BookPage/Flashcards/FlashcardCard.tsx';
 import { FlashcardWithContext } from '@/pages/BookPage/Flashcards/FlashcardChapterList.tsx';
+import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
+import { FlashcardCard } from '@/pages/BookPage/Flashcards/FlashcardCard.tsx';
 import { DeleteIcon, EditIcon } from '@/theme/Icons.tsx';
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -28,22 +27,17 @@ export const FlashcardListCard = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const queryClient = useQueryClient();
-  const { showSnackbar } = useSnackbar();
+  const { mutationErrorHandler, invalidateBookDetails } = useBookMutationHelpers(bookId);
 
   const deleteMutation = useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete({
     mutation: {
       onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-        });
+        invalidateBookDetails();
         for (const queryKey of additionalInvalidateKeys) {
           void queryClient.invalidateQueries({ queryKey });
         }
       },
-      onError: (error) => {
-        console.error('Failed to delete flashcard:', error);
-        showSnackbar('Failed to delete flashcard. Please try again.', 'error');
-      },
+      onError: mutationErrorHandler('delete flashcard'),
     },
   });
 

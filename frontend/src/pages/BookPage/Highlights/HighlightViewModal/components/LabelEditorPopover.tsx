@@ -1,9 +1,8 @@
-import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import {
   getGetBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGetQueryKey,
   useUpdateHighlightLabelApiV1HighlightLabelsStyleIdPatch,
 } from '@/api/generated/highlight-labels/highlight-labels.ts';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { LABEL_COLORS } from '@/utils/colorUtils.ts';
 import { Box, Popover, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
@@ -34,23 +33,18 @@ const LabelEditorContent = ({
   onClose,
 }: LabelEditorContentProps) => {
   const queryClient = useQueryClient();
-  const { showSnackbar } = useSnackbar();
+  const { mutationErrorHandler, invalidateBookDetails } = useBookMutationHelpers(bookId);
   const [labelText, setLabelText] = useState(currentLabel || '');
 
   const updateMutation = useUpdateHighlightLabelApiV1HighlightLabelsStyleIdPatch({
     mutation: {
       onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-        });
+        invalidateBookDetails();
         void queryClient.invalidateQueries({
           queryKey: getGetBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGetQueryKey(bookId),
         });
       },
-      onError: (error: Error) => {
-        console.error('Failed to update label:', error);
-        showSnackbar('Failed to update label. Please try again.', 'error');
-      },
+      onError: mutationErrorHandler('update label'),
     },
   });
 

@@ -1,11 +1,6 @@
-import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
-import {
-  getGetTagsApiV1BooksBookIdTagsGetQueryKey,
-  useCreateTagApiV1BooksBookIdTagPost,
-} from '@/api/generated/highlights/highlights.ts';
+import { useCreateTagApiV1BooksBookIdTagPost } from '@/api/generated/highlights/highlights.ts';
 import type { TagInBook } from '@/api/generated/model';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
-import { useQueryClient } from '@tanstack/react-query';
+import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 
 /**
  * Tag-field logic for the note editor: resolve the `(tag | string)` values from
@@ -28,23 +23,12 @@ export interface NoteTagField {
 }
 
 export const useNoteTagField = (bookId: number): NoteTagField => {
-  const queryClient = useQueryClient();
-  const { showSnackbar } = useSnackbar();
+  const { mutationErrorHandler, invalidateBookAndTags } = useBookMutationHelpers(bookId);
 
   const createTagMutation = useCreateTagApiV1BooksBookIdTagPost({
     mutation: {
-      onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-        });
-        void queryClient.invalidateQueries({
-          queryKey: getGetTagsApiV1BooksBookIdTagsGetQueryKey(bookId),
-        });
-      },
-      onError: (error) => {
-        console.error('Failed to create tag:', error);
-        showSnackbar('Failed to create tag. Please try again.', 'error');
-      },
+      onSuccess: invalidateBookAndTags,
+      onError: mutationErrorHandler('create tag'),
     },
   });
 

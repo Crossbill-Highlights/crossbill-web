@@ -13,6 +13,7 @@ import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx'
 import { ProgressBar } from '@/components/dialogs/ProgressBar.tsx';
 import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { markdownStyles } from '@/theme/theme';
 import { copyUrlWithSearchParam } from '@/utils/clipboard.ts';
@@ -57,6 +58,7 @@ export const NoteViewModal = ({
   const theme = useTheme();
   const { book } = useBookPage();
   const { showSnackbar } = useSnackbar();
+  const { mutationErrorHandler } = useBookMutationHelpers(book.id);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -112,10 +114,7 @@ export const NoteViewModal = ({
         setDeleteConfirmOpen(false);
         onClose();
       },
-      onError: (error) => {
-        console.error('Failed to delete note:', error);
-        showSnackbar('Failed to delete note. Please try again.', 'error');
-      },
+      onError: mutationErrorHandler('delete note'),
     },
   });
 
