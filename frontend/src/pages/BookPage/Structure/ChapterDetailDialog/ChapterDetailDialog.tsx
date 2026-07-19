@@ -117,6 +117,19 @@ export const ChapterDetailDialog = ({
       ),
     },
     {
+      key: 'notes',
+      label: 'Notes',
+      count: notes.length,
+      content: (
+        <LinkedNotesSection
+          bookId={bookId}
+          target={{ kind: 'chapter', id: chapter.id }}
+          notes={notes}
+          isLoading={notesLoading}
+        />
+      ),
+    },
+    {
       key: 'highlights',
       label: 'Highlights',
       count: highlightCount,
@@ -139,19 +152,6 @@ export const ChapterDetailDialog = ({
           bookId={bookId}
           prereadingSummary={prereadingSummary}
           bookFlashcards={bookFlashcards}
-        />
-      ),
-    },
-    {
-      key: 'notes',
-      label: 'Notes',
-      count: notes.length,
-      content: (
-        <LinkedNotesSection
-          bookId={bookId}
-          target={{ kind: 'chapter', id: chapter.id }}
-          notes={notes}
-          isLoading={notesLoading}
         />
       ),
     },
