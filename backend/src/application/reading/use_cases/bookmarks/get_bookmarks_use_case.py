@@ -1,10 +1,10 @@
 """Use case for getting bookmarks."""
 
+from src.application.common.ownership import require_book
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.reading.entities.bookmark import Bookmark
-from src.domain.reading.exceptions import BookNotFoundError
 
 
 class GetBookmarksUseCase:
@@ -35,9 +35,7 @@ class GetBookmarksUseCase:
         user_id_vo = UserId(user_id)
 
         # Validate book exists and belongs to user
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         # Get bookmarks
         return await self.bookmark_repository.find_by_book(book_id_vo, user_id_vo)

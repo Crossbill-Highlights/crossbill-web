@@ -2,6 +2,7 @@
 
 import structlog
 
+from src.application.common.ownership import require_book
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
 from src.application.notes.protocols.note_repository import NoteRepositoryProtocol
@@ -12,7 +13,6 @@ from src.application.reading.protocols.tag_repository import (
 )
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.notes.entities.note import Note
-from src.domain.reading.exceptions import BookNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -48,9 +48,7 @@ class CreateNoteUseCase:
         user_id_vo = UserId(user_id)
         book_id_vo = BookId(book_id)
 
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         await validate_link_targets(
             user_id=user_id_vo,

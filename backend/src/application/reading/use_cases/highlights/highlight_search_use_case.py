@@ -4,13 +4,13 @@ Book-scoped highlight search.
 Provides full-text search within a specific book's highlights.
 """
 
+from src.application.common.ownership import require_book
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.application.reading.protocols.highlight_style_repository import (
     HighlightStyleRepositoryProtocol,
 )
 from src.domain.common.value_objects import BookId, UserId
-from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights,
     HighlightGroupingService,
@@ -61,9 +61,7 @@ class HighlightSearchUseCase:
         user_id_vo = UserId(user_id)
 
         # Verify book exists and belongs to user
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         # Search highlights (returns domain entities)
         highlights_with_context = await self.highlight_repository.search(

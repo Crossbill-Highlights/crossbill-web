@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 import structlog
 
+from src.application.common.ownership import require_book
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.application.reading.protocols.ebook_text_extraction_service import (
@@ -21,7 +22,6 @@ from src.application.reading.protocols.reading_session_repository import (
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.reading_session import ReadingSession
-from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_style_resolver import (
     HighlightStyleResolver,
     ResolvedLabel,
@@ -98,9 +98,7 @@ class ReadingSessionQueryUseCase:
         user_id_vo = UserId(user_id)
 
         # Validate book exists and belongs to user
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        book = await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         # Resolve epub content once for the book
         epub_content = None

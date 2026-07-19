@@ -2,9 +2,9 @@
 
 from dataclasses import dataclass
 
+from src.application.common.ownership import require_book_by_client_id
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.domain.common.value_objects import UserId
-from src.domain.reading.exceptions import BookNotFoundError
 
 
 @dataclass
@@ -44,9 +44,7 @@ class GetEreaderMetadataUseCase:
         """
         user_id_vo = UserId(user_id)
 
-        book = await self.book_repository.find_by_client_book_id(client_book_id, user_id_vo)
-        if not book:
-            raise BookNotFoundError(client_book_id)
+        book = await require_book_by_client_id(self.book_repository, client_book_id, user_id_vo)
 
         cover_file = book.cover_file
         has_ebook = book.ebook_file is not None

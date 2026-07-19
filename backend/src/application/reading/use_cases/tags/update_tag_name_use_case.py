@@ -2,10 +2,10 @@
 
 import structlog
 
+from src.application.common.ownership import require_belongs_to_book
 from src.application.reading.protocols.tag_repository import (
     TagRepositoryProtocol,
 )
-from src.domain.common import ValidationError
 from src.domain.common.value_objects.ids import BookId, TagId, UserId
 from src.domain.reading.entities.tag import Tag
 from src.domain.reading.exceptions import DuplicateTagNameError, TagNotFoundError
@@ -36,8 +36,7 @@ class UpdateTagNameUseCase:
             Updated tag entity
 
         Raises:
-            TagNotFoundError: If tag not found
-            ValidationError: If tag doesn't belong to book
+            TagNotFoundError: If tag not found or belongs to another book
             DuplicateTagNameError: If new name already exists
         """
         tag_id_vo = TagId(tag_id)
@@ -48,8 +47,7 @@ class UpdateTagNameUseCase:
         if not tag:
             raise TagNotFoundError(tag_id)
 
-        if tag.book_id != book_id_vo:
-            raise ValidationError(f"Tag {tag_id} does not belong to book {book_id}")
+        require_belongs_to_book(tag, book_id_vo, lambda: TagNotFoundError(tag_id))
 
         if new_name.strip() != tag.name:
             existing = await self.tag_repository.find_by_book_and_name(

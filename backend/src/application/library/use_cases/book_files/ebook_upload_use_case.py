@@ -2,6 +2,7 @@
 
 import logging
 
+from src.application.common.ownership import require_book_by_client_id
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
 from src.application.library.protocols.cover_image_service import CoverImageServiceProtocol
@@ -18,7 +19,6 @@ from src.domain.common.value_objects.position_index import PositionIndex
 from src.domain.library.entities.book import Book
 from src.domain.library.entities.chapter import TocChapter
 from src.domain.library.exceptions import InvalidEbookError
-from src.domain.reading.exceptions import BookNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -114,9 +114,7 @@ class EbookUploadUseCase:
             InvalidEbookError: If epub structure validation fails
         """
         # Find book by client_book_id
-        book = await self.book_repository.find_by_client_book_id(client_book_id, user_id)
-        if not book:
-            raise BookNotFoundError(client_book_id)
+        book = await require_book_by_client_id(self.book_repository, client_book_id, user_id)
 
         if not self.epub_parser.validate_epub(content):
             raise InvalidEbookError("EPUB structure validation failed", ebook_type="EPUB")

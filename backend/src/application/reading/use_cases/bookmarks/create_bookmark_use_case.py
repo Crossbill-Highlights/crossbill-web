@@ -2,13 +2,13 @@
 
 import structlog
 
+from src.application.common.ownership import require_belongs_to_book, require_book
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
-from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects.ids import BookId, HighlightId, UserId
 from src.domain.reading.entities.bookmark import Bookmark
-from src.domain.reading.exceptions import BookNotFoundError, HighlightNotFoundError
+from src.domain.reading.exceptions import HighlightNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -38,7 +38,7 @@ class CreateBookmarkUseCase:
 
         Raises:
             BookNotFoundError: If book is not found
-            ValidationError: If highlight doesn't exist or doesn't belong to the book
+            HighlightNotFoundError: If highlight doesn't exist or belongs to another book
         """
         # Convert to value objects
         book_id_vo = BookId(book_id)
@@ -46,20 +46,17 @@ class CreateBookmarkUseCase:
         user_id_vo = UserId(user_id)
 
         # Validate book exists and belongs to user
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         # Validate highlight exists and belongs to user
         highlight = await self.highlight_repository.find_by_id(highlight_id_vo, user_id_vo)
         if not highlight:
             raise HighlightNotFoundError(highlight_id)
 
-        # Validate highlight belongs to the book
-        if highlight.book_id != book_id_vo:
-            raise ValidationError(
-                f"Highlight {highlight_id} does not belong to book {book_id}",
-            )
+        # A highlight from another book is indistinguishable from a missing one.
+        require_belongs_to_book(
+            highlight, book_id_vo, lambda: HighlightNotFoundError(highlight_id)
+        )
 
         # Check if bookmark already exists (idempotent)
         existing = await self.bookmark_repository.find_by_book_and_highlight(

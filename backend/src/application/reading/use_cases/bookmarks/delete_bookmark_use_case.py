@@ -2,10 +2,10 @@
 
 import structlog
 
+from src.application.common.ownership import require_book
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
 from src.domain.common.value_objects.ids import BookId, BookmarkId, UserId
-from src.domain.reading.exceptions import BookNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -37,9 +37,7 @@ class DeleteBookmarkUseCase:
         user_id_vo = UserId(user_id)
 
         # Validate book exists and belongs to user
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         # Delete bookmark (idempotent)
         deleted = await self.bookmark_repository.delete(bookmark_id_vo, user_id_vo)

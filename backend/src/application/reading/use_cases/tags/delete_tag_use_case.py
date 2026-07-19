@@ -2,10 +2,11 @@
 
 import structlog
 
+from src.application.common.ownership import require_belongs_to_book
 from src.application.reading.protocols.tag_repository import (
     TagRepositoryProtocol,
 )
-from src.domain.common.value_objects.ids import TagId, UserId
+from src.domain.common.value_objects.ids import BookId, TagId, UserId
 from src.domain.reading.exceptions import TagNotFoundError
 
 logger = structlog.get_logger(__name__)
@@ -42,8 +43,7 @@ class DeleteTagUseCase:
         if not tag:
             return False
 
-        if tag.book_id.value != book_id:
-            raise TagNotFoundError(tag_id)
+        require_belongs_to_book(tag, BookId(book_id), lambda: TagNotFoundError(tag_id))
 
         success = await self.tag_repository.delete(tag_id_vo, user_id_vo)
         if success:

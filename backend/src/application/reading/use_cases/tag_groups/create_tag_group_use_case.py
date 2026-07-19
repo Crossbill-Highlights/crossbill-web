@@ -4,13 +4,14 @@ Use case for creating a new tag group.
 
 import structlog
 
+from src.application.common.ownership import require_book
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.tag_repository import (
     TagRepositoryProtocol,
 )
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.reading.entities.tag_group import TagGroup
-from src.domain.reading.exceptions import BookNotFoundError, DuplicateTagGroupNameError
+from src.domain.reading.exceptions import DuplicateTagGroupNameError
 
 logger = structlog.get_logger(__name__)
 
@@ -46,9 +47,7 @@ class CreateTagGroupUseCase:
         user_id_vo = UserId(user_id)
 
         # Validate book exists
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         # Check for duplicate name
         existing = await self.tag_repository.find_group_by_name(book_id_vo, name.strip())

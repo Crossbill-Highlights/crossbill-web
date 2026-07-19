@@ -2,12 +2,12 @@
 
 import logging
 
+from src.application.common.ownership import require_book
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.use_cases.book_files.ebook_deletion_use_case import (
     EbookDeletionUseCase,
 )
 from src.domain.common.value_objects import BookId, UserId
-from src.domain.reading.exceptions import BookNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +40,7 @@ class DeleteBookUseCase:
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        book = await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         await self.ebook_deletion_use_case.delete_ebook(book)
         await self.book_repository.delete(book)

@@ -1,12 +1,12 @@
 """Use case for getting tags for a book."""
 
+from src.application.common.ownership import require_book
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.tag_repository import (
     TagRepositoryProtocol,
 )
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.reading.entities.tag import Tag
-from src.domain.reading.exceptions import BookNotFoundError
 
 
 class GetTagsForBookUseCase:
@@ -37,8 +37,6 @@ class GetTagsForBookUseCase:
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         return await self.tag_repository.find_by_book(book_id_vo, user_id_vo)

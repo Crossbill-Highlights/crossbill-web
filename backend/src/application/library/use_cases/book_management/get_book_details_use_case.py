@@ -2,6 +2,7 @@
 
 import logging
 
+from src.application.common.ownership import require_book
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
@@ -21,7 +22,6 @@ from src.application.reading.use_cases.tags.get_tags_for_book_use_case import (
 )
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
-from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights,
     HighlightGroupingService,
@@ -84,9 +84,7 @@ class GetBookDetailsUseCase:
         user_id_vo = UserId(user_id)
 
         # Fetch and update book (returns domain entity, not ORM)
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        book = await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         book.mark_as_viewed()
         book = await self.book_repository.save(book)
