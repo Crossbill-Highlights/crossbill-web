@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 import structlog
 
+from src.application.common.ownership import require_book
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.application.reading.protocols.ebook_text_extraction_service import (
@@ -12,18 +13,14 @@ from src.application.reading.protocols.ebook_text_extraction_service import (
 from src.application.reading.protocols.highlight_repository import (
     HighlightRepositoryProtocol,
 )
-from src.application.reading.protocols.highlight_style_repository import (
-    HighlightStyleRepositoryProtocol,
-)
 from src.application.reading.protocols.reading_session_repository import (
     ReadingSessionRepositoryProtocol,
 )
+from src.application.reading.services.label_resolution_service import LabelResolutionService
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.reading_session import ReadingSession
-from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_style_resolver import (
-    HighlightStyleResolver,
     ResolvedLabel,
 )
 
@@ -60,16 +57,14 @@ class ReadingSessionQueryUseCase:
         highlight_repository: HighlightRepositoryProtocol,
         text_extraction_service: EbookTextExtractionServiceProtocol,
         file_repo: FileRepositoryProtocol,
-        highlight_style_repository: HighlightStyleRepositoryProtocol | None = None,
-        highlight_style_resolver: HighlightStyleResolver | None = None,
+        label_resolution_service: LabelResolutionService | None = None,
     ) -> None:
         self.session_repository = session_repository
         self.book_repository = book_repository
         self.highlight_repository = highlight_repository
         self.text_extraction_service = text_extraction_service
         self.file_repo = file_repo
-        self.highlight_style_repository = highlight_style_repository
-        self.highlight_style_resolver = highlight_style_resolver
+        self.label_resolution_service = label_resolution_service
 
     async def get_sessions_for_book(
         self,
@@ -98,9 +93,7 @@ class ReadingSessionQueryUseCase:
         user_id_vo = UserId(user_id)
 
         # Validate book exists and belongs to user
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        book = await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         # Resolve epub content once for the book
         epub_content = None
@@ -150,14 +143,8 @@ class ReadingSessionQueryUseCase:
 
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}
-        if self.highlight_style_repository and self.highlight_style_resolver:
-            all_styles = await self.highlight_style_repository.find_for_resolution(
-                user_id_vo, book_id_vo
-            )
-            for style in all_styles:
-                if style.is_combination_level() and not style.is_global():
-                    resolved = self.highlight_style_resolver.resolve(style, all_styles)
-                    labels[style.id.value] = resolved
+        if self.label_resolution_service is not None:
+            labels = await self.label_resolution_service.resolve_for_book(user_id_vo, book_id_vo)
 
         return ReadingSessionQueryResult(
             sessions_with_highlights=sessions_with_highlights,

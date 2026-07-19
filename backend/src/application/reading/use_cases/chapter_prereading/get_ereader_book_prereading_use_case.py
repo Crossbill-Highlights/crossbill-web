@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+from src.application.common.ownership import require_book_by_client_id
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import (
     ChapterRepositoryProtocol,
@@ -16,7 +17,6 @@ from src.domain.library.entities.chapter import Chapter
 from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
 )
-from src.domain.reading.exceptions import BookNotFoundError
 
 
 @dataclass
@@ -71,10 +71,7 @@ class GetEreaderBookPrereadingUseCase:
         )
 
     async def _resolve_book(self, client_book_id: str, user_id: UserId) -> Book:
-        book = await self.book_repo.find_by_client_book_id(client_book_id, user_id)
-        if not book:
-            raise BookNotFoundError(client_book_id)
-        return book
+        return await require_book_by_client_id(self.book_repo, client_book_id, user_id)
 
     async def _build_prereading_lookup(
         self, book_id: BookId

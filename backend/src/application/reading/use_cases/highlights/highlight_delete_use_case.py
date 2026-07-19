@@ -1,7 +1,7 @@
+from src.application.common.ownership import require_book
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
 from src.domain.common.value_objects import BookId, HighlightId, UserId
-from src.domain.reading.exceptions import BookNotFoundError
 
 
 class HighlightDeleteUseCase:
@@ -41,9 +41,7 @@ class HighlightDeleteUseCase:
         highlight_ids_vo = [HighlightId(hid) for hid in highlight_ids]
 
         # Verify book exists
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         # Soft delete highlights (cascades to bookmarks and flashcards)
         return await self.highlight_repository.soft_delete_by_ids(

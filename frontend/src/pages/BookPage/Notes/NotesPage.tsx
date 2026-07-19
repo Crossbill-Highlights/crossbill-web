@@ -1,12 +1,14 @@
 import type { GetNotesForBookApiV1BooksBookIdNotesGetParams } from '@/api/generated/model';
 import { useGetNotesForBookApiV1BooksBookIdNotesGet } from '@/api/generated/notes/notes.ts';
 import { CardList } from '@/components/CardList.tsx';
+import { EmptyStateText } from '@/components/EmptyStateText.tsx';
 import { Spinner } from '@/components/animations/Spinner.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
+import { useBookTabFilters } from '@/pages/BookPage/common/useBookTabFilters.ts';
 import { AddIcon } from '@/theme/Icons.tsx';
-import { Box, Button, Divider, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { Alert, Box, Button, Divider, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { FilterFab } from '../common/FilterFab.tsx';
@@ -40,14 +42,10 @@ const NoteKindFilter = ({ value, onChange }: NoteKindFilterProps) => (
 export const NotesPage = () => {
   const { book, isDesktop, leftSidebarEl, fabContainerEl } = useBookPage();
   const navigate = useNavigate({ from: '/book/$bookId/notes' });
-  const { kind, chapterId, tagId } = useSearch({ from: '/book/$bookId/notes' });
+  const { kind, chapterId } = useSearch({ from: '/book/$bookId/notes' });
 
-  const [selectedTagId, setSelectedTagId] = useState<number | undefined>(tagId);
+  const { selectedTagId, handleTagClick } = useBookTabFilters('/book/$bookId/notes');
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
-
-  useEffect(() => {
-    setSelectedTagId(tagId);
-  }, [tagId]);
 
   const params: GetNotesForBookApiV1BooksBookIdNotesGetParams = {
     kind: (kind as NoteKindValue | undefined) ?? undefined,
@@ -62,14 +60,6 @@ export const NotesPage = () => {
 
   const handleKindFilter = (value: NoteKindValue | null) => {
     void navigate({ search: (prev) => ({ ...prev, kind: value ?? undefined }) });
-  };
-
-  const handleTagClick = (newTagId: number | null) => {
-    setSelectedTagId(newTagId || undefined);
-    void navigate({
-      search: (prev) => ({ ...prev, tagId: newTagId || undefined }),
-      replace: true,
-    });
   };
 
   const filterTabs: FilterTab[] = [
@@ -123,13 +113,13 @@ export const NotesPage = () => {
       </Box>
 
       {isLoading && <Spinner />}
-      {isError && <Typography color="error">Failed to load notes.</Typography>}
+      {isError && <Alert severity="error">Failed to load notes.</Alert>}
       {!isLoading && !isError && notes.length === 0 && (
-        <Typography color="text.secondary">
+        <EmptyStateText>
           {selectedTagId
             ? 'No notes found with the selected tag.'
             : 'No notes yet. Create notes about characters, terms, and concepts as you read.'}
-        </Typography>
+        </EmptyStateText>
       )}
 
       <CardList>

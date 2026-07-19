@@ -2,12 +2,13 @@
 
 import re
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from starlette import status
 from starlette.responses import Response
 
 from src.application.library.protocols.file_repository import FileRepositoryProtocol
 from src.core import container
+from src.domain.library.exceptions import CoverNotFoundError
 
 router = APIRouter(prefix="/covers", tags=["covers"])
 
@@ -26,13 +27,13 @@ async def get_cover(filename: str) -> Response:
     Cover filenames are UUIDs, making enumeration infeasible.
     """
     if not _UUID_FILENAME_RE.match(filename):
-        raise HTTPException(status_code=404, detail="Cover not found")
+        raise CoverNotFoundError(filename)
 
     file_repository: FileRepositoryProtocol = container.shared.file_repository()
     cover_bytes = await file_repository.get_cover(filename)
 
     if cover_bytes is None:
-        raise HTTPException(status_code=404, detail="Cover not found")
+        raise CoverNotFoundError(filename)
 
     return Response(
         content=cover_bytes,

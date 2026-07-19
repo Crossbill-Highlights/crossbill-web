@@ -1,8 +1,5 @@
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
-import {
-  getGetTagsApiV1BooksBookIdTagsGetQueryKey,
-  useDeleteHighlightsApiV1BooksBookIdHighlightDelete,
-} from '@/api/generated/highlights/highlights.ts';
+import { useDeleteHighlightsApiV1BooksBookIdHighlightDelete } from '@/api/generated/highlights/highlights.ts';
 import type { Bookmark, Highlight, TagInBook } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
@@ -11,8 +8,8 @@ import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { ProgressBar } from '@/components/dialogs/ProgressBar.tsx';
 import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
-import { TagInput } from '@/pages/BookPage/Highlights/HighlightViewModal/components/TagInput.tsx';
+import { TagInput } from '@/components/inputs/TagInput.tsx';
+import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { useImmediateTagMutation } from '@/pages/BookPage/Highlights/HighlightViewModal/hooks/useImmediateTagMutation.ts';
 import { Box, Button, Stack } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
@@ -46,7 +43,7 @@ export const HighlightViewModal = ({
   onNavigate,
 }: HighlightViewModalProps) => {
   const queryClient = useQueryClient();
-  const { showSnackbar } = useSnackbar();
+  const { mutationErrorHandler, invalidateBookAndTags } = useBookMutationHelpers(bookId);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [labelAnchorEl, setLabelAnchorEl] = useState<HTMLElement | null>(null);
 
@@ -56,7 +53,6 @@ export const HighlightViewModal = ({
     bookId,
     highlightId: highlight.id,
     initialTags: highlight.tags,
-    showSnackbar,
   });
 
   const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext, swipeHandlers } =
@@ -76,10 +72,7 @@ export const HighlightViewModal = ({
         });
         onClose();
       },
-      onError: (error: Error) => {
-        console.error('Failed to delete highlight:', error);
-        showSnackbar('Failed to delete highlight. Please try again.', 'error');
-      },
+      onError: mutationErrorHandler('delete highlight'),
     },
   });
 
@@ -96,12 +89,7 @@ export const HighlightViewModal = ({
   };
 
   const handleClose = () => {
-    void queryClient.invalidateQueries({
-      queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-    });
-    void queryClient.invalidateQueries({
-      queryKey: getGetTagsApiV1BooksBookIdTagsGetQueryKey(bookId),
-    });
+    invalidateBookAndTags();
     onClose(highlight.id);
   };
 

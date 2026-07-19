@@ -1,16 +1,14 @@
 """Use case for getting highlight labels for a book."""
 
+from src.application.common.ownership import require_book
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.highlight_style_repository import (
     HighlightStyleRepositoryProtocol,
 )
+from src.application.reading.services.label_resolution_service import LabelResolutionService
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.reading.entities.highlight_style import HighlightStyle
-from src.domain.reading.exceptions import BookNotFoundError
-from src.domain.reading.services.highlight_style_resolver import (
-    HighlightStyleResolver,
-    ResolvedLabel,
-)
+from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
 
 
 class GetBookHighlightLabelsUseCase:
@@ -20,11 +18,11 @@ class GetBookHighlightLabelsUseCase:
         self,
         highlight_style_repository: HighlightStyleRepositoryProtocol,
         book_repository: BookRepositoryProtocol,
-        highlight_style_resolver: HighlightStyleResolver,
+        label_resolution_service: LabelResolutionService,
     ) -> None:
         self.highlight_style_repository = highlight_style_repository
         self.book_repository = book_repository
-        self.resolver = highlight_style_resolver
+        self.label_resolution_service = label_resolution_service
 
     async def execute(
         self, book_id: int, user_id: int
@@ -33,21 +31,14 @@ class GetBookHighlightLabelsUseCase:
         user_id_vo = UserId(user_id)
         book_id_vo = BookId(book_id)
 
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        await require_book(self.book_repository, book_id_vo, user_id_vo)
 
-        all_styles = await self.highlight_style_repository.find_for_resolution(
+        combination_labels = await self.label_resolution_service.resolve_combination_labels(
             user_id_vo, book_id_vo
         )
 
-        book_combo_styles = [
-            s for s in all_styles if s.is_combination_level() and not s.is_global()
-        ]
-
         results: list[tuple[HighlightStyle, ResolvedLabel, int]] = []
-        for style in book_combo_styles:
-            resolved = self.resolver.resolve(style, all_styles)
+        for style, resolved in combination_labels:
             count = await self.highlight_style_repository.count_highlights_by_style(style.id)
             results.append((style, resolved, count))
 

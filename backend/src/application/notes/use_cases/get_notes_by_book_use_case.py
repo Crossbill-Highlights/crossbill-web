@@ -1,5 +1,6 @@
 """Use case for retrieving notes for a book with linked entities."""
 
+from src.application.common.ownership import require_book
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
 from src.application.notes.protocols.note_repository import NoteRepositoryProtocol
@@ -10,7 +11,6 @@ from src.application.reading.protocols.tag_repository import (
     TagRepositoryProtocol,
 )
 from src.domain.common.value_objects import BookId, ChapterId, HighlightId, TagId, UserId
-from src.domain.reading.exceptions import BookNotFoundError
 
 
 class GetNotesByBookUseCase:
@@ -42,9 +42,7 @@ class GetNotesByBookUseCase:
         user_id_vo = UserId(user_id)
         book_id_vo = BookId(book_id)
 
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         notes = await self.note_repository.find_by_book(
             book_id_vo,

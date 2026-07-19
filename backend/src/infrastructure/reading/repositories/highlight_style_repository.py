@@ -5,28 +5,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.common.value_objects import BookId, HighlightStyleId, UserId
 from src.domain.reading.entities.highlight_style import HighlightStyle
+from src.infrastructure.common.repositories import BaseRepository
 from src.infrastructure.reading.mappers.highlight_style_mapper import HighlightStyleMapper
 from src.models import Highlight as HighlightORM
 from src.models import HighlightStyle as HighlightStyleORM
 
 
-class HighlightStyleRepository:
-    """SQLAlchemy implementation of HighlightStyle repository."""
+class HighlightStyleRepository(BaseRepository[HighlightStyle, HighlightStyleORM]):
+    """SQLAlchemy implementation of HighlightStyle repository.
+
+    ``find_by_id`` is inherited from :class:`BaseRepository`; ``save`` is
+    overridden because it upserts a row at a caller-provided id.
+    """
 
     def __init__(self, db: AsyncSession) -> None:
-        self.db = db
         self.mapper = HighlightStyleMapper()
-
-    async def find_by_id(
-        self, style_id: HighlightStyleId, user_id: UserId
-    ) -> HighlightStyle | None:
-        stmt = select(HighlightStyleORM).where(
-            HighlightStyleORM.id == style_id.value,
-            HighlightStyleORM.user_id == user_id.value,
-        )
-        result = await self.db.execute(stmt)
-        orm = result.scalar_one_or_none()
-        return self.mapper.to_domain(orm) if orm else None
+        super().__init__(db, HighlightStyleORM, self.mapper)
 
     async def find_or_create(
         self,

@@ -1,8 +1,8 @@
 import { useGetHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcardSuggestionsGet } from '@/api/generated/flashcards/flashcards.ts';
 import { useCreateFlashcardForHighlightApiV1HighlightsHighlightIdFlashcardsPost } from '@/api/generated/highlights/highlights.ts';
 import type { Highlight } from '@/api/generated/model';
-import type { FlashcardWithContext } from '@/pages/BookPage/Flashcards/FlashcardChapterList.tsx';
-import { FlashcardSection } from '@/pages/BookPage/Flashcards/FlashcardSection.tsx';
+import type { FlashcardWithContext } from '@/components/features/flashcards/FlashcardChapterList.tsx';
+import { FlashcardSection } from '@/components/features/flashcards/FlashcardSection.tsx';
 import { useAIFlashcardSuggestions } from '@/pages/BookPage/Flashcards/hooks/useAIFlashcardSuggestions.ts';
 import { useFlashcardMutations } from '@/pages/BookPage/Flashcards/hooks/useFlashcardMutations.ts';
 import { sortBy } from 'lodash';

@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, UploadFile, status
 
 from src.application.library.dtos import CreateBookInput
 from src.application.library.use_cases.book_files.ebook_upload_use_case import EbookUploadUseCase
@@ -16,13 +16,14 @@ from src.application.reading.use_cases.chapter_prereading.get_ereader_book_prere
     GetEreaderBookPrereadingUseCase,
 )
 from src.core import container
+from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects.ids import UserId
 from src.domain.identity.entities.user import User
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.schemas import SuccessResponse
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.library.schemas import (
     BookCreate,
-    EpubUploadResponse,
     EreaderBookMetadata,
 )
 from src.infrastructure.reading.schemas.chapter_prereading_schemas import (
@@ -131,7 +132,7 @@ MAX_EBOOK_SIZE = 50 * 1024 * 1024
 
 @router.post(
     "/books/{client_book_id}/epub",
-    response_model=EpubUploadResponse,
+    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
 )
 async def upload_book_epub(
@@ -141,7 +142,7 @@ async def upload_book_epub(
     use_case: EbookUploadUseCase = Depends(
         inject_use_case(container.library.ebook_upload_use_case)
     ),
-) -> EpubUploadResponse:
+) -> SuccessResponse:
     """
     Upload an ebook file (EPUB) for a book using client_book_id.
 
@@ -154,7 +155,7 @@ async def upload_book_epub(
         current_user: Authenticated user
 
     Returns:
-        EpubUploadResponse with success status
+        SuccessResponse with success status
 
     Raises:
         HTTPException: 400 for invalid file, 404 if book is not found
@@ -162,24 +163,18 @@ async def upload_book_epub(
     # Validate content-type
     allowed_types = {"application/epub+zip"}
     if epub.content_type not in allowed_types:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only EPUB and PDF files are allowed",
-        )
+        raise ValidationError("Only EPUB and PDF files are allowed")
 
     # Read file with size limit
     content = epub.file.read(MAX_EBOOK_SIZE + 1)
     if len(content) > MAX_EBOOK_SIZE:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File too large (max {MAX_EBOOK_SIZE // (1024 * 1024)}MB)",
-        )
+        raise ValidationError(f"File too large (max {MAX_EBOOK_SIZE // (1024 * 1024)}MB)")
 
     await use_case.upload_ebook(
         client_book_id, content, epub.content_type or "", current_user.id.value
     )
 
-    return EpubUploadResponse(
+    return SuccessResponse(
         success=True,
         message="Ebook uploaded successfully",
     )

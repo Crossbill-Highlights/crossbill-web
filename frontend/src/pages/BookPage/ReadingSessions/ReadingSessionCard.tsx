@@ -1,11 +1,11 @@
 import type { Bookmark, ReadingSession } from '@/api/generated/model';
 import { useGetReadingSessionAiSummaryApiV1ReadingSessionIdAiSummaryGet } from '@/api/generated/reading-sessions/reading-sessions';
 import { AIActionButton } from '@/components/buttons/AIActionButton';
+import { HighlightCard } from '@/components/cards/HighlightCard';
 import { MetadataRow } from '@/components/cards/MetadataRow.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { useSettings } from '@/context/SettingsContext';
 import { useSnackbar } from '@/context/SnackbarContext';
-import { HighlightCard } from '@/pages/BookPage/Highlights/HighlightCard';
 import { formatDate, formatDuration, formatTime } from '@/utils/date';
 import { Box, Typography } from '@mui/material';
 import type { AxiosError } from 'axios';

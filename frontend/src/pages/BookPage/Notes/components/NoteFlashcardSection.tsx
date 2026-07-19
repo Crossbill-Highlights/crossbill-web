@@ -4,8 +4,8 @@ import {
 } from '@/api/generated/flashcards/flashcards.ts';
 import type { NoteWithLinks } from '@/api/generated/model';
 import { getGetNoteApiV1NotesNoteIdGetQueryKey } from '@/api/generated/notes/notes.ts';
-import type { FlashcardWithContext } from '@/pages/BookPage/Flashcards/FlashcardChapterList.tsx';
-import { FlashcardSection } from '@/pages/BookPage/Flashcards/FlashcardSection.tsx';
+import type { FlashcardWithContext } from '@/components/features/flashcards/FlashcardChapterList.tsx';
+import { FlashcardSection } from '@/components/features/flashcards/FlashcardSection.tsx';
 import { useAIFlashcardSuggestions } from '@/pages/BookPage/Flashcards/hooks/useAIFlashcardSuggestions.ts';
 import { useFlashcardMutations } from '@/pages/BookPage/Flashcards/hooks/useFlashcardMutations.ts';
 import { sortBy } from 'lodash';

@@ -1,6 +1,5 @@
-import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import { useUpdateFlashcardApiV1FlashcardsFlashcardIdPut } from '@/api/generated/flashcards/flashcards.ts';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -23,13 +22,11 @@ export const useFlashcardMutations = ({
   additionalInvalidateKeys = [],
 }: UseFlashcardMutationsOptions) => {
   const queryClient = useQueryClient();
-  const { showSnackbar } = useSnackbar();
+  const { mutationErrorHandler, invalidateBookDetails } = useBookMutationHelpers(bookId);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const invalidateFlashcardQueries = () => {
-    void queryClient.invalidateQueries({
-      queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-    });
+    invalidateBookDetails();
     for (const queryKey of additionalInvalidateKeys) {
       void queryClient.invalidateQueries({ queryKey });
     }
@@ -38,10 +35,7 @@ export const useFlashcardMutations = ({
   const updateFlashcardMutation = useUpdateFlashcardApiV1FlashcardsFlashcardIdPut({
     mutation: {
       onSuccess: invalidateFlashcardQueries,
-      onError: (error) => {
-        console.error('Failed to update flashcard:', error);
-        showSnackbar('Failed to update flashcard. Please try again.', 'error');
-      },
+      onError: mutationErrorHandler('update flashcard'),
     },
   });
 
@@ -54,8 +48,7 @@ export const useFlashcardMutations = ({
       invalidateFlashcardQueries();
       return true;
     } catch (error) {
-      console.error('Failed to create flashcard:', error);
-      showSnackbar('Failed to create flashcard. Please try again.', 'error');
+      mutationErrorHandler('create flashcard')(error);
       return false;
     } finally {
       setIsProcessing(false);

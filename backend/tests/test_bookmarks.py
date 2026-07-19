@@ -172,7 +172,8 @@ class TestCreateBookmark:
             json={"highlight_id": highlight.id},
         )
 
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        # A highlight owned by another book is treated as not found (404).
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 class TestDeleteBookmark:

@@ -338,7 +338,8 @@ class TestUpdateTag:
             json={"name": "New Name"},
         )
 
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        # A tag owned by another book is treated as not found (404).
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_update_tag_nonexistent_group(
         self, client: AsyncClient, test_book: models.Book, test_tag: models.Tag

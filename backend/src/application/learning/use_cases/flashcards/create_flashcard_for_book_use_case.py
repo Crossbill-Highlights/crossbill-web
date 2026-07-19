@@ -2,13 +2,13 @@
 
 import structlog
 
+from src.application.common.ownership import require_belongs_to_book, require_book
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
-from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
-from src.domain.reading.exceptions import BookNotFoundError, ChapterNotFoundError
+from src.domain.reading.exceptions import ChapterNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -50,17 +50,14 @@ class CreateFlashcardForBookUseCase:
 
         Raises:
             BookNotFoundError: If book is not found
-            NotFoundError: If chapter is not found
-            ValidationError: If chapter does not belong to the book
+            ChapterNotFoundError: If chapter is not found or belongs to another book
         """
         # Convert to value objects
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
 
         # Validate book exists and belongs to user
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         # Validate chapter if provided
         chapter_id_vo: ChapterId | None = None
@@ -69,8 +66,8 @@ class CreateFlashcardForBookUseCase:
             chapter = await self.chapter_repository.find_by_id(chapter_id_vo, user_id_vo)
             if not chapter:
                 raise ChapterNotFoundError(chapter_id)
-            if chapter.book_id != book_id_vo:
-                raise ValidationError("Chapter does not belong to this book")
+            # A chapter from another book is indistinguishable from a missing one.
+            require_belongs_to_book(chapter, book_id_vo, lambda: ChapterNotFoundError(chapter_id))
 
         # Create flashcard using domain factory (no highlight)
         flashcard = Flashcard.create(

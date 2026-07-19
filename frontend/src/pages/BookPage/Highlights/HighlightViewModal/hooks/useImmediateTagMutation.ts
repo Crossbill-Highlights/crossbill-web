@@ -1,11 +1,9 @@
-import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import {
-  getGetTagsApiV1BooksBookIdTagsGetQueryKey,
   useAddTagToHighlightApiV1BooksBookIdHighlightHighlightIdTagPost,
   useRemoveTagFromHighlightApiV1BooksBookIdHighlightHighlightIdTagTagIdDelete,
 } from '@/api/generated/highlights/highlights.ts';
 import type { TagInBook } from '@/api/generated/model';
-import { useQueryClient } from '@tanstack/react-query';
+import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { filter, map } from 'lodash';
 import { useEffect, useState } from 'react';
 
@@ -16,8 +14,6 @@ export interface UseImmediateTagMutationParams {
   highlightId: number;
   /** Initial tags for the highlight */
   initialTags: TagInBook[];
-  /** Snackbar function for error/success notifications */
-  showSnackbar: (message: string, severity: 'error' | 'success' | 'info' | 'warning') => void;
 }
 
 export interface UseImmediateTagMutationReturn {
@@ -58,9 +54,8 @@ export const useImmediateTagMutation = ({
   bookId,
   highlightId,
   initialTags,
-  showSnackbar,
 }: UseImmediateTagMutationParams): UseImmediateTagMutationReturn => {
-  const queryClient = useQueryClient();
+  const { mutationErrorHandler, invalidateBookAndTags } = useBookMutationHelpers(bookId);
   const [currentTags, setCurrentTags] = useState<TagInBook[]>(initialTags);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -72,17 +67,9 @@ export const useImmediateTagMutation = ({
     mutation: {
       onSuccess: (data: { tags: TagInBook[] }) => {
         setCurrentTags(data.tags);
-        void queryClient.invalidateQueries({
-          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-        });
-        void queryClient.invalidateQueries({
-          queryKey: getGetTagsApiV1BooksBookIdTagsGetQueryKey(bookId),
-        });
+        invalidateBookAndTags();
       },
-      onError: (error: Error) => {
-        console.error('Failed to add tag:', error);
-        showSnackbar('Failed to add tag. Please try again.', 'error');
-      },
+      onError: mutationErrorHandler('add tag'),
     },
   });
 
@@ -91,17 +78,9 @@ export const useImmediateTagMutation = ({
       mutation: {
         onSuccess: (data: { tags: TagInBook[] }) => {
           setCurrentTags(data.tags);
-          void queryClient.invalidateQueries({
-            queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-          });
-          void queryClient.invalidateQueries({
-            queryKey: getGetTagsApiV1BooksBookIdTagsGetQueryKey(bookId),
-          });
+          invalidateBookAndTags();
         },
-        onError: (error: Error) => {
-          console.error('Failed to remove tag:', error);
-          showSnackbar('Failed to remove tag. Please try again.', 'error');
-        },
+        onError: mutationErrorHandler('remove tag'),
       },
     });
 

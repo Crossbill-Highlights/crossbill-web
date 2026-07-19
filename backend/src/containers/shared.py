@@ -4,6 +4,7 @@ import boto3
 from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.application.reading.services.label_resolution_service import LabelResolutionService
 from src.domain.reading.services.deduplication_service import HighlightDeduplicationService
 from src.domain.reading.services.highlight_grouping_service import HighlightGroupingService
 from src.domain.reading.services.highlight_style_resolver import HighlightStyleResolver
@@ -43,7 +44,6 @@ from src.infrastructure.reading.repositories.chapter_prereading_repository impor
 from src.infrastructure.reading.repositories.reading_session_repository import (
     ReadingSessionRepository,
 )
-from src.infrastructure.reading.services.highlight_label_resolver import HighlightLabelResolver
 
 
 def _create_s3_file_repository(settings: Any) -> S3FileRepository:  # noqa: ANN401
@@ -107,11 +107,11 @@ class SharedContainer(containers.DeclarativeContainer):
     highlight_grouping_service = providers.Factory(HighlightGroupingService)
     highlight_style_resolver = providers.Factory(HighlightStyleResolver)
 
-    # Infrastructure services (with deps)
-    highlight_label_resolver = providers.Factory(
-        HighlightLabelResolver,
+    # Application services (with deps)
+    label_resolution_service = providers.Factory(
+        LabelResolutionService,
         highlight_style_repository=highlight_style_repository,
-        resolver=highlight_style_resolver,
+        highlight_style_resolver=highlight_style_resolver,
     )
 
     # Learning repositories

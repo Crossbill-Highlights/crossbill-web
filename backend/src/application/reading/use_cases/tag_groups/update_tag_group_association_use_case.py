@@ -4,10 +4,10 @@ Use case for updating a tag's group association.
 
 import structlog
 
+from src.application.common.ownership import require_belongs_to_book
 from src.application.reading.protocols.tag_repository import (
     TagRepositoryProtocol,
 )
-from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects.ids import (
     BookId,
     TagGroupId,
@@ -56,9 +56,8 @@ class UpdateTagGroupAssociationUseCase:
         if not tag:
             raise TagNotFoundError(tag_id)
 
-        # Verify belongs to book
-        if tag.book_id != book_id_vo:
-            raise ValidationError(f"Tag {tag_id} does not belong to book {book_id}")
+        # A tag from another book is indistinguishable from a missing one.
+        require_belongs_to_book(tag, book_id_vo, lambda: TagNotFoundError(tag_id))
 
         # Validate group if provided
         if group_id_vo:

@@ -2,34 +2,29 @@
 
 import logging
 
+from src.application.common.ownership import require_book
 from src.application.learning.protocols.flashcard_repository import FlashcardRepositoryProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
 from src.application.library.protocols.chapter_repository import ChapterRepositoryProtocol
 from src.application.reading.protocols.bookmark_repository import BookmarkRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
-from src.application.reading.protocols.highlight_style_repository import (
-    HighlightStyleRepositoryProtocol,
-)
 from src.application.reading.protocols.reading_session_repository import (
     ReadingSessionRepositoryProtocol,
 )
 from src.application.reading.protocols.tag_repository import (
     TagRepositoryProtocol,
 )
+from src.application.reading.services.label_resolution_service import LabelResolutionService
 from src.application.reading.use_cases.tags.get_tags_for_book_use_case import (
     GetTagsForBookUseCase,
 )
 from src.domain.common.value_objects import BookId, UserId
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
-from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights,
     HighlightGroupingService,
 )
-from src.domain.reading.services.highlight_style_resolver import (
-    HighlightStyleResolver,
-    ResolvedLabel,
-)
+from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +43,7 @@ class GetBookDetailsUseCase:
         tag_use_case: GetTagsForBookUseCase,
         highlight_grouping_service: HighlightGroupingService,
         reading_session_repository: ReadingSessionRepositoryProtocol,
-        highlight_style_repository: HighlightStyleRepositoryProtocol | None = None,
-        highlight_style_resolver: HighlightStyleResolver | None = None,
+        label_resolution_service: LabelResolutionService | None = None,
     ) -> None:
         self.book_repository = book_repository
         self.chapter_repository = chapter_repository
@@ -60,8 +54,7 @@ class GetBookDetailsUseCase:
         self.tag_use_case = tag_use_case
         self.highlight_grouping_service = highlight_grouping_service
         self.reading_session_repository = reading_session_repository
-        self.highlight_style_repository = highlight_style_repository
-        self.highlight_style_resolver = highlight_style_resolver
+        self.label_resolution_service = label_resolution_service
 
     async def get_book_details(self, book_id: int, user_id: int) -> BookDetailsAggregation:
         """
@@ -84,9 +77,7 @@ class GetBookDetailsUseCase:
         user_id_vo = UserId(user_id)
 
         # Fetch and update book (returns domain entity, not ORM)
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        book = await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         book.mark_as_viewed()
         book = await self.book_repository.save(book)
@@ -153,14 +144,8 @@ class GetBookDetailsUseCase:
 
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}
-        if self.highlight_style_repository and self.highlight_style_resolver:
-            all_styles = await self.highlight_style_repository.find_for_resolution(
-                user_id_vo, book_id_vo
-            )
-            for style in all_styles:
-                if style.is_combination_level() and not style.is_global():
-                    resolved = self.highlight_style_resolver.resolve(style, all_styles)
-                    labels[style.id.value] = resolved
+        if self.label_resolution_service is not None:
+            labels = await self.label_resolution_service.resolve_for_book(user_id_vo, book_id_vo)
 
         # Return domain aggregation
         return BookDetailsAggregation(

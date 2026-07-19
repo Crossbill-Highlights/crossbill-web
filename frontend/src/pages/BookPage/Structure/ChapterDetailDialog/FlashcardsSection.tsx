@@ -1,4 +1,3 @@
-import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import {
   useCreateFlashcardForBookApiV1BooksBookIdFlashcardsPost,
   useGetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet,
@@ -12,13 +11,13 @@ import type {
 } from '@/api/generated/model';
 import { CardList } from '@/components/CardList.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
+import type { FlashcardWithContext } from '@/components/features/flashcards/FlashcardChapterList.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { CreateFlashcardForm } from '@/pages/BookPage/Flashcards/CreateFlashcardForm.tsx';
-import type { FlashcardWithContext } from '@/pages/BookPage/Flashcards/FlashcardChapterList.tsx';
 import { FlashcardEditDialog } from '@/pages/BookPage/Flashcards/FlashcardEditDialog.tsx';
 import { FlashcardListCard } from '@/pages/BookPage/Flashcards/FlashcardListCard.tsx';
 import { FlashcardSuggestions } from '@/pages/BookPage/Flashcards/FlashcardSuggestions.tsx';
-import { useQueryClient } from '@tanstack/react-query';
 import { flatMap } from 'lodash';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -29,39 +28,21 @@ interface FlashcardsSectionProps {
   bookFlashcards?: Flashcard[];
 }
 
-const useFlashcardMutations = (
-  bookId: number,
-  chapterId: number,
-  showSnackbar: (message: string, severity: 'error' | 'warning' | 'info' | 'success') => void
-) => {
-  const queryClient = useQueryClient();
+const useFlashcardMutations = (bookId: number, chapterId: number) => {
+  const { mutationErrorHandler, invalidateBookDetails } = useBookMutationHelpers(bookId);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const createFlashcardMutation = useCreateFlashcardForBookApiV1BooksBookIdFlashcardsPost({
     mutation: {
-      onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-        });
-      },
-      onError: (error) => {
-        console.error('Failed to create flashcard:', error);
-        showSnackbar('Failed to create flashcard. Please try again.', 'error');
-      },
+      onSuccess: invalidateBookDetails,
+      onError: mutationErrorHandler('create flashcard'),
     },
   });
 
   const updateFlashcardMutation = useUpdateFlashcardApiV1FlashcardsFlashcardIdPut({
     mutation: {
-      onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-        });
-      },
-      onError: (error) => {
-        console.error('Failed to update flashcard:', error);
-        showSnackbar('Failed to update flashcard. Please try again.', 'error');
-      },
+      onSuccess: invalidateBookDetails,
+      onError: mutationErrorHandler('update flashcard'),
     },
   });
 
@@ -149,8 +130,7 @@ export const FlashcardsSection = ({
   const { showSnackbar } = useSnackbar();
   const { isProcessing, saveFlashcard, updateFlashcard } = useFlashcardMutations(
     bookId,
-    chapter.id,
-    showSnackbar
+    chapter.id
   );
   const { isLoading, suggestions, fetchSuggestions, removeSuggestion } = useAIFlashcardSuggestions(
     chapter.id,

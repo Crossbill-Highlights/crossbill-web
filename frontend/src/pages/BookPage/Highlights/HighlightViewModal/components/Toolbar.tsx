@@ -2,11 +2,10 @@ import {
   useCreateBookmarkApiV1BooksBookIdBookmarksPost,
   useDeleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete,
 } from '@/api/generated/bookmarks/bookmarks.ts';
-import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import type { Bookmark } from '@/api/generated/model';
 import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip.tsx';
 import { DialogToolbar } from '@/components/dialogs/DialogToolbar.tsx';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import {
   BookmarkFilledIcon,
   BookmarkIcon,
@@ -15,7 +14,6 @@ import {
   LinkIcon,
 } from '@/theme/Icons.tsx';
 import { copyUrlWithSearchParam } from '@/utils/clipboard.ts';
-import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 interface ToolbarProps {
@@ -35,12 +33,10 @@ export const Toolbar = ({
   onDelete,
   disabled = false,
 }: ToolbarProps) => {
-  const { showSnackbar } = useSnackbar();
   const { handleBookmarkToggle, isProcessing } = useBookmarkMutations(
     bookmark,
     bookId,
-    highlightId,
-    showSnackbar
+    highlightId
   );
 
   // Copy a link that works from any context: `highlightId` is only a validated
@@ -97,37 +93,22 @@ export const Toolbar = ({
 const useBookmarkMutations = (
   bookmark: Bookmark | undefined,
   bookId: number,
-  highlightId: number,
-  showSnackbar: (message: string, severity: 'error' | 'warning' | 'info' | 'success') => void
+  highlightId: number
 ) => {
-  const queryClient = useQueryClient();
+  const { mutationErrorHandler, invalidateBookDetails } = useBookMutationHelpers(bookId);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const createBookmarkMutation = useCreateBookmarkApiV1BooksBookIdBookmarksPost({
     mutation: {
-      onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-        });
-      },
-      onError: (error: Error) => {
-        console.error('Failed to create bookmark:', error);
-        showSnackbar('Failed to create bookmark. Please try again.', 'error');
-      },
+      onSuccess: invalidateBookDetails,
+      onError: mutationErrorHandler('create bookmark'),
     },
   });
 
   const deleteBookmarkMutation = useDeleteBookmarkApiV1BooksBookIdBookmarksBookmarkIdDelete({
     mutation: {
-      onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-        });
-      },
-      onError: (error: Error) => {
-        console.error('Failed to delete bookmark:', error);
-        showSnackbar('Failed to delete bookmark. Please try again.', 'error');
-      },
+      onSuccess: invalidateBookDetails,
+      onError: mutationErrorHandler('delete bookmark'),
     },
   });
 

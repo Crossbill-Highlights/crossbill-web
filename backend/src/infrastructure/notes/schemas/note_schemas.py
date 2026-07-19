@@ -99,13 +99,6 @@ class NoteUpdateResponse(BaseModel):
     note: Note = Field(..., description="Updated note")
 
 
-class NoteDeleteResponse(BaseModel):
-    """Schema for note deletion response."""
-
-    success: bool = Field(..., description="Whether the deletion was successful")
-    message: str = Field(..., description="Response message")
-
-
 class NotesResponse(BaseModel):
     """Schema for a list of notes with linked entity summaries."""
 

@@ -4,21 +4,16 @@ Book-scoped highlight search.
 Provides full-text search within a specific book's highlights.
 """
 
+from src.application.common.ownership import require_book
 from src.application.reading.protocols.book_repository import BookRepositoryProtocol
 from src.application.reading.protocols.highlight_repository import HighlightRepositoryProtocol
-from src.application.reading.protocols.highlight_style_repository import (
-    HighlightStyleRepositoryProtocol,
-)
+from src.application.reading.services.label_resolution_service import LabelResolutionService
 from src.domain.common.value_objects import BookId, UserId
-from src.domain.reading.exceptions import BookNotFoundError
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights,
     HighlightGroupingService,
 )
-from src.domain.reading.services.highlight_style_resolver import (
-    HighlightStyleResolver,
-    ResolvedLabel,
-)
+from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
 
 
 class HighlightSearchUseCase:
@@ -26,14 +21,12 @@ class HighlightSearchUseCase:
         self,
         book_repository: BookRepositoryProtocol,
         highlight_repository: HighlightRepositoryProtocol,
-        highlight_style_repository: HighlightStyleRepositoryProtocol | None = None,
-        highlight_style_resolver: HighlightStyleResolver | None = None,
+        label_resolution_service: LabelResolutionService | None = None,
     ) -> None:
         self.book_repository = book_repository
         self.highlight_repository = highlight_repository
         self.highlight_grouping_service = HighlightGroupingService()
-        self.highlight_style_repository = highlight_style_repository
-        self.highlight_style_resolver = highlight_style_resolver
+        self.label_resolution_service = label_resolution_service
 
     async def search_book_highlights(
         self, book_id: int, user_id: int, search_text: str, limit: int = 100
@@ -61,9 +54,7 @@ class HighlightSearchUseCase:
         user_id_vo = UserId(user_id)
 
         # Verify book exists and belongs to user
-        book = await self.book_repository.find_by_id(book_id_vo, user_id_vo)
-        if not book:
-            raise BookNotFoundError(book_id)
+        await require_book(self.book_repository, book_id_vo, user_id_vo)
 
         # Search highlights (returns domain entities)
         highlights_with_context = await self.highlight_repository.search(
@@ -83,13 +74,7 @@ class HighlightSearchUseCase:
 
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}
-        if self.highlight_style_repository and self.highlight_style_resolver:
-            all_styles = await self.highlight_style_repository.find_for_resolution(
-                user_id_vo, book_id_vo
-            )
-            for style in all_styles:
-                if style.is_combination_level() and not style.is_global():
-                    resolved = self.highlight_style_resolver.resolve(style, all_styles)
-                    labels[style.id.value] = resolved
+        if self.label_resolution_service is not None:
+            labels = await self.label_resolution_service.resolve_for_book(user_id_vo, book_id_vo)
 
         return (grouped, total, labels)

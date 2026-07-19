@@ -47,8 +47,7 @@ class LearningContainer(containers.DeclarativeContainer):
     # Dependencies from shared
     flashcard_repository = providers.Dependency()
     highlight_repository = providers.Dependency()
-    highlight_style_repository = providers.Dependency()
-    highlight_style_resolver = providers.Dependency()
+    label_resolution_service = providers.Dependency()
     book_repository = providers.Dependency()
     chapter_repository = providers.Dependency()
     chapter_prereading_repository = providers.Dependency()
@@ -80,8 +79,7 @@ class LearningContainer(containers.DeclarativeContainer):
         flashcard_repository=flashcard_repository,
         book_repository=book_repository,
         highlight_repository=highlight_repository,
-        highlight_style_repository=highlight_style_repository,
-        highlight_style_resolver=highlight_style_resolver,
+        label_resolution_service=label_resolution_service,
     )
     update_flashcard_use_case = providers.Factory(
         UpdateFlashcardUseCase,

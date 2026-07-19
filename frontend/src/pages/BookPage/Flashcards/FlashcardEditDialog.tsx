@@ -1,12 +1,10 @@
-import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import { useUpdateFlashcardApiV1FlashcardsFlashcardIdPut } from '@/api/generated/flashcards/flashcards.ts';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import type { FlashcardWithContext } from '@/components/features/flashcards/FlashcardChapterList.tsx';
+import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { HighlightContent } from '@/pages/BookPage/common/HighlightContent.tsx';
 import { Box, Button, TextField, Typography } from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import type { FlashcardWithContext } from './FlashcardChapterList.tsx';
 
 interface FlashcardEditDialogProps {
   flashcard: FlashcardWithContext;
@@ -24,8 +22,7 @@ export const FlashcardEditDialog = ({
   const [question, setQuestion] = useState(flashcard.question);
   const [answer, setAnswer] = useState(flashcard.answer);
   const [isSaving, setIsSaving] = useState(false);
-  const queryClient = useQueryClient();
-  const { showSnackbar } = useSnackbar();
+  const { mutationErrorHandler, invalidateBookDetails } = useBookMutationHelpers(bookId);
 
   // Reset form when flashcard changes
   useEffect(() => {
@@ -36,15 +33,10 @@ export const FlashcardEditDialog = ({
   const updateMutation = useUpdateFlashcardApiV1FlashcardsFlashcardIdPut({
     mutation: {
       onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: getGetBookDetailsApiV1BooksBookIdGetQueryKey(bookId),
-        });
+        invalidateBookDetails();
         onClose();
       },
-      onError: (error) => {
-        console.error('Failed to update flashcard:', error);
-        showSnackbar('Failed to update flashcard. Please try again.', 'error');
-      },
+      onError: mutationErrorHandler('update flashcard'),
     },
   });
 

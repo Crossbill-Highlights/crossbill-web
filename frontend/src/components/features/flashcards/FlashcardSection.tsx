@@ -1,8 +1,8 @@
 import type { FlashcardSuggestionItem } from '@/api/generated/model';
 import { CardList } from '@/components/CardList.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
+import type { FlashcardWithContext } from '@/components/features/flashcards/FlashcardChapterList.tsx';
 import { CreateFlashcardForm } from '@/pages/BookPage/Flashcards/CreateFlashcardForm.tsx';
-import type { FlashcardWithContext } from '@/pages/BookPage/Flashcards/FlashcardChapterList.tsx';
 import { FlashcardListCard } from '@/pages/BookPage/Flashcards/FlashcardListCard.tsx';
 import { FlashcardSuggestions } from '@/pages/BookPage/Flashcards/FlashcardSuggestions.tsx';
 import { Box, Typography } from '@mui/material';

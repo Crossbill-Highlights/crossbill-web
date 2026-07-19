@@ -7,12 +7,12 @@ from src.domain.common.value_objects import (
     BookId,
     ChapterId,
     HighlightId,
-    NoteId,
     TagId,
     UserId,
 )
 from src.domain.notes.entities.note import Note, NoteKind
 from src.domain.notes.exceptions import NoteNotFoundError
+from src.infrastructure.common.repositories import BaseRepository
 from src.infrastructure.notes.mappers.note_mapper import NoteMapper
 from src.models import Book as BookORM
 from src.models import Chapter as ChapterORM
@@ -21,21 +21,16 @@ from src.models import Note as NoteORM
 from src.models import Tag as TagORM
 
 
-class NoteRepository:
-    """Repository for Note domain entities."""
+class NoteRepository(BaseRepository[Note, NoteORM]):
+    """Repository for Note domain entities.
+
+    ``find_by_id`` and ``delete`` are inherited from :class:`BaseRepository`;
+    ``save`` is overridden because a note also owns association collections.
+    """
 
     def __init__(self, db: AsyncSession) -> None:
-        self.db = db
         self.mapper = NoteMapper()
-
-    async def find_by_id(self, note_id: NoteId, user_id: UserId) -> Note | None:
-        stmt = select(NoteORM).where(
-            NoteORM.id == note_id.value,
-            NoteORM.user_id == user_id.value,
-        )
-        result = await self.db.execute(stmt)
-        orm_model = result.scalar_one_or_none()
-        return self.mapper.to_domain(orm_model) if orm_model else None
+        super().__init__(db, NoteORM, self.mapper)
 
     async def find_by_book(
         self,
@@ -86,19 +81,6 @@ class NoteRepository:
         result = await self.db.execute(stmt)
         saved = result.scalar_one()
         return self.mapper.to_domain(saved)
-
-    async def delete(self, note_id: NoteId, user_id: UserId) -> bool:
-        stmt = select(NoteORM).where(
-            NoteORM.id == note_id.value,
-            NoteORM.user_id == user_id.value,
-        )
-        result = await self.db.execute(stmt)
-        note_orm = result.scalar_one_or_none()
-        if not note_orm:
-            return False
-        await self.db.delete(note_orm)
-        await self.db.commit()
-        return True
 
     async def _sync_links(self, orm_model: NoteORM, note: Note) -> None:
         """Replace association collections with rows matching the note's link ids."""

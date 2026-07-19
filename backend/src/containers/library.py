@@ -33,12 +33,11 @@ class LibraryContainer(containers.DeclarativeContainer):
     bookmark_repository = providers.Dependency()
     highlight_repository = providers.Dependency()
     tag_repository = providers.Dependency()
-    highlight_style_repository = providers.Dependency()
     reading_session_repository = providers.Dependency()
     flashcard_repository = providers.Dependency()
     file_repository = providers.Dependency()
     highlight_grouping_service = providers.Dependency()
-    highlight_style_resolver = providers.Dependency()
+    label_resolution_service = providers.Dependency()
     epub_parser_service = providers.Dependency()
     epub_position_index_service = providers.Dependency()
     cover_image_service = providers.Dependency()
@@ -79,8 +78,7 @@ class LibraryContainer(containers.DeclarativeContainer):
         tag_use_case=get_tags_for_book_use_case,
         highlight_grouping_service=highlight_grouping_service,
         reading_session_repository=reading_session_repository,
-        highlight_style_repository=highlight_style_repository,
-        highlight_style_resolver=highlight_style_resolver,
+        label_resolution_service=label_resolution_service,
     )
     delete_book_use_case = providers.Factory(
         DeleteBookUseCase,

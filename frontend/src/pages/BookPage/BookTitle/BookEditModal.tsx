@@ -3,7 +3,7 @@ import { BookDetails } from '@/api/generated/model';
 import { BookCover } from '@/components/BookCover.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
-import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { DeleteIcon } from '@/theme/Icons.tsx';
 import { Box, Button, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
@@ -19,7 +19,7 @@ interface BookEditModalProps {
 export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { showSnackbar } = useSnackbar();
+  const { mutationErrorHandler } = useBookMutationHelpers(book.id);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const deleteBookMutation = useDeleteBookApiV1BooksBookIdDelete({
@@ -34,10 +34,7 @@ export const BookEditModal = ({ book, open, onClose }: BookEditModalProps) => {
         onClose();
         navigate({ to: '/' });
       },
-      onError: (error) => {
-        console.error('Failed to delete book:', error);
-        showSnackbar('Failed to delete book. Please try again.', 'error');
-      },
+      onError: mutationErrorHandler('delete book'),
     },
   });
 

@@ -1,9 +1,8 @@
 """API routes for highlights management."""
 
-from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from src.application.learning.use_cases.flashcards.create_flashcard_for_highlight_use_case import (
     CreateFlashcardForHighlightUseCase,
@@ -53,12 +52,10 @@ from src.application.reading.use_cases.tags.update_tag_name_use_case import (
 )
 from src.core import container
 from src.database import DatabaseSession
+from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects import TagId, UserId
 from src.domain.identity.entities.user import User
-from src.domain.reading.services.highlight_grouping_service import (
-    ChapterWithHighlights as ChapterWithHighlightsDomain,
-)
-from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
+from src.domain.reading.exceptions import TagGroupNotFoundError, TagNotFoundError
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.learning.schemas import (
@@ -67,16 +64,15 @@ from src.infrastructure.learning.schemas import (
     FlashcardCreateResponse,
 )
 from src.infrastructure.reading.repositories import TagRepository
+from src.infrastructure.reading.schema_mappers import map_chapters_to_schemas
 from src.infrastructure.reading.schemas import (
     BookHighlightSearchResponse,
-    ChapterWithHighlights,
     Highlight,
     HighlightDeleteRequest,
     HighlightDeleteResponse,
     HighlightLabel,
     HighlightUploadRequest,
     HighlightUploadResponse,
-    PositionResponse,
     Tag,
     TagAssociationRequest,
     TagCreateRequest,
@@ -220,10 +216,7 @@ async def delete_tag_group(
     """
     success = await use_case.delete_group(tag_group_id, current_user.id.value)
     if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Tag group with id {tag_group_id} not found",
-        )
+        raise TagGroupNotFoundError(tag_group_id)
 
 
 @router.post(
@@ -278,94 +271,6 @@ async def create_flashcard_for_highlight(
     )
 
 
-def _map_chapters_to_schemas(
-    chapters_grouped: list[ChapterWithHighlightsDomain],
-    labels: dict[int, ResolvedLabel] | None = None,
-) -> list[ChapterWithHighlights]:
-    """
-    Map domain ChapterWithHighlights to Pydantic schemas.
-
-    Args:
-        chapters_grouped: List of ChapterWithHighlights domain dataclasses
-        labels: Optional dict mapping highlight_style_id -> ResolvedLabel
-
-    Returns:
-        List of ChapterWithHighlights Pydantic schemas
-    """
-    chapters_with_highlights = []
-
-    for chapter_group in chapters_grouped:
-        highlight_schemas = []
-        for hw in chapter_group.highlights:
-            h = hw.highlight
-            chapter = hw.chapter
-
-            resolved = (
-                labels.get(h.highlight_style_id.value) if labels and h.highlight_style_id else None
-            )
-            highlight_schema = Highlight(
-                id=h.id.value,
-                book_id=h.book_id.value,
-                chapter_id=h.chapter_id.value if h.chapter_id else None,
-                text=h.text,
-                chapter=chapter.name if chapter else None,
-                chapter_number=chapter.chapter_number if chapter else None,
-                page=h.page,
-                datetime=h.datetime,
-                label=HighlightLabel(
-                    highlight_style_id=h.highlight_style_id.value if h.highlight_style_id else None,
-                    text=resolved.label if resolved else None,
-                    ui_color=resolved.ui_color if resolved else None,
-                )
-                if h.highlight_style_id
-                else None,
-                flashcards=[
-                    Flashcard(
-                        id=fc.id.value,
-                        user_id=fc.user_id.value,
-                        book_id=fc.book_id.value,
-                        highlight_id=fc.highlight_id.value if fc.highlight_id else None,
-                        question=fc.question,
-                        answer=fc.answer,
-                    )
-                    for fc in hw.flashcards
-                ],
-                tags=[
-                    TagInBook(
-                        id=tag.id.value,
-                        name=tag.name,
-                        tag_group_id=tag.tag_group_id,
-                    )
-                    for tag in hw.tags
-                ],
-                created_at=h.created_at,
-                updated_at=h.updated_at,
-            )
-            highlight_schemas.append(highlight_schema)
-
-        # Get chapter info from first highlight's chapter
-        first_chapter = chapter_group.highlights[0].chapter if chapter_group.highlights else None
-
-        chapter_with_highlights = ChapterWithHighlights(
-            id=chapter_group.chapter_id,
-            name=chapter_group.chapter_name or "",
-            chapter_number=chapter_group.chapter_number,
-            parent_id=chapter_group.parent_id,
-            start_position=PositionResponse(
-                index=chapter_group.start_position.index,
-                char_index=chapter_group.start_position.char_index,
-            )
-            if chapter_group.start_position
-            else None,
-            highlights=highlight_schemas,
-            created_at=first_chapter.created_at if first_chapter else datetime.now(UTC),
-            updated_at=first_chapter.created_at if first_chapter else datetime.now(UTC),
-        )
-        chapters_with_highlights.append(chapter_with_highlights)
-
-    return chapters_with_highlights
-
-
 @router.get(
     "/books/{book_id}/highlights",
     response_model=BookHighlightSearchResponse,
@@ -394,7 +299,7 @@ async def search_book_highlights(
         book_id, current_user.id.value, search_text
     )
     return BookHighlightSearchResponse(
-        chapters=_map_chapters_to_schemas(chapters_grouped, labels),
+        chapters=map_chapters_to_schemas(chapters_grouped, labels),
         total=total,
     )
 
@@ -535,10 +440,7 @@ async def delete_tag(
     """
     deleted = await use_case.delete_tag(book_id, tag_id, current_user.id.value)
     if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Tag {tag_id} not found",
-        )
+        raise TagNotFoundError(tag_id)
 
 
 @router.post(
@@ -588,10 +490,7 @@ async def update_tag(
         tag_repo = TagRepository(db)
         tag = await tag_repo.find_by_id(TagId(tag_id), UserId(current_user.id.value))
         if not tag:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Tag {tag_id} not found",
-            )
+            raise TagNotFoundError(tag_id)
 
     # Update group association if provided (including None to clear)
     if hasattr(request, "tag_group_id"):
@@ -654,10 +553,7 @@ async def add_tag_to_highlight(
             book_id, highlight_id, request.name, current_user.id.value
         )
     else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Either tag_id or name must be provided",
-        )
+        raise ValidationError("Either tag_id or name must be provided")
 
     resolved = (
         labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None

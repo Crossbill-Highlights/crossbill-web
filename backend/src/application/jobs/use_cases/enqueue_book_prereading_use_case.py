@@ -2,6 +2,7 @@
 
 import structlog
 
+from src.application.common.ownership import require_book
 from src.application.jobs.protocols.job_batch_repository import JobBatchRepositoryProtocol
 from src.application.jobs.protocols.job_queue_service import JobQueueServiceProtocol
 from src.application.library.protocols.book_repository import BookRepositoryProtocol
@@ -12,7 +13,6 @@ from src.application.reading.protocols.chapter_prereading_repository import (
 from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.jobs.entities.job_batch import JobBatch, JobBatchType
-from src.domain.reading.exceptions import BookNotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -33,9 +33,7 @@ class EnqueueBookPrereadingUseCase:
         self._prereading_repo = prereading_repo
 
     async def execute(self, book_id: BookId, user_id: UserId) -> JobBatch:
-        book = await self._book_repo.find_by_id(book_id, user_id)
-        if not book:
-            raise BookNotFoundError(book_id.value)
+        await require_book(self._book_repo, book_id, user_id)
 
         chapters = await self._chapter_repo.find_all_by_book(book_id, user_id)
 

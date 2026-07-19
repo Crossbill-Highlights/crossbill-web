@@ -1,6 +1,13 @@
 """Library domain exceptions."""
 
-from src.domain.common.exceptions import ValidationError
+from src.domain.common.exceptions import EntityNotFoundError, ValidationError
+
+
+class CoverNotFoundError(EntityNotFoundError):
+    """Raised when a book cover image cannot be found."""
+
+    def __init__(self, filename: str) -> None:
+        super().__init__("Cover", filename)
 
 
 class XPointParseError(ValidationError):

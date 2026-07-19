@@ -5,6 +5,7 @@ import {
   useUpdateNoteApiV1NotesNoteIdPut,
 } from '@/api/generated/notes/notes.ts';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
+import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface UseNoteLinksOptions {
@@ -24,6 +25,7 @@ interface MutateOptions {
 export const useNoteLinks = ({ bookId }: UseNoteLinksOptions) => {
   const queryClient = useQueryClient();
   const { showSnackbar } = useSnackbar();
+  const { mutationErrorHandler } = useBookMutationHelpers(bookId);
 
   const updateNoteMutation = useUpdateNoteApiV1NotesNoteIdPut({
     mutation: {
@@ -35,10 +37,7 @@ export const useNoteLinks = ({ bookId }: UseNoteLinksOptions) => {
           queryKey: getGetNoteApiV1NotesNoteIdGetQueryKey(noteId),
         });
       },
-      onError: (error: Error) => {
-        console.error('Failed to update note links:', error);
-        showSnackbar('Failed to update note links. Please try again.', 'error');
-      },
+      onError: mutationErrorHandler('update note links'),
     },
   });
 
