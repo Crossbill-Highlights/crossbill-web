@@ -1,4 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
+import { getApiErrorMessage } from '@/utils/getApiErrorMessage.ts';
 import { Alert, Box, Button, Container, Link, Paper, TextField, Typography } from '@mui/material';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
 import { FormEvent, useState } from 'react';
@@ -32,12 +33,7 @@ export const RegistrationPage = () => {
       await register(email, password);
       navigate({ to: '/' });
     } catch (err: unknown) {
-      const errorObj = err as { response?: { data?: { detail?: string } } };
-      if (errorObj.response?.data?.detail) {
-        setError(errorObj.response.data.detail);
-      } else {
-        setError('Registration failed. Please try again.');
-      }
+      setError(getApiErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }
