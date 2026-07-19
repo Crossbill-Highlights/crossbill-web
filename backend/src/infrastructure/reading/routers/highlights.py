@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from src.application.learning.use_cases.flashcards.create_flashcard_for_highlight_use_case import (
     CreateFlashcardForHighlightUseCase,
@@ -53,8 +53,10 @@ from src.application.reading.use_cases.tags.update_tag_name_use_case import (
 )
 from src.core import container
 from src.database import DatabaseSession
+from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects import TagId, UserId
 from src.domain.identity.entities.user import User
+from src.domain.reading.exceptions import TagGroupNotFoundError, TagNotFoundError
 from src.domain.reading.services.highlight_grouping_service import (
     ChapterWithHighlights as ChapterWithHighlightsDomain,
 )
@@ -220,10 +222,7 @@ async def delete_tag_group(
     """
     success = await use_case.delete_group(tag_group_id, current_user.id.value)
     if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Tag group with id {tag_group_id} not found",
-        )
+        raise TagGroupNotFoundError(tag_group_id)
 
 
 @router.post(
@@ -535,10 +534,7 @@ async def delete_tag(
     """
     deleted = await use_case.delete_tag(book_id, tag_id, current_user.id.value)
     if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Tag {tag_id} not found",
-        )
+        raise TagNotFoundError(tag_id)
 
 
 @router.post(
@@ -588,10 +584,7 @@ async def update_tag(
         tag_repo = TagRepository(db)
         tag = await tag_repo.find_by_id(TagId(tag_id), UserId(current_user.id.value))
         if not tag:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Tag {tag_id} not found",
-            )
+            raise TagNotFoundError(tag_id)
 
     # Update group association if provided (including None to clear)
     if hasattr(request, "tag_group_id"):
@@ -654,10 +647,7 @@ async def add_tag_to_highlight(
             book_id, highlight_id, request.name, current_user.id.value
         )
     else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Either tag_id or name must be provided",
-        )
+        raise ValidationError("Either tag_id or name must be provided")
 
     resolved = (
         labels.get(highlight.highlight_style_id.value) if highlight.highlight_style_id else None
