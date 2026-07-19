@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import { motion } from 'motion/react';
 
 interface ProgressBarProps {
@@ -7,6 +7,7 @@ interface ProgressBarProps {
 }
 
 export const ProgressBar = ({ currentIndex, totalCount }: ProgressBarProps) => {
+  const theme = useTheme();
   const progressPercentage = ((currentIndex + 1) / totalCount) * 100;
 
   return (
@@ -14,7 +15,7 @@ export const ProgressBar = ({ currentIndex, totalCount }: ProgressBarProps) => {
       sx={{
         width: '100%',
         height: '4px',
-        backgroundColor: 'rgba(0, 0, 0, 0.05)',
+        backgroundColor: theme.customColors.backgrounds.subtle,
         overflow: 'hidden',
         mt: 0,
       }}
@@ -22,7 +23,7 @@ export const ProgressBar = ({ currentIndex, totalCount }: ProgressBarProps) => {
       <motion.div
         style={{
           height: '100%',
-          backgroundColor: '#43311E', // primary.main (amber.700)
+          backgroundColor: theme.palette.primary.main,
           transformOrigin: 'left',
         }}
         initial={{ width: `${progressPercentage}%` }}

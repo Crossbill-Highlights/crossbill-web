@@ -5,17 +5,20 @@ import type {
   Flashcard,
   TagInBook,
 } from '@/api/generated/model';
+import { useGetNotesForBookApiV1BooksBookIdNotesGet } from '@/api/generated/notes/notes.ts';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { CommonDialogHorizontalNavigation } from '@/components/dialogs/CommonDialogHorizontalNavigation.tsx';
 import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
+import { DialogTabs, type DialogTabItem } from '@/components/dialogs/DialogTabs.tsx';
+import { ProgressBar } from '@/components/dialogs/ProgressBar.tsx';
 import {
   useModalHorizontalNavigation,
   useModalSwipeNavigation,
 } from '@/components/dialogs/useModalHorizontalNavigation.ts';
-import { ProgressBar } from '@/pages/BookPage/Highlights/HighlightViewModal/components/ProgressBar.tsx';
+import { LinkedNotesSection } from '@/pages/BookPage/Notes/components/LinkedNotesSection.tsx';
 import { NoteEditorDialog } from '@/pages/BookPage/Notes/NoteEditorDialog';
-import { Box, Button, Tab, Tabs } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { sumBy } from 'lodash';
 import { useMemo, useState } from 'react';
 import { ChapterReviewSection } from './ChapterReviewSection.tsx';
@@ -24,7 +27,6 @@ import { ChatDialog } from './ChatDialog.tsx';
 import { CHAT_VARIANT, QUIZ_VARIANT } from './chatVariants.ts';
 import { FlashcardsSection } from './FlashcardsSection.tsx';
 import { HighlightsSection } from './HighlightsSection.tsx';
-import { NotesSection } from './NotesSection.tsx';
 import { PrereadingSummarySection } from './PrereadingSummarySection.tsx';
 
 interface ChapterDetailDialogProps {
@@ -41,14 +43,6 @@ interface ChapterDetailDialogProps {
   bookFlashcards?: Flashcard[];
 }
 
-const TAB_CHAPTER_REVIEW = 0;
-const TAB_HIGHLIGHTS = 1;
-const TAB_FLASHCARDS = 2;
-const TAB_NOTES = 3;
-
-const formatTabLabel = (label: string, count: number) =>
-  count > 0 ? `${label} (${count})` : label;
-
 export const ChapterDetailDialog = ({
   open,
   onClose,
@@ -64,7 +58,9 @@ export const ChapterDetailDialog = ({
 }: ChapterDetailDialogProps) => {
   const [quizOpen, setQuizOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(TAB_CHAPTER_REVIEW);
+  // Lifted out of DialogTabs so the active tab survives chapter navigation
+  // (the tab content remounts inside the chapter-keyed FadeInOut).
+  const [activeTab, setActiveTab] = useState(0);
   const [chatNoteBody, setChatNoteBody] = useState<string | null>(null);
 
   const { hasNavigation, hasPrevious, hasNext, handlePrevious, handleNext } =
@@ -89,6 +85,14 @@ export const ChapterDetailDialog = ({
 
   const prereadingSummary = prereadingByChapterId[chapter.id];
 
+  const { data: notesData, isLoading: notesLoading } = useGetNotesForBookApiV1BooksBookIdNotesGet(
+    bookId,
+    { chapter_id: chapter.id }
+  );
+  // NOTE: the orval axios mutator unwraps the response (`.then(({ data }) => data)`),
+  // so the generated GET hook's `data` is the payload itself, not an AxiosResponse.
+  const notes = notesData?.notes ?? [];
+
   const highlightCount = chapter.highlights.length;
   const flashcardCount = useMemo(() => {
     const fromHighlights = sumBy(chapter.highlights, (h) => h.flashcards.length);
@@ -98,6 +102,61 @@ export const ChapterDetailDialog = ({
 
   const title = <CommonDialogTitle>{chapter.name}</CommonDialogTitle>;
 
+  const tabs: DialogTabItem[] = [
+    {
+      key: 'review',
+      label: 'Chapter review',
+      content: (
+        <ChapterReviewSection
+          chapterId={chapter.id}
+          bookId={bookId}
+          prereadingSummary={prereadingSummary}
+          onStartQuiz={() => setQuizOpen(true)}
+          onStartChat={() => setChatOpen(true)}
+        />
+      ),
+    },
+    {
+      key: 'highlights',
+      label: 'Highlights',
+      count: highlightCount,
+      content: (
+        <HighlightsSection
+          chapter={chapter}
+          bookId={bookId}
+          bookmarksByHighlightId={bookmarksByHighlightId}
+          availableTags={availableTags}
+        />
+      ),
+    },
+    {
+      key: 'flashcards',
+      label: 'Flashcards',
+      count: flashcardCount,
+      content: (
+        <FlashcardsSection
+          chapter={chapter}
+          bookId={bookId}
+          prereadingSummary={prereadingSummary}
+          bookFlashcards={bookFlashcards}
+        />
+      ),
+    },
+    {
+      key: 'notes',
+      label: 'Notes',
+      count: notes.length,
+      content: (
+        <LinkedNotesSection
+          bookId={bookId}
+          target={{ kind: 'chapter', id: chapter.id }}
+          notes={notes}
+          isLoading={notesLoading}
+        />
+      ),
+    },
+  ];
+
   const renderContent = () => (
     <Box>
       <Box {...summarySwipeHandlers}>
@@ -106,53 +165,12 @@ export const ChapterDetailDialog = ({
 
       <ChapterToolbar chapterId={chapter.id} bookId={bookId} hasSummary={!!prereadingSummary} />
 
-      <Tabs
-        value={activeTab}
-        onChange={(_, newValue: number) => setActiveTab(newValue)}
-        variant="scrollable"
-        scrollButtons="auto"
-        sx={{ borderBottom: 1, borderColor: 'divider', mt: 1 }}
-        onTouchStart={(e) => e.stopPropagation()}
-        onTouchMove={(e) => e.stopPropagation()}
-        onTouchEnd={(e) => e.stopPropagation()}
-      >
-        <Tab label="Chapter review" />
-        <Tab label={formatTabLabel('Highlights', highlightCount)} />
-        <Tab label={formatTabLabel('Flashcards', flashcardCount)} />
-        <Tab label="Notes" />
-      </Tabs>
-
-      <Box sx={{ pt: 2, pb: 2 }} {...tabSwipeHandlers}>
-        {activeTab === TAB_CHAPTER_REVIEW && (
-          <ChapterReviewSection
-            chapterId={chapter.id}
-            bookId={bookId}
-            prereadingSummary={prereadingSummary}
-            onStartQuiz={() => setQuizOpen(true)}
-            onStartChat={() => setChatOpen(true)}
-          />
-        )}
-
-        {activeTab === TAB_HIGHLIGHTS && (
-          <HighlightsSection
-            chapter={chapter}
-            bookId={bookId}
-            bookmarksByHighlightId={bookmarksByHighlightId}
-            availableTags={availableTags}
-          />
-        )}
-
-        {activeTab === TAB_FLASHCARDS && (
-          <FlashcardsSection
-            chapter={chapter}
-            bookId={bookId}
-            prereadingSummary={prereadingSummary}
-            bookFlashcards={bookFlashcards}
-          />
-        )}
-
-        {activeTab === TAB_NOTES && <NotesSection chapter={chapter} bookId={bookId} />}
-      </Box>
+      <DialogTabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        panelSwipeHandlers={tabSwipeHandlers}
+      />
     </Box>
   );
 
@@ -169,7 +187,7 @@ export const ChapterDetailDialog = ({
           ) : undefined
         }
         footerActions={
-          <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
             <Button onClick={onClose}>Close</Button>
           </Box>
         }

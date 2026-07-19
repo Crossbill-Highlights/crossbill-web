@@ -49,11 +49,8 @@ export const ChatMessageList = ({
             maxWidth: '80%',
             p: 1.5,
             borderRadius: 2,
-            bgcolor: msg.role === 'user' ? 'primary.main' : 'grey.100',
+            bgcolor: msg.role === 'user' ? 'primary.main' : theme.customColors.backgrounds.subtle,
             color: msg.role === 'user' ? 'primary.contrastText' : 'text.primary',
-            ...(theme.palette.mode === 'dark' && msg.role === 'assistant'
-              ? { bgcolor: 'grey.800' }
-              : {}),
           }}
         >
           {msg.role === 'assistant' ? (

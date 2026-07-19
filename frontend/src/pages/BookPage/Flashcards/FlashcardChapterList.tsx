@@ -1,8 +1,9 @@
 import type { Flashcard, Highlight } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
+import { CardList } from '@/components/CardList.tsx';
 import { SectionTitle } from '@/components/typography/SectionTitle.tsx';
 import { FlashcardListCard } from '@/pages/BookPage/Flashcards/FlashcardListCard.tsx';
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 export interface FlashcardWithContext extends Flashcard {
   highlight: Highlight | null;
@@ -56,16 +57,7 @@ export const FlashcardChapterList = ({
             <Box key={chapter.id} id={`chapter-${chapter.id}`}>
               <SectionTitle showDivider>{chapter.name}</SectionTitle>
 
-              <Stack
-                component="ul"
-                sx={{
-                  gap: 2,
-                  listStyle: 'none',
-                  p: 0,
-                  m: 0,
-                }}
-                aria-label={`Flashcards in ${chapter.name}`}
-              >
+              <CardList aria-label={`Flashcards in ${chapter.name}`}>
                 {chapter.flashcards.map((flashcard) => (
                   <li key={flashcard.id}>
                     <FlashcardListCard
@@ -75,7 +67,7 @@ export const FlashcardChapterList = ({
                     />
                   </li>
                 ))}
-              </Stack>
+              </CardList>
             </Box>
           ))
         )}

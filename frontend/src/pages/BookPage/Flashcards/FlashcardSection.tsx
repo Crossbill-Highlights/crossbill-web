@@ -1,10 +1,11 @@
 import type { FlashcardSuggestionItem } from '@/api/generated/model';
+import { CardList } from '@/components/CardList.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { CreateFlashcardForm } from '@/pages/BookPage/Flashcards/CreateFlashcardForm.tsx';
 import type { FlashcardWithContext } from '@/pages/BookPage/Flashcards/FlashcardChapterList.tsx';
 import { FlashcardListCard } from '@/pages/BookPage/Flashcards/FlashcardListCard.tsx';
 import { FlashcardSuggestions } from '@/pages/BookPage/Flashcards/FlashcardSuggestions.tsx';
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import type { QueryKey } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -49,16 +50,7 @@ const FlashcardsList = ({
   }
 
   return (
-    <Stack
-      component="ul"
-      sx={{
-        gap: 2,
-        listStyle: 'none',
-        p: 0,
-        m: 0,
-        mb: 2,
-      }}
-    >
+    <CardList sx={{ mb: 2 }}>
       {flashcardsWithContext.map((flashcard) => (
         <li key={flashcard.id}>
           <FlashcardListCard
@@ -70,7 +62,7 @@ const FlashcardsList = ({
           />
         </li>
       ))}
-    </Stack>
+    </CardList>
   );
 };
 

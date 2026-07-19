@@ -1,8 +1,9 @@
 import type { Bookmark, ChapterWithHighlights, TagInBook } from '@/api/generated/model';
+import { CardList } from '@/components/CardList.tsx';
+import { EmptyStateText } from '@/components/EmptyStateText.tsx';
 import { HighlightCard } from '@/pages/BookPage/Highlights/HighlightCard.tsx';
 import { HighlightViewModal } from '@/pages/BookPage/Highlights/HighlightViewModal/HighlightViewModal.tsx';
 import { useHighlightModal } from '@/pages/BookPage/Highlights/hooks/useHighlightModal.ts';
-import { Stack, Typography } from '@mui/material';
 
 interface HighlightsSectionProps {
   chapter: ChapterWithHighlights;
@@ -28,16 +29,12 @@ export const HighlightsSection = ({
   } = useHighlightModal({ allHighlights: highlights, isMobile: false, syncToUrl: false });
 
   if (highlights.length === 0) {
-    return (
-      <Typography variant="body2" color="text.secondary">
-        No highlights in this chapter yet.
-      </Typography>
-    );
+    return <EmptyStateText>No highlights in this chapter yet.</EmptyStateText>;
   }
 
   return (
     <>
-      <Stack component="ul" sx={{ gap: 2, listStyle: 'none', p: 0, m: 0 }}>
+      <CardList>
         {highlights.map((highlight) => (
           <li key={highlight.id}>
             <HighlightCard
@@ -47,7 +44,7 @@ export const HighlightsSection = ({
             />
           </li>
         ))}
-      </Stack>
+      </CardList>
 
       {currentHighlight && (
         <HighlightViewModal

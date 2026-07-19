@@ -5,6 +5,7 @@ import {
 import { getGetBookDetailsApiV1BooksBookIdGetQueryKey } from '@/api/generated/books/books.ts';
 import type { Bookmark } from '@/api/generated/model';
 import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip.tsx';
+import { DialogToolbar } from '@/components/dialogs/DialogToolbar.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import {
   BookmarkFilledIcon,
@@ -13,7 +14,7 @@ import {
   DeleteIcon,
   LinkIcon,
 } from '@/theme/Icons.tsx';
-import { Box } from '@mui/material';
+import { copyUrlWithSearchParam } from '@/utils/clipboard.ts';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -42,10 +43,15 @@ export const Toolbar = ({
     showSnackbar
   );
 
+  // Copy a link that works from any context: `highlightId` is only a validated
+  // search param on the highlights route, so build the URL on that route —
+  // copying the current URL from e.g. the chapter dialog would be a dead link.
   const handleCopyLink = async () => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('highlightId', highlightId.toString());
-    await navigator.clipboard.writeText(url.toString());
+    await copyUrlWithSearchParam(
+      'highlightId',
+      highlightId,
+      `${window.location.origin}/book/${bookId}/highlights`
+    );
   };
 
   const handleCopyContent = async () => {
@@ -55,7 +61,7 @@ export const Toolbar = ({
   const isDisabled = disabled || isProcessing;
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+    <DialogToolbar>
       <IconButtonWithTooltip
         title="Copy link"
         onClick={handleCopyLink}
@@ -84,7 +90,7 @@ export const Toolbar = ({
         ariaLabel="Delete highlight"
         icon={<DeleteIcon />}
       />
-    </Box>
+    </DialogToolbar>
   );
 };
 

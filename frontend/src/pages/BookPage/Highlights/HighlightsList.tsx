@@ -1,5 +1,6 @@
 import type { Bookmark, Highlight } from '@/api/generated/model';
 import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
+import { CardList } from '@/components/CardList.tsx';
 import { SectionTitle } from '@/components/typography/SectionTitle.tsx';
 import { Box, Typography } from '@mui/material';
 import { HighlightCard } from './HighlightCard.tsx';
@@ -51,18 +52,7 @@ export const HighlightsList = ({
               <SectionTitle showDivider>{chapter.name}</SectionTitle>
 
               {chapter.highlights.length > 0 ? (
-                <Box
-                  component="ul"
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 2.5,
-                    listStyle: 'none',
-                    p: 0,
-                    m: 0,
-                  }}
-                  aria-label={`Highlights in ${chapter.name}`}
-                >
+                <CardList sx={{ gap: 2.5 }} aria-label={`Highlights in ${chapter.name}`}>
                   {chapter.highlights.map((highlight) => (
                     <li key={highlight.id}>
                       <HighlightCard
@@ -72,7 +62,7 @@ export const HighlightsList = ({
                       />
                     </li>
                   ))}
-                </Box>
+                </CardList>
               ) : (
                 <Typography variant="body2" color="text.secondary" sx={{ pl: 0.5 }}>
                   No highlights found in this chapter.

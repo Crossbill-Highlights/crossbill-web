@@ -3,9 +3,10 @@ import {
   useGenerateChapterPrereadingApiV1ChaptersChapterIdPrereadingGeneratePost,
 } from '@/api/generated/prereading/prereading';
 import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip.tsx';
+import { DialogToolbar } from '@/components/dialogs/DialogToolbar.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { AIIcon, RegenerateIcon } from '@/theme/Icons.tsx';
-import { Box, CircularProgress } from '@mui/material';
+import { CircularProgress } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface ChapterToolbarProps {
@@ -37,7 +38,7 @@ export const ChapterToolbar = ({ chapterId, bookId, hasSummary }: ChapterToolbar
 
   return (
     <AIFeature>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+      <DialogToolbar>
         {isPending ? (
           <CircularProgress size={24} sx={{ m: '4px' }} />
         ) : (
@@ -48,7 +49,7 @@ export const ChapterToolbar = ({ chapterId, bookId, hasSummary }: ChapterToolbar
             icon={icon}
           />
         )}
-      </Box>
+      </DialogToolbar>
     </AIFeature>
   );
 };

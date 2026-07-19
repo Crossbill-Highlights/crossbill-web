@@ -10,6 +10,7 @@ import type {
   Flashcard,
   FlashcardSuggestionItem,
 } from '@/api/generated/model';
+import { CardList } from '@/components/CardList.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { CreateFlashcardForm } from '@/pages/BookPage/Flashcards/CreateFlashcardForm.tsx';
@@ -17,7 +18,6 @@ import type { FlashcardWithContext } from '@/pages/BookPage/Flashcards/Flashcard
 import { FlashcardEditDialog } from '@/pages/BookPage/Flashcards/FlashcardEditDialog.tsx';
 import { FlashcardListCard } from '@/pages/BookPage/Flashcards/FlashcardListCard.tsx';
 import { FlashcardSuggestions } from '@/pages/BookPage/Flashcards/FlashcardSuggestions.tsx';
-import { Stack } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { flatMap } from 'lodash';
 import { useCallback, useMemo, useState } from 'react';
@@ -214,7 +214,7 @@ export const FlashcardsSection = ({
   return (
     <>
       {flashcardsWithContext.length > 0 && (
-        <Stack component="ul" sx={{ gap: 2, listStyle: 'none', p: 0, m: 0, mb: 2 }}>
+        <CardList sx={{ mb: 2 }}>
           {flashcardsWithContext.map((flashcard) => (
             <li key={flashcard.id}>
               <FlashcardListCard
@@ -225,7 +225,7 @@ export const FlashcardsSection = ({
               />
             </li>
           ))}
-        </Stack>
+        </CardList>
       )}
 
       <CreateFlashcardForm
