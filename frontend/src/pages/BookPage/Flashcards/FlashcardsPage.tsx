@@ -5,21 +5,19 @@ import type {
   TagGroupInBook,
   TagInBook,
 } from '@/api/generated/model';
-import { scrollToElementWithHighlight } from '@/components/animations/scrollUtils';
 import {
   FlashcardChapterList,
   type FlashcardChapterData,
   type FlashcardWithContext,
 } from '@/components/features/flashcards/FlashcardChapterList.tsx';
-import { SearchBar } from '@/components/inputs/SearchBar.tsx';
 import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
+import { ListSearchSortHeader } from '@/pages/BookPage/common/ListSearchSortHeader.tsx';
+import { useBookTabFilters } from '@/pages/BookPage/common/useBookTabFilters.ts';
 import { ChapterNav, type ChapterNavigationData } from '@/pages/BookPage/navigation/ChapterNav.tsx';
-import { SortIcon } from '@/theme/Icons.tsx';
-import { Box, Divider, IconButton, Tooltip } from '@mui/material';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Box, Divider } from '@mui/material';
 import { flatMap } from 'lodash';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FilterFab } from '../common/FilterFab.tsx';
 import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
@@ -31,56 +29,11 @@ const BOOK_FLASHCARDS_KEY = -1;
 export const FlashcardsPage = () => {
   const { book, isDesktop, leftSidebarEl, fabContainerEl } = useBookPage();
 
-  const { search: urlSearch, tagId: urlTagId } = useSearch({ from: '/book/$bookId/flashcards' });
-  const navigate = useNavigate({ from: '/book/$bookId/flashcards' });
-
-  const searchText = urlSearch || '';
-  const [selectedTagId, setSelectedTagId] = useState<number | undefined>(urlTagId);
+  const { searchText, selectedTagId, handleSearch, handleTagClick, handleChapterClick } =
+    useBookTabFilters('/book/$bookId/flashcards');
   const [isReversed, setIsReversed] = useState(false);
   const [editingFlashcard, setEditingFlashcard] = useState<FlashcardWithContext | null>(null);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
-
-  useEffect(() => {
-    setSelectedTagId(urlTagId);
-  }, [urlTagId]);
-
-  // Navigation callbacks
-  const handleSearch = useCallback(
-    (value: string) => {
-      navigate({
-        search: (prev) => ({ ...prev, search: value || undefined }),
-        replace: true,
-      });
-    },
-    [navigate]
-  );
-
-  const handleTagClick = useCallback(
-    (newTagId: number | null) => {
-      setSelectedTagId(newTagId || undefined);
-      navigate({
-        search: (prev) => ({ ...prev, tagId: newTagId || undefined }),
-        replace: true,
-      });
-    },
-    [navigate]
-  );
-
-  const handleChapterClick = useCallback(
-    (chapterId: number) => {
-      if (urlSearch) {
-        navigate({
-          search: (prev) => ({ ...prev, search: undefined }),
-          replace: true,
-        });
-      }
-      scrollToElementWithHighlight(`chapter-${chapterId}`, {
-        behavior: 'smooth',
-        block: 'start',
-      });
-    },
-    [navigate, urlSearch]
-  );
 
   const bookChapters = book.chapters;
 
@@ -231,27 +184,13 @@ export const FlashcardsPage = () => {
       {isDesktop ? (
         <ContentWithSidebar>
           <Box>
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
-              <Box sx={{ flexGrow: 1 }}>
-                <SearchBar
-                  onSearch={handleSearch}
-                  placeholder="Search flashcards..."
-                  initialValue={searchText}
-                />
-              </Box>
-              <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
-                <IconButton
-                  onClick={() => setIsReversed(!isReversed)}
-                  sx={{
-                    mt: '1px',
-                    color: isReversed ? 'primary.main' : 'text.secondary',
-                    '&:hover': { color: 'primary.main' },
-                  }}
-                >
-                  <SortIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
+            <ListSearchSortHeader
+              onSearch={handleSearch}
+              searchPlaceholder="Search flashcards..."
+              searchInitialValue={searchText}
+              isReversed={isReversed}
+              onToggleReversed={() => setIsReversed(!isReversed)}
+            />
             <FlashcardChapterList
               chapters={flashcardChapters}
               bookId={book.id}
@@ -268,27 +207,13 @@ export const FlashcardsPage = () => {
         </ContentWithSidebar>
       ) : (
         <>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
-            <Box sx={{ flexGrow: 1 }}>
-              <SearchBar
-                onSearch={handleSearch}
-                placeholder="Search flashcards..."
-                initialValue={searchText}
-              />
-            </Box>
-            <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
-              <IconButton
-                onClick={() => setIsReversed(!isReversed)}
-                sx={{
-                  mt: '1px',
-                  color: isReversed ? 'primary.main' : 'text.secondary',
-                  '&:hover': { color: 'primary.main' },
-                }}
-              >
-                <SortIcon />
-              </IconButton>
-            </Tooltip>
-          </Box>
+          <ListSearchSortHeader
+            onSearch={handleSearch}
+            searchPlaceholder="Search flashcards..."
+            searchInitialValue={searchText}
+            isReversed={isReversed}
+            onToggleReversed={() => setIsReversed(!isReversed)}
+          />
           <FlashcardChapterList
             chapters={flashcardChapters}
             bookId={book.id}

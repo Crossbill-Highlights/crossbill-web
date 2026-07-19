@@ -1,9 +1,7 @@
 import type { Bookmark, Highlight } from '@/api/generated/model';
-import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
-import { CardList } from '@/components/CardList.tsx';
-import { SectionTitle } from '@/components/typography/SectionTitle.tsx';
-import { Box, Typography } from '@mui/material';
 import { HighlightCard } from '@/components/cards/HighlightCard.tsx';
+import { ChapterGroupedList } from '@/pages/BookPage/common/ChapterGroupedList.tsx';
+import { Typography } from '@mui/material';
 
 export interface ChapterData {
   id: number;
@@ -28,50 +26,29 @@ export const HighlightsList = ({
   emptyMessage = 'No chapters found.',
   animationKey = 'chapters',
   onOpenHighlight,
-}: ChapterListProps) => {
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-        <Typography variant="body2" color="text.secondary">
-          Searching...
-        </Typography>
-      </Box>
-    );
-  }
-
-  return (
-    <FadeInOut ekey={animationKey}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {chapters.length === 0 ? (
-          <Typography variant="body1" color="text.secondary">
-            {emptyMessage}
-          </Typography>
-        ) : (
-          chapters.map((chapter) => (
-            <Box key={chapter.id} id={`chapter-${chapter.id}`}>
-              <SectionTitle showDivider>{chapter.name}</SectionTitle>
-
-              {chapter.highlights.length > 0 ? (
-                <CardList sx={{ gap: 2.5 }} aria-label={`Highlights in ${chapter.name}`}>
-                  {chapter.highlights.map((highlight) => (
-                    <li key={highlight.id}>
-                      <HighlightCard
-                        highlight={highlight}
-                        bookmark={bookmarksByHighlightId[highlight.id]}
-                        onOpenModal={onOpenHighlight}
-                      />
-                    </li>
-                  ))}
-                </CardList>
-              ) : (
-                <Typography variant="body2" color="text.secondary" sx={{ pl: 0.5 }}>
-                  No highlights found in this chapter.
-                </Typography>
-              )}
-            </Box>
-          ))
-        )}
-      </Box>
-    </FadeInOut>
-  );
-};
+}: ChapterListProps) => (
+  <ChapterGroupedList
+    chapters={chapters}
+    getChapterId={(chapter) => chapter.id}
+    getChapterName={(chapter) => chapter.name}
+    getItems={(chapter) => chapter.highlights}
+    getItemKey={(highlight) => highlight.id}
+    ariaLabel={(chapterName) => `Highlights in ${chapterName}`}
+    isLoading={isLoading}
+    emptyMessage={emptyMessage}
+    animationKey={animationKey}
+    cardListSx={{ gap: 2.5 }}
+    renderItem={(highlight) => (
+      <HighlightCard
+        highlight={highlight}
+        bookmark={bookmarksByHighlightId[highlight.id]}
+        onOpenModal={onOpenHighlight}
+      />
+    )}
+    renderEmptyChapter={() => (
+      <Typography variant="body2" color="text.secondary" sx={{ pl: 0.5 }}>
+        No highlights found in this chapter.
+      </Typography>
+    )}
+  />
+);

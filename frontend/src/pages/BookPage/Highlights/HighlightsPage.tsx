@@ -10,12 +10,12 @@ import type {
   TagInBook,
 } from '@/api/generated/model';
 import { scrollToElementWithHighlight } from '@/components/animations/scrollUtils';
-import { SearchBar } from '@/components/inputs/SearchBar.tsx';
 import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
+import { ListSearchSortHeader } from '@/pages/BookPage/common/ListSearchSortHeader.tsx';
+import { useBookTabFilters } from '@/pages/BookPage/common/useBookTabFilters.ts';
 import { useHighlightModal } from '@/pages/BookPage/Highlights/hooks/useHighlightModal.ts';
-import { SortIcon } from '@/theme/Icons.tsx';
-import { Box, Divider, IconButton, Tooltip } from '@mui/material';
+import { Box, Divider } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { keyBy } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -32,15 +32,13 @@ import { HighlightViewModal } from './HighlightViewModal';
 export const HighlightsPage = () => {
   const { book, isDesktop, leftSidebarEl, fabContainerEl } = useBookPage();
 
-  const {
-    search: urlSearch,
-    tagId: urlTagId,
-    labelId: urlLabelId,
-  } = useSearch({ from: '/book/$bookId/highlights' });
+  const { search: urlSearch, labelId: urlLabelId } = useSearch({
+    from: '/book/$bookId/highlights',
+  });
   const navigate = useNavigate({ from: '/book/$bookId/highlights' });
 
-  const searchText = urlSearch || '';
-  const [selectedTagId, setSelectedTagId] = useState<number | undefined>(urlTagId);
+  const { searchText, selectedTagId, handleSearch, handleTagClick, handleChapterClick } =
+    useBookTabFilters('/book/$bookId/highlights');
   const [selectedLabelId, setSelectedLabelId] = useState<number | undefined>(urlLabelId);
   const [isReversed, setIsReversed] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
@@ -48,37 +46,11 @@ export const HighlightsPage = () => {
   const filterEnabled = !!selectedLabelId || !!selectedTagId;
 
   useEffect(() => {
-    setSelectedTagId(urlTagId);
-  }, [urlTagId]);
-
-  useEffect(() => {
     setSelectedLabelId(urlLabelId);
   }, [urlLabelId]);
 
   // Fetch available tags for the highlight modal
   const { data: tagsResponse } = useGetTagsApiV1BooksBookIdTagsGet(book.id);
-
-  // Navigation callbacks
-  const handleSearch = useCallback(
-    (value: string) => {
-      navigate({
-        search: (prev) => ({ ...prev, search: value || undefined }),
-        replace: true,
-      });
-    },
-    [navigate]
-  );
-
-  const handleTagClick = useCallback(
-    (newTagId: number | null) => {
-      setSelectedTagId(newTagId || undefined);
-      navigate({
-        search: (prev) => ({ ...prev, tagId: newTagId || undefined }),
-        replace: true,
-      });
-    },
-    [navigate]
-  );
 
   const handleLabelClick = useCallback(
     (newLabelId: number | null) => {
@@ -100,22 +72,6 @@ export const HighlightsPage = () => {
         });
       }
       scrollToElementWithHighlight(`highlight-${highlightId}`, { behavior: 'smooth' });
-    },
-    [navigate, urlSearch]
-  );
-
-  const handleChapterClick = useCallback(
-    (chapterId: number) => {
-      if (urlSearch) {
-        navigate({
-          search: (prev) => ({ ...prev, search: undefined }),
-          replace: true,
-        });
-      }
-      scrollToElementWithHighlight(`chapter-${chapterId}`, {
-        behavior: 'smooth',
-        block: 'start',
-      });
     },
     [navigate, urlSearch]
   );
@@ -230,27 +186,13 @@ export const HighlightsPage = () => {
       {isDesktop ? (
         <ContentWithSidebar>
           <Box>
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
-              <Box sx={{ flexGrow: 1 }}>
-                <SearchBar
-                  onSearch={handleSearch}
-                  placeholder="Search highlights..."
-                  initialValue={searchText}
-                />
-              </Box>
-              <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
-                <IconButton
-                  onClick={() => setIsReversed(!isReversed)}
-                  sx={{
-                    mt: '1px',
-                    color: isReversed ? 'primary.main' : 'text.secondary',
-                    '&:hover': { color: 'primary.main' },
-                  }}
-                >
-                  <SortIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
+            <ListSearchSortHeader
+              onSearch={handleSearch}
+              searchPlaceholder="Search highlights..."
+              searchInitialValue={searchText}
+              isReversed={isReversed}
+              onToggleReversed={() => setIsReversed(!isReversed)}
+            />
             <HighlightsList
               chapters={chapters}
               bookmarksByHighlightId={bookmarksByHighlightId}
@@ -276,27 +218,13 @@ export const HighlightsPage = () => {
         </ContentWithSidebar>
       ) : (
         <>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 3 }}>
-            <Box sx={{ flexGrow: 1 }}>
-              <SearchBar
-                onSearch={handleSearch}
-                placeholder="Search highlights..."
-                initialValue={searchText}
-              />
-            </Box>
-            <Tooltip title={isReversed ? 'Show oldest first' : 'Show newest first'}>
-              <IconButton
-                onClick={() => setIsReversed(!isReversed)}
-                sx={{
-                  mt: '1px',
-                  color: isReversed ? 'primary.main' : 'text.secondary',
-                  '&:hover': { color: 'primary.main' },
-                }}
-              >
-                <SortIcon />
-              </IconButton>
-            </Tooltip>
-          </Box>
+          <ListSearchSortHeader
+            onSearch={handleSearch}
+            searchPlaceholder="Search highlights..."
+            searchInitialValue={searchText}
+            isReversed={isReversed}
+            onToggleReversed={() => setIsReversed(!isReversed)}
+          />
           <HighlightsList
             chapters={chapters}
             bookmarksByHighlightId={bookmarksByHighlightId}
