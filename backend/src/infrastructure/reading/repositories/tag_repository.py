@@ -1,6 +1,6 @@
 """Repository for Tag and TagGroup domain entities."""
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -21,7 +21,7 @@ from src.infrastructure.reading.mappers.tag_mapper import TagMapper
 from src.models import Highlight as HighlightORM
 from src.models import Tag as TagORM
 from src.models import TagGroup as TagGroupORM
-from src.models import highlight_tags
+from src.models import highlight_tags, note_tags
 
 
 class TagRepository(BaseRepository[Tag, TagORM]):
@@ -64,9 +64,12 @@ class TagRepository(BaseRepository[Tag, TagORM]):
 
     async def find_by_book(self, book_id: BookId, user_id: UserId) -> list[Tag]:
         """
-        Get all tags for a book that have active highlight associations.
+        Get all tags for a book that are in active use.
 
-        This filters out tags that only have soft-deleted highlights.
+        A tag is "in use" when it is linked to a non-deleted highlight or to a
+        note. This filters out tags that only have soft-deleted highlights and
+        no note association. Notes have no soft-delete: deleting a note cascades
+        away its ``note_tags`` rows, so any surviving note association is active.
 
         Args:
             book_id: The book ID
@@ -75,16 +78,23 @@ class TagRepository(BaseRepository[Tag, TagORM]):
         Returns:
             List of tag entities
         """
+        has_active_highlight = (
+            select(highlight_tags.c.tag_id)
+            .join(HighlightORM, HighlightORM.id == highlight_tags.c.highlight_id)
+            .where(
+                highlight_tags.c.tag_id == TagORM.id,
+                HighlightORM.deleted_at.is_(None),
+            )
+            .exists()
+        )
+        has_note = select(note_tags.c.tag_id).where(note_tags.c.tag_id == TagORM.id).exists()
         stmt = (
             select(TagORM)
-            .join(highlight_tags)
-            .join(HighlightORM)
             .where(
                 TagORM.book_id == book_id.value,
                 TagORM.user_id == user_id.value,
-                HighlightORM.deleted_at.is_(None),
+                or_(has_active_highlight, has_note),
             )
-            .distinct()
             .order_by(TagORM.name)
         )
         result = await self.db.execute(stmt)

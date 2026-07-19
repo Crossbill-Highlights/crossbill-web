@@ -167,6 +167,20 @@ class TestCreateNote:
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
+    async def test_create_tag_is_idempotent_for_existing_name(
+        self, client: AsyncClient, test_tag: models.Tag
+    ) -> None:
+        # The note editor resolves a typed tag name by POSTing to /tag. A tag
+        # may already exist for the book without any highlight association (so
+        # it is hidden from the dropdown); re-creating it must return the
+        # existing tag rather than a 409 conflict.
+        response = await client.post(
+            f"/api/v1/books/{test_tag.book_id}/tag",
+            json={"name": test_tag.name},
+        )
+        assert response.status_code in (200, 201), response.text
+        assert response.json()["id"] == test_tag.id
+
 
 class TestGetNote:
     """Test suite for GET /notes/{note_id} endpoint."""
