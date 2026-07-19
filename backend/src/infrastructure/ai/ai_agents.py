@@ -49,7 +49,7 @@ def get_prereading_agent() -> Agent[None, PrereadingContent]:
            Generate also example answers to be compared with the user's answers. Generate 3 questions which should not repeat themselves. Questions should be clear and concise.
 
         Focus on helping the reader understand what to expect from the chapter.
-        Be concise and specific.
+        Be concise and specific. Always go straight to the content and write from perspective of the content and its claims. Not by expressions such as "Chapter deals with autonomy..." but instead "Autonomy is person's...".
         """,
     )
 
