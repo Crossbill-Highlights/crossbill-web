@@ -21,6 +21,9 @@ from src.application.reading.use_cases.chapter_prereading.get_book_prereading_us
 from src.application.reading.use_cases.chapter_prereading.get_chapter_prereading_use_case import (
     GetChapterPrereadingUseCase,
 )
+from src.application.reading.use_cases.chapter_prereading.get_ereader_book_prereading_use_case import (
+    GetEreaderBookPrereadingUseCase,
+)
 from src.application.reading.use_cases.chapter_prereading.update_prereading_answers_use_case import (
     UpdatePrereadingAnswersUseCase,
 )
@@ -271,6 +274,12 @@ class ReadingContainer(containers.DeclarativeContainer):
         GetBookPrereadingUseCase,
         prereading_repo=chapter_prereading_repository,
         chapter_repo=chapter_repository,
+    )
+    get_ereader_book_prereading_use_case = providers.Factory(
+        GetEreaderBookPrereadingUseCase,
+        book_repo=book_repository,
+        chapter_repo=chapter_repository,
+        prereading_repo=chapter_prereading_repository,
     )
     generate_chapter_prereading_use_case = providers.Factory(
         GenerateChapterPrereadingUseCase,
