@@ -1,32 +1,55 @@
-import { Box, Button, TextField } from '@mui/material';
+import { RHFTextField } from '@/components/inputs/RHFTextField.tsx';
+import { Box, Button } from '@mui/material';
+import { useForm, useWatch } from 'react-hook-form';
 
-interface CreateFlashcardFormProps {
+export interface FlashcardFormValues {
   question: string;
   answer: string;
-  onQuestionChange: (value: string) => void;
-  onAnswerChange: (value: string) => void;
+}
+
+const EMPTY_FORM: FlashcardFormValues = { question: '', answer: '' };
+
+interface CreateFlashcardFormProps {
   editingFlashcardId: number | null;
+  initialValues?: FlashcardFormValues;
   isDisabled: boolean;
   isProcessing: boolean;
-  onSave: () => void;
+  onSave: (values: FlashcardFormValues) => Promise<boolean>;
   onCancelEdit: () => void;
 }
 
 export const CreateFlashcardForm = ({
-  question,
-  answer,
-  onQuestionChange,
-  onAnswerChange,
   editingFlashcardId,
+  initialValues,
   isDisabled,
   isProcessing,
   onSave,
   onCancelEdit,
 }: CreateFlashcardFormProps) => {
+  const { control, handleSubmit, reset } = useForm<FlashcardFormValues>({
+    defaultValues: initialValues ?? EMPTY_FORM,
+  });
+
+  const [question, answer] = useWatch({ control, name: ['question', 'answer'] });
   const canSave = question.trim() && answer.trim() && !isDisabled;
+
+  const onSubmit = async (values: FlashcardFormValues) => {
+    const saved = await onSave({
+      question: values.question.trim(),
+      answer: values.answer.trim(),
+    });
+    if (saved) reset(EMPTY_FORM);
+  };
+
+  const handleCancel = () => {
+    reset(EMPTY_FORM);
+    onCancelEdit();
+  };
 
   return (
     <Box
+      component="form"
+      onSubmit={handleSubmit(onSubmit)}
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -34,22 +57,22 @@ export const CreateFlashcardForm = ({
         alignItems: 'flex-start',
       }}
     >
-      <TextField
+      <RHFTextField
+        name="question"
+        control={control}
         fullWidth
         size="small"
-        value={question}
-        onChange={(e) => onQuestionChange(e.target.value)}
         placeholder="Question..."
         disabled={isDisabled}
       />
-      <TextField
+      <RHFTextField
+        name="answer"
+        control={control}
         fullWidth
         size="small"
         multiline
         minRows={2}
         maxRows={4}
-        value={answer}
-        onChange={(e) => onAnswerChange(e.target.value)}
         placeholder="Answer..."
         disabled={isDisabled}
       />
@@ -58,7 +81,7 @@ export const CreateFlashcardForm = ({
           <Button
             variant="text"
             size="small"
-            onClick={onCancelEdit}
+            onClick={handleCancel}
             disabled={isDisabled}
             sx={{ flexShrink: 0, height: 'fit-content', mt: 0.5 }}
           >
@@ -66,9 +89,9 @@ export const CreateFlashcardForm = ({
           </Button>
         )}
         <Button
+          type="submit"
           variant="text"
           size="small"
-          onClick={onSave}
           disabled={!canSave}
           sx={{ flexShrink: 0, height: 'fit-content', mt: 0.5 }}
         >

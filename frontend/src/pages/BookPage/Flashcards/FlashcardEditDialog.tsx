@@ -1,10 +1,14 @@
 import { useUpdateFlashcardApiV1FlashcardsFlashcardIdPut } from '@/api/generated/flashcards/flashcards.ts';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import type { FlashcardWithContext } from '@/components/features/flashcards/FlashcardChapterList.tsx';
+import { RHFTextField } from '@/components/inputs/RHFTextField.tsx';
 import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { HighlightContent } from '@/pages/BookPage/common/HighlightContent.tsx';
-import { Box, Button, TextField, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { Box, Button, Typography } from '@mui/material';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+
+import type { FlashcardFormValues } from './CreateFlashcardForm.tsx';
 
 interface FlashcardEditDialogProps {
   flashcard: FlashcardWithContext;
@@ -19,16 +23,22 @@ export const FlashcardEditDialog = ({
   open,
   onClose,
 }: FlashcardEditDialogProps) => {
-  const [question, setQuestion] = useState(flashcard.question);
-  const [answer, setAnswer] = useState(flashcard.answer);
-  const [isSaving, setIsSaving] = useState(false);
   const { mutationErrorHandler, invalidateBookDetails } = useBookMutationHelpers(bookId);
 
-  // Reset form when flashcard changes
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { isDirty, isValid },
+  } = useForm<FlashcardFormValues>({
+    mode: 'onChange',
+    defaultValues: { question: flashcard.question, answer: flashcard.answer },
+  });
+
+  // Re-seed the fields when the edited card changes.
   useEffect(() => {
-    setQuestion(flashcard.question);
-    setAnswer(flashcard.answer);
-  }, [flashcard]);
+    reset({ question: flashcard.question, answer: flashcard.answer });
+  }, [flashcard, reset]);
 
   const updateMutation = useUpdateFlashcardApiV1FlashcardsFlashcardIdPut({
     mutation: {
@@ -40,25 +50,17 @@ export const FlashcardEditDialog = ({
     },
   });
 
-  const handleSave = async () => {
-    if (!question.trim() || !answer.trim()) return;
+  const isSaving = updateMutation.isPending;
 
-    setIsSaving(true);
-    try {
-      await updateMutation.mutateAsync({
-        flashcardId: flashcard.id,
-        data: {
-          question: question.trim(),
-          answer: answer.trim(),
-        },
-      });
-    } finally {
-      setIsSaving(false);
-    }
+  const onSubmit = async (values: FlashcardFormValues) => {
+    await updateMutation.mutateAsync({
+      flashcardId: flashcard.id,
+      data: {
+        question: values.question.trim(),
+        answer: values.answer.trim(),
+      },
+    });
   };
-
-  const hasChanges = question.trim() !== flashcard.question || answer.trim() !== flashcard.answer;
-  const canSave = hasChanges && question.trim() && answer.trim() && !isSaving;
 
   return (
     <CommonDialog
@@ -72,7 +74,11 @@ export const FlashcardEditDialog = ({
           <Button onClick={onClose} disabled={isSaving}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={handleSave} disabled={!canSave}>
+          <Button
+            variant="contained"
+            onClick={handleSubmit(onSubmit)}
+            disabled={!isDirty || !isValid || isSaving}
+          >
             {isSaving ? 'Saving...' : 'Save Changes'}
           </Button>
         </Box>
@@ -95,17 +101,16 @@ export const FlashcardEditDialog = ({
           >
             Question
           </Typography>
-          <TextField
+          <RHFTextField
+            name="question"
+            control={control}
+            rules={{ validate: (value) => value.trim().length > 0 || 'Question is required' }}
             fullWidth
             multiline
             minRows={2}
             maxRows={4}
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
             placeholder="Enter your question..."
             disabled={isSaving}
-            error={!question.trim()}
-            helperText={!question.trim() ? 'Question is required' : ''}
           />
         </Box>
 
@@ -123,17 +128,16 @@ export const FlashcardEditDialog = ({
           >
             Answer
           </Typography>
-          <TextField
+          <RHFTextField
+            name="answer"
+            control={control}
+            rules={{ validate: (value) => value.trim().length > 0 || 'Answer is required' }}
             fullWidth
             multiline
             minRows={3}
             maxRows={6}
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
             placeholder="Enter your answer..."
             disabled={isSaving}
-            error={!answer.trim()}
-            helperText={!answer.trim() ? 'Answer is required' : ''}
           />
         </Box>
       </Box>

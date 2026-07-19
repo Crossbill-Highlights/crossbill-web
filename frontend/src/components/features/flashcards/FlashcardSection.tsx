@@ -2,7 +2,10 @@ import type { FlashcardSuggestionItem } from '@/api/generated/model';
 import { CardList } from '@/components/CardList.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
 import type { FlashcardWithContext } from '@/components/features/flashcards/FlashcardChapterList.tsx';
-import { CreateFlashcardForm } from '@/pages/BookPage/Flashcards/CreateFlashcardForm.tsx';
+import {
+  CreateFlashcardForm,
+  type FlashcardFormValues,
+} from '@/pages/BookPage/Flashcards/CreateFlashcardForm.tsx';
 import { FlashcardListCard } from '@/pages/BookPage/Flashcards/FlashcardListCard.tsx';
 import { FlashcardSuggestions } from '@/pages/BookPage/Flashcards/FlashcardSuggestions.tsx';
 import { Box, Typography } from '@mui/material';
@@ -79,32 +82,20 @@ export const FlashcardSection = ({
   onRemoveSuggestion,
   additionalInvalidateKeys,
 }: FlashcardSectionProps) => {
-  const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
   const [editingFlashcardId, setEditingFlashcardId] = useState<number | null>(null);
 
-  const handleEditFlashcard = (flashcardId: number) => {
-    const flashcard = flashcards.find((f) => f.id === flashcardId);
-    if (flashcard) {
-      setEditingFlashcardId(flashcardId);
-      setQuestion(flashcard.question);
-      setAnswer(flashcard.answer);
-    }
-  };
+  const editingFlashcard =
+    editingFlashcardId != null ? flashcards.find((f) => f.id === editingFlashcardId) : undefined;
 
-  const handleSave = async () => {
+  const handleSave = async (values: FlashcardFormValues) => {
     const saved = editingFlashcardId
-      ? await onUpdateFlashcard(editingFlashcardId, question, answer)
-      : await onSaveFlashcard(question, answer);
-    if (!saved) return;
-    setQuestion('');
-    setAnswer('');
-    setEditingFlashcardId(null);
+      ? await onUpdateFlashcard(editingFlashcardId, values.question, values.answer)
+      : await onSaveFlashcard(values.question, values.answer);
+    if (saved) setEditingFlashcardId(null);
+    return saved;
   };
 
   const handleCancelEdit = () => {
-    setQuestion('');
-    setAnswer('');
     setEditingFlashcardId(null);
   };
 
@@ -124,16 +115,18 @@ export const FlashcardSection = ({
       <FlashcardsList
         flashcardsWithContext={flashcards}
         bookId={bookId}
-        onEdit={handleEditFlashcard}
+        onEdit={setEditingFlashcardId}
         additionalInvalidateKeys={additionalInvalidateKeys}
       />
 
       <CreateFlashcardForm
-        question={question}
-        answer={answer}
-        onQuestionChange={setQuestion}
-        onAnswerChange={setAnswer}
+        key={editingFlashcardId ?? 'new'}
         editingFlashcardId={editingFlashcardId}
+        initialValues={
+          editingFlashcard
+            ? { question: editingFlashcard.question, answer: editingFlashcard.answer }
+            : undefined
+        }
         isDisabled={disabled || isProcessing}
         isProcessing={isProcessing}
         onSave={handleSave}

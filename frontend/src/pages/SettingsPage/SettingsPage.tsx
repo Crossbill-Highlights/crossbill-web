@@ -1,65 +1,116 @@
 import { useUpdateMeApiV1UsersMePost } from '@/api/generated/users/users';
+import { RHFTextField } from '@/components/inputs/RHFTextField.tsx';
 import { PageContainer } from '@/components/layout/Layouts.tsx';
 import { useAuth } from '@/context/AuthContext';
-import { Alert, Box, Button, Divider, TextField, Typography } from '@mui/material';
-import { FormEvent, useState } from 'react';
+import { Alert, Box, Button, Divider, Typography } from '@mui/material';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 
-export const SettingsPage = () => {
+interface EmailFormValues {
+  email: string;
+}
+
+const EmailForm = () => {
   const { user, refreshUser } = useAuth();
+  const [success, setSuccess] = useState(false);
 
-  // Email form state
-  const [email, setEmail] = useState(user?.email || '');
-  const [emailError, setEmailError] = useState<string | null>(null);
-  const [emailSuccess, setEmailSuccess] = useState(false);
-
-  // Password form state
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { errors, isDirty },
+  } = useForm<EmailFormValues>({
+    defaultValues: { email: user?.email ?? '' },
+  });
 
   const updateMutation = useUpdateMeApiV1UsersMePost();
 
-  const handleEmailSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setEmailError(null);
-    setEmailSuccess(false);
-
-    if (!email.trim()) {
-      setEmailError('Email cannot be empty');
-      return;
-    }
-
+  const onSubmit = async ({ email }: EmailFormValues) => {
+    setSuccess(false);
     try {
       await updateMutation.mutateAsync({ data: { email: email.trim() } });
       await refreshUser();
-      setEmailSuccess(true);
+      setSuccess(true);
     } catch {
-      setEmailError('Failed to update email');
+      setError('root', { message: 'Failed to update email' });
     }
   };
 
-  const handlePasswordSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setPasswordError(null);
-    setPasswordSuccess(false);
+  return (
+    <Box sx={{ mb: 6 }}>
+      <Typography variant="h3" sx={{ mb: 3, color: 'text.primary' }}>
+        Profile
+      </Typography>
 
-    if (!currentPassword) {
-      setPasswordError('Current password is required');
-      return;
-    }
+      <Divider sx={{ mb: 3 }} />
 
-    if (newPassword.length < 8) {
-      setPasswordError('New password must be at least 8 characters');
-      return;
-    }
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Email updated successfully
+        </Alert>
+      )}
 
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Passwords do not match');
-      return;
-    }
+      {errors.root && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {errors.root.message}
+        </Alert>
+      )}
 
+      <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+        <RHFTextField
+          name="email"
+          control={control}
+          rules={{
+            required: 'Email cannot be empty',
+            validate: (value) => value.trim().length > 0 || 'Email cannot be empty',
+          }}
+          label="Email"
+          fullWidth
+          margin="normal"
+          inputProps={{ maxLength: 100 }}
+        />
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={updateMutation.isPending || !isDirty}
+          sx={{ mt: 2 }}
+        >
+          {updateMutation.isPending ? 'Saving...' : 'Update Email'}
+        </Button>
+      </Box>
+    </Box>
+  );
+};
+
+interface PasswordFormValues {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+const EMPTY_PASSWORD_FORM: PasswordFormValues = {
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+};
+
+const PasswordForm = () => {
+  const [success, setSuccess] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors },
+  } = useForm<PasswordFormValues>({
+    defaultValues: EMPTY_PASSWORD_FORM,
+  });
+
+  const updateMutation = useUpdateMeApiV1UsersMePost();
+
+  const onSubmit = async ({ currentPassword, newPassword }: PasswordFormValues) => {
+    setSuccess(false);
     try {
       await updateMutation.mutateAsync({
         data: {
@@ -67,174 +118,101 @@ export const SettingsPage = () => {
           new_password: newPassword,
         },
       });
-      setPasswordSuccess(true);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setSuccess(true);
+      reset(EMPTY_PASSWORD_FORM);
     } catch {
-      setPasswordError('Failed to update password. Check your current password.');
+      setError('root', {
+        message: 'Failed to update password. Check your current password.',
+      });
     }
   };
 
   return (
+    <Box>
+      <Typography variant="h3" sx={{ mb: 1, color: 'text.primary' }}>
+        Change Password
+      </Typography>
+      <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+        Update your password to keep your account secure
+      </Typography>
+
+      <Divider sx={{ mb: 3 }} />
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Password updated successfully
+        </Alert>
+      )}
+
+      {errors.root && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {errors.root.message}
+        </Alert>
+      )}
+
+      <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+        <RHFTextField
+          name="currentPassword"
+          control={control}
+          rules={{ required: 'Current password is required' }}
+          label="Current Password"
+          type="password"
+          fullWidth
+          margin="normal"
+          autoComplete="current-password"
+        />
+        <RHFTextField
+          name="newPassword"
+          control={control}
+          rules={{
+            required: 'New password is required',
+            minLength: { value: 8, message: 'New password must be at least 8 characters' },
+          }}
+          label="New Password"
+          type="password"
+          fullWidth
+          margin="normal"
+          autoComplete="new-password"
+          helperText="Minimum 8 characters"
+        />
+        <RHFTextField
+          name="confirmPassword"
+          control={control}
+          rules={{
+            required: 'Please confirm your new password',
+            validate: (value, values) => value === values.newPassword || 'Passwords do not match',
+          }}
+          label="Confirm New Password"
+          type="password"
+          fullWidth
+          margin="normal"
+          autoComplete="new-password"
+        />
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={updateMutation.isPending}
+          sx={{ mt: 2 }}
+        >
+          {updateMutation.isPending ? 'Updating...' : 'Update Password'}
+        </Button>
+      </Box>
+    </Box>
+  );
+};
+
+export const SettingsPage = () => {
+  return (
     <PageContainer maxWidth="sm">
-      <Typography
-        variant="h1"
-        sx={{
-          mb: 1,
-          color: 'text.primary',
-        }}
-      >
+      <Typography variant="h1" sx={{ mb: 1, color: 'text.primary' }}>
         Settings
       </Typography>
-      <Typography
-        variant="body2"
-        sx={{
-          mb: 4,
-          color: 'text.secondary',
-        }}
-      >
+      <Typography variant="body2" sx={{ mb: 4, color: 'text.secondary' }}>
         Manage your account preferences
       </Typography>
 
-      {/* Profile Section */}
-      <Box
-        sx={{
-          mb: 6,
-        }}
-      >
-        <Typography
-          variant="h3"
-          sx={{
-            mb: 3,
-            color: 'text.primary',
-          }}
-        >
-          Profile
-        </Typography>
-
-        <Divider sx={{ mb: 3 }} />
-
-        {emailSuccess && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            Email updated successfully
-          </Alert>
-        )}
-
-        {emailError && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {emailError}
-          </Alert>
-        )}
-
-        <Box component="form" onSubmit={handleEmailSubmit}>
-          <TextField
-            label="Email"
-            fullWidth
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setEmailSuccess(false);
-            }}
-            margin="normal"
-            inputProps={{ maxLength: 100 }}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={updateMutation.isPending || email === user?.email}
-            sx={{ mt: 2 }}
-          >
-            {updateMutation.isPending ? 'Saving...' : 'Update Email'}
-          </Button>
-        </Box>
-      </Box>
-
-      {/* Password Section */}
-      <Box>
-        <Typography
-          variant="h3"
-          sx={{
-            mb: 1,
-            color: 'text.primary',
-          }}
-        >
-          Change Password
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            mb: 3,
-            color: 'text.secondary',
-          }}
-        >
-          Update your password to keep your account secure
-        </Typography>
-
-        <Divider sx={{ mb: 3 }} />
-
-        {passwordSuccess && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            Password updated successfully
-          </Alert>
-        )}
-
-        {passwordError && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {passwordError}
-          </Alert>
-        )}
-
-        <Box component="form" onSubmit={handlePasswordSubmit}>
-          <TextField
-            label="Current Password"
-            type="password"
-            fullWidth
-            value={currentPassword}
-            onChange={(e) => {
-              setCurrentPassword(e.target.value);
-              setPasswordSuccess(false);
-            }}
-            margin="normal"
-            autoComplete="current-password"
-          />
-          <TextField
-            label="New Password"
-            type="password"
-            fullWidth
-            value={newPassword}
-            onChange={(e) => {
-              setNewPassword(e.target.value);
-              setPasswordSuccess(false);
-            }}
-            margin="normal"
-            autoComplete="new-password"
-            helperText="Minimum 8 characters"
-          />
-          <TextField
-            label="Confirm New Password"
-            type="password"
-            fullWidth
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-              setPasswordSuccess(false);
-            }}
-            margin="normal"
-            autoComplete="new-password"
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={
-              updateMutation.isPending || !currentPassword || !newPassword || !confirmPassword
-            }
-            sx={{ mt: 2 }}
-          >
-            {updateMutation.isPending ? 'Updating...' : 'Update Password'}
-          </Button>
-        </Box>
-      </Box>
+      <EmailForm />
+      <PasswordForm />
     </PageContainer>
   );
 };
