@@ -1,7 +1,6 @@
 import {
   useCreateFlashcardForBookApiV1BooksBookIdFlashcardsPost,
   useGetChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSuggestionsGet,
-  useUpdateFlashcardApiV1FlashcardsFlashcardIdPut,
 } from '@/api/generated/flashcards/flashcards.ts';
 import type {
   ChapterPrereadingResponse,
@@ -14,7 +13,10 @@ import { AIFeature } from '@/components/features/AIFeature.tsx';
 import type { FlashcardWithContext } from '@/components/features/flashcards/FlashcardChapterList.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
-import { CreateFlashcardForm } from '@/pages/BookPage/Flashcards/CreateFlashcardForm.tsx';
+import {
+  CreateFlashcardForm,
+  type FlashcardFormValues,
+} from '@/pages/BookPage/Flashcards/CreateFlashcardForm.tsx';
 import { FlashcardEditDialog } from '@/pages/BookPage/Flashcards/FlashcardEditDialog.tsx';
 import { FlashcardListCard } from '@/pages/BookPage/Flashcards/FlashcardListCard.tsx';
 import { FlashcardSuggestions } from '@/pages/BookPage/Flashcards/FlashcardSuggestions.tsx';
@@ -39,15 +41,8 @@ const useFlashcardMutations = (bookId: number, chapterId: number) => {
     },
   });
 
-  const updateFlashcardMutation = useUpdateFlashcardApiV1FlashcardsFlashcardIdPut({
-    mutation: {
-      onSuccess: invalidateBookDetails,
-      onError: mutationErrorHandler('update flashcard'),
-    },
-  });
-
-  const saveFlashcard = async (question: string, answer: string) => {
-    if (!question.trim() || !answer.trim()) return;
+  const saveFlashcard = async (question: string, answer: string): Promise<boolean> => {
+    if (!question.trim() || !answer.trim()) return false;
 
     setIsProcessing(true);
     try {
@@ -55,20 +50,9 @@ const useFlashcardMutations = (bookId: number, chapterId: number) => {
         bookId,
         data: { question: question.trim(), answer: answer.trim(), chapter_id: chapterId },
       });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const updateFlashcard = async (flashcardId: number, question: string, answer: string) => {
-    if (!question.trim() || !answer.trim()) return;
-
-    setIsProcessing(true);
-    try {
-      await updateFlashcardMutation.mutateAsync({
-        flashcardId,
-        data: { question: question.trim(), answer: answer.trim() },
-      });
+      return true;
+    } catch {
+      return false;
     } finally {
       setIsProcessing(false);
     }
@@ -77,7 +61,6 @@ const useFlashcardMutations = (bookId: number, chapterId: number) => {
   return {
     isProcessing,
     saveFlashcard,
-    updateFlashcard,
   };
 };
 
@@ -124,14 +107,8 @@ export const FlashcardsSection = ({
   bookFlashcards,
 }: FlashcardsSectionProps) => {
   const [editingFlashcard, setEditingFlashcard] = useState<FlashcardWithContext | null>(null);
-  const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
-  const [editingFlashcardId, setEditingFlashcardId] = useState<number | null>(null);
   const { showSnackbar } = useSnackbar();
-  const { isProcessing, saveFlashcard, updateFlashcard } = useFlashcardMutations(
-    bookId,
-    chapter.id
-  );
+  const { isProcessing, saveFlashcard } = useFlashcardMutations(bookId, chapter.id);
   const { isLoading, suggestions, fetchSuggestions, removeSuggestion } = useAIFlashcardSuggestions(
     chapter.id,
     showSnackbar
@@ -169,26 +146,11 @@ export const FlashcardsSection = ({
     setEditingFlashcard(null);
   }, []);
 
-  const handleSave = async () => {
-    if (editingFlashcardId) {
-      await updateFlashcard(editingFlashcardId, question, answer);
-    } else {
-      await saveFlashcard(question, answer);
-    }
-    setQuestion('');
-    setAnswer('');
-    setEditingFlashcardId(null);
-  };
-
-  const handleCancelEdit = () => {
-    setQuestion('');
-    setAnswer('');
-    setEditingFlashcardId(null);
-  };
+  const handleSave = (values: FlashcardFormValues) => saveFlashcard(values.question, values.answer);
 
   const handleAcceptSuggestion = async (suggestion: FlashcardSuggestionItem, index: number) => {
-    await saveFlashcard(suggestion.question, suggestion.answer);
-    removeSuggestion(index);
+    const saved = await saveFlashcard(suggestion.question, suggestion.answer);
+    if (saved) removeSuggestion(index);
   };
 
   return (
@@ -209,15 +171,11 @@ export const FlashcardsSection = ({
       )}
 
       <CreateFlashcardForm
-        question={question}
-        answer={answer}
-        onQuestionChange={setQuestion}
-        onAnswerChange={setAnswer}
-        editingFlashcardId={editingFlashcardId}
+        editingFlashcardId={null}
         isDisabled={isProcessing}
         isProcessing={isProcessing}
         onSave={handleSave}
-        onCancelEdit={handleCancelEdit}
+        onCancelEdit={() => {}}
       />
 
       {prereadingSummary && (

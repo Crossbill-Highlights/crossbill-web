@@ -1,29 +1,34 @@
 import { FeatureGate } from '@/components/features/FeatureGate.tsx';
+import { RHFTextField } from '@/components/inputs/RHFTextField.tsx';
 import { useAuth } from '@/context/AuthContext';
-import { Alert, Box, Button, Container, Link, Paper, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Container, Link, Paper, Typography } from '@mui/material';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
-import { FormEvent, useState } from 'react';
+import { useForm } from 'react-hook-form';
+
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
 
 export const LoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    defaultValues: { email: '', password: '' },
+  });
 
+  const onSubmit = async ({ email, password }: LoginFormValues) => {
     try {
       await login(email, password);
       navigate({ to: '/' });
     } catch {
-      setError('Invalid email or password');
-    } finally {
-      setIsSubmitting(false);
+      setError('root', { message: 'Invalid email or password' });
     }
   };
 
@@ -57,32 +62,32 @@ export const LoginPage = () => {
             </Typography>
           </Box>
 
-          {error && (
+          {errors.root && (
             <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
+              {errors.root.message}
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField
+          <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+            <RHFTextField
+              name="email"
+              control={control}
+              rules={{ required: 'Email is required' }}
               label="Email"
               fullWidth
               margin="normal"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
               autoFocus
-              required
             />
-            <TextField
+            <RHFTextField
+              name="password"
+              control={control}
+              rules={{ required: 'Password is required' }}
               label="Password"
               type="password"
               fullWidth
               margin="normal"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
-              required
             />
             <Button
               type="submit"

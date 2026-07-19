@@ -1,41 +1,37 @@
+import { RHFTextField } from '@/components/inputs/RHFTextField.tsx';
 import { useAuth } from '@/context/AuthContext';
 import { getApiErrorMessage } from '@/utils/getApiErrorMessage.ts';
-import { Alert, Box, Button, Container, Link, Paper, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Container, Link, Paper, Typography } from '@mui/material';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
-import { FormEvent, useState } from 'react';
+import { useForm } from 'react-hook-form';
+
+interface RegistrationFormValues {
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
 
 export const RegistrationPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<RegistrationFormValues>({
+    defaultValues: { email: '', password: '', confirmPassword: '' },
+  });
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      return;
-    }
-
-    setIsSubmitting(true);
-
+  const onSubmit = async ({ email, password }: RegistrationFormValues) => {
     try {
       await register(email, password);
       navigate({ to: '/' });
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Registration failed. Please try again.'));
-    } finally {
-      setIsSubmitting(false);
+      setError('root', {
+        message: getApiErrorMessage(err, 'Registration failed. Please try again.'),
+      });
     }
   };
 
@@ -69,43 +65,52 @@ export const RegistrationPage = () => {
             </Typography>
           </Box>
 
-          {error && (
+          {errors.root && (
             <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
+              {errors.root.message}
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField
+          <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+            <RHFTextField
+              name="email"
+              control={control}
+              rules={{ required: 'Email is required' }}
               label="Email"
               fullWidth
               margin="normal"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
               autoFocus
-              required
             />
-            <TextField
+            <RHFTextField
+              name="password"
+              control={control}
+              rules={{
+                required: 'Password is required',
+                minLength: {
+                  value: 8,
+                  message: 'Password must be at least 8 characters long',
+                },
+              }}
               label="Password"
               type="password"
               fullWidth
               margin="normal"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
-              required
               helperText="Must be at least 8 characters"
             />
-            <TextField
+            <RHFTextField
+              name="confirmPassword"
+              control={control}
+              rules={{
+                required: 'Please confirm your password',
+                validate: (value, values) => value === values.password || 'Passwords do not match',
+              }}
               label="Confirm Password"
               type="password"
               fullWidth
               margin="normal"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
               autoComplete="new-password"
-              required
             />
             <Button
               type="submit"

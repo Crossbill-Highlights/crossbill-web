@@ -5,6 +5,7 @@ import {
   useCreateNoteApiV1NotesPost,
   useUpdateNoteApiV1NotesNoteIdPut,
 } from '@/api/generated/notes/notes.ts';
+import { RHFTextField } from '@/components/inputs/RHFTextField.tsx';
 import { TagInput } from '@/components/inputs/TagInput.tsx';
 import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
@@ -157,31 +158,22 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
 
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-        <Controller
-          name="title"
-          control={control}
-          render={({ field }) => <TextField {...field} label="Title" fullWidth autoFocus />}
-        />
-        <Controller
-          name="kind"
-          control={control}
-          render={({ field }) => (
-            <TextField {...field} select label="Kind" fullWidth>
-              <MenuItem value="">None</MenuItem>
-              {NOTE_KINDS.map((value) => (
-                <MenuItem key={value} value={value}>
-                  {NOTE_KIND_LABELS[value]}
-                </MenuItem>
-              ))}
-            </TextField>
-          )}
-        />
-        <Controller
+        <RHFTextField name="title" control={control} label="Title" fullWidth autoFocus />
+        <RHFTextField name="kind" control={control} select label="Kind" fullWidth>
+          <MenuItem value="">None</MenuItem>
+          {NOTE_KINDS.map((value) => (
+            <MenuItem key={value} value={value}>
+              {NOTE_KIND_LABELS[value]}
+            </MenuItem>
+          ))}
+        </RHFTextField>
+        <RHFTextField
           name="body"
           control={control}
-          render={({ field }) => (
-            <TextField {...field} label="Note (markdown)" fullWidth multiline minRows={5} />
-          )}
+          label="Note (markdown)"
+          fullWidth
+          multiline
+          minRows={5}
         />
         <Controller
           name="chapters"
