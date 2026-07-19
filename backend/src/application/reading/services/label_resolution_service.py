@@ -38,9 +38,7 @@ class LabelResolutionService:
             if style.is_combination_level() and not style.is_global()
         ]
 
-    async def resolve_for_book(
-        self, user_id: UserId, book_id: BookId
-    ) -> dict[int, ResolvedLabel]:
+    async def resolve_for_book(self, user_id: UserId, book_id: BookId) -> dict[int, ResolvedLabel]:
         """Map highlight-style id to its resolved label for a book."""
         return {
             style.id.value: label

@@ -67,9 +67,7 @@ class CreateFlashcardForBookUseCase:
             if not chapter:
                 raise ChapterNotFoundError(chapter_id)
             # A chapter from another book is indistinguishable from a missing one.
-            require_belongs_to_book(
-                chapter, book_id_vo, lambda: ChapterNotFoundError(chapter_id)
-            )
+            require_belongs_to_book(chapter, book_id_vo, lambda: ChapterNotFoundError(chapter_id))
 
         # Create flashcard using domain factory (no highlight)
         flashcard = Flashcard.create(

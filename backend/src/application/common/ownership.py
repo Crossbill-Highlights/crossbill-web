@@ -23,9 +23,7 @@ class _BookByIdLookup(Protocol):
 class _BookByClientIdLookup(Protocol):
     """Minimal book-repository surface needed to load a book by client id."""
 
-    async def find_by_client_book_id(
-        self, client_book_id: str, user_id: UserId
-    ) -> Book | None: ...
+    async def find_by_client_book_id(self, client_book_id: str, user_id: UserId) -> Book | None: ...
 
 
 class _BelongsToBook(Protocol):

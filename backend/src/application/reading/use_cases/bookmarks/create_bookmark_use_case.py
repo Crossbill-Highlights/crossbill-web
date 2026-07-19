@@ -54,9 +54,7 @@ class CreateBookmarkUseCase:
             raise HighlightNotFoundError(highlight_id)
 
         # A highlight from another book is indistinguishable from a missing one.
-        require_belongs_to_book(
-            highlight, book_id_vo, lambda: HighlightNotFoundError(highlight_id)
-        )
+        require_belongs_to_book(highlight, book_id_vo, lambda: HighlightNotFoundError(highlight_id))
 
         # Check if bookmark already exists (idempotent)
         existing = await self.bookmark_repository.find_by_book_and_highlight(

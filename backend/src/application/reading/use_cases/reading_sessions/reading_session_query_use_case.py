@@ -144,9 +144,7 @@ class ReadingSessionQueryUseCase:
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}
         if self.label_resolution_service is not None:
-            labels = await self.label_resolution_service.resolve_for_book(
-                user_id_vo, book_id_vo
-            )
+            labels = await self.label_resolution_service.resolve_for_book(user_id_vo, book_id_vo)
 
         return ReadingSessionQueryResult(
             sessions_with_highlights=sessions_with_highlights,
