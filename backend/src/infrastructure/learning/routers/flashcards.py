@@ -13,10 +13,10 @@ from src.application.learning.use_cases.flashcards.update_flashcard_use_case imp
 from src.core import container
 from src.domain.identity.entities.user import User
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.schemas import SuccessResponse
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.learning.schemas import (
     Flashcard,
-    FlashcardDeleteResponse,
     FlashcardUpdateRequest,
     FlashcardUpdateResponse,
 )
@@ -75,7 +75,7 @@ async def update_flashcard(
 
 @router.delete(
     "/{flashcard_id}",
-    response_model=FlashcardDeleteResponse,
+    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
 )
 async def delete_flashcard(
@@ -84,7 +84,7 @@ async def delete_flashcard(
     use_case: DeleteFlashcardUseCase = Depends(
         inject_use_case(container.learning.delete_flashcard_use_case)
     ),
-) -> FlashcardDeleteResponse:
+) -> SuccessResponse:
     """
     Delete a flashcard.
 
@@ -99,7 +99,7 @@ async def delete_flashcard(
         HTTPException: If flashcard not found or deletion fails
     """
     await use_case.delete_flashcard(flashcard_id=flashcard_id, user_id=current_user.id.value)
-    return FlashcardDeleteResponse(
+    return SuccessResponse(
         success=True,
         message="Flashcard deleted successfully",
     )

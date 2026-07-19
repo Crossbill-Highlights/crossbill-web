@@ -6,7 +6,6 @@ from src.infrastructure.library.schemas.book_schemas import (
     BookCreate,
     BooksListResponse,
     BookWithHighlightCount,
-    EpubUploadResponse,
     EreaderBookMetadata,
     RecentlyViewedBooksResponse,
 )
@@ -20,7 +19,6 @@ __all__ = [
     "BooksListResponse",
     "Chapter",
     "ChapterBase",
-    "EpubUploadResponse",
     "EreaderBookMetadata",
     "RecentlyViewedBooksResponse",
 ]

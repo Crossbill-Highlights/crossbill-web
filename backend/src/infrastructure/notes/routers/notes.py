@@ -15,13 +15,13 @@ from src.core import container
 from src.domain.identity import User
 from src.domain.notes.entities.note import Note as NoteEntity
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.schemas import SuccessResponse
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.learning.schemas import Flashcard
 from src.infrastructure.notes.schemas import (
     Note,
     NoteCreateRequest,
     NoteCreateResponse,
-    NoteDeleteResponse,
     NoteKindLiteral,
     NoteLinkedChapter,
     NoteLinkedHighlight,
@@ -183,13 +183,13 @@ async def update_note(
 
 @router.delete(
     "/notes/{note_id}",
-    response_model=NoteDeleteResponse,
+    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
 )
 async def delete_note(
     note_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: DeleteNoteUseCase = Depends(inject_use_case(container.notes.delete_note_use_case)),
-) -> NoteDeleteResponse:
+) -> SuccessResponse:
     await use_case.delete_note(note_id=note_id, user_id=current_user.id.value)
-    return NoteDeleteResponse(success=True, message="Note deleted successfully")
+    return SuccessResponse(success=True, message="Note deleted successfully")

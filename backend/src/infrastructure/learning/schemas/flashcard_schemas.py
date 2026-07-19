@@ -64,13 +64,6 @@ class FlashcardUpdateResponse(BaseModel):
     flashcard: Flashcard = Field(..., description="Updated flashcard")
 
 
-class FlashcardDeleteResponse(BaseModel):
-    """Schema for flashcard deletion response."""
-
-    success: bool = Field(..., description="Whether the deletion was successful")
-    message: str = Field(..., description="Response message")
-
-
 class FlashcardSuggestionItem(BaseModel):
     """Schema for a single AI-generated flashcard suggestion."""
 

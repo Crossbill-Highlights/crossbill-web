@@ -87,13 +87,6 @@ class RecentlyViewedBooksResponse(BaseModel):
     )
 
 
-class EpubUploadResponse(BaseModel):
-    """Schema for epub upload response."""
-
-    success: bool = Field(..., description="Whether the upload was successful")
-    message: str = Field(..., description="Response message")
-
-
 class EreaderBookMetadata(BaseModel):
     """Schema for ereader book metadata response.
 
