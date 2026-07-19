@@ -37,19 +37,67 @@ def get_prereading_agent() -> Agent[None, PrereadingContent]:
         get_ai_model(),
         output_type=PrereadingContent,
         instructions="""
-        You are helping a reader prepare to read a book chapter.
-        Generate pre-reading content to help the reader set expectations and think about
-        what they are going to read before they start.
+       1. SUMMARY (2-3 sentences)
 
-        Generate:
-        1. A brief summary (2-3 sentences) of what this chapter covers. Be concise and specific. Always go straight to the content and write from perspective of the content and its claims, without emphasizing "this chapter or this text..."
-        2. 3-5 key points or concepts the reader should watch for in markdown format. Bold the key point name. Do not use bullet points or list markers.
-        3. Questions about the concepts and key topics in text which reader should find the answers from the text as they read it.
-           Questions should help user to engage with the text by making them to think about the content and write about it by their own words.
-           Generate also example answers to be compared with the user's answers. Generate 3 questions which should not repeat themselves. Questions should be clear and concise.
+        Write from inside the content: state what it claims, not what it covers.
+        The first sentence must begin with the subject matter itself or with the
+        author's action on it — never with a meta-noun referring to the text.
 
-        Focus on helping the reader understand what to expect from the chapter.
-        Be concise and specific.
+        Sentence 1: the central claim, or the problem being taken up.
+        Sentences 2-3: what the content does with it — the mechanism, the
+        argument, or the stakes.
+
+        Never open with: "This chapter", "This text", "The chapter", "This
+        preface", "Tämä luku", "Tässä luvussa", "Tämä esipuhe", "Teksti".
+
+        Never describe the work with: covers, deals with, includes, explores,
+        discusses, introduces, provides, offers, presents, aims to, serves as,
+        is designed to — or their equivalents: käsittelee, sisältää, esittelee,
+        tarjoaa, pyrkii, toimii.
+
+        TEST: the summary must be false if the chapter's argument is false. A
+        summary you could write from the table of contents alone has failed.
+
+        Weak: "This chapter introduces systematic skimming as a vital first step
+        in effective reading. It provides a practical, multi-step framework for
+        evaluating whether a book merits deeper commitment."
+        Strong: "Systematic skimming comes before any serious reading: a few
+        quick passes through contents, index, and key paragraphs expose a book's
+        structure and central argument. Most books don't survive that test — and
+        identifying the ones that do is what makes slow analytical reading worth
+        its cost."
+
+        Weak: "Tämä esipuhe esittelee kirjan lähestymistavan, joka ei pyri
+        tarjoamaan valmiita ohjeita, vaan toimimaan tukena lukijan omalle
+        oivallukselle ja jäsentelylle."
+        Strong: "Valmiita ohjeita ei ole tarjolla — eikä pidäkään olla. Ymmärrys
+        omasta elämästä syntyy vasta kun lukija jäsentää sen jännitteet itse;
+        kirjan tehtävä on tukea tuota työtä, ei korvata sitä."
+
+        ---
+
+        2. KEY POINTS (3-5)
+
+        Concepts or moves the reader should watch for. Bold the name of each,
+        followed by one sentence of substance. No bullet points or list markers;
+        separate them with blank lines. Apply the same rules as above — name what
+        the concept asserts, not that it appears.
+
+        Weak: **Inspectional reading** — the chapter discusses this as one of
+        four levels of reading.
+        Strong: **Inspectional reading** — a complete reading at a deliberately
+        shallow depth, not an incomplete deep one; the goal is a verdict on the
+        book, not mastery of it.
+
+        ---
+
+        3. QUESTIONS (exactly 3)
+
+        Questions the reader should answer from the text as they read. Each must
+        target a different concept — no overlap. Make them clear, concise, and
+        answerable in the reader's own words rather than by quoting. Prefer
+        questions that ask why, how, or what follows over questions that ask what
+        something is called.
         """,
     )
 
