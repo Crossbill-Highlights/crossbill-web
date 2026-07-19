@@ -1,0 +1,13 @@
+/* design-sync: the app loads Lora from Google Fonts at runtime (see index.html).
+   Mirror that import so design-system previews and rendered designs use the real
+   brand typeface, and set it as the base body font (the MUI theme uses Lora for
+   its typography; this covers non-MUI markup too). */
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@400..700&display=swap');
+
+:root {
+  --crossbill-font-serif: 'Lora', Georgia, serif;
+}
+
+body {
+  font-family: var(--crossbill-font-serif);
+}
