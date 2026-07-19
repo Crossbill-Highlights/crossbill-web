@@ -13,6 +13,7 @@ from src.domain.common.value_objects.ids import (
 )
 from src.domain.reading.entities.tag import Tag
 from src.domain.reading.entities.tag_group import TagGroup
+from src.infrastructure.common.repositories import BaseRepository
 from src.infrastructure.reading.mappers.tag_group_mapper import (
     TagGroupMapper,
 )
@@ -23,34 +24,20 @@ from src.models import TagGroup as TagGroupORM
 from src.models import highlight_tags
 
 
-class TagRepository:
-    """Repository for Tag and TagGroup domain entities."""
+class TagRepository(BaseRepository[Tag, TagORM]):
+    """Repository for Tag and TagGroup domain entities.
+
+    Plain ``Tag`` CRUD (``find_by_id``, ``find_by_ids``, ``save``, ``delete``)
+    is inherited from :class:`BaseRepository`; the TagGroup and tag-highlight
+    association helpers below are bespoke.
+    """
 
     def __init__(self, db: AsyncSession) -> None:
-        self.db = db
         self.mapper = TagMapper()
         self.group_mapper = TagGroupMapper()
+        super().__init__(db, TagORM, self.mapper)
 
     # Tag methods
-
-    async def find_by_id(self, tag_id: TagId, user_id: UserId) -> Tag | None:
-        """
-        Find a tag by ID and user ID.
-
-        Args:
-            tag_id: The tag ID
-            user_id: The user ID
-
-        Returns:
-            Tag entity if found, None otherwise
-        """
-        stmt = select(TagORM).where(
-            TagORM.id == tag_id.value,
-            TagORM.user_id == user_id.value,
-        )
-        result = await self.db.execute(stmt)
-        orm_model = result.scalar_one_or_none()
-        return self.mapper.to_domain(orm_model) if orm_model else None
 
     async def find_by_book_and_name(
         self, book_id: BookId, name: str, user_id: UserId
@@ -103,82 +90,6 @@ class TagRepository:
         result = await self.db.execute(stmt)
         orm_models = result.scalars().all()
         return [self.mapper.to_domain(orm) for orm in orm_models]
-
-    async def find_by_ids(self, tag_ids: list[int], user_id: UserId) -> list[Tag]:
-        """
-        Get tags by their ids, scoped to the user.
-
-        Unlike find_by_book, this does not require the tags to have active
-        highlight associations, so tags attached only to notes are returned.
-
-        Args:
-            tag_ids: The tag ids to fetch
-            user_id: The user ID
-
-        Returns:
-            List of tag entities (only those owned by the user)
-        """
-        if not tag_ids:
-            return []
-        stmt = select(TagORM).where(
-            TagORM.id.in_(tag_ids),
-            TagORM.user_id == user_id.value,
-        )
-        result = await self.db.execute(stmt)
-        orm_models = result.scalars().all()
-        return [self.mapper.to_domain(orm) for orm in orm_models]
-
-    async def save(self, tag: Tag) -> Tag:
-        """
-        Save a tag entity.
-
-        Args:
-            tag: The tag entity to save
-
-        Returns:
-            Saved tag entity with updated ID
-        """
-        if tag.id.value == 0:
-            # Create new
-            orm_model = self.mapper.to_orm(tag)
-            self.db.add(orm_model)
-            await self.db.commit()
-            await self.db.refresh(orm_model)
-            return self.mapper.to_domain(orm_model)
-        # Update existing
-        stmt = select(TagORM).where(TagORM.id == tag.id.value)
-        result = await self.db.execute(stmt)
-        existing_orm = result.scalar_one()
-        self.mapper.to_orm(tag, existing_orm)
-        await self.db.commit()
-        await self.db.refresh(existing_orm)
-        return self.mapper.to_domain(existing_orm)
-
-    async def delete(self, tag_id: TagId, user_id: UserId) -> bool:
-        """
-        Delete a tag.
-
-        Args:
-            tag_id: The tag ID
-            user_id: The user ID
-
-        Returns:
-            True if deleted, False if not found
-        """
-        result = await self.db.execute(
-            select(TagORM).where(
-                TagORM.id == tag_id.value,
-                TagORM.user_id == user_id.value,
-            )
-        )
-        tag_orm = result.scalar_one_or_none()
-
-        if not tag_orm:
-            return False
-
-        await self.db.delete(tag_orm)
-        await self.db.commit()
-        return True
 
     # Tag group methods
 

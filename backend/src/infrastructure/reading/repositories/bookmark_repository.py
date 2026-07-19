@@ -1,21 +1,36 @@
 """Repository for Bookmark domain entities."""
 
-from sqlalchemy import select
+from typing import Any
+
+from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.domain.common.value_objects.ids import BookId, BookmarkId, HighlightId, UserId
+from src.domain.common.value_objects.ids import BookId, HighlightId, UserId
 from src.domain.reading.entities.bookmark import Bookmark
+from src.infrastructure.common.repositories import BaseRepository
 from src.infrastructure.reading.mappers.bookmark_mapper import BookmarkMapper
 from src.models import Book as BookORM
 from src.models import Bookmark as BookmarkORM
 
 
-class BookmarkRepository:
-    """Repository for Bookmark domain entities."""
+class BookmarkRepository(BaseRepository[Bookmark, BookmarkORM]):
+    """Repository for Bookmark domain entities.
+
+    Bookmarks carry no ``user_id`` column, so ownership is enforced through a
+    join to the owning book (see :meth:`_ownership_filter`). ``delete`` is
+    inherited from :class:`BaseRepository`; ``save`` is overridden because
+    bookmarks are immutable.
+    """
 
     def __init__(self, db: AsyncSession) -> None:
-        self.db = db
         self.mapper = BookmarkMapper()
+        super().__init__(db, BookmarkORM, self.mapper)
+
+    def _ownership_filter(self, stmt: Select[Any], user_id: UserId) -> Select[Any]:
+        """Scope bookmarks to their owner via the book they belong to."""
+        return stmt.join(BookORM, BookmarkORM.book_id == BookORM.id).where(
+            BookORM.user_id == user_id.value
+        )
 
     async def find_by_book_and_highlight(
         self, book_id: BookId, highlight_id: HighlightId
@@ -81,33 +96,3 @@ class BookmarkRepository:
             return self.mapper.to_domain(orm_model)
         # Bookmarks are immutable - no update case
         raise ValueError("Bookmarks cannot be updated")
-
-    async def delete(self, bookmark_id: BookmarkId, user_id: UserId) -> bool:
-        """
-        Delete a bookmark.
-
-        Args:
-            bookmark_id: The bookmark ID
-            user_id: The user ID for ownership verification
-
-        Returns:
-            True if deleted, False if not found
-        """
-        # Find with ownership check
-        stmt = (
-            select(BookmarkORM)
-            .join(BookORM, BookmarkORM.book_id == BookORM.id)
-            .where(
-                BookmarkORM.id == bookmark_id.value,
-                BookORM.user_id == user_id.value,
-            )
-        )
-        result = await self.db.execute(stmt)
-        bookmark_orm = result.scalar_one_or_none()
-
-        if not bookmark_orm:
-            return False
-
-        await self.db.delete(bookmark_orm)
-        await self.db.commit()
-        return True
