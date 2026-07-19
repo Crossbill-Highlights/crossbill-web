@@ -106,7 +106,7 @@ class ReadingContainer(containers.DeclarativeContainer):
     highlight_style_repository = providers.Dependency()
     file_repository = providers.Dependency()
     highlight_deduplication_service = providers.Dependency()
-    highlight_style_resolver = providers.Dependency()
+    label_resolution_service = providers.Dependency()
     epub_position_index_service = providers.Dependency()
     ebook_text_extraction_service = providers.Dependency()
     ai_service = providers.Dependency()
@@ -134,8 +134,7 @@ class ReadingContainer(containers.DeclarativeContainer):
         HighlightSearchUseCase,
         book_repository=book_repository,
         highlight_repository=highlight_repository,
-        highlight_style_repository=highlight_style_repository,
-        highlight_style_resolver=highlight_style_resolver,
+        label_resolution_service=label_resolution_service,
     )
     highlight_delete_use_case = providers.Factory(
         HighlightDeleteUseCase,
@@ -198,22 +197,19 @@ class ReadingContainer(containers.DeclarativeContainer):
         AddTagToHighlightByIdUseCase,
         highlight_repository=highlight_repository,
         tag_repository=tag_repository,
-        highlight_style_repository=highlight_style_repository,
-        highlight_style_resolver=highlight_style_resolver,
+        label_resolution_service=label_resolution_service,
     )
     add_tag_to_highlight_by_name_use_case = providers.Factory(
         AddTagToHighlightByNameUseCase,
         highlight_repository=highlight_repository,
         tag_repository=tag_repository,
-        highlight_style_repository=highlight_style_repository,
-        highlight_style_resolver=highlight_style_resolver,
+        label_resolution_service=label_resolution_service,
     )
     remove_tag_from_highlight_use_case = providers.Factory(
         RemoveTagFromHighlightUseCase,
         highlight_repository=highlight_repository,
         tag_repository=tag_repository,
-        highlight_style_repository=highlight_style_repository,
-        highlight_style_resolver=highlight_style_resolver,
+        label_resolution_service=label_resolution_service,
     )
 
     # Highlight labels
@@ -221,7 +217,7 @@ class ReadingContainer(containers.DeclarativeContainer):
         GetBookHighlightLabelsUseCase,
         highlight_style_repository=highlight_style_repository,
         book_repository=book_repository,
-        highlight_style_resolver=highlight_style_resolver,
+        label_resolution_service=label_resolution_service,
     )
     update_highlight_label_use_case = providers.Factory(
         UpdateHighlightLabelUseCase,
@@ -252,8 +248,7 @@ class ReadingContainer(containers.DeclarativeContainer):
         highlight_repository=highlight_repository,
         text_extraction_service=ebook_text_extraction_service,
         file_repo=file_repository,
-        highlight_style_repository=highlight_style_repository,
-        highlight_style_resolver=highlight_style_resolver,
+        label_resolution_service=label_resolution_service,
     )
     reading_session_ai_summary_use_case = providers.Factory(
         ReadingSessionAISummaryUseCase,

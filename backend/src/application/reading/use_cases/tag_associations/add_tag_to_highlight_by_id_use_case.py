@@ -7,21 +7,16 @@ import structlog
 from src.application.reading.protocols.highlight_repository import (
     HighlightRepositoryProtocol,
 )
-from src.application.reading.protocols.highlight_style_repository import (
-    HighlightStyleRepositoryProtocol,
-)
 from src.application.reading.protocols.tag_repository import (
     TagRepositoryProtocol,
 )
+from src.application.reading.services.label_resolution_service import LabelResolutionService
 from src.domain.common.value_objects.ids import HighlightId, TagId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
 from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.tag import Tag
 from src.domain.reading.exceptions import HighlightNotFoundError, TagNotFoundError
-from src.domain.reading.services.highlight_style_resolver import (
-    HighlightStyleResolver,
-    ResolvedLabel,
-)
+from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
 
 logger = structlog.get_logger(__name__)
 
@@ -33,13 +28,11 @@ class AddTagToHighlightByIdUseCase:
         self,
         highlight_repository: HighlightRepositoryProtocol,
         tag_repository: TagRepositoryProtocol,
-        highlight_style_repository: HighlightStyleRepositoryProtocol | None = None,
-        highlight_style_resolver: HighlightStyleResolver | None = None,
+        label_resolution_service: LabelResolutionService | None = None,
     ) -> None:
         self.highlight_repository = highlight_repository
         self.tag_repository = tag_repository
-        self.highlight_style_repository = highlight_style_repository
-        self.highlight_style_resolver = highlight_style_resolver
+        self.label_resolution_service = label_resolution_service
 
     async def add_tag(
         self, highlight_id: int, tag_id: int, user_id: int
@@ -91,13 +84,9 @@ class AddTagToHighlightByIdUseCase:
 
         # Resolve labels
         labels: dict[int, ResolvedLabel] = {}
-        if self.highlight_style_repository and self.highlight_style_resolver:
-            all_styles = await self.highlight_style_repository.find_for_resolution(
+        if self.label_resolution_service is not None:
+            labels = await self.label_resolution_service.resolve_for_book(
                 user_id_vo, highlight.book_id
             )
-            for style in all_styles:
-                if style.is_combination_level() and not style.is_global():
-                    resolved = self.highlight_style_resolver.resolve(style, all_styles)
-                    labels[style.id.value] = resolved
 
         return highlight, flashcards, tags, labels
