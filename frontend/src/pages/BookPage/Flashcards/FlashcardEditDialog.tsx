@@ -1,6 +1,6 @@
 import { useUpdateFlashcardApiV1FlashcardsFlashcardIdPut } from '@/api/generated/flashcards/flashcards.ts';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
-import type { FlashcardWithContext } from '@/pages/BookPage/Flashcards/FlashcardChapterList.tsx';
+import type { FlashcardWithContext } from '@/components/features/flashcards/FlashcardChapterList.tsx';
 import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { HighlightContent } from '@/pages/BookPage/common/HighlightContent.tsx';
 import { Box, Button, TextField, Typography } from '@mui/material';

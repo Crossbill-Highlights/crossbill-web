@@ -1,7 +1,7 @@
 import type { Bookmark, ChapterWithHighlights, TagInBook } from '@/api/generated/model';
 import { CardList } from '@/components/CardList.tsx';
 import { EmptyStateText } from '@/components/EmptyStateText.tsx';
-import { HighlightCard } from '@/pages/BookPage/Highlights/HighlightCard.tsx';
+import { HighlightCard } from '@/components/cards/HighlightCard.tsx';
 import { HighlightViewModal } from '@/pages/BookPage/Highlights/HighlightViewModal/HighlightViewModal.tsx';
 import { useHighlightModal } from '@/pages/BookPage/Highlights/hooks/useHighlightModal.ts';
 

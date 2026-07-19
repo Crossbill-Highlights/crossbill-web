@@ -8,7 +8,7 @@ import { CommonDialogTitle } from '@/components/dialogs/CommonDialogTitle.tsx';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
 import { ProgressBar } from '@/components/dialogs/ProgressBar.tsx';
 import { useModalHorizontalNavigation } from '@/components/dialogs/useModalHorizontalNavigation.ts';
-import { TagInput } from '@/pages/BookPage/Highlights/HighlightViewModal/components/TagInput.tsx';
+import { TagInput } from '@/components/inputs/TagInput.tsx';
 import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { useImmediateTagMutation } from '@/pages/BookPage/Highlights/HighlightViewModal/hooks/useImmediateTagMutation.ts';
 import { Box, Button, Stack } from '@mui/material';

@@ -5,7 +5,7 @@ import {
   useCreateNoteApiV1NotesPost,
   useUpdateNoteApiV1NotesNoteIdPut,
 } from '@/api/generated/notes/notes.ts';
-import { TagInput } from '@/pages/BookPage/Highlights/HighlightViewModal/components/TagInput.tsx';
+import { TagInput } from '@/components/inputs/TagInput.tsx';
 import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { Autocomplete, Box, MenuItem, TextField } from '@mui/material';

@@ -2,8 +2,8 @@ import type { Highlight, NoteLinkedChapter, NoteWithLinks } from '@/api/generate
 import { CardList } from '@/components/CardList.tsx';
 import { EmptyStateText } from '@/components/EmptyStateText.tsx';
 import { UnlinkButton } from '@/components/buttons/UnlinkButton.tsx';
+import { HighlightCard } from '@/components/cards/HighlightCard.tsx';
 import { DialogTabs, type DialogTabItem } from '@/components/dialogs/DialogTabs.tsx';
-import { HighlightCard } from '@/pages/BookPage/Highlights/HighlightCard.tsx';
 import { NoteFlashcardSection } from '@/pages/BookPage/Notes/components/NoteFlashcardSection.tsx';
 import { Box, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
 

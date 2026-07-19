@@ -3,7 +3,7 @@ import { FadeInOut } from '@/components/animations/FadeInOut.tsx';
 import { CardList } from '@/components/CardList.tsx';
 import { SectionTitle } from '@/components/typography/SectionTitle.tsx';
 import { Box, Typography } from '@mui/material';
-import { HighlightCard } from './HighlightCard.tsx';
+import { HighlightCard } from '@/components/cards/HighlightCard.tsx';
 
 export interface ChapterData {
   id: number;

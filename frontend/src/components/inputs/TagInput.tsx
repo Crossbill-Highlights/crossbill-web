@@ -1,3 +1,4 @@
+import { TagInBook } from '@/api/generated/model';
 import { Autocomplete, Box, Chip, TextField, Typography } from '@mui/material';
 import { useRef } from 'react';
 
@@ -121,5 +122,48 @@ export const TagAutocomplete = <T,>({
         }}
       />
     </Box>
+  );
+};
+
+export interface TagInputProps extends BaseTagInputProps {
+  value: TagInBook[];
+  onChange: (newTags: (TagInBook | string)[]) => void | Promise<void>;
+  availableTags?: TagInBook[];
+  isProcessing?: boolean;
+}
+
+/**
+ * Book-tag flavour of {@link TagAutocomplete}: a labelled multi-select over the
+ * book's `TagInBook` list. Shared by the highlight modal and the note editor.
+ */
+export const TagInput = ({
+  value,
+  onChange,
+  label = 'Tags',
+  placeholder = 'Add tags...',
+  helperText = 'Press Enter to add a tag, click X to remove',
+  disabled = false,
+  availableTags = [],
+  isProcessing = false,
+  chipAriaDescription = 'Selected tag, click to remove',
+}: TagInputProps) => {
+  const isDisabled = disabled || isProcessing;
+
+  return (
+    <TagAutocomplete
+      value={value}
+      onChange={onChange}
+      options={availableTags}
+      disabled={isDisabled}
+      blurOnSelect={false}
+      placeholder={placeholder}
+      helperText={helperText}
+      preventParentNavigation={true}
+      chipAriaDescription={chipAriaDescription}
+      getOptionLabel={(option) => (typeof option === 'string' ? option : option.name)}
+      isOptionEqualToValue={(option, value) => option.id === value.id}
+      label={label}
+      showLabelAsTypography={true}
+    />
   );
 };

@@ -6,6 +6,11 @@ import type {
   TagInBook,
 } from '@/api/generated/model';
 import { scrollToElementWithHighlight } from '@/components/animations/scrollUtils';
+import {
+  FlashcardChapterList,
+  type FlashcardChapterData,
+  type FlashcardWithContext,
+} from '@/components/features/flashcards/FlashcardChapterList.tsx';
 import { SearchBar } from '@/components/inputs/SearchBar.tsx';
 import { ContentWithSidebar } from '@/components/layout/Layouts.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
@@ -19,11 +24,6 @@ import { createPortal } from 'react-dom';
 import { FilterFab } from '../common/FilterFab.tsx';
 import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
 import { TagsList } from '../navigation/TagsList.tsx';
-import {
-  FlashcardChapterList,
-  type FlashcardChapterData,
-  type FlashcardWithContext,
-} from './FlashcardChapterList.tsx';
 import { FlashcardEditDialog } from './FlashcardEditDialog.tsx';
 
 const BOOK_FLASHCARDS_KEY = -1;

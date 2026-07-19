@@ -11,7 +11,7 @@ import type {
 } from '@/api/generated/model';
 import { CardList } from '@/components/CardList.tsx';
 import { AIFeature } from '@/components/features/AIFeature.tsx';
-import type { FlashcardWithContext } from '@/pages/BookPage/Flashcards/FlashcardChapterList.tsx';
+import type { FlashcardWithContext } from '@/components/features/flashcards/FlashcardChapterList.tsx';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { CreateFlashcardForm } from '@/pages/BookPage/Flashcards/CreateFlashcardForm.tsx';

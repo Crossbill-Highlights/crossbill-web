@@ -1,7 +1,7 @@
 import { useDeleteFlashcardApiV1FlashcardsFlashcardIdDelete } from '@/api/generated/flashcards/flashcards.ts';
 import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip';
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog.tsx';
-import { FlashcardWithContext } from '@/pages/BookPage/Flashcards/FlashcardChapterList.tsx';
+import { FlashcardWithContext } from '@/components/features/flashcards/FlashcardChapterList.tsx';
 import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { FlashcardCard } from '@/pages/BookPage/Flashcards/FlashcardCard.tsx';
 import { DeleteIcon, EditIcon } from '@/theme/Icons.tsx';
