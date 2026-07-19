@@ -25,14 +25,14 @@ export const CommonDialogHorizontalNavigation = ({
   children,
 }: CommonDialogHorizontalNavigationProps) => (
   <>
-    {/* Desktop Layout: Navigation buttons on sides */}
-    <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 2 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
       {hasNavigation && (
         <IconButton
           onClick={onPrevious}
           disabled={!hasPrevious || disabled}
           sx={{
             flexShrink: 0,
+            display: { xs: 'none', sm: 'inline-flex' },
             visibility: hasPrevious ? 'visible' : 'hidden',
           }}
           aria-label="Previous"
@@ -41,7 +41,7 @@ export const CommonDialogHorizontalNavigation = ({
         </IconButton>
       )}
 
-      <Box display="flex" flexDirection="column" gap={3} flex={1} {...swipeHandlers}>
+      <Box display="flex" flexDirection="column" gap={3} flex={1} minWidth={0} {...swipeHandlers}>
         {children}
       </Box>
 
@@ -51,6 +51,7 @@ export const CommonDialogHorizontalNavigation = ({
           disabled={!hasNext || disabled}
           sx={{
             flexShrink: 0,
+            display: { xs: 'none', sm: 'inline-flex' },
             visibility: hasNext ? 'visible' : 'hidden',
           }}
           aria-label="Next"
@@ -60,35 +61,35 @@ export const CommonDialogHorizontalNavigation = ({
       )}
     </Box>
 
-    {/* Mobile Layout: Navigation buttons below */}
-    <Box
-      sx={{ display: { xs: 'flex', sm: 'none' }, flexDirection: 'column', gap: 3 }}
-      {...swipeHandlers}
-    >
-      {children}
-
-      {hasNavigation && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, pt: 1 }}>
-          <Button
-            onClick={onPrevious}
-            disabled={!hasPrevious || disabled}
-            startIcon={<ArrowBackIcon />}
-            variant="outlined"
-            sx={{ flex: 1, maxWidth: '200px' }}
-          >
-            Previous
-          </Button>
-          <Button
-            onClick={onNext}
-            disabled={!hasNext || disabled}
-            endIcon={<ArrowForwardIcon />}
-            variant="outlined"
-            sx={{ flex: 1, maxWidth: '200px' }}
-          >
-            Next
-          </Button>
-        </Box>
-      )}
-    </Box>
+    {hasNavigation && (
+      <Box
+        sx={{
+          display: { xs: 'flex', sm: 'none' },
+          justifyContent: 'center',
+          gap: 2,
+          mt: 3,
+          pt: 1,
+        }}
+      >
+        <Button
+          onClick={onPrevious}
+          disabled={!hasPrevious || disabled}
+          startIcon={<ArrowBackIcon />}
+          variant="outlined"
+          sx={{ flex: 1, maxWidth: '200px' }}
+        >
+          Previous
+        </Button>
+        <Button
+          onClick={onNext}
+          disabled={!hasNext || disabled}
+          endIcon={<ArrowForwardIcon />}
+          variant="outlined"
+          sx={{ flex: 1, maxWidth: '200px' }}
+        >
+          Next
+        </Button>
+      </Box>
+    )}
   </>
 );
