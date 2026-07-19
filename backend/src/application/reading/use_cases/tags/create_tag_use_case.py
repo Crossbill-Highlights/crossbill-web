@@ -9,7 +9,6 @@ from src.application.reading.protocols.tag_repository import (
 )
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.reading.entities.tag import Tag
-from src.domain.reading.exceptions import DuplicateTagNameError
 
 logger = structlog.get_logger(__name__)
 
@@ -27,7 +26,7 @@ class CreateTagUseCase:
 
     async def create_tag(self, book_id: int, name: str, user_id: int) -> Tag:
         """
-        Create a new tag for a book.
+        Get or create a tag for a book.
 
         Args:
             book_id: ID of the book
@@ -35,11 +34,10 @@ class CreateTagUseCase:
             user_id: ID of the user creating the tag
 
         Returns:
-            Created tag entity
+            The existing or newly created tag entity
 
         Raises:
             BookNotFoundError: If book not found
-            DuplicateTagNameError: If tag with same name already exists
         """
         book_id_vo = BookId(book_id)
         user_id_vo = UserId(user_id)
@@ -50,7 +48,7 @@ class CreateTagUseCase:
             book_id_vo, name.strip(), user_id_vo
         )
         if existing_tag:
-            raise DuplicateTagNameError(name)
+            return existing_tag
 
         tag = Tag.create(
             user_id=user_id_vo,

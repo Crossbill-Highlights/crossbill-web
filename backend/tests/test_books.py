@@ -517,6 +517,29 @@ class TestGetBookDetails:
         assert "Important" in tag_names
         assert "Review" in tag_names
 
+    async def test_get_book_details_includes_note_only_tag(
+        self,
+        client: AsyncClient,
+        test_book: models.Book,
+    ) -> None:
+        """A tag linked only to a note (never to a highlight) must still appear
+        in the book-level tag list that feeds the tag-input dropdown."""
+        tag_resp = await client.post(
+            f"/api/v1/books/{test_book.id}/tag",
+            json={"name": "note-only"},
+        )
+        assert tag_resp.status_code in (200, 201), tag_resp.text
+        tag_id = tag_resp.json()["id"]
+
+        await client.post(
+            "/api/v1/notes",
+            json={"title": "Concept", "book_id": test_book.id, "tag_ids": [tag_id]},
+        )
+
+        response = await client.get(f"/api/v1/books/{test_book.id}")
+        assert response.status_code == status.HTTP_200_OK
+        assert tag_id in [tag["id"] for tag in response.json()["tags"]]
+
     async def test_get_book_details_includes_reading_position(
         self,
         client: AsyncClient,
