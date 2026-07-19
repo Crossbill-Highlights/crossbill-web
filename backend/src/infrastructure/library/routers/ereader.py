@@ -12,7 +12,11 @@ from src.application.library.use_cases.book_management.create_book_use_case impo
 from src.application.library.use_cases.book_queries.get_ereader_metadata_use_case import (
     GetEreaderMetadataUseCase,
 )
+from src.application.reading.use_cases.chapter_prereading.get_ereader_book_prereading_use_case import (
+    GetEreaderBookPrereadingUseCase,
+)
 from src.core import container
+from src.domain.common.value_objects.ids import UserId
 from src.domain.identity.entities.user import User
 from src.infrastructure.common.di import inject_use_case
 from src.infrastructure.identity.dependencies import get_current_user
@@ -20,6 +24,10 @@ from src.infrastructure.library.schemas import (
     BookCreate,
     EpubUploadResponse,
     EreaderBookMetadata,
+)
+from src.infrastructure.reading.schemas.chapter_prereading_schemas import (
+    EreaderBookPrereadingResponse,
+    EreaderChapterPrereadingItem,
 )
 
 router = APIRouter(prefix="/ereader", tags=["ereader"])
@@ -174,4 +182,53 @@ async def upload_book_epub(
     return EpubUploadResponse(
         success=True,
         message="Ebook uploaded successfully",
+    )
+
+
+@router.get(
+    "/books/{client_book_id}/prereading",
+    response_model=EreaderBookPrereadingResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_book_prereading(
+    client_book_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: GetEreaderBookPrereadingUseCase = Depends(
+        inject_use_case(container.reading.get_ereader_book_prereading_use_case)
+    ),
+) -> EreaderBookPrereadingResponse:
+    """
+    Get all chapter prereading content for a book by client_book_id.
+
+    Returns one item per chapter that has generated prereading content, ordered
+    by the server-side chapter number. Questions are exposed as plain strings
+    only (no AI or user answers). A book with no prereading yields an empty list.
+
+    Args:
+        client_book_id: The client-provided stable book identifier
+        current_user: Authenticated user
+
+    Returns:
+        EreaderBookPrereadingResponse with one item per chapter that has prereading
+
+    Raises:
+        HTTPException: 404 if the book is not found for the given client_book_id
+    """
+    items = await use_case.get_prereading_for_client_book(
+        client_book_id, UserId(current_user.id.value)
+    )
+    return EreaderBookPrereadingResponse(
+        items=[
+            EreaderChapterPrereadingItem(
+                chapter_id=item.chapter_id,
+                chapter_name=item.chapter_name,
+                chapter_number=item.chapter_number,
+                parent_chapter_name=item.parent_chapter_name,
+                summary=item.summary,
+                keypoints=item.keypoints,
+                questions=item.questions,
+                generated_at=item.generated_at,
+            )
+            for item in items
+        ]
     )

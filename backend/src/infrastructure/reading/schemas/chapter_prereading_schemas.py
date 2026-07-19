@@ -43,3 +43,26 @@ class BookPrereadingResponse(BaseModel):
     """Response schema for batch prereading content for a book."""
 
     items: list[ChapterPrereadingResponse]
+
+
+class EreaderChapterPrereadingItem(BaseModel):
+    """Ereader-friendly prereading content for a single chapter.
+
+    Questions are exposed as plain strings only (no AI or user answers) to keep
+    the device payload small and preserve active-recall value.
+    """
+
+    chapter_id: int
+    chapter_name: str
+    chapter_number: int | None
+    parent_chapter_name: str | None
+    summary: str
+    keypoints: list[str]
+    questions: list[str]
+    generated_at: datetime
+
+
+class EreaderBookPrereadingResponse(BaseModel):
+    """Response schema for ereader book prereading content."""
+
+    items: list[EreaderChapterPrereadingItem]
