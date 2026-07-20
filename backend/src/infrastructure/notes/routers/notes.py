@@ -149,9 +149,7 @@ async def get_notes_for_book(
         highlight_id=highlight_id,
         tag_id=tag_id,
     )
-    return CollectionResponse[NoteWithLinks](
-        items=[note_with_links_to_schema(dto) for dto in dtos]
-    )
+    return CollectionResponse[NoteWithLinks](items=[note_with_links_to_schema(dto) for dto in dtos])
 
 
 @router.put(

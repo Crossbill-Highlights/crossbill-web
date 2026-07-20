@@ -69,5 +69,3 @@ class FlashcardSuggestionItem(BaseModel):
 
     question: str = Field(..., description="Suggested question for flashcard")
     answer: str = Field(..., description="Suggested answer for flashcard")
-
-
