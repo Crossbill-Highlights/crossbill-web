@@ -14,6 +14,9 @@ for file in $CLAUDE_FILE_PATHS; do
         *.py)
             echo "━━━ Checking Python: $file ━━━"
 
+            # Run ruff (formatter) - keeps files matching CI's `ruff format --check`
+            cd "$PROJECT_ROOT/backend" && uv run ruff format "$file" 2>&1 | head -5
+
             # Run ruff (linter)
             if cd "$PROJECT_ROOT/backend" && uv run ruff check "$file" 2>&1 | head -20; then
                 echo "✓ Ruff: no issues"
