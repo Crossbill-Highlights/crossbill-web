@@ -638,7 +638,7 @@ class TestGetBooksWithFlashcardFilter:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["total"] == 2
-        assert len(data["books"]) == 2
+        assert len(data["items"]) == 2
 
     async def test_get_books_with_flashcard_filter_returns_only_books_with_flashcards(
         self, client: AsyncClient, books_with_flashcards: None
@@ -649,9 +649,9 @@ class TestGetBooksWithFlashcardFilter:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["total"] == 1
-        assert len(data["books"]) == 1
-        assert data["books"][0]["title"] == "Book with Flashcards"
-        assert data["books"][0]["flashcard_count"] == 1
+        assert len(data["items"]) == 1
+        assert data["items"][0]["title"] == "Book with Flashcards"
+        assert data["items"][0]["flashcard_count"] == 1
 
     async def test_get_book_details_includes_book_flashcards(
         self,

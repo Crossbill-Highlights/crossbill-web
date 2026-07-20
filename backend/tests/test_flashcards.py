@@ -290,8 +290,8 @@ class TestGetFlashcardsForBook:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "flashcards" in data
-        assert len(data["flashcards"]) == 2
+        assert "items" in data
+        assert len(data["items"]) == 2
 
     async def test_get_flashcards_empty(self, client: AsyncClient, test_book: models.Book) -> None:
         """Test getting flashcards when book has none."""
@@ -299,8 +299,8 @@ class TestGetFlashcardsForBook:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "flashcards" in data
-        assert len(data["flashcards"]) == 0
+        assert "items" in data
+        assert len(data["items"]) == 0
 
     async def test_get_flashcards_book_not_found(self, client: AsyncClient) -> None:
         """Test getting flashcards for non-existent book."""

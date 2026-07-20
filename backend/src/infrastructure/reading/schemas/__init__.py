@@ -5,7 +5,6 @@ from src.infrastructure.reading.schemas.bookmark_schemas import (
     Bookmark,
     BookmarkBase,
     BookmarkCreateRequest,
-    BookmarksResponse,
 )
 from src.infrastructure.reading.schemas.highlight_schemas import (
     BookDetails,
@@ -27,7 +26,6 @@ from src.infrastructure.reading.schemas.highlight_schemas import (
 from src.infrastructure.reading.schemas.reading_session_schemas import (
     ReadingSession,
     ReadingSessionAISummaryResponse,
-    ReadingSessionsResponse,
     ReadingSessionUploadRequest,
     ReadingSessionUploadResponse,
     ReadingSessionUploadSessionItem,
@@ -40,7 +38,6 @@ from src.infrastructure.reading.schemas.tag_schemas import (
     TagGroupCreateRequest,
     TagGroupInBook,
     TagInBook,
-    TagsResponse,
     TagUpdateRequest,
 )
 
@@ -50,7 +47,6 @@ __all__ = [
     "Bookmark",
     "BookmarkBase",
     "BookmarkCreateRequest",
-    "BookmarksResponse",
     "ChapterWithHighlights",
     "Highlight",
     "HighlightBase",
@@ -70,7 +66,6 @@ __all__ = [
     "ReadingSessionUploadRequest",
     "ReadingSessionUploadResponse",
     "ReadingSessionUploadSessionItem",
-    "ReadingSessionsResponse",
     "Tag",
     "TagAssociationRequest",
     "TagCreateRequest",
@@ -79,5 +74,4 @@ __all__ = [
     "TagGroupInBook",
     "TagInBook",
     "TagUpdateRequest",
-    "TagsResponse",
 ]

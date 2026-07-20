@@ -5,7 +5,7 @@ It imports from both flashcard_schemas and highlight_schemas to avoid circular
 dependencies in those modules.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from src.infrastructure.learning.schemas.flashcard_schemas import Flashcard
 from src.infrastructure.reading.schemas.highlight_schemas import HighlightResponseBase
@@ -16,12 +16,4 @@ class FlashcardWithHighlight(Flashcard):
 
     highlight: HighlightResponseBase | None = Field(
         None, description="Associated highlight data with tags (if any)"
-    )
-
-
-class FlashcardsWithHighlightsResponse(BaseModel):
-    """Schema for list of flashcards response with highlight data."""
-
-    flashcards: list[FlashcardWithHighlight] = Field(
-        ..., description="List of flashcards with highlight data"
     )

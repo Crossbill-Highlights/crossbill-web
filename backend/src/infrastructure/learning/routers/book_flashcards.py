@@ -12,12 +12,12 @@ from src.application.learning.use_cases.flashcards.get_flashcards_by_book_use_ca
 from src.core import container
 from src.domain.identity import User
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.schemas import CollectionResponse
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.learning.schemas import (
     Flashcard,
     FlashcardCreateRequest,
     FlashcardCreateResponse,
-    FlashcardsWithHighlightsResponse,
     FlashcardWithHighlight,
 )
 from src.infrastructure.reading.schemas import (
@@ -85,7 +85,7 @@ async def create_flashcard_for_book(
 
 @router.get(
     "/{book_id}/flashcards",
-    response_model=FlashcardsWithHighlightsResponse,
+    response_model=CollectionResponse[FlashcardWithHighlight],
     status_code=status.HTTP_200_OK,
 )
 async def get_flashcards_for_book(
@@ -94,7 +94,7 @@ async def get_flashcards_for_book(
     use_case: GetFlashcardsByBookUseCase = Depends(
         inject_use_case(container.learning.get_flashcards_by_book_use_case)
     ),
-) -> FlashcardsWithHighlightsResponse:
+) -> CollectionResponse[FlashcardWithHighlight]:
     """
     Get all flashcards for a book with embedded highlight data.
 
@@ -175,4 +175,4 @@ async def get_flashcards_for_book(
         )
         flashcards.append(flashcard_schema)
 
-    return FlashcardsWithHighlightsResponse(flashcards=flashcards)
+    return CollectionResponse[FlashcardWithHighlight](items=flashcards)

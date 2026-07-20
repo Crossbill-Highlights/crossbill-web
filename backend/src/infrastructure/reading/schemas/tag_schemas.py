@@ -30,12 +30,6 @@ class TagCreateRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, description="Tag name")
 
 
-class TagsResponse(BaseModel):
-    """Schema for list of tags response."""
-
-    tags: list[Tag] = Field(..., description="List of tags")
-
-
 class TagAssociationRequest(BaseModel):
     """Schema for associating a tag with a highlight."""
 

@@ -39,12 +39,6 @@ class ChapterPrereadingResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class BookPrereadingResponse(BaseModel):
-    """Response schema for batch prereading content for a book."""
-
-    items: list[ChapterPrereadingResponse]
-
-
 class EreaderChapterPrereadingItem(BaseModel):
     """Ereader-friendly prereading content for a single chapter.
 
@@ -60,9 +54,3 @@ class EreaderChapterPrereadingItem(BaseModel):
     keypoints: list[str]
     questions: list[str]
     generated_at: datetime
-
-
-class EreaderBookPrereadingResponse(BaseModel):
-    """Response schema for ereader book prereading content."""
-
-    items: list[EreaderChapterPrereadingItem]

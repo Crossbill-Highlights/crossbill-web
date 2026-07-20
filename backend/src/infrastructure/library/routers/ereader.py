@@ -20,14 +20,13 @@ from src.domain.common.exceptions import ValidationError
 from src.domain.common.value_objects.ids import UserId
 from src.domain.identity.entities.user import User
 from src.infrastructure.common.di import inject_use_case
-from src.infrastructure.common.schemas import SuccessResponse
+from src.infrastructure.common.schemas import CollectionResponse, SuccessResponse
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.library.schemas import (
     BookCreate,
     EreaderBookMetadata,
 )
 from src.infrastructure.reading.schemas.chapter_prereading_schemas import (
-    EreaderBookPrereadingResponse,
     EreaderChapterPrereadingItem,
 )
 
@@ -182,7 +181,7 @@ async def upload_book_epub(
 
 @router.get(
     "/books/{client_book_id}/prereading",
-    response_model=EreaderBookPrereadingResponse,
+    response_model=CollectionResponse[EreaderChapterPrereadingItem],
     status_code=status.HTTP_200_OK,
 )
 async def get_book_prereading(
@@ -191,7 +190,7 @@ async def get_book_prereading(
     use_case: GetEreaderBookPrereadingUseCase = Depends(
         inject_use_case(container.reading.get_ereader_book_prereading_use_case)
     ),
-) -> EreaderBookPrereadingResponse:
+) -> CollectionResponse[EreaderChapterPrereadingItem]:
     """
     Get all chapter prereading content for a book by client_book_id.
 
@@ -204,7 +203,7 @@ async def get_book_prereading(
         current_user: Authenticated user
 
     Returns:
-        EreaderBookPrereadingResponse with one item per chapter that has prereading
+        CollectionResponse with one item per chapter that has prereading
 
     Raises:
         HTTPException: 404 if the book is not found for the given client_book_id
@@ -212,7 +211,7 @@ async def get_book_prereading(
     items = await use_case.get_prereading_for_client_book(
         client_book_id, UserId(current_user.id.value)
     )
-    return EreaderBookPrereadingResponse(
+    return CollectionResponse[EreaderChapterPrereadingItem](
         items=[
             EreaderChapterPrereadingItem(
                 chapter_id=item.chapter_id,

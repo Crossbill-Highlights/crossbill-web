@@ -97,9 +97,3 @@ class NoteUpdateResponse(BaseModel):
     success: bool = Field(..., description="Whether the update was successful")
     message: str = Field(..., description="Response message")
     note: Note = Field(..., description="Updated note")
-
-
-class NotesResponse(BaseModel):
-    """Schema for a list of notes with linked entity summaries."""
-
-    notes: list[NoteWithLinks] = Field(..., description="Notes for the book")

@@ -15,7 +15,7 @@ from src.core import container
 from src.domain.identity import User
 from src.domain.notes.entities.note import Note as NoteEntity
 from src.infrastructure.common.di import inject_use_case
-from src.infrastructure.common.schemas import SuccessResponse
+from src.infrastructure.common.schemas import CollectionResponse, SuccessResponse
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.learning.schemas import Flashcard
 from src.infrastructure.notes.schemas import (
@@ -26,7 +26,6 @@ from src.infrastructure.notes.schemas import (
     NoteLinkedChapter,
     NoteLinkedHighlight,
     NoteLinkedTag,
-    NotesResponse,
     NoteUpdateRequest,
     NoteUpdateResponse,
     NoteWithLinks,
@@ -128,7 +127,7 @@ async def get_note(
 
 @router.get(
     "/books/{book_id}/notes",
-    response_model=NotesResponse,
+    response_model=CollectionResponse[NoteWithLinks],
     status_code=status.HTTP_200_OK,
 )
 async def get_notes_for_book(
@@ -141,7 +140,7 @@ async def get_notes_for_book(
     use_case: GetNotesByBookUseCase = Depends(
         inject_use_case(container.notes.get_notes_by_book_use_case)
     ),
-) -> NotesResponse:
+) -> CollectionResponse[NoteWithLinks]:
     dtos = await use_case.get_notes(
         book_id=book_id,
         user_id=current_user.id.value,
@@ -150,7 +149,9 @@ async def get_notes_for_book(
         highlight_id=highlight_id,
         tag_id=tag_id,
     )
-    return NotesResponse(notes=[note_with_links_to_schema(dto) for dto in dtos])
+    return CollectionResponse[NoteWithLinks](
+        items=[note_with_links_to_schema(dto) for dto in dtos]
+    )
 
 
 @router.put(

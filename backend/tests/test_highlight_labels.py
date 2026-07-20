@@ -229,7 +229,7 @@ class TestGetBookHighlightLabels:
 
         response = await client.get(f"/api/v1/books/{book.id}/highlight-labels")
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
+        data = response.json()["items"]
 
         assert len(data) == 1
         label_data = data[0]
@@ -252,7 +252,7 @@ class TestGetBookHighlightLabels:
 
         response = await client.get(f"/api/v1/books/{book.id}/highlight-labels")
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
+        data = response.json()["items"]
         assert data == []
 
     async def test_get_book_labels_excludes_individual_level_styles(
@@ -289,7 +289,7 @@ class TestGetBookHighlightLabels:
 
         response = await client.get(f"/api/v1/books/{book.id}/highlight-labels")
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
+        data = response.json()["items"]
 
         # Only the combination-level style should be returned
         assert len(data) == 1
@@ -345,7 +345,7 @@ class TestGetGlobalHighlightLabels:
         """Test getting global labels when none exist."""
         response = await client.get("/api/v1/highlight-labels/global")
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
+        data = response.json()["items"]
         assert data == []
 
     async def test_get_global_labels_returns_globals(
@@ -381,7 +381,7 @@ class TestGetGlobalHighlightLabels:
 
         response = await client.get("/api/v1/highlight-labels/global")
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
+        data = response.json()["items"]
 
         assert len(data) == 1
         assert data[0]["device_color"] == "yellow"
@@ -486,7 +486,7 @@ class TestHighlightUploadWithLabels:
         # Get labels for the book
         labels_response = await client.get(f"/api/v1/books/{book.id}/highlight-labels")
         assert labels_response.status_code == status.HTTP_200_OK
-        labels = labels_response.json()
+        labels = labels_response.json()["items"]
 
         assert len(labels) == 2  # Two unique color+style combos
 

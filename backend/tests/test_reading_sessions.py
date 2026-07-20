@@ -453,12 +453,12 @@ class TestGetBookReadingSessions:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "sessions" in data
-        assert len(data["sessions"]) == 2
+        assert "items" in data
+        assert len(data["items"]) == 2
         assert data["total"] == 2
 
         # Verify session data matches database records
-        returned_ids = {s["id"] for s in data["sessions"]}
+        returned_ids = {s["id"] for s in data["items"]}
         expected_ids = {s.id for s in sessions}
         assert returned_ids == expected_ids
 
@@ -491,7 +491,7 @@ class TestGetBookReadingSessions:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        sessions = data["sessions"]
+        sessions = data["items"]
 
         # Newer session should come first
         assert sessions[0]["id"] == newer_session.id
@@ -505,7 +505,7 @@ class TestGetBookReadingSessions:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["sessions"] == []
+        assert data["items"] == []
         assert data["total"] == 0
 
     async def test_get_sessions_book_not_found(self, client: AsyncClient) -> None:
@@ -536,7 +536,7 @@ class TestGetBookReadingSessions:
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data["sessions"]) == 2
+        assert len(data["items"]) == 2
         assert data["total"] == 5
 
         # Get next 2
@@ -545,7 +545,7 @@ class TestGetBookReadingSessions:
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data["sessions"]) == 2
+        assert len(data["items"]) == 2
 
 
 class TestReadingSessionCascadeDelete:

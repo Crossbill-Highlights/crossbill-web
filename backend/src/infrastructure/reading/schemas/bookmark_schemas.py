@@ -25,9 +25,3 @@ class BookmarkCreateRequest(BaseModel):
     """Schema for creating a new bookmark."""
 
     highlight_id: int = Field(..., description="ID of the highlight to bookmark")
-
-
-class BookmarksResponse(BaseModel):
-    """Schema for list of bookmarks response."""
-
-    bookmarks: list[Bookmark] = Field(..., description="List of bookmarks")

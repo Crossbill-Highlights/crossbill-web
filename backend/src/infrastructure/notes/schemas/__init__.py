@@ -8,7 +8,6 @@ from src.infrastructure.notes.schemas.note_schemas import (
     NoteLinkedChapter,
     NoteLinkedHighlight,
     NoteLinkedTag,
-    NotesResponse,
     NoteUpdateRequest,
     NoteUpdateResponse,
     NoteWithLinks,
@@ -25,5 +24,4 @@ __all__ = [
     "NoteUpdateRequest",
     "NoteUpdateResponse",
     "NoteWithLinks",
-    "NotesResponse",
 ]
