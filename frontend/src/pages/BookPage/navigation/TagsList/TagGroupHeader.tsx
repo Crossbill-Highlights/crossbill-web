@@ -1,0 +1,225 @@
+import { TagGroupInBook } from '@/api/generated/model';
+import { DeleteIcon, EditIcon, EditTagsIcon, ExpandMoreIcon } from '@/theme/Icons.tsx';
+import { createAdaptiveHoverStyles, createAdaptiveTouchTarget } from '@/utils/adaptiveHover.ts';
+import { Box, ClickAwayListener, IconButton, TextField, Tooltip, Typography } from '@mui/material';
+import { KeyboardEvent, useState } from 'react';
+
+interface TagGroupTitleProps {
+  title: string;
+  count: number;
+  isExpanded: boolean;
+  onToggleCollapse: () => void;
+}
+
+export const TagGroupTitle = ({
+  title,
+  count,
+  isExpanded,
+  onToggleCollapse,
+}: TagGroupTitleProps) => {
+  return (
+    <Box
+      onClick={onToggleCollapse}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        flex: 1,
+        cursor: 'pointer',
+      }}
+    >
+      <ExpandMoreIcon
+        sx={{
+          fontSize: 16,
+          color: 'text.secondary',
+          transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+          transition: 'transform 0.15s',
+        }}
+      />
+      <Typography
+        variant="subtitle2"
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: 'text.secondary',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px',
+        }}
+      >
+        {title}
+        <Typography
+          component="span"
+          sx={{
+            fontSize: '0.7rem',
+            fontWeight: 400,
+            color: 'text.disabled',
+            ml: 0.5,
+          }}
+        >
+          ({count})
+        </Typography>
+      </Typography>
+    </Box>
+  );
+};
+
+interface TagGroupNameEditFormProps {
+  initialValue: string;
+  isProcessing: boolean;
+  onSubmit: (value: string) => void;
+  onCancel: () => void;
+}
+
+const TagGroupNameEditForm = ({
+  initialValue,
+  isProcessing,
+  onSubmit,
+  onCancel,
+}: TagGroupNameEditFormProps) => {
+  const [editValue, setEditValue] = useState(initialValue);
+
+  const handleSubmit = () => {
+    onSubmit(editValue);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    } else if (e.key === 'Escape') {
+      onCancel();
+    }
+  };
+
+  return (
+    <ClickAwayListener onClickAway={handleSubmit}>
+      <TextField
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={handleSubmit}
+        size="small"
+        autoFocus
+        disabled={isProcessing}
+        sx={{ flex: 1, mr: 1 }}
+      />
+    </ClickAwayListener>
+  );
+};
+
+interface TagGroupHeaderProps {
+  group: TagGroupInBook;
+  tagCount: number;
+  isExpanded: boolean;
+  onToggleCollapse: () => void;
+  onEditSubmit: (value: string) => void;
+  onEditTags: () => void;
+  onDelete: () => void;
+  isProcessing: boolean;
+}
+
+export const TagGroupHeader = ({
+  group,
+  tagCount,
+  isExpanded,
+  onToggleCollapse,
+  onEditSubmit,
+  onEditTags,
+  onDelete,
+  isProcessing,
+}: TagGroupHeaderProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+
+  const adaptiveStyles = createAdaptiveHoverStyles({
+    actionsClassName: 'group-actions',
+    transitionDuration: 0.15,
+  });
+  const touchTarget = createAdaptiveTouchTarget();
+
+  const handleEditSubmit = (value: string) => {
+    onEditSubmit(value);
+    setIsEditing(false);
+  };
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        mb: isExpanded ? 1 : 0,
+        cursor: 'pointer',
+        ...adaptiveStyles.container,
+      }}
+    >
+      {isEditing ? (
+        <TagGroupNameEditForm
+          initialValue={group.name}
+          isProcessing={isProcessing}
+          onSubmit={handleEditSubmit}
+          onCancel={() => setIsEditing(false)}
+        />
+      ) : (
+        <TagGroupTitle
+          title={group.name}
+          count={tagCount}
+          isExpanded={isExpanded}
+          onToggleCollapse={onToggleCollapse}
+        />
+      )}
+      {!isEditing && (
+        <Box
+          className="group-actions"
+          sx={{
+            ...adaptiveStyles.actions,
+            gap: 0.25,
+          }}
+        >
+          <Tooltip title="Edit tags">
+            <span>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditTags();
+                }}
+                sx={{ ...touchTarget, color: 'text.disabled' }}
+              >
+                <EditTagsIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title="Rename group">
+            <span>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditing(true);
+                }}
+                sx={{ ...touchTarget, color: 'text.disabled' }}
+              >
+                <EditIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title="Delete group">
+            <span>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                disabled={isProcessing}
+                sx={{ ...touchTarget, color: 'text.disabled' }}
+              >
+                <DeleteIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
+      )}
+    </Box>
+  );
+};

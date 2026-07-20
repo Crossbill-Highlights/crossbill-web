@@ -39,6 +39,7 @@ export {
   ContentCopy as CopyIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  PlaylistAdd as EditTagsIcon,
   Link as LinkIcon,
   LinkOff as LinkOffIcon,
   NoteAdd as NoteAddIcon,

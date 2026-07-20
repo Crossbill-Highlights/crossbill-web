@@ -21,7 +21,7 @@ import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FilterFab } from '../common/FilterFab.tsx';
 import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
-import { TagsList } from '../navigation/TagsList.tsx';
+import { TagsList } from '../navigation/TagsList/TagsList.tsx';
 import { FlashcardEditDialog } from './FlashcardEditDialog.tsx';
 
 const BOOK_FLASHCARDS_KEY = -1;

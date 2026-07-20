@@ -25,7 +25,7 @@ import { BookmarkList } from '../navigation/BookmarkList.tsx';
 import { ChapterNav, type ChapterNavigationData } from '../navigation/ChapterNav.tsx';
 import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
 import { HighlightLabelsList } from '../navigation/HighlightLabelsList.tsx';
-import { TagsList } from '../navigation/TagsList.tsx';
+import { TagsList } from '../navigation/TagsList/TagsList.tsx';
 import { HighlightsList, type ChapterData } from './HighlightsList.tsx';
 import { HighlightViewModal } from './HighlightViewModal';
 
