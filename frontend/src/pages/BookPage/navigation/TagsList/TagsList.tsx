@@ -1,6 +1,6 @@
 import { TagGroupInBook, TagInBook } from '@/api/generated/model';
 import { AddIcon, TagIcon } from '@/theme/Icons.tsx';
-import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { Box, Button, IconButton, Tooltip, Typography } from '@mui/material';
 import { sortBy } from 'lodash';
 import { useState } from 'react';
 
@@ -54,7 +54,7 @@ export const TagsList = ({
 
   return (
     <Box>
-      {!hideTitle && (
+      {!hideTitle ? (
         <SidebarSectionHeader
           icon={TagIcon}
           title="Tags"
@@ -70,6 +70,19 @@ export const TagsList = ({
             </Tooltip>
           }
         />
+      ) : (
+        !showAddGroup && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+            <Button
+              size="small"
+              startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+              onClick={() => setShowAddGroup(true)}
+              sx={{ color: 'text.secondary', fontSize: '0.75rem' }}
+            >
+              Add group
+            </Button>
+          </Box>
+        )
       )}
 
       <AddGroupForm
