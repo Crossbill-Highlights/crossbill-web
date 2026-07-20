@@ -20,7 +20,7 @@ export const HighlightTabs = ({ highlight, bookId, disabled = false }: Highlight
   });
   // NOTE: the orval axios mutator unwraps the response (`.then(({ data }) => data)`),
   // so the generated GET hook's `data` is the payload itself, not an AxiosResponse.
-  const notes = data?.notes ?? [];
+  const notes = data?.items ?? [];
 
   const tabs: DialogTabItem[] = [
     {

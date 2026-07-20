@@ -21,3 +21,9 @@ class PaginatedResponse(BaseModel, Generic[T]):
     total: int
     offset: int
     limit: int
+
+
+class CollectionResponse(BaseModel, Generic[T]):
+    """Return-all list wrapper (no pagination)."""
+
+    items: list[T]

@@ -6,10 +6,6 @@
  */
 import type { Tag } from './tag';
 
-/**
- * Schema for list of tags response.
- */
-export interface TagsResponse {
-  /** List of tags */
-  tags: Tag[];
+export interface CollectionResponseTag {
+  items: Tag[];
 }

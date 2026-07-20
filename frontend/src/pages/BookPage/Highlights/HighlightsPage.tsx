@@ -255,7 +255,7 @@ export const HighlightsPage = () => {
           bookId={book.id}
           open={!!openHighlightId}
           onClose={handleCloseHighlight}
-          availableTags={tagsResponse?.tags || []}
+          availableTags={tagsResponse?.items || []}
           bookmarksByHighlightId={bookmarksByHighlightId}
           allHighlights={allHighlights}
           currentIndex={currentHighlightIndex}

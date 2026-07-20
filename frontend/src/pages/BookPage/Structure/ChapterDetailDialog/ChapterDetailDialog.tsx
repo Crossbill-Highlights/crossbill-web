@@ -91,7 +91,7 @@ export const ChapterDetailDialog = ({
   );
   // NOTE: the orval axios mutator unwraps the response (`.then(({ data }) => data)`),
   // so the generated GET hook's `data` is the payload itself, not an AxiosResponse.
-  const notes = notesData?.notes ?? [];
+  const notes = notesData?.items ?? [];
 
   const highlightCount = chapter.highlights.length;
   const flashcardCount = useMemo(() => {

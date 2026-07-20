@@ -20,13 +20,12 @@ from src.domain.identity import User
 from src.domain.library.services.book_details_aggregator import BookDetailsAggregation
 from src.domain.reading.services.highlight_style_resolver import ResolvedLabel
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.schemas import CollectionResponse, PaginatedResponse
 from src.infrastructure.common.schemas.position_schemas import PositionResponse
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.learning.schemas import Flashcard
 from src.infrastructure.library.schemas import (
-    BooksListResponse,
     BookWithHighlightCount,
-    RecentlyViewedBooksResponse,
 )
 from src.infrastructure.reading.schema_mappers import map_chapters_to_schemas
 from src.infrastructure.reading.schemas import (
@@ -119,7 +118,11 @@ def _build_book_details_schema(
     )
 
 
-@router.get("/", response_model=BooksListResponse, status_code=status.HTTP_200_OK)
+@router.get(
+    "/",
+    response_model=PaginatedResponse[BookWithHighlightCount],
+    status_code=status.HTTP_200_OK,
+)
 async def get_books(
     current_user: Annotated[User, Depends(get_current_user)],
     use_case: GetBooksWithCountsUseCase = Depends(
@@ -129,7 +132,7 @@ async def get_books(
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of books to return"),
     only_with_flashcards: bool = Query(False, description="Return only books with flashcards"),
     search: str | None = Query(None, description="Search text to filter books by title or author"),
-) -> BooksListResponse:
+) -> PaginatedResponse[BookWithHighlightCount]:
     """
     Get all books with their highlight counts, sorted alphabetically by title.
 
@@ -139,7 +142,7 @@ async def get_books(
         search: Optional search text to filter books by title or author
 
     Returns:
-        BooksListResponse with list of books and pagination info
+        PaginatedResponse with list of books and pagination info
 
     Raises:
         HTTPException: If fetching books fails due to server error
@@ -175,12 +178,14 @@ async def get_books(
         for book, highlight_count, flashcard_count in results
     ]
 
-    return BooksListResponse(books=books_list, total=total, offset=offset, limit=limit)
+    return PaginatedResponse[BookWithHighlightCount](
+        items=books_list, total=total, offset=offset, limit=limit
+    )
 
 
 @router.get(
     "/recently-viewed",
-    response_model=RecentlyViewedBooksResponse,
+    response_model=CollectionResponse[BookWithHighlightCount],
     status_code=status.HTTP_200_OK,
 )
 async def get_recently_viewed_books(
@@ -189,7 +194,7 @@ async def get_recently_viewed_books(
         inject_use_case(container.library.get_recently_viewed_books_use_case)
     ),
     limit: int = Query(10, ge=1, le=50, description="Maximum number of books to return"),
-) -> RecentlyViewedBooksResponse:
+) -> CollectionResponse[BookWithHighlightCount]:
     """
     Get recently viewed books with their highlight counts.
 
@@ -199,7 +204,7 @@ async def get_recently_viewed_books(
         limit: Maximum number of books to return (default: 10, max: 50)
 
     Returns:
-        RecentlyViewedBooksResponse with list of recently viewed books
+        CollectionResponse with list of recently viewed books
 
     Raises:
         HTTPException: If fetching books fails due to server error
@@ -233,7 +238,7 @@ async def get_recently_viewed_books(
         for book, highlight_count, flashcard_count in results
     ]
 
-    return RecentlyViewedBooksResponse(books=books_list)
+    return CollectionResponse[BookWithHighlightCount](items=books_list)
 
 
 @router.get("/{book_id}", response_model=BookDetails, status_code=status.HTTP_200_OK)

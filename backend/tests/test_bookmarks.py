@@ -246,11 +246,11 @@ class TestGetBookmarks:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "bookmarks" in data
-        assert len(data["bookmarks"]) == 2
+        assert "items" in data
+        assert len(data["items"]) == 2
 
         # Verify bookmark data
-        bookmark_ids = {b["id"] for b in data["bookmarks"]}
+        bookmark_ids = {b["id"] for b in data["items"]}
         assert bookmark1.id in bookmark_ids
         assert bookmark2.id in bookmark_ids
 
@@ -260,8 +260,8 @@ class TestGetBookmarks:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "bookmarks" in data
-        assert len(data["bookmarks"]) == 0
+        assert "items" in data
+        assert len(data["items"]) == 0
 
     async def test_get_bookmarks_book_not_found(self, client: AsyncClient) -> None:
         """Test getting bookmarks for non-existent book."""

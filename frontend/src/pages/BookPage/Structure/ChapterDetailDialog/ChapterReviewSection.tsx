@@ -1,4 +1,7 @@
-import type { BookPrereadingResponse, ChapterPrereadingResponse } from '@/api/generated/model';
+import type {
+  ChapterPrereadingResponse,
+  CollectionResponseChapterPrereadingResponse,
+} from '@/api/generated/model';
 import {
   getGetBookPrereadingApiV1BooksBookIdPrereadingGetQueryKey,
   useGenerateChapterPrereadingApiV1ChaptersChapterIdPrereadingGeneratePost,
@@ -61,7 +64,7 @@ export const ChapterReviewSection = ({
     useUpdatePrereadingAnswersApiV1ChaptersChapterIdPrereadingAnswersPut({
       mutation: {
         onSuccess: (updatedChapter) => {
-          queryClient.setQueryData<BookPrereadingResponse>(queryKey, (old) => {
+          queryClient.setQueryData<CollectionResponseChapterPrereadingResponse>(queryKey, (old) => {
             if (!old) return old;
             return {
               ...old,

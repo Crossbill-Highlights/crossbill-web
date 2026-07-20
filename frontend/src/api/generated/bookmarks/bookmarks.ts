@@ -23,7 +23,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
   Bookmark,
   BookmarkCreateRequest,
-  BookmarksResponse,
+  CollectionResponseBookmark,
   HTTPValidationError,
 } from '.././model';
 
@@ -146,7 +146,7 @@ Raises:
  * @summary Get Bookmarks
  */
 export const getBookmarksApiV1BooksBookIdBookmarksGet = (bookId: number, signal?: AbortSignal) => {
-  return axiosInstance<BookmarksResponse>({
+  return axiosInstance<CollectionResponseBookmark>({
     url: `/api/v1/books/${bookId}/bookmarks`,
     method: 'GET',
     signal,

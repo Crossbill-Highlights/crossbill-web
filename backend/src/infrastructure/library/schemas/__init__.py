@@ -4,10 +4,8 @@ from src.infrastructure.library.schemas.book_schemas import (
     Book,
     BookBase,
     BookCreate,
-    BooksListResponse,
     BookWithHighlightCount,
     EreaderBookMetadata,
-    RecentlyViewedBooksResponse,
 )
 from src.infrastructure.library.schemas.chapter_schemas import Chapter, ChapterBase
 
@@ -16,9 +14,7 @@ __all__ = [
     "BookBase",
     "BookCreate",
     "BookWithHighlightCount",
-    "BooksListResponse",
     "Chapter",
     "ChapterBase",
     "EreaderBookMetadata",
-    "RecentlyViewedBooksResponse",
 ]

@@ -1,6 +1,6 @@
 import type {
+  CollectionResponseFlashcardSuggestionItem,
   FlashcardSuggestionItem,
-  HighlightFlashcardSuggestionsResponse,
 } from '@/api/generated/model';
 import { useSnackbar } from '@/context/SnackbarContext.tsx';
 import { useState } from 'react';
@@ -10,7 +10,7 @@ import { useState } from 'react';
  * The fetcher is source-specific (highlight, note, ...) and provided by the caller.
  */
 export const useAIFlashcardSuggestions = (
-  fetchFn: () => Promise<HighlightFlashcardSuggestionsResponse | undefined>
+  fetchFn: () => Promise<CollectionResponseFlashcardSuggestionItem | undefined>
 ) => {
   const { showSnackbar } = useSnackbar();
   const [isLoading, setIsLoading] = useState(false);
@@ -20,8 +20,8 @@ export const useAIFlashcardSuggestions = (
     setIsLoading(true);
     try {
       const data = await fetchFn();
-      if (data?.suggestions) {
-        setSuggestions(data.suggestions);
+      if (data?.items) {
+        setSuggestions(data.items);
       }
     } catch (error) {
       console.error('Failed to fetch flashcard suggestions:', error);

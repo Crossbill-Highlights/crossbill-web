@@ -57,6 +57,7 @@ from src.domain.common.value_objects import TagId, UserId
 from src.domain.identity.entities.user import User
 from src.domain.reading.exceptions import TagGroupNotFoundError, TagNotFoundError
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.schemas import CollectionResponse
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.learning.schemas import (
     Flashcard,
@@ -79,7 +80,6 @@ from src.infrastructure.reading.schemas import (
     TagGroup,
     TagGroupCreateRequest,
     TagInBook,
-    TagsResponse,
     TagUpdateRequest,
 )
 
@@ -347,7 +347,7 @@ async def delete_highlights(
 
 @router.get(
     "/books/{book_id}/tags",
-    response_model=TagsResponse,
+    response_model=CollectionResponse[Tag],
     status_code=status.HTTP_200_OK,
 )
 async def get_tags(
@@ -356,7 +356,7 @@ async def get_tags(
     use_case: GetTagsForBookUseCase = Depends(
         inject_use_case(container.reading.get_tags_for_book_use_case)
     ),
-) -> TagsResponse:
+) -> CollectionResponse[Tag]:
     """
     Get all tags for a book.
 
@@ -370,8 +370,8 @@ async def get_tags(
         HTTPException: If book is not found
     """
     tags = await use_case.get_tags(book_id, current_user.id.value)
-    return TagsResponse(
-        tags=[
+    return CollectionResponse[Tag](
+        items=[
             Tag(
                 id=tag.id.value,
                 book_id=tag.book_id.value,

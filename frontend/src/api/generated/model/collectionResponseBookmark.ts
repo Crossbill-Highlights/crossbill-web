@@ -6,10 +6,6 @@
  */
 import type { Bookmark } from './bookmark';
 
-/**
- * Schema for list of bookmarks response.
- */
-export interface BookmarksResponse {
-  /** List of bookmarks */
-  bookmarks: Bookmark[];
+export interface CollectionResponseBookmark {
+  items: Bookmark[];
 }

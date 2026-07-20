@@ -22,9 +22,9 @@ from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.identity import User
 from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.schemas import CollectionResponse
 from src.infrastructure.identity import get_current_user
 from src.infrastructure.reading.schemas.chapter_prereading_schemas import (
-    BookPrereadingResponse,
     ChapterPrereadingResponse,
     PrereadingQuestionResponse,
     UpdatePrereadingAnswersRequest,
@@ -144,7 +144,7 @@ book_prereading_router = APIRouter(prefix="/books", tags=["prereading"])
 
 @book_prereading_router.get(
     "/{book_id}/prereading",
-    response_model=BookPrereadingResponse,
+    response_model=CollectionResponse[ChapterPrereadingResponse],
     status_code=status.HTTP_200_OK,
 )
 async def get_book_prereading(
@@ -153,14 +153,14 @@ async def get_book_prereading(
     use_case: GetBookPrereadingUseCase = Depends(
         inject_use_case(container.reading.get_book_prereading_use_case)
     ),
-) -> BookPrereadingResponse:
+) -> CollectionResponse[ChapterPrereadingResponse]:
     """Get all prereading content for chapters in a book."""
     results = await use_case.get_all_prereading_for_book(
         book_id=BookId(book_id),
         user_id=UserId(current_user.id.value),
     )
 
-    return BookPrereadingResponse(
+    return CollectionResponse[ChapterPrereadingResponse](
         items=[
             ChapterPrereadingResponse(
                 id=r.id.value,

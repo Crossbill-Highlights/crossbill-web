@@ -18,13 +18,13 @@ from src.core import container
 from src.domain.identity.entities.user import User
 from src.infrastructure.common.dependencies import require_ai_enabled
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.schemas import PaginatedResponse
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.reading.schemas import (
     Highlight,
     HighlightLabel,
     ReadingSession,
     ReadingSessionAISummaryResponse,
-    ReadingSessionsResponse,
     ReadingSessionUploadRequest,
     ReadingSessionUploadResponse,
 )
@@ -98,7 +98,7 @@ async def upload_reading_sessions(
 
 @router.get(
     "/books/{book_id}/reading_sessions",
-    response_model=ReadingSessionsResponse,
+    response_model=PaginatedResponse[ReadingSession],
     status_code=status.HTTP_200_OK,
 )
 async def get_book_reading_sessions(
@@ -109,7 +109,7 @@ async def get_book_reading_sessions(
     use_case: ReadingSessionQueryUseCase = Depends(
         inject_use_case(container.reading.reading_session_query_use_case)
     ),
-) -> ReadingSessionsResponse:
+) -> PaginatedResponse[ReadingSession]:
     """
     Get reading sessions for a specific book.
 
@@ -121,7 +121,7 @@ async def get_book_reading_sessions(
         offset: Pagination offset
 
     Returns:
-        ReadingSessionsResponse with sessions list
+        PaginatedResponse with sessions list
     """
     # Call use case
     result = await use_case.get_sessions_for_book(
@@ -196,8 +196,8 @@ async def get_book_reading_sessions(
             )
         )
 
-    return ReadingSessionsResponse(
-        sessions=sessions_schemas,
+    return PaginatedResponse[ReadingSession](
+        items=sessions_schemas,
         total=result.total,
         offset=result.offset,
         limit=result.limit,

@@ -69,11 +69,3 @@ class FlashcardSuggestionItem(BaseModel):
 
     question: str = Field(..., description="Suggested question for flashcard")
     answer: str = Field(..., description="Suggested answer for flashcard")
-
-
-class HighlightFlashcardSuggestionsResponse(BaseModel):
-    """Schema for flashcard suggestions response."""
-
-    suggestions: list[FlashcardSuggestionItem] = Field(
-        ..., description="List of AI-generated flashcard suggestions"
-    )

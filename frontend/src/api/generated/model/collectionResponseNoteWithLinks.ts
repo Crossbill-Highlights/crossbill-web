@@ -6,10 +6,6 @@
  */
 import type { NoteWithLinks } from './noteWithLinks';
 
-/**
- * Schema for a list of notes with linked entity summaries.
- */
-export interface NotesResponse {
-  /** Notes for the book */
-  notes: NoteWithLinks[];
+export interface CollectionResponseNoteWithLinks {
+  items: NoteWithLinks[];
 }

@@ -6,11 +6,9 @@
  */
 
 /**
- * Schema for flashcard deletion response.
+ * Generic success response wrapper.
  */
-export interface FlashcardDeleteResponse {
-  /** Whether the deletion was successful */
+export interface SuccessResponse {
   success: boolean;
-  /** Response message */
   message: string;
 }

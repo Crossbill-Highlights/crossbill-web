@@ -25,7 +25,7 @@ export const NotePickerDialog = ({
 
   // NOTE: the orval axios mutator unwraps the response (`.then(({ data }) => data)`),
   // so the generated GET hook's `data` is the payload itself, not an AxiosResponse.
-  const notes = data?.notes ?? [];
+  const notes = data?.items ?? [];
 
   return (
     <CommonDialog open={open} onClose={onClose} title={title} maxWidth="sm">

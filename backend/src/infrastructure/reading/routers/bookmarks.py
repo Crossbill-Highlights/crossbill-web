@@ -15,8 +15,9 @@ from src.application.reading.use_cases.bookmarks.get_bookmarks_use_case import (
 from src.core import container
 from src.domain.identity import User
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.schemas import CollectionResponse
 from src.infrastructure.identity import get_current_user
-from src.infrastructure.reading.schemas import Bookmark, BookmarkCreateRequest, BookmarksResponse
+from src.infrastructure.reading.schemas import Bookmark, BookmarkCreateRequest
 
 router = APIRouter(prefix="/books", tags=["bookmarks"])
 
@@ -95,7 +96,7 @@ async def delete_bookmark(
 
 @router.get(
     "/{book_id}/bookmarks",
-    response_model=BookmarksResponse,
+    response_model=CollectionResponse[Bookmark],
     status_code=status.HTTP_200_OK,
 )
 async def get_bookmarks(
@@ -104,7 +105,7 @@ async def get_bookmarks(
     use_case: GetBookmarksUseCase = Depends(
         inject_use_case(container.reading.get_bookmarks_use_case)
     ),
-) -> BookmarksResponse:
+) -> CollectionResponse[Bookmark]:
     """
     Get all bookmarks for a book.
 
@@ -135,4 +136,4 @@ async def get_bookmarks(
                 created_at=b.created_at,
             )
         )
-    return BookmarksResponse(bookmarks=bookmark_schemas)
+    return CollectionResponse[Bookmark](items=bookmark_schemas)

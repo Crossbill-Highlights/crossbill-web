@@ -21,15 +21,15 @@ import type {
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
+  CollectionResponseFlashcardSuggestionItem,
+  CollectionResponseFlashcardWithHighlight,
   FlashcardCreateRequest,
   FlashcardCreateResponse,
-  FlashcardDeleteResponse,
   FlashcardUpdateRequest,
   FlashcardUpdateResponse,
-  FlashcardsWithHighlightsResponse,
   HTTPValidationError,
-  HighlightFlashcardSuggestionsResponse,
   NoteFlashcardCreateRequest,
+  SuccessResponse,
 } from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
@@ -155,7 +155,7 @@ export const getFlashcardsForBookApiV1BooksBookIdFlashcardsGet = (
   bookId: number,
   signal?: AbortSignal
 ) => {
-  return axiosInstance<FlashcardsWithHighlightsResponse>({
+  return axiosInstance<CollectionResponseFlashcardWithHighlight>({
     url: `/api/v1/books/${bookId}/flashcards`,
     method: 'GET',
     signal,
@@ -413,7 +413,7 @@ export const deleteFlashcardApiV1FlashcardsFlashcardIdDelete = (
   flashcardId: number,
   signal?: AbortSignal
 ) => {
-  return axiosInstance<FlashcardDeleteResponse>({
+  return axiosInstance<SuccessResponse>({
     url: `/api/v1/flashcards/${flashcardId}`,
     method: 'DELETE',
     signal,
@@ -497,7 +497,7 @@ Args:
     use_case: FlashcardAIUseCase injected via dependency container
 
 Returns:
-    HighlightFlashcardSuggestionsResponse with list of flashcard suggestions
+    CollectionResponse with list of flashcard suggestions
 
 Raises:
     HTTPException 404: If highlight not found or not owned by user
@@ -507,7 +507,7 @@ export const getHighlightFlashcardSuggestionsApiV1HighlightsHighlightIdFlashcard
   highlightId: number,
   signal?: AbortSignal
 ) => {
-  return axiosInstance<HighlightFlashcardSuggestionsResponse>({
+  return axiosInstance<CollectionResponseFlashcardSuggestionItem>({
     url: `/api/v1/highlights/${highlightId}/flashcard_suggestions`,
     method: 'GET',
     signal,
@@ -740,7 +740,7 @@ export const getChapterFlashcardSuggestionsApiV1ChaptersChapterIdFlashcardSugges
   chapterId: number,
   signal?: AbortSignal
 ) => {
-  return axiosInstance<HighlightFlashcardSuggestionsResponse>({
+  return axiosInstance<CollectionResponseFlashcardSuggestionItem>({
     url: `/api/v1/chapters/${chapterId}/flashcard_suggestions`,
     method: 'GET',
     signal,
@@ -1064,7 +1064,7 @@ Args:
     use_case: Use case injected via dependency container
 
 Returns:
-    HighlightFlashcardSuggestionsResponse with list of flashcard suggestions
+    CollectionResponse with list of flashcard suggestions
 
 Raises:
     HTTPException 404: If note not found or not owned by user
@@ -1074,7 +1074,7 @@ export const getNoteFlashcardSuggestionsApiV1NotesNoteIdFlashcardSuggestionsGet 
   noteId: number,
   signal?: AbortSignal
 ) => {
-  return axiosInstance<HighlightFlashcardSuggestionsResponse>({
+  return axiosInstance<CollectionResponseFlashcardSuggestionItem>({
     url: `/api/v1/notes/${noteId}/flashcard_suggestions`,
     method: 'GET',
     signal,

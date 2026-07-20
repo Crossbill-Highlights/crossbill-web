@@ -6,9 +6,6 @@
  */
 import type { ChapterPrereadingResponse } from './chapterPrereadingResponse';
 
-/**
- * Response schema for batch prereading content for a book.
- */
-export interface BookPrereadingResponse {
+export interface CollectionResponseChapterPrereadingResponse {
   items: ChapterPrereadingResponse[];
 }

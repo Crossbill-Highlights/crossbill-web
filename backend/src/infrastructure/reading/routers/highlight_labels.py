@@ -17,6 +17,7 @@ from src.application.reading.use_cases.highlight_labels.update_highlight_label_u
 from src.core import container
 from src.domain.identity.entities.user import User
 from src.infrastructure.common.di import inject_use_case
+from src.infrastructure.common.schemas import CollectionResponse
 from src.infrastructure.identity.dependencies import get_current_user
 from src.infrastructure.reading.schemas.highlight_schemas import (
     HighlightLabelCreate,
@@ -27,28 +28,33 @@ from src.infrastructure.reading.schemas.highlight_schemas import (
 router = APIRouter(tags=["highlight-labels"])
 
 
-@router.get("/books/{book_id}/highlight-labels", response_model=list[HighlightLabelInBook])
+@router.get(
+    "/books/{book_id}/highlight-labels",
+    response_model=CollectionResponse[HighlightLabelInBook],
+)
 async def get_book_highlight_labels(
     book_id: int,
     current_user: User = Depends(get_current_user),
     use_case: GetBookHighlightLabelsUseCase = Depends(
         inject_use_case(container.reading.get_book_highlight_labels_use_case)
     ),
-) -> list[HighlightLabelInBook]:
+) -> CollectionResponse[HighlightLabelInBook]:
     """Get all highlight labels for a book with resolved labels."""
     results = await use_case.execute(book_id=book_id, user_id=current_user.id.value)
-    return [
-        HighlightLabelInBook(
-            id=style.id.value,
-            device_color=style.device_color,
-            device_style=style.device_style,
-            label=resolved.label,
-            ui_color=resolved.ui_color,
-            label_source=resolved.source,
-            highlight_count=count,
-        )
-        for style, resolved, count in results
-    ]
+    return CollectionResponse[HighlightLabelInBook](
+        items=[
+            HighlightLabelInBook(
+                id=style.id.value,
+                device_color=style.device_color,
+                device_style=style.device_style,
+                label=resolved.label,
+                ui_color=resolved.ui_color,
+                label_source=resolved.source,
+                highlight_count=count,
+            )
+            for style, resolved, count in results
+        ]
+    )
 
 
 @router.patch("/highlight-labels/{style_id}", response_model=HighlightLabelInBook)
@@ -78,27 +84,32 @@ async def update_highlight_label(
     )
 
 
-@router.get("/highlight-labels/global", response_model=list[HighlightLabelInBook])
+@router.get(
+    "/highlight-labels/global",
+    response_model=CollectionResponse[HighlightLabelInBook],
+)
 async def get_global_highlight_labels(
     current_user: User = Depends(get_current_user),
     use_case: GetGlobalHighlightLabelsUseCase = Depends(
         inject_use_case(container.reading.get_global_highlight_labels_use_case)
     ),
-) -> list[HighlightLabelInBook]:
+) -> CollectionResponse[HighlightLabelInBook]:
     """Get all global default highlight labels."""
     styles = await use_case.execute(user_id=current_user.id.value)
-    return [
-        HighlightLabelInBook(
-            id=s.id.value,
-            device_color=s.device_color,
-            device_style=s.device_style,
-            label=s.label,
-            ui_color=s.ui_color,
-            label_source="global",
-            highlight_count=0,
-        )
-        for s in styles
-    ]
+    return CollectionResponse[HighlightLabelInBook](
+        items=[
+            HighlightLabelInBook(
+                id=s.id.value,
+                device_color=s.device_color,
+                device_style=s.device_style,
+                label=s.label,
+                ui_color=s.ui_color,
+                label_source="global",
+                highlight_count=0,
+            )
+            for s in styles
+        ]
+    )
 
 
 @router.post("/highlight-labels/global", response_model=HighlightLabelInBook, status_code=201)

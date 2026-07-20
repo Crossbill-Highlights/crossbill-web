@@ -23,10 +23,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
   GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
   HTTPValidationError,
+  PaginatedResponseReadingSession,
   ReadingSessionAISummaryResponse,
   ReadingSessionUploadRequest,
   ReadingSessionUploadResponse,
-  ReadingSessionsResponse,
 } from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
@@ -136,7 +136,7 @@ Args:
     offset: Pagination offset
 
 Returns:
-    ReadingSessionsResponse with sessions list
+    PaginatedResponse with sessions list
  * @summary Get Book Reading Sessions
  */
 export const getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet = (
@@ -144,7 +144,7 @@ export const getBookReadingSessionsApiV1BooksBookIdReadingSessionsGet = (
   params?: GetBookReadingSessionsApiV1BooksBookIdReadingSessionsGetParams,
   signal?: AbortSignal
 ) => {
-  return axiosInstance<ReadingSessionsResponse>({
+  return axiosInstance<PaginatedResponseReadingSession>({
     url: `/api/v1/books/${bookId}/reading_sessions`,
     method: 'GET',
     params,

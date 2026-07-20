@@ -340,7 +340,7 @@ class TestGetNotesForBook:
     ) -> None:
         response = await client.get(f"/api/v1/books/{test_book.id}/notes")
         assert response.status_code == status.HTTP_200_OK
-        notes = response.json()["notes"]
+        notes = response.json()["items"]
         assert len(notes) == 2
 
     async def test_list_includes_tag_not_attached_to_any_highlight(
@@ -365,7 +365,7 @@ class TestGetNotesForBook:
         )
 
         response = await client.get(f"/api/v1/books/{test_book.id}/notes")
-        note = next(n for n in response.json()["notes"] if n["title"] == "Concept")
+        note = next(n for n in response.json()["items"] if n["title"] == "Concept")
         assert note["tag_ids"] == [tag_id]
         assert [t["id"] for t in note["tags"]] == [tag_id]
 
@@ -377,7 +377,7 @@ class TestGetNotesForBook:
         two_notes: tuple[int, int],
     ) -> None:
         response = await client.get(f"/api/v1/books/{test_book.id}/notes")
-        notes = response.json()["notes"]
+        notes = response.json()["items"]
         raskolnikov = next(n for n in notes if n["title"] == "Raskolnikov")
         assert raskolnikov["chapters"] == [{"id": test_chapter.id, "name": test_chapter.name}]
 
@@ -385,7 +385,7 @@ class TestGetNotesForBook:
         self, client: AsyncClient, test_book: models.Book, two_notes: tuple[int, int]
     ) -> None:
         response = await client.get(f"/api/v1/books/{test_book.id}/notes?kind=character")
-        notes = response.json()["notes"]
+        notes = response.json()["items"]
         assert len(notes) == 1
         assert notes[0]["title"] == "Raskolnikov"
 
@@ -399,14 +399,14 @@ class TestGetNotesForBook:
         response = await client.get(
             f"/api/v1/books/{test_book.id}/notes?chapter_id={test_chapter.id}"
         )
-        notes = response.json()["notes"]
+        notes = response.json()["items"]
         assert len(notes) == 1
         assert notes[0]["title"] == "Raskolnikov"
 
     async def test_list_notes_empty(self, client: AsyncClient, test_book: models.Book) -> None:
         response = await client.get(f"/api/v1/books/{test_book.id}/notes")
         assert response.status_code == status.HTTP_200_OK
-        assert response.json()["notes"] == []
+        assert response.json()["items"] == []
 
     async def test_list_notes_book_not_found(self, client: AsyncClient) -> None:
         response = await client.get("/api/v1/books/99999/notes")

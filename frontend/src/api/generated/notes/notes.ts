@@ -21,15 +21,15 @@ import type {
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
+  CollectionResponseNoteWithLinks,
   GetNotesForBookApiV1BooksBookIdNotesGetParams,
   HTTPValidationError,
   NoteCreateRequest,
   NoteCreateResponse,
-  NoteDeleteResponse,
   NoteUpdateRequest,
   NoteUpdateResponse,
   NoteWithLinks,
-  NotesResponse,
+  SuccessResponse,
 } from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
@@ -314,7 +314,7 @@ export const useUpdateNoteApiV1NotesNoteIdPut = <TError = HTTPValidationError, T
  * @summary Delete Note
  */
 export const deleteNoteApiV1NotesNoteIdDelete = (noteId: number, signal?: AbortSignal) => {
-  return axiosInstance<NoteDeleteResponse>({
+  return axiosInstance<SuccessResponse>({
     url: `/api/v1/notes/${noteId}`,
     method: 'DELETE',
     signal,
@@ -394,7 +394,7 @@ export const getNotesForBookApiV1BooksBookIdNotesGet = (
   params?: GetNotesForBookApiV1BooksBookIdNotesGetParams,
   signal?: AbortSignal
 ) => {
-  return axiosInstance<NotesResponse>({
+  return axiosInstance<CollectionResponseNoteWithLinks>({
     url: `/api/v1/books/${bookId}/notes`,
     method: 'GET',
     params,

@@ -82,8 +82,8 @@ const useAIFlashcardSuggestions = (
     setIsLoading(true);
     try {
       const { data } = await refetch();
-      if (data?.suggestions) {
-        setSuggestions(data.suggestions);
+      if (data?.items) {
+        setSuggestions(data.items);
       }
     } catch (error) {
       console.error('Failed to fetch flashcard suggestions:', error);

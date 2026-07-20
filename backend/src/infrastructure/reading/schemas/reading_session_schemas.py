@@ -93,15 +93,6 @@ class ReadingSessionUploadResponse(BaseModel):
     skipped_duplicate_count: int = Field(0, description="Sessions skipped because already uploaded")
 
 
-class ReadingSessionsResponse(BaseModel):
-    """Schema for paginated reading sessions response."""
-
-    sessions: list[ReadingSession] = Field(..., description="List of reading sessions")
-    total: int = Field(..., ge=0, description="Total number of sessions")
-    offset: int = Field(..., ge=0, description="Current offset")
-    limit: int = Field(..., ge=1, description="Current limit")
-
-
 class ReadingSessionAISummaryResponse(BaseModel):
     """Schema for AI summary response."""
 

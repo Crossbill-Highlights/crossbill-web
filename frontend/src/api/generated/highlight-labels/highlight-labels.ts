@@ -21,6 +21,7 @@ import type {
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
+  CollectionResponseHighlightLabelInBook,
   HTTPValidationError,
   HighlightLabelCreate,
   HighlightLabelInBook,
@@ -37,7 +38,7 @@ export const getBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet = (
   bookId: number,
   signal?: AbortSignal
 ) => {
-  return axiosInstance<HighlightLabelInBook[]>({
+  return axiosInstance<CollectionResponseHighlightLabelInBook>({
     url: `/api/v1/books/${bookId}/highlight-labels`,
     method: 'GET',
     signal,
@@ -275,7 +276,7 @@ export const useUpdateHighlightLabelApiV1HighlightLabelsStyleIdPatch = <
  * @summary Get Global Highlight Labels
  */
 export const getGlobalHighlightLabelsApiV1HighlightLabelsGlobalGet = (signal?: AbortSignal) => {
-  return axiosInstance<HighlightLabelInBook[]>({
+  return axiosInstance<CollectionResponseHighlightLabelInBook>({
     url: `/api/v1/highlight-labels/global`,
     method: 'GET',
     signal,
