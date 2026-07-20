@@ -1,7 +1,5 @@
 """Tests for bookmarks API endpoints."""
 
-import json
-
 import pytest
 from fastapi import status
 from httpx import AsyncClient
@@ -375,7 +373,7 @@ class TestBookmarkCascadeDelete:
         # Soft delete the highlight
         payload = {"highlight_ids": [test_highlight.id]}
         response = await client.request(
-            "DELETE", f"/api/v1/books/{test_book.id}/highlight", content=json.dumps(payload)
+            "DELETE", f"/api/v1/books/{test_book.id}/highlight", json=payload
         )
         assert response.status_code == status.HTTP_200_OK
 

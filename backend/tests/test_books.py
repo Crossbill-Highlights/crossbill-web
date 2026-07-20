@@ -1,6 +1,5 @@
 """Tests for books API endpoints."""
 
-import json
 from datetime import UTC, datetime
 from typing import NamedTuple
 
@@ -188,7 +187,7 @@ class TestDeleteHighlights:
 
         payload = {"highlight_ids": [highlight1.id, highlight2.id]}
         response = await client.request(
-            "DELETE", f"/api/v1/books/{book.id}/highlight", content=json.dumps(payload)
+            "DELETE", f"/api/v1/books/{book.id}/highlight", json=payload
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -215,7 +214,7 @@ class TestDeleteHighlights:
 
         payload = {"highlight_ids": [highlight1.id]}
         response = await client.request(
-            "DELETE", f"/api/v1/books/{book.id}/highlight", content=json.dumps(payload)
+            "DELETE", f"/api/v1/books/{book.id}/highlight", json=payload
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -239,7 +238,7 @@ class TestDeleteHighlights:
 
         payload = {"highlight_ids": [highlight.id]}
         response = await client.request(
-            "DELETE", f"/api/v1/books/{book.id}/highlight", content=json.dumps(payload)
+            "DELETE", f"/api/v1/books/{book.id}/highlight", json=payload
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -276,7 +275,7 @@ class TestDeleteHighlights:
         # Try to delete book1's highlight using book2's ID
         payload = {"highlight_ids": [highlight1.id]}
         response = await client.request(
-            "DELETE", f"/api/v1/books/{book2.id}/highlight", content=json.dumps(payload)
+            "DELETE", f"/api/v1/books/{book2.id}/highlight", json=payload
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -290,9 +289,7 @@ class TestDeleteHighlights:
     async def test_delete_highlights_book_not_found(self, client: AsyncClient) -> None:
         """Test deletion of highlights for non-existent book."""
         payload = {"highlight_ids": [1, 2, 3]}
-        response = await client.request(
-            "DELETE", "/api/v1/books/99999/highlight", content=json.dumps(payload)
-        )
+        response = await client.request("DELETE", "/api/v1/books/99999/highlight", json=payload)
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         data = response.json()
@@ -304,7 +301,7 @@ class TestDeleteHighlights:
         """Test deletion with empty highlight list."""
         payload = {"highlight_ids": []}
         response = await client.request(
-            "DELETE", f"/api/v1/books/{test_book.id}/highlight", content=json.dumps(payload)
+            "DELETE", f"/api/v1/books/{test_book.id}/highlight", json=payload
         )
 
         # Should fail validation because of min_length=1
