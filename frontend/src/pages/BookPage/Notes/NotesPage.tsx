@@ -13,7 +13,7 @@ import { createPortal } from 'react-dom';
 
 import { FilterFab } from '../common/FilterFab.tsx';
 import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
-import { TagsList } from '../navigation/TagsList.tsx';
+import { TagsList } from '../navigation/TagsList/TagsList.tsx';
 import { NoteCard } from './NoteCard';
 import { NoteModals } from './NoteModals';
 import { useNoteModals } from './hooks/useNoteModals';
