@@ -89,7 +89,8 @@ export const HighlightLabelsList = ({
   onLabelClick,
   hideTitle,
 }: HighlightLabelsListProps) => {
-  const { data: labels } = useGetBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet(bookId);
+  const { data } = useGetBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet(bookId);
+  const labels = data?.items;
 
   if (!labels || labels.length < 2) {
     return null;

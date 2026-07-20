@@ -40,8 +40,8 @@ export const ReadingSessionsPage = () => {
   );
 
   const activeSession = useMemo(
-    () => data?.sessions.find((s: ReadingSession) => s.id === activeSessionId) || null,
-    [data?.sessions, activeSessionId]
+    () => data?.items.find((s: ReadingSession) => s.id === activeSessionId) || null,
+    [data?.items, activeSessionId]
   );
 
   const sessionHighlights = useMemo(() => activeSession?.highlights || [], [activeSession]);
@@ -95,7 +95,7 @@ export const ReadingSessionsPage = () => {
         {data && (
           <>
             <ReadingSessionList
-              sessions={data.sessions}
+              sessions={data.items}
               animationKey={`reading-sessions-${currentPage}`}
               bookmarksByHighlightId={bookmarksByHighlightId}
               onOpenHighlight={handleOpenSessionHighlight}
@@ -123,7 +123,7 @@ export const ReadingSessionsPage = () => {
           bookId={book.id}
           open={!!openHighlightId}
           onClose={handleCloseModal}
-          availableTags={tagsResponse?.tags || []}
+          availableTags={tagsResponse?.items || []}
           bookmarksByHighlightId={bookmarksByHighlightId}
           allHighlights={sessionHighlights}
           currentIndex={currentHighlightIndex}

@@ -81,7 +81,7 @@ export const LandingPage = () => {
         </Box>
       )}
 
-      {data?.books && data.books.length === 0 && (
+      {data?.items && data.items.length === 0 && (
         <Box sx={{ py: 4, textAlign: 'center' }}>
           <Typography variant="body1" color="text.secondary">
             No books found. Upload some highlights to get started!
@@ -89,9 +89,9 @@ export const LandingPage = () => {
         </Box>
       )}
 
-      {data?.books && data.books.length > 0 && (
+      {data?.items && data.items.length > 0 && (
         <>
-          <BookList books={data.books} pageKey={`${currentPage}-${searchText}`} />
+          <BookList books={data.items} pageKey={`${currentPage}-${searchText}`} />
           {totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
               <Pagination

@@ -20,7 +20,7 @@ export const BookStatsStrip = ({ book }: BookStatsStripProps) => {
   const flashcardCount = book.book_flashcards?.length ?? 0;
 
   // Last read date from latest session
-  const latestSession = sessionsData?.sessions[0];
+  const latestSession = sessionsData?.items[0];
   const lastReadDate = latestSession ? formatDate(latestSession.start_time) : null;
 
   const items = [

@@ -12,7 +12,7 @@ export const RecentlyViewedBooks = () => {
   });
 
   // Don't render the section if there are no recently viewed books
-  if (!isLoading && !isError && (!data?.books || data.books.length === 0)) {
+  if (!isLoading && !isError && (!data?.items || data.items.length === 0)) {
     return null;
   }
 
@@ -28,8 +28,8 @@ export const RecentlyViewedBooks = () => {
         </Box>
       )}
 
-      {data?.books && data.books.length > 0 && (
-        <BookList books={data.books} pageKey="recently-viewed" />
+      {data?.items && data.items.length > 0 && (
+        <BookList books={data.items} pageKey="recently-viewed" />
       )}
     </Box>
   );
