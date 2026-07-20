@@ -16,8 +16,8 @@ from src.domain.common.value_objects import BookId, HighlightId, ReadingSessionI
 from src.domain.common.value_objects.position import Position
 from src.domain.reading.entities.reading_session import ReadingSession
 from src.infrastructure.reading.mappers.reading_session_mapper import ReadingSessionMapper
-from src.models import ReadingSession as ReadingSessionORM
-from src.models import reading_session_highlights
+from src.infrastructure.reading.orm.associations import reading_session_highlights
+from src.infrastructure.reading.orm.reading_session_model import ReadingSession as ReadingSessionORM
 
 logger = logging.getLogger(__name__)
 

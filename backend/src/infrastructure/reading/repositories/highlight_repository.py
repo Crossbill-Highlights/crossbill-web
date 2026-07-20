@@ -27,14 +27,14 @@ from src.domain.reading.entities.highlight import Highlight
 from src.domain.reading.entities.tag import Tag
 from src.infrastructure.common.sql import LIKE_ESCAPE_CHAR, escape_like_pattern
 from src.infrastructure.learning.mappers.flashcard_mapper import FlashcardMapper
+from src.infrastructure.learning.orm.flashcard_model import Flashcard as FlashcardORM
 from src.infrastructure.library.mappers.book_mapper import BookMapper
 from src.infrastructure.library.mappers.chapter_mapper import ChapterMapper
 from src.infrastructure.reading.mappers.highlight_mapper import HighlightMapper
 from src.infrastructure.reading.mappers.tag_mapper import TagMapper
-from src.models import Bookmark as BookmarkORM
-from src.models import Flashcard as FlashcardORM
-from src.models import Highlight as HighlightORM
-from src.models import reading_session_highlights
+from src.infrastructure.reading.orm.associations import reading_session_highlights
+from src.infrastructure.reading.orm.bookmark_model import Bookmark as BookmarkORM
+from src.infrastructure.reading.orm.highlight_model import Highlight as HighlightORM
 
 logger = logging.getLogger(__name__)
 

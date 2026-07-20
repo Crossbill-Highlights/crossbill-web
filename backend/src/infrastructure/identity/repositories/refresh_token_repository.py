@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.common.value_objects.ids import UserId
 from src.domain.identity.entities.refresh_token import RefreshToken
 from src.infrastructure.identity.mappers.refresh_token_mapper import RefreshTokenMapper
-from src.models import RefreshToken as RefreshTokenORM
+from src.infrastructure.identity.orm.refresh_token_model import RefreshToken as RefreshTokenORM
 
 
 class RefreshTokenRepository:

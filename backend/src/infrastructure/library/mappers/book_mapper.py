@@ -2,7 +2,7 @@ from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.common.value_objects.position import Position
 from src.domain.library.entities.book import Book
 from src.infrastructure.common.mappers import orm_id
-from src.models import Book as BookORM
+from src.infrastructure.library.orm.book_model import Book as BookORM
 
 
 class BookMapper:

@@ -3,7 +3,7 @@
 from src.domain.common.value_objects.ids import BookId, BookmarkId, HighlightId
 from src.domain.reading.entities.bookmark import Bookmark
 from src.infrastructure.common.mappers import orm_id
-from src.models import Bookmark as BookmarkORM
+from src.infrastructure.reading.orm.bookmark_model import Bookmark as BookmarkORM
 
 
 class BookmarkMapper:

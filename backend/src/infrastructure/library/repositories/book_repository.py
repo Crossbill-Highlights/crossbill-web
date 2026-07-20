@@ -4,10 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.library.entities.book import Book
 from src.infrastructure.common.sql import LIKE_ESCAPE_CHAR, escape_like_pattern
+from src.infrastructure.learning.orm.flashcard_model import Flashcard as FlashcardORM
 from src.infrastructure.library.mappers.book_mapper import BookMapper
-from src.models import Book as BookORM
-from src.models import Flashcard as FlashcardORM
-from src.models import Highlight as HighlightORM
+from src.infrastructure.library.orm.book_model import Book as BookORM
+from src.infrastructure.reading.orm.highlight_model import Highlight as HighlightORM
 
 
 class BookRepository:

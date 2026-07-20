@@ -17,7 +17,7 @@ from src.domain.common.value_objects import (
 from src.domain.common.value_objects.position import Position
 from src.domain.reading.entities.highlight import Highlight
 from src.infrastructure.common.mappers import orm_id
-from src.models import Highlight as HighlightORM
+from src.infrastructure.reading.orm.highlight_model import Highlight as HighlightORM
 
 
 class HighlightMapper:

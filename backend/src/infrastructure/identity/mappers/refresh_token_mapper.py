@@ -3,7 +3,7 @@
 from src.domain.common.value_objects.ids import RefreshTokenId, UserId
 from src.domain.identity.entities.refresh_token import RefreshToken
 from src.infrastructure.common.mappers import orm_id
-from src.models import RefreshToken as RefreshTokenORM
+from src.infrastructure.identity.orm.refresh_token_model import RefreshToken as RefreshTokenORM
 
 
 class RefreshTokenMapper:

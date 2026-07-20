@@ -7,7 +7,7 @@ from src.domain.common.value_objects.ids import BookId, NoteId, UserId
 from src.domain.learning.entities.flashcard import Flashcard
 from src.infrastructure.common.repositories import BaseRepository
 from src.infrastructure.learning.mappers.flashcard_mapper import FlashcardMapper
-from src.models import Flashcard as FlashcardORM
+from src.infrastructure.learning.orm.flashcard_model import Flashcard as FlashcardORM
 
 
 class FlashcardRepository(BaseRepository[Flashcard, FlashcardORM]):

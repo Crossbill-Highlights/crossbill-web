@@ -10,7 +10,7 @@ from src.domain.common.value_objects import (
 )
 from src.domain.learning.entities.flashcard import Flashcard
 from src.infrastructure.common.mappers import orm_id
-from src.models import Flashcard as FlashcardORM
+from src.infrastructure.learning.orm.flashcard_model import Flashcard as FlashcardORM
 
 
 class FlashcardMapper:

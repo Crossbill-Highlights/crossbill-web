@@ -2,7 +2,7 @@ from src.domain.common.value_objects.ids import BookId, ChapterId
 from src.domain.common.value_objects.position import Position
 from src.domain.library.entities.chapter import Chapter
 from src.infrastructure.common.mappers import orm_id
-from src.models import Chapter as ChapterORM
+from src.infrastructure.library.orm.chapter_model import Chapter as ChapterORM
 
 
 class ChapterMapper:

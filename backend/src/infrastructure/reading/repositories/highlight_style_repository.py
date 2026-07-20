@@ -7,8 +7,8 @@ from src.domain.common.value_objects import BookId, HighlightStyleId, UserId
 from src.domain.reading.entities.highlight_style import HighlightStyle
 from src.infrastructure.common.repositories import BaseRepository
 from src.infrastructure.reading.mappers.highlight_style_mapper import HighlightStyleMapper
-from src.models import Highlight as HighlightORM
-from src.models import HighlightStyle as HighlightStyleORM
+from src.infrastructure.reading.orm.highlight_model import Highlight as HighlightORM
+from src.infrastructure.reading.orm.highlight_style_model import HighlightStyle as HighlightStyleORM
 
 
 class HighlightStyleRepository(BaseRepository[HighlightStyle, HighlightStyleORM]):

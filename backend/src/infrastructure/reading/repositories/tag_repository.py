@@ -14,14 +14,15 @@ from src.domain.common.value_objects.ids import (
 from src.domain.reading.entities.tag import Tag
 from src.domain.reading.entities.tag_group import TagGroup
 from src.infrastructure.common.repositories import BaseRepository
+from src.infrastructure.notes.orm.associations import note_tags
 from src.infrastructure.reading.mappers.tag_group_mapper import (
     TagGroupMapper,
 )
 from src.infrastructure.reading.mappers.tag_mapper import TagMapper
-from src.models import Highlight as HighlightORM
-from src.models import Tag as TagORM
-from src.models import TagGroup as TagGroupORM
-from src.models import highlight_tags, note_tags
+from src.infrastructure.reading.orm.associations import highlight_tags
+from src.infrastructure.reading.orm.highlight_model import Highlight as HighlightORM
+from src.infrastructure.reading.orm.tag_group_model import TagGroup as TagGroupORM
+from src.infrastructure.reading.orm.tag_model import Tag as TagORM
 
 
 class TagRepository(BaseRepository[Tag, TagORM]):
