@@ -2,6 +2,7 @@
 
 from src.domain.common.value_objects.ids import AIChatSessionId, ChapterId, UserId
 from src.domain.learning.entities.ai_chat_session import AIChatSession
+from src.infrastructure.common.mappers import orm_id
 from src.models import AIChatSession as AIChatSessionModel
 
 
@@ -21,13 +22,11 @@ class AIChatSessionMapper:
 
     def to_orm(self, entity: AIChatSession) -> AIChatSessionModel:
         """Convert domain entity to ORM model."""
-        model = AIChatSessionModel(
+        return AIChatSessionModel(
+            id=orm_id(entity.id),
             user_id=entity.user_id.value,
             chapter_id=entity.chapter_id.value,
             session_type=entity.session_type,
             message_history=entity.message_history,
             created_at=entity.created_at,
         )
-        if entity.id.value != 0:
-            model.id = entity.id.value
-        return model

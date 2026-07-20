@@ -2,6 +2,7 @@
 
 from src.domain.common.value_objects.ids import BookId, TagGroupId
 from src.domain.reading.entities.tag_group import TagGroup
+from src.infrastructure.common.mappers import orm_id
 from src.models import TagGroup as TagGroupORM
 
 
@@ -22,14 +23,10 @@ class TagGroupMapper:
         orm_model: TagGroupORM | None = None,
     ) -> TagGroupORM:
         """Convert domain entity to ORM model."""
-        if orm_model:
-            # Update existing
-            orm_model.name = entity.name
-            return orm_model
-
-        # Create new
-        return TagGroupORM(
-            id=entity.id.value if entity.id.value != 0 else None,
-            book_id=entity.book_id.value,
-            name=entity.name,
-        )
+        if orm_model is None:
+            orm_model = TagGroupORM(
+                id=orm_id(entity.id),
+                book_id=entity.book_id.value,
+            )
+        orm_model.name = entity.name
+        return orm_model

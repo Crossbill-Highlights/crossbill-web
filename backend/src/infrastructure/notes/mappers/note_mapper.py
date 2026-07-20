@@ -2,6 +2,7 @@
 
 from src.domain.common.value_objects import NoteId, UserId
 from src.domain.notes.entities.note import Note, NoteKind
+from src.infrastructure.common.mappers import orm_id
 from src.models import Note as NoteORM
 
 
@@ -30,17 +31,12 @@ class NoteMapper:
         Association collections are synced separately by the repository,
         which loads the referenced ORM rows.
         """
-        if orm_model:
-            orm_model.user_id = domain_entity.user_id.value
-            orm_model.title = domain_entity.title
-            orm_model.body = domain_entity.body
-            orm_model.kind = domain_entity.kind.value if domain_entity.kind else None
-            return orm_model
-
-        return NoteORM(
-            id=domain_entity.id.value if domain_entity.id.value != 0 else None,
-            user_id=domain_entity.user_id.value,
-            title=domain_entity.title,
-            body=domain_entity.body,
-            kind=domain_entity.kind.value if domain_entity.kind else None,
-        )
+        if orm_model is None:
+            orm_model = NoteORM(
+                id=orm_id(domain_entity.id),
+            )
+        orm_model.user_id = domain_entity.user_id.value
+        orm_model.title = domain_entity.title
+        orm_model.body = domain_entity.body
+        orm_model.kind = domain_entity.kind.value if domain_entity.kind else None
+        return orm_model

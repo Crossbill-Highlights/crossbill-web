@@ -2,6 +2,7 @@
 
 from src.domain.common.value_objects.ids import UserId
 from src.domain.identity.entities.user import User
+from src.infrastructure.common.mappers import orm_id
 from src.models import User as UserORM
 
 
@@ -20,15 +21,10 @@ class UserMapper:
 
     def to_orm(self, domain_entity: User, orm_model: UserORM | None = None) -> UserORM:
         """Convert domain entity to ORM model."""
-        if orm_model:
-            # Update existing
-            orm_model.email = domain_entity.email
-            orm_model.hashed_password = domain_entity.hashed_password
-            return orm_model
-
-        # Create new
-        return UserORM(
-            id=domain_entity.id.value if domain_entity.id.value != 0 else None,
-            email=domain_entity.email,
-            hashed_password=domain_entity.hashed_password,
-        )
+        if orm_model is None:
+            orm_model = UserORM(
+                id=orm_id(domain_entity.id),
+            )
+        orm_model.email = domain_entity.email
+        orm_model.hashed_password = domain_entity.hashed_password
+        return orm_model
