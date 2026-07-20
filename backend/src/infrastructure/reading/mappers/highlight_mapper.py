@@ -95,17 +95,13 @@ class HighlightMapper:
             )
         orm_model.user_id = domain_entity.user_id.value
         orm_model.book_id = domain_entity.book_id.value
-        orm_model.chapter_id = (
-            domain_entity.chapter_id.value if domain_entity.chapter_id else None
-        )
+        orm_model.chapter_id = domain_entity.chapter_id.value if domain_entity.chapter_id else None
         orm_model.text = domain_entity.text
         orm_model.content_hash = domain_entity.content_hash.value
         orm_model.page = domain_entity.page
         orm_model.start_xpoint = start_xpoint
         orm_model.end_xpoint = end_xpoint
-        orm_model.position = (
-            domain_entity.position.to_json() if domain_entity.position else None
-        )
+        orm_model.position = domain_entity.position.to_json() if domain_entity.position else None
         orm_model.highlight_style_id = (
             domain_entity.highlight_style_id.value if domain_entity.highlight_style_id else None
         )
