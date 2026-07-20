@@ -5,6 +5,7 @@ from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
     PrereadingQuestion,
 )
+from src.infrastructure.common.mappers import orm_id
 from src.models import ChapterPrereadingContent as PrereadingContentORM
 
 
@@ -39,21 +40,14 @@ class ChapterPrereadingMapper:
             for q in entity.questions
         ]
 
-        if orm:
-            orm.chapter_id = entity.chapter_id.value
-            orm.summary = entity.summary
-            orm.keypoints = entity.keypoints
-            orm.questions = questions
-            orm.generated_at = entity.generated_at
-            orm.ai_model = entity.ai_model
-            return orm
-
-        return PrereadingContentORM(
-            id=entity.id.value if entity.id.value != 0 else None,
-            chapter_id=entity.chapter_id.value,
-            summary=entity.summary,
-            keypoints=entity.keypoints,
-            questions=questions,
-            generated_at=entity.generated_at,
-            ai_model=entity.ai_model,
-        )
+        if orm is None:
+            orm = PrereadingContentORM(
+                id=orm_id(entity.id),
+            )
+        orm.chapter_id = entity.chapter_id.value
+        orm.summary = entity.summary
+        orm.keypoints = entity.keypoints
+        orm.questions = questions
+        orm.generated_at = entity.generated_at
+        orm.ai_model = entity.ai_model
+        return orm

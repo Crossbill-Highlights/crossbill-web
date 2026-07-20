@@ -1,12 +1,13 @@
 from src.domain.ai.entities.ai_usage_record import AIUsageRecord
 from src.domain.common.value_objects.ids import AIUsageRecordId, UserId
+from src.infrastructure.common.mappers import orm_id
 from src.models import AIUsageRecord as AIUsageRecordORM
 
 
 class AIUsageMapper:
     def to_orm(self, entity: AIUsageRecord) -> AIUsageRecordORM:
         return AIUsageRecordORM(
-            id=entity.id.value if entity.id.value != 0 else None,
+            id=orm_id(entity.id),
             user_id=entity.user_id.value,
             task_type=entity.task_type,
             entity_type=entity.entity_type,

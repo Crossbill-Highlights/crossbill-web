@@ -9,6 +9,7 @@ from src.domain.common.value_objects import (
     UserId,
 )
 from src.domain.learning.entities.flashcard import Flashcard
+from src.infrastructure.common.mappers import orm_id
 from src.models import Flashcard as FlashcardORM
 
 
@@ -34,29 +35,17 @@ class FlashcardMapper:
         self, domain_entity: Flashcard, orm_model: FlashcardORM | None = None
     ) -> FlashcardORM:
         """Convert domain entity to ORM model."""
-        if orm_model:
-            # Update existing
-            orm_model.user_id = domain_entity.user_id.value
-            orm_model.book_id = domain_entity.book_id.value
-            orm_model.question = domain_entity.question
-            orm_model.answer = domain_entity.answer
-            orm_model.highlight_id = (
-                domain_entity.highlight_id.value if domain_entity.highlight_id else None
+        if orm_model is None:
+            orm_model = FlashcardORM(
+                id=orm_id(domain_entity.id),
             )
-            orm_model.chapter_id = (
-                domain_entity.chapter_id.value if domain_entity.chapter_id else None
-            )
-            orm_model.note_id = domain_entity.note_id.value if domain_entity.note_id else None
-            return orm_model
-
-        # Create new
-        return FlashcardORM(
-            id=domain_entity.id.value if domain_entity.id.value != 0 else None,
-            user_id=domain_entity.user_id.value,
-            book_id=domain_entity.book_id.value,
-            question=domain_entity.question,
-            answer=domain_entity.answer,
-            highlight_id=domain_entity.highlight_id.value if domain_entity.highlight_id else None,
-            chapter_id=domain_entity.chapter_id.value if domain_entity.chapter_id else None,
-            note_id=domain_entity.note_id.value if domain_entity.note_id else None,
+        orm_model.user_id = domain_entity.user_id.value
+        orm_model.book_id = domain_entity.book_id.value
+        orm_model.question = domain_entity.question
+        orm_model.answer = domain_entity.answer
+        orm_model.highlight_id = (
+            domain_entity.highlight_id.value if domain_entity.highlight_id else None
         )
+        orm_model.chapter_id = domain_entity.chapter_id.value if domain_entity.chapter_id else None
+        orm_model.note_id = domain_entity.note_id.value if domain_entity.note_id else None
+        return orm_model

@@ -1,6 +1,7 @@
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.common.value_objects.position import Position
 from src.domain.library.entities.book import Book
+from src.infrastructure.common.mappers import orm_id
 from src.models import Book as BookORM
 
 
@@ -33,44 +34,25 @@ class BookMapper:
 
     def to_orm(self, domain_entity: Book, orm_model: BookORM | None = None) -> BookORM:
         """Convert domain entity to ORM model."""
-        if orm_model:
-            # Update existing
-            orm_model.user_id = domain_entity.user_id.value
-            orm_model.title = domain_entity.title
-            orm_model.client_book_id = domain_entity.client_book_id
-            orm_model.author = domain_entity.author
-            orm_model.isbn = domain_entity.isbn
-            orm_model.description = domain_entity.description
-            orm_model.language = domain_entity.language
-            orm_model.page_count = domain_entity.page_count
-            orm_model.ebook_file = domain_entity.ebook_file
-            orm_model.file_type = domain_entity.file_type
-            orm_model.cover_file = domain_entity.cover_file
-            orm_model.cover_blurhash = domain_entity.cover_blurhash
-            orm_model.last_viewed = domain_entity.last_viewed
-            orm_model.end_position = (
-                domain_entity.end_position.to_json() if domain_entity.end_position else None
+        if orm_model is None:
+            orm_model = BookORM(
+                id=orm_id(domain_entity.id),
+                created_at=domain_entity.created_at,
             )
-            return orm_model
-
-        # Create new
-        return BookORM(
-            id=domain_entity.id.value if domain_entity.id.value != 0 else None,
-            user_id=domain_entity.user_id.value,
-            title=domain_entity.title,
-            client_book_id=domain_entity.client_book_id,
-            author=domain_entity.author,
-            isbn=domain_entity.isbn,
-            description=domain_entity.description,
-            language=domain_entity.language,
-            page_count=domain_entity.page_count,
-            ebook_file=domain_entity.ebook_file,
-            file_type=domain_entity.file_type,
-            cover_file=domain_entity.cover_file,
-            cover_blurhash=domain_entity.cover_blurhash,
-            created_at=domain_entity.created_at,
-            last_viewed=domain_entity.last_viewed,
-            end_position=domain_entity.end_position.to_json()
-            if domain_entity.end_position
-            else None,
+        orm_model.user_id = domain_entity.user_id.value
+        orm_model.title = domain_entity.title
+        orm_model.client_book_id = domain_entity.client_book_id
+        orm_model.author = domain_entity.author
+        orm_model.isbn = domain_entity.isbn
+        orm_model.description = domain_entity.description
+        orm_model.language = domain_entity.language
+        orm_model.page_count = domain_entity.page_count
+        orm_model.ebook_file = domain_entity.ebook_file
+        orm_model.file_type = domain_entity.file_type
+        orm_model.cover_file = domain_entity.cover_file
+        orm_model.cover_blurhash = domain_entity.cover_blurhash
+        orm_model.last_viewed = domain_entity.last_viewed
+        orm_model.end_position = (
+            domain_entity.end_position.to_json() if domain_entity.end_position else None
         )
+        return orm_model

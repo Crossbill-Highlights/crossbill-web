@@ -2,6 +2,7 @@
 
 from src.domain.common.value_objects.ids import RefreshTokenId, UserId
 from src.domain.identity.entities.refresh_token import RefreshToken
+from src.infrastructure.common.mappers import orm_id
 from src.models import RefreshToken as RefreshTokenORM
 
 
@@ -21,7 +22,7 @@ class RefreshTokenMapper:
 
     def to_orm(self, domain_entity: RefreshToken) -> RefreshTokenORM:
         return RefreshTokenORM(
-            id=domain_entity.id.value if domain_entity.id.value != 0 else None,
+            id=orm_id(domain_entity.id),
             jti=domain_entity.jti,
             user_id=domain_entity.user_id.value,
             family_id=domain_entity.family_id,

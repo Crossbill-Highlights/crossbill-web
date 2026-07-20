@@ -16,6 +16,7 @@ from src.domain.common.value_objects import (
 )
 from src.domain.common.value_objects.position import Position
 from src.domain.reading.entities.highlight import Highlight
+from src.infrastructure.common.mappers import orm_id
 from src.models import Highlight as HighlightORM
 
 
@@ -86,42 +87,27 @@ class HighlightMapper:
         datetime_str = domain_entity.datetime
 
         # Update existing ORM model or create new one
-        if orm_model:
-            # Update existing model
-            orm_model.user_id = domain_entity.user_id.value
-            orm_model.book_id = domain_entity.book_id.value
-            orm_model.chapter_id = (
-                domain_entity.chapter_id.value if domain_entity.chapter_id else None
+        if orm_model is None:
+            orm_model = HighlightORM(
+                id=orm_id(domain_entity.id),
+                datetime=datetime_str,
+                created_at=domain_entity.created_at,
             )
-            orm_model.text = domain_entity.text
-            orm_model.content_hash = domain_entity.content_hash.value
-            orm_model.page = domain_entity.page
-            orm_model.start_xpoint = start_xpoint
-            orm_model.end_xpoint = end_xpoint
-            orm_model.position = (
-                domain_entity.position.to_json() if domain_entity.position else None
-            )
-            orm_model.highlight_style_id = (
-                domain_entity.highlight_style_id.value if domain_entity.highlight_style_id else None
-            )
-            orm_model.deleted_at = domain_entity.deleted_at
-            return orm_model
-        # Create new model
-        return HighlightORM(
-            id=domain_entity.id.value if domain_entity.id.value != 0 else None,
-            user_id=domain_entity.user_id.value,
-            book_id=domain_entity.book_id.value,
-            chapter_id=domain_entity.chapter_id.value if domain_entity.chapter_id else None,
-            text=domain_entity.text,
-            content_hash=domain_entity.content_hash.value,
-            page=domain_entity.page,
-            position=domain_entity.position.to_json() if domain_entity.position else None,
-            highlight_style_id=domain_entity.highlight_style_id.value
-            if domain_entity.highlight_style_id
-            else None,
-            start_xpoint=start_xpoint,
-            end_xpoint=end_xpoint,
-            datetime=datetime_str,
-            created_at=domain_entity.created_at,
-            deleted_at=domain_entity.deleted_at,
+        orm_model.user_id = domain_entity.user_id.value
+        orm_model.book_id = domain_entity.book_id.value
+        orm_model.chapter_id = (
+            domain_entity.chapter_id.value if domain_entity.chapter_id else None
         )
+        orm_model.text = domain_entity.text
+        orm_model.content_hash = domain_entity.content_hash.value
+        orm_model.page = domain_entity.page
+        orm_model.start_xpoint = start_xpoint
+        orm_model.end_xpoint = end_xpoint
+        orm_model.position = (
+            domain_entity.position.to_json() if domain_entity.position else None
+        )
+        orm_model.highlight_style_id = (
+            domain_entity.highlight_style_id.value if domain_entity.highlight_style_id else None
+        )
+        orm_model.deleted_at = domain_entity.deleted_at
+        return orm_model

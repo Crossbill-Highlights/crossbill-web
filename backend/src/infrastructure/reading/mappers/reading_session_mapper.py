@@ -8,6 +8,7 @@ from src.domain.common.value_objects import (
 )
 from src.domain.common.value_objects.position import Position
 from src.domain.reading.entities.reading_session import ReadingSession
+from src.infrastructure.common.mappers import orm_id
 from src.models import ReadingSession as ReadingSessionORM
 
 
@@ -65,45 +66,25 @@ class ReadingSessionMapper:
             start_xpoint_str = domain_entity.start_xpoint.start.to_string()
             end_xpoint_str = domain_entity.start_xpoint.end.to_string()
 
-        if orm_model:
-            # Update existing
-            orm_model.user_id = domain_entity.user_id.value
-            orm_model.book_id = domain_entity.book_id.value
-            orm_model.start_time = domain_entity.start_time
-            orm_model.end_time = domain_entity.end_time
-            orm_model.content_hash = domain_entity.content_hash.value
-            orm_model.start_xpoint = start_xpoint_str
-            orm_model.end_xpoint = end_xpoint_str
-            orm_model.start_page = domain_entity.start_page
-            orm_model.end_page = domain_entity.end_page
-            orm_model.start_position = (
-                domain_entity.start_position.to_json() if domain_entity.start_position else None
+        if orm_model is None:
+            orm_model = ReadingSessionORM(
+                id=orm_id(domain_entity.id),
             )
-            orm_model.end_position = (
-                domain_entity.end_position.to_json() if domain_entity.end_position else None
-            )
-            orm_model.device_id = domain_entity.device_id
-            orm_model.ai_summary = domain_entity.ai_summary
-            return orm_model
-
-        # Create new
-        return ReadingSessionORM(
-            id=domain_entity.id.value if domain_entity.id.value != 0 else None,
-            user_id=domain_entity.user_id.value,
-            book_id=domain_entity.book_id.value,
-            start_time=domain_entity.start_time,
-            end_time=domain_entity.end_time,
-            content_hash=domain_entity.content_hash.value,
-            start_xpoint=start_xpoint_str,
-            end_xpoint=end_xpoint_str,
-            start_page=domain_entity.start_page,
-            end_page=domain_entity.end_page,
-            start_position=domain_entity.start_position.to_json()
-            if domain_entity.start_position
-            else None,
-            end_position=domain_entity.end_position.to_json()
-            if domain_entity.end_position
-            else None,
-            device_id=domain_entity.device_id,
-            ai_summary=domain_entity.ai_summary,
+        orm_model.user_id = domain_entity.user_id.value
+        orm_model.book_id = domain_entity.book_id.value
+        orm_model.start_time = domain_entity.start_time
+        orm_model.end_time = domain_entity.end_time
+        orm_model.content_hash = domain_entity.content_hash.value
+        orm_model.start_xpoint = start_xpoint_str
+        orm_model.end_xpoint = end_xpoint_str
+        orm_model.start_page = domain_entity.start_page
+        orm_model.end_page = domain_entity.end_page
+        orm_model.start_position = (
+            domain_entity.start_position.to_json() if domain_entity.start_position else None
         )
+        orm_model.end_position = (
+            domain_entity.end_position.to_json() if domain_entity.end_position else None
+        )
+        orm_model.device_id = domain_entity.device_id
+        orm_model.ai_summary = domain_entity.ai_summary
+        return orm_model

@@ -2,6 +2,7 @@
 
 from src.domain.common.value_objects import BookId, HighlightStyleId, UserId
 from src.domain.reading.entities.highlight_style import HighlightStyle
+from src.infrastructure.common.mappers import orm_id
 from src.models import HighlightStyle as HighlightStyleORM
 
 
@@ -28,19 +29,17 @@ class HighlightStyleMapper:
         orm_model: HighlightStyleORM | None = None,
     ) -> HighlightStyleORM:
         """Convert domain entity to ORM model."""
-        if orm_model:
-            orm_model.label = domain_entity.label
-            orm_model.ui_color = domain_entity.ui_color
+        if orm_model is None:
+            orm_model = HighlightStyleORM(
+                id=orm_id(domain_entity.id),
+                user_id=domain_entity.user_id.value,
+                book_id=domain_entity.book_id.value if domain_entity.book_id else None,
+                device_color=domain_entity.device_color,
+                device_style=domain_entity.device_style,
+                created_at=domain_entity.created_at,
+            )
+        else:
             orm_model.updated_at = domain_entity.updated_at
-            return orm_model
-
-        return HighlightStyleORM(
-            id=domain_entity.id.value if domain_entity.id.value != 0 else None,
-            user_id=domain_entity.user_id.value,
-            book_id=domain_entity.book_id.value if domain_entity.book_id else None,
-            device_color=domain_entity.device_color,
-            device_style=domain_entity.device_style,
-            label=domain_entity.label,
-            ui_color=domain_entity.ui_color,
-            created_at=domain_entity.created_at,
-        )
+        orm_model.label = domain_entity.label
+        orm_model.ui_color = domain_entity.ui_color
+        return orm_model
