@@ -22,6 +22,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
   BookHighlightSearchResponse,
+  CollectionResponseTag,
   FlashcardCreateRequest,
   FlashcardCreateResponse,
   HTTPValidationError,
@@ -37,7 +38,6 @@ import type {
   TagGroup,
   TagGroupCreateRequest,
   TagUpdateRequest,
-  TagsResponse,
 } from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
@@ -711,7 +711,7 @@ Raises:
  * @summary Get Tags
  */
 export const getTagsApiV1BooksBookIdTagsGet = (bookId: number, signal?: AbortSignal) => {
-  return axiosInstance<TagsResponse>({
+  return axiosInstance<CollectionResponseTag>({
     url: `/api/v1/books/${bookId}/tags`,
     method: 'GET',
     signal,

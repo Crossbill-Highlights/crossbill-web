@@ -23,9 +23,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
   BodyUploadBookEpubApiV1EreaderBooksClientBookIdEpubPost,
   BookCreate,
-  EpubUploadResponse,
+  CollectionResponseEreaderChapterPrereadingItem,
   EreaderBookMetadata,
   HTTPValidationError,
+  SuccessResponse,
 } from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
@@ -299,7 +300,7 @@ Args:
     current_user: Authenticated user
 
 Returns:
-    EpubUploadResponse with success status
+    SuccessResponse with success status
 
 Raises:
     HTTPException: 400 for invalid file, 404 if book is not found
@@ -313,7 +314,7 @@ export const uploadBookEpubApiV1EreaderBooksClientBookIdEpubPost = (
   const formData = new FormData();
   formData.append(`epub`, bodyUploadBookEpubApiV1EreaderBooksClientBookIdEpubPost.epub);
 
-  return axiosInstance<EpubUploadResponse>({
+  return axiosInstance<SuccessResponse>({
     url: `/api/v1/ereader/books/${clientBookId}/epub`,
     method: 'POST',
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -391,3 +392,172 @@ export const useUploadBookEpubApiV1EreaderBooksClientBookIdEpubPost = <
     queryClient
   );
 };
+/**
+ * Get all chapter prereading content for a book by client_book_id.
+
+Returns one item per chapter that has generated prereading content, ordered
+by the server-side chapter number. Questions are exposed as plain strings
+only (no AI or user answers). A book with no prereading yields an empty list.
+
+Args:
+    client_book_id: The client-provided stable book identifier
+    current_user: Authenticated user
+
+Returns:
+    CollectionResponse with one item per chapter that has prereading
+
+Raises:
+    HTTPException: 404 if the book is not found for the given client_book_id
+ * @summary Get Book Prereading
+ */
+export const getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet = (
+  clientBookId: string,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<CollectionResponseEreaderChapterPrereadingItem>({
+    url: `/api/v1/ereader/books/${clientBookId}/prereading`,
+    method: 'GET',
+    signal,
+  });
+};
+
+export const getGetBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGetQueryKey = (
+  clientBookId: string
+) => {
+  return [`/api/v1/ereader/books/${clientBookId}/prereading`] as const;
+};
+
+export const getGetBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>,
+  TError = HTTPValidationError,
+>(
+  clientBookId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>,
+        TError,
+        TData
+      >
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGetQueryKey(clientBookId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>
+  > = ({ signal }) =>
+    getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet(clientBookId, signal);
+
+  return { queryKey, queryFn, enabled: !!clientBookId, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>
+>;
+export type GetBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGetQueryError =
+  HTTPValidationError;
+
+export function useGetBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet<
+  TData = Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>,
+  TError = HTTPValidationError,
+>(
+  clientBookId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet<
+  TData = Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>,
+  TError = HTTPValidationError,
+>(
+  clientBookId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet<
+  TData = Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>,
+  TError = HTTPValidationError,
+>(
+  clientBookId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Book Prereading
+ */
+
+export function useGetBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet<
+  TData = Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>,
+  TError = HTTPValidationError,
+>(
+  clientBookId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGet>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetBookPrereadingApiV1EreaderBooksClientBookIdPrereadingGetQueryOptions(
+    clientBookId,
+    options
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

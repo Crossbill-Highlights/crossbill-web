@@ -21,8 +21,8 @@ import type {
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
-  BookPrereadingResponse,
   ChapterPrereadingResponse,
+  CollectionResponseChapterPrereadingResponse,
   HTTPValidationError,
   UpdatePrereadingAnswersRequest,
 } from '.././model';
@@ -375,7 +375,7 @@ export const getBookPrereadingApiV1BooksBookIdPrereadingGet = (
   bookId: number,
   signal?: AbortSignal
 ) => {
-  return axiosInstance<BookPrereadingResponse>({
+  return axiosInstance<CollectionResponseChapterPrereadingResponse>({
     url: `/api/v1/books/${bookId}/prereading`,
     method: 'GET',
     signal,

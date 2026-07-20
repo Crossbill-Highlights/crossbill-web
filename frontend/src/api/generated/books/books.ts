@@ -22,11 +22,11 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
   BookDetails,
-  BooksListResponse,
+  CollectionResponseBookWithHighlightCount,
   GetBooksApiV1BooksGetParams,
   GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams,
   HTTPValidationError,
-  RecentlyViewedBooksResponse,
+  PaginatedResponseBookWithHighlightCount,
 } from '.././model';
 
 import { axiosInstance } from '../../axios-instance';
@@ -40,7 +40,7 @@ Args:
     search: Optional search text to filter books by title or author
 
 Returns:
-    BooksListResponse with list of books and pagination info
+    PaginatedResponse with list of books and pagination info
 
 Raises:
     HTTPException: If fetching books fails due to server error
@@ -50,7 +50,12 @@ export const getBooksApiV1BooksGet = (
   params?: GetBooksApiV1BooksGetParams,
   signal?: AbortSignal
 ) => {
-  return axiosInstance<BooksListResponse>({ url: `/api/v1/books/`, method: 'GET', params, signal });
+  return axiosInstance<PaginatedResponseBookWithHighlightCount>({
+    url: `/api/v1/books/`,
+    method: 'GET',
+    params,
+    signal,
+  });
 };
 
 export const getGetBooksApiV1BooksGetQueryKey = (params?: GetBooksApiV1BooksGetParams) => {
@@ -173,7 +178,7 @@ Args:
     limit: Maximum number of books to return (default: 10, max: 50)
 
 Returns:
-    RecentlyViewedBooksResponse with list of recently viewed books
+    CollectionResponse with list of recently viewed books
 
 Raises:
     HTTPException: If fetching books fails due to server error
@@ -183,7 +188,7 @@ export const getRecentlyViewedBooksApiV1BooksRecentlyViewedGet = (
   params?: GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams,
   signal?: AbortSignal
 ) => {
-  return axiosInstance<RecentlyViewedBooksResponse>({
+  return axiosInstance<CollectionResponseBookWithHighlightCount>({
     url: `/api/v1/books/recently-viewed`,
     method: 'GET',
     params,
