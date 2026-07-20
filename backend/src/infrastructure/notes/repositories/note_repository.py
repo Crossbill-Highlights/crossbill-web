@@ -13,12 +13,12 @@ from src.domain.common.value_objects import (
 from src.domain.notes.entities.note import Note, NoteKind
 from src.domain.notes.exceptions import NoteNotFoundError
 from src.infrastructure.common.repositories import BaseRepository
+from src.infrastructure.library.orm.book_model import Book as BookORM
+from src.infrastructure.library.orm.chapter_model import Chapter as ChapterORM
 from src.infrastructure.notes.mappers.note_mapper import NoteMapper
-from src.models import Book as BookORM
-from src.models import Chapter as ChapterORM
-from src.models import Highlight as HighlightORM
-from src.models import Note as NoteORM
-from src.models import Tag as TagORM
+from src.infrastructure.notes.orm.note_model import Note as NoteORM
+from src.infrastructure.reading.orm.highlight_model import Highlight as HighlightORM
+from src.infrastructure.reading.orm.tag_model import Tag as TagORM
 
 
 class NoteRepository(BaseRepository[Note, NoteORM]):

@@ -3,7 +3,7 @@
 from src.domain.common.value_objects.ids import BookId, TagGroupId
 from src.domain.reading.entities.tag_group import TagGroup
 from src.infrastructure.common.mappers import orm_id
-from src.models import TagGroup as TagGroupORM
+from src.infrastructure.reading.orm.tag_group_model import TagGroup as TagGroupORM
 
 
 class TagGroupMapper:

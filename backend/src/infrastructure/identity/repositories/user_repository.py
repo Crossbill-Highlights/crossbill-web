@@ -10,7 +10,7 @@ from src.domain.common.value_objects.ids import UserId
 from src.domain.identity.entities.user import User
 from src.domain.identity.exceptions import EmailAlreadyExistsError
 from src.infrastructure.identity.mappers.user_mapper import UserMapper
-from src.models import User as UserORM
+from src.infrastructure.identity.orm.user_model import User as UserORM
 
 logger = logging.getLogger(__name__)
 

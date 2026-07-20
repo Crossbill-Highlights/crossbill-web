@@ -1,7 +1,7 @@
 from src.domain.ai.entities.ai_usage_record import AIUsageRecord
 from src.domain.common.value_objects.ids import AIUsageRecordId, UserId
+from src.infrastructure.ai.orm.ai_usage_record_model import AIUsageRecord as AIUsageRecordORM
 from src.infrastructure.common.mappers import orm_id
-from src.models import AIUsageRecord as AIUsageRecordORM
 
 
 class AIUsageMapper:

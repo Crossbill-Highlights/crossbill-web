@@ -3,7 +3,7 @@
 from src.domain.common.value_objects.ids import UserId
 from src.domain.identity.entities.user import User
 from src.infrastructure.common.mappers import orm_id
-from src.models import User as UserORM
+from src.infrastructure.identity.orm.user_model import User as UserORM
 
 
 class UserMapper:

@@ -3,7 +3,9 @@
 from src.domain.common.value_objects.ids import AIChatSessionId, ChapterId, UserId
 from src.domain.learning.entities.ai_chat_session import AIChatSession
 from src.infrastructure.common.mappers import orm_id
-from src.models import AIChatSession as AIChatSessionModel
+from src.infrastructure.learning.orm.ai_chat_session_model import (
+    AIChatSession as AIChatSessionModel,
+)
 
 
 class AIChatSessionMapper:

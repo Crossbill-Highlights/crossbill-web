@@ -6,7 +6,9 @@ from src.domain.reading.entities.chapter_prereading_content import (
     PrereadingQuestion,
 )
 from src.infrastructure.common.mappers import orm_id
-from src.models import ChapterPrereadingContent as PrereadingContentORM
+from src.infrastructure.reading.orm.chapter_prereading_content_model import (
+    ChapterPrereadingContent as PrereadingContentORM,
+)
 
 
 class ChapterPrereadingMapper:

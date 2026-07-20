@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.common.value_objects.ids import BookId, ChapterId, UserId
 from src.domain.library.entities.chapter import Chapter, TocChapter
 from src.infrastructure.library.mappers.chapter_mapper import ChapterMapper
-from src.models import Book as BookORM
-from src.models import Chapter as ChapterORM
+from src.infrastructure.library.orm.book_model import Book as BookORM
+from src.infrastructure.library.orm.chapter_model import Chapter as ChapterORM
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@
 from src.domain.common.value_objects import NoteId, UserId
 from src.domain.notes.entities.note import Note, NoteKind
 from src.infrastructure.common.mappers import orm_id
-from src.models import Note as NoteORM
+from src.infrastructure.notes.orm.note_model import Note as NoteORM
 
 
 class NoteMapper:

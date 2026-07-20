@@ -7,11 +7,13 @@ from src.domain.common.value_objects.ids import BookId, ChapterId, PrereadingCon
 from src.domain.reading.entities.chapter_prereading_content import (
     ChapterPrereadingContent,
 )
+from src.infrastructure.library.orm.chapter_model import Chapter as ChapterORM
 from src.infrastructure.reading.mappers.chapter_prereading_mapper import (
     ChapterPrereadingMapper,
 )
-from src.models import Chapter as ChapterORM
-from src.models import ChapterPrereadingContent as PrereadingContentORM
+from src.infrastructure.reading.orm.chapter_prereading_content_model import (
+    ChapterPrereadingContent as PrereadingContentORM,
+)
 
 
 class ChapterPrereadingRepository:

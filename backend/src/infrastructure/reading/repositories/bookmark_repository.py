@@ -8,9 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.common.value_objects.ids import BookId, HighlightId, UserId
 from src.domain.reading.entities.bookmark import Bookmark
 from src.infrastructure.common.repositories import BaseRepository
+from src.infrastructure.library.orm.book_model import Book as BookORM
 from src.infrastructure.reading.mappers.bookmark_mapper import BookmarkMapper
-from src.models import Book as BookORM
-from src.models import Bookmark as BookmarkORM
+from src.infrastructure.reading.orm.bookmark_model import Bookmark as BookmarkORM
 
 
 class BookmarkRepository(BaseRepository[Bookmark, BookmarkORM]):

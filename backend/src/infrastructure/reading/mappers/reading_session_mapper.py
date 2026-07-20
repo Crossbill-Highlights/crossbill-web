@@ -9,7 +9,7 @@ from src.domain.common.value_objects import (
 from src.domain.common.value_objects.position import Position
 from src.domain.reading.entities.reading_session import ReadingSession
 from src.infrastructure.common.mappers import orm_id
-from src.models import ReadingSession as ReadingSessionORM
+from src.infrastructure.reading.orm.reading_session_model import ReadingSession as ReadingSessionORM
 
 
 class ReadingSessionMapper:
