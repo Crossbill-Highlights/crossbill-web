@@ -12,8 +12,8 @@
 
 set -e # Exit on error
 
-TIMESTAMP=$(date +%Y%m%d%H%M%S)
-UNIQUE_TAG="nightly-${TIMESTAMP}"
+# Optional first arg pins the unique tag (so callers can deploy that exact image).
+UNIQUE_TAG="${1:-nightly-$(date +%Y%m%d%H%M%S)}"
 
 echo "Building and pushing nightly release (${UNIQUE_TAG})..."
 

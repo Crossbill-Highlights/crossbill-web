@@ -1,8 +1,5 @@
 .PHONY: help test dev-app dev-worker migrate migrate-new lint format release-nightly deploy empty-s3-bucket reset-db
 
-# Railway service to redeploy (override with: make deploy RAILWAY_SERVICE=foo)
-RAILWAY_SERVICE ?= crossbill
-
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
@@ -40,14 +37,12 @@ format: ## Format backend code with ruff
 release-nightly: ## Build and push nightly Docker image to Docker Hub
 	./scripts/build-for-docker-hub.sh
 
-# Requires the Railway service source to track the moving `tumetsu/crossbill:nightly`
-# tag (set once in the Railway dashboard). Redeploy then re-pulls the new digest.
-deploy: release-nightly ## Build+push nightly image, then redeploy the Railway service
-	@command -v railway >/dev/null 2>&1 || { echo "railway CLI not found. Install: https://docs.railway.com/guides/cli"; exit 1; }
-	@railway whoami >/dev/null 2>&1 || { echo "Not logged in to Railway. Run: railway login"; exit 1; }
-	@railway status >/dev/null 2>&1 || { echo "No Railway project linked here. Run: railway link"; exit 1; }
-	@echo "Redeploying Railway service '$(RAILWAY_SERVICE)' (re-pulls tumetsu/crossbill:nightly)..."
-	railway redeploy -s $(RAILWAY_SERVICE) -y
+# Builds+pushes a uniquely-tagged nightly image and deploys it via the Railway API
+# (plain `railway redeploy` reuses the cached digest, so it won't pull a new build).
+# Requires RAILWAY_API_TOKEN (railway.com -> Account -> Tokens; NOT RAILWAY_TOKEN).
+# No `railway login` needed — the script talks to the API directly.
+deploy: ## Build+push nightly image and deploy it to Railway
+	set -a; [ -f .env.deploy ] && . ./.env.deploy; set +a; ./scripts/railway-deploy.sh
 
 empty-s3-bucket: ## Remove all objects from the local S3 bucket
 	aws --endpoint-url http://localhost:3900 s3 rm s3://crossbill-files --recursive
