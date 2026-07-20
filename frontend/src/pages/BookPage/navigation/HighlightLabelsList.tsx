@@ -2,7 +2,10 @@ import { useGetBookHighlightLabelsApiV1BooksBookIdHighlightLabelsGet } from '@/a
 import type { HighlightLabelInBook } from '@/api/generated/model';
 import { PaletteIcon } from '@/theme/Icons.tsx';
 import { getContrastColor } from '@/utils/colorUtils.ts';
-import { Box, Chip, Typography } from '@mui/material';
+import { Box, Chip } from '@mui/material';
+
+import { filterChipBaseSx, filterChipOutlinedSx } from './filterChipStyles.ts';
+import { SidebarSectionHeader } from './SidebarSectionHeader.tsx';
 
 interface HighlightLabelsListProps {
   bookId: number;
@@ -56,10 +59,7 @@ const LabelChip = ({
       variant={isSelected ? 'filled' : 'outlined'}
       onClick={onClick}
       sx={{
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        py: 0.25,
-        px: 0.5,
+        ...filterChipBaseSx,
         ...(isSelected
           ? {
               backgroundColor: color,
@@ -70,14 +70,7 @@ const LabelChip = ({
                 transform: 'translateY(-1px)',
               },
             }
-          : {
-              borderColor: 'divider',
-              '&:hover': {
-                bgcolor: 'action.hover',
-                borderColor: 'secondary.light',
-                transform: 'translateY(-1px)',
-              },
-            }),
+          : filterChipOutlinedSx),
       }}
     />
   );
@@ -98,21 +91,7 @@ export const HighlightLabelsList = ({
 
   return (
     <Box>
-      {!hideTitle && (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            mb: 2,
-          }}
-        >
-          <PaletteIcon sx={{ fontSize: 18, color: 'primary.main' }} />
-          <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600 }}>
-            Labels
-          </Typography>
-        </Box>
-      )}
+      {!hideTitle && <SidebarSectionHeader icon={PaletteIcon} title="Labels" />}
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
         {labels.map((label) => (
