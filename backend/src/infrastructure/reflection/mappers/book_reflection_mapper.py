@@ -17,10 +17,10 @@ class BookReflectionMapper:
             id=BookReflectionId(orm_model.id),
             user_id=UserId(orm_model.user_id),
             book_id=BookId(orm_model.book_id),
-            what_is_it_about=orm_model.what_is_it_about,
-            what_does_it_say=orm_model.what_does_it_say,
-            do_i_agree=orm_model.do_i_agree,
-            so_what=orm_model.so_what,
+            what_is_it_about_note_id=orm_model.what_is_it_about_note_id,
+            what_does_it_say_note_id=orm_model.what_does_it_say_note_id,
+            do_i_agree_note_id=orm_model.do_i_agree_note_id,
+            so_what_note_id=orm_model.so_what_note_id,
             note_ids=[note.id for note in orm_model.notes],
             created_at=orm_model.created_at,
             updated_at=orm_model.updated_at,
@@ -40,8 +40,8 @@ class BookReflectionMapper:
             orm_model = BookReflectionORM(id=orm_id(domain_entity.id))
         orm_model.user_id = domain_entity.user_id.value
         orm_model.book_id = domain_entity.book_id.value
-        orm_model.what_is_it_about = domain_entity.what_is_it_about
-        orm_model.what_does_it_say = domain_entity.what_does_it_say
-        orm_model.do_i_agree = domain_entity.do_i_agree
-        orm_model.so_what = domain_entity.so_what
+        orm_model.what_is_it_about_note_id = domain_entity.what_is_it_about_note_id
+        orm_model.what_does_it_say_note_id = domain_entity.what_does_it_say_note_id
+        orm_model.do_i_agree_note_id = domain_entity.do_i_agree_note_id
+        orm_model.so_what_note_id = domain_entity.so_what_note_id
         return orm_model

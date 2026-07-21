@@ -3,7 +3,7 @@
 from datetime import datetime as dt
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Text, UniqueConstraint, func
+from sqlalchemy import DateTime, ForeignKey, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
@@ -26,10 +26,18 @@ class BookReflection(Base):
     book_id: Mapped[int] = mapped_column(
         ForeignKey("books.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    what_is_it_about: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    what_does_it_say: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    do_i_agree: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    so_what: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    what_is_it_about_note_id: Mapped[int | None] = mapped_column(
+        ForeignKey("notes.id", ondelete="SET NULL"), nullable=True
+    )
+    what_does_it_say_note_id: Mapped[int | None] = mapped_column(
+        ForeignKey("notes.id", ondelete="SET NULL"), nullable=True
+    )
+    do_i_agree_note_id: Mapped[int | None] = mapped_column(
+        ForeignKey("notes.id", ondelete="SET NULL"), nullable=True
+    )
+    so_what_note_id: Mapped[int | None] = mapped_column(
+        ForeignKey("notes.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[dt] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

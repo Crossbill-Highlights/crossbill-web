@@ -13,34 +13,35 @@ from src.domain.common.value_objects import BookId, BookReflectionId, UserId
 class BookReflection(AggregateRoot[BookReflectionId]):
     """A single reflection per book: the four analytical-reading answers.
 
-    ``note_ids`` link the term/concept notes the reader used to come to terms
-    with the author (the Q2 answer). The four answer fields are free text and
-    may all be empty (an untouched reflection is still valid).
+    Each answer is backed by a full :class:`Note` (markdown, links, flashcards).
+    The four ``*_note_id`` fields reference that answer note, or are ``None`` when
+    the question is still unanswered. ``note_ids`` link the term/concept notes the
+    reader used to come to terms with the author (the Q2 side list).
     """
 
     id: BookReflectionId
     user_id: UserId
     book_id: BookId
-    what_is_it_about: str = ""
-    what_does_it_say: str = ""
-    do_i_agree: str = ""
-    so_what: str = ""
+    what_is_it_about_note_id: int | None = None
+    what_does_it_say_note_id: int | None = None
+    do_i_agree_note_id: int | None = None
+    so_what_note_id: int | None = None
     note_ids: list[int] = field(default_factory=list)
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
-    def update_answers(
+    def update_answer_notes(
         self,
-        what_is_it_about: str,
-        what_does_it_say: str,
-        do_i_agree: str,
-        so_what: str,
+        what_is_it_about_note_id: int | None,
+        what_does_it_say_note_id: int | None,
+        do_i_agree_note_id: int | None,
+        so_what_note_id: int | None,
     ) -> None:
-        """Replace all four answer fields (the frontend always sends the full set)."""
-        self.what_is_it_about = what_is_it_about
-        self.what_does_it_say = what_does_it_say
-        self.do_i_agree = do_i_agree
-        self.so_what = so_what
+        """Replace all four answer-note references (the frontend sends the full set)."""
+        self.what_is_it_about_note_id = what_is_it_about_note_id
+        self.what_does_it_say_note_id = what_does_it_say_note_id
+        self.do_i_agree_note_id = do_i_agree_note_id
+        self.so_what_note_id = so_what_note_id
 
     def replace_note_links(self, note_ids: list[int]) -> None:
         """Replace the linked-note set."""
@@ -51,10 +52,10 @@ class BookReflection(AggregateRoot[BookReflectionId]):
         cls,
         user_id: UserId,
         book_id: BookId,
-        what_is_it_about: str = "",
-        what_does_it_say: str = "",
-        do_i_agree: str = "",
-        so_what: str = "",
+        what_is_it_about_note_id: int | None = None,
+        what_does_it_say_note_id: int | None = None,
+        do_i_agree_note_id: int | None = None,
+        so_what_note_id: int | None = None,
         note_ids: list[int] | None = None,
     ) -> BookReflection:
         """Create a new reflection (ID will be 0 until persisted)."""
@@ -62,10 +63,10 @@ class BookReflection(AggregateRoot[BookReflectionId]):
             id=BookReflectionId.generate(),
             user_id=user_id,
             book_id=book_id,
-            what_is_it_about=what_is_it_about,
-            what_does_it_say=what_does_it_say,
-            do_i_agree=do_i_agree,
-            so_what=so_what,
+            what_is_it_about_note_id=what_is_it_about_note_id,
+            what_does_it_say_note_id=what_does_it_say_note_id,
+            do_i_agree_note_id=do_i_agree_note_id,
+            so_what_note_id=so_what_note_id,
             note_ids=list(note_ids or []),
         )
 
@@ -75,10 +76,10 @@ class BookReflection(AggregateRoot[BookReflectionId]):
         id: BookReflectionId,
         user_id: UserId,
         book_id: BookId,
-        what_is_it_about: str,
-        what_does_it_say: str,
-        do_i_agree: str,
-        so_what: str,
+        what_is_it_about_note_id: int | None,
+        what_does_it_say_note_id: int | None,
+        do_i_agree_note_id: int | None,
+        so_what_note_id: int | None,
         note_ids: list[int],
         created_at: datetime,
         updated_at: datetime,
@@ -88,10 +89,10 @@ class BookReflection(AggregateRoot[BookReflectionId]):
             id=id,
             user_id=user_id,
             book_id=book_id,
-            what_is_it_about=what_is_it_about,
-            what_does_it_say=what_does_it_say,
-            do_i_agree=do_i_agree,
-            so_what=so_what,
+            what_is_it_about_note_id=what_is_it_about_note_id,
+            what_does_it_say_note_id=what_does_it_say_note_id,
+            do_i_agree_note_id=do_i_agree_note_id,
+            so_what_note_id=so_what_note_id,
             note_ids=note_ids,
             created_at=created_at,
             updated_at=updated_at,

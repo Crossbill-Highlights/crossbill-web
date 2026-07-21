@@ -28,10 +28,10 @@ def _reflection_to_schema(entity: BookReflectionEntity) -> BookReflectionRespons
     """Convert a BookReflection domain entity to its response schema."""
     return BookReflectionResponse(
         book_id=entity.book_id.value,
-        what_is_it_about=entity.what_is_it_about,
-        what_does_it_say=entity.what_does_it_say,
-        do_i_agree=entity.do_i_agree,
-        so_what=entity.so_what,
+        what_is_it_about_note_id=entity.what_is_it_about_note_id,
+        what_does_it_say_note_id=entity.what_does_it_say_note_id,
+        do_i_agree_note_id=entity.do_i_agree_note_id,
+        so_what_note_id=entity.so_what_note_id,
         note_ids=entity.note_ids,
     )
 
@@ -68,10 +68,10 @@ async def upsert_book_reflection(
     reflection = await use_case.upsert_reflection(
         book_id=book_id,
         user_id=current_user.id.value,
-        what_is_it_about=request.what_is_it_about,
-        what_does_it_say=request.what_does_it_say,
-        do_i_agree=request.do_i_agree,
-        so_what=request.so_what,
+        what_is_it_about_note_id=request.what_is_it_about_note_id,
+        what_does_it_say_note_id=request.what_does_it_say_note_id,
+        do_i_agree_note_id=request.do_i_agree_note_id,
+        so_what_note_id=request.so_what_note_id,
         note_ids=request.note_ids,
     )
     return _reflection_to_schema(reflection)

@@ -18,6 +18,7 @@ class NoteKind(StrEnum):
     TERM = "term"
     CONCEPT = "concept"
     GIST = "gist"
+    REFLECTION = "reflection"
     OTHER = "other"
 
 

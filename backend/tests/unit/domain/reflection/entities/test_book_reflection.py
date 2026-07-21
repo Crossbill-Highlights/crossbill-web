@@ -14,41 +14,51 @@ def make_reflection(**overrides: object) -> BookReflection:
 
 
 class TestBookReflectionCreate:
-    def test_create_defaults_to_empty_answers(self) -> None:
+    def test_create_defaults_to_no_answer_notes(self) -> None:
         reflection = make_reflection()
         assert reflection.id.value == 0
         assert reflection.user_id == UserId(1)
         assert reflection.book_id == BookId(7)
-        assert reflection.what_is_it_about == ""
-        assert reflection.what_does_it_say == ""
-        assert reflection.do_i_agree == ""
-        assert reflection.so_what == ""
+        assert reflection.what_is_it_about_note_id is None
+        assert reflection.what_does_it_say_note_id is None
+        assert reflection.do_i_agree_note_id is None
+        assert reflection.so_what_note_id is None
         assert reflection.note_ids == []
 
     def test_create_with_values(self) -> None:
         reflection = make_reflection(
-            what_is_it_about="About X",
-            so_what="Therefore Y",
+            what_is_it_about_note_id=11,
+            so_what_note_id=44,
             note_ids=[1, 2],
         )
-        assert reflection.what_is_it_about == "About X"
-        assert reflection.so_what == "Therefore Y"
+        assert reflection.what_is_it_about_note_id == 11
+        assert reflection.so_what_note_id == 44
         assert reflection.note_ids == [1, 2]
 
 
 class TestBookReflectionCommands:
-    def test_update_answers_replaces_all_fields(self) -> None:
-        reflection = make_reflection(what_is_it_about="old")
-        reflection.update_answers(
-            what_is_it_about="new about",
-            what_does_it_say="new say",
-            do_i_agree="new agree",
-            so_what="new so",
+    def test_update_answer_notes_replaces_all_fields(self) -> None:
+        reflection = make_reflection(what_is_it_about_note_id=1)
+        reflection.update_answer_notes(
+            what_is_it_about_note_id=10,
+            what_does_it_say_note_id=20,
+            do_i_agree_note_id=30,
+            so_what_note_id=40,
         )
-        assert reflection.what_is_it_about == "new about"
-        assert reflection.what_does_it_say == "new say"
-        assert reflection.do_i_agree == "new agree"
-        assert reflection.so_what == "new so"
+        assert reflection.what_is_it_about_note_id == 10
+        assert reflection.what_does_it_say_note_id == 20
+        assert reflection.do_i_agree_note_id == 30
+        assert reflection.so_what_note_id == 40
+
+    def test_update_answer_notes_can_clear_to_none(self) -> None:
+        reflection = make_reflection(what_is_it_about_note_id=10)
+        reflection.update_answer_notes(
+            what_is_it_about_note_id=None,
+            what_does_it_say_note_id=None,
+            do_i_agree_note_id=None,
+            so_what_note_id=None,
+        )
+        assert reflection.what_is_it_about_note_id is None
 
     def test_replace_note_links_copies_list(self) -> None:
         reflection = make_reflection()

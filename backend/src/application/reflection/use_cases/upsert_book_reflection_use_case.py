@@ -32,27 +32,40 @@ class UpsertBookReflectionUseCase:
         self,
         book_id: int,
         user_id: int,
-        what_is_it_about: str,
-        what_does_it_say: str,
-        do_i_agree: str,
-        so_what: str,
+        what_is_it_about_note_id: int | None,
+        what_does_it_say_note_id: int | None,
+        do_i_agree_note_id: int | None,
+        so_what_note_id: int | None,
         note_ids: list[int],
     ) -> BookReflection:
         user_id_vo = UserId(user_id)
         book_id_vo = BookId(book_id)
 
         await require_book(self.book_repository, book_id_vo, user_id_vo)
-        await self._validate_notes_belong_to_book(book_id_vo, user_id_vo, note_ids)
+
+        answer_note_ids = [
+            note_id
+            for note_id in (
+                what_is_it_about_note_id,
+                what_does_it_say_note_id,
+                do_i_agree_note_id,
+                so_what_note_id,
+            )
+            if note_id is not None
+        ]
+        await self._validate_notes_belong_to_book(
+            book_id_vo, user_id_vo, [*answer_note_ids, *note_ids]
+        )
 
         reflection = await self.book_reflection_repository.find_by_book_id(book_id_vo, user_id_vo)
         if reflection is None:
             reflection = BookReflection.create(user_id=user_id_vo, book_id=book_id_vo)
 
-        reflection.update_answers(
-            what_is_it_about=what_is_it_about,
-            what_does_it_say=what_does_it_say,
-            do_i_agree=do_i_agree,
-            so_what=so_what,
+        reflection.update_answer_notes(
+            what_is_it_about_note_id=what_is_it_about_note_id,
+            what_does_it_say_note_id=what_does_it_say_note_id,
+            do_i_agree_note_id=do_i_agree_note_id,
+            so_what_note_id=so_what_note_id,
         )
         reflection.replace_note_links(note_ids)
         reflection = await self.book_reflection_repository.save(reflection)
