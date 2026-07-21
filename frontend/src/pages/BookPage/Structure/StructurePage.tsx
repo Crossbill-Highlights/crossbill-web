@@ -32,8 +32,9 @@ export const StructurePage = () => {
   const gistByChapterId = useMemo(() => {
     const map = new Map<number, string>();
     for (const note of gistNotes?.items ?? []) {
-      const chapterId = note.chapter_ids.at(0);
-      if (chapterId != null && !map.has(chapterId)) {
+      if (note.chapter_ids.length === 0) continue;
+      const chapterId = note.chapter_ids[0];
+      if (!map.has(chapterId)) {
         map.set(chapterId, note.body);
       }
     }
