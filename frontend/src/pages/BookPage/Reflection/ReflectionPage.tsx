@@ -35,10 +35,38 @@ interface EditorState {
   note: NoteWithLinks | null;
 }
 
+const EditNoteButton = ({ onClick }: { onClick: () => void }) => (
+  <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+    <IconButtonWithTooltip
+      title="Edit answer"
+      icon={<EditIcon fontSize="small" />}
+      onClick={onClick}
+    />
+  </Box>
+);
+
+const AnswerNote = ({ note, onEdit }: { note: NoteWithLinks; onEdit: () => void }) => {
+  const theme = useTheme();
+
+  return (
+    <Box sx={{ bgcolor: 'action.hover', borderRadius: 1, px: 2, py: 1.5, position: 'relative' }}>
+      <EditNoteButton onClick={onEdit} />
+      <Box sx={{ ...markdownStyles(theme), pr: 4 }}>
+        <ReactMarkdown>{note.body}</ReactMarkdown>
+      </Box>
+    </Box>
+  );
+};
+
+const AnswerButton = ({ onClick }: { onClick: () => void }) => (
+  <Button variant="outlined" size="small" onClick={onClick}>
+    Answer
+  </Button>
+);
+
 export const ReflectionPage = () => {
   const { book } = useBookPage();
   const bookId = book.id;
-  const theme = useTheme();
   const queryClient = useQueryClient();
   const { mutationErrorHandler } = useBookMutationHelpers(bookId);
 
@@ -112,36 +140,14 @@ export const ReflectionPage = () => {
               {noteId != null && !answerNote && <Spinner size={24} />}
 
               {answerNote && (
-                <Box
-                  sx={{
-                    bgcolor: 'action.hover',
-                    borderRadius: 1,
-                    px: 2,
-                    py: 1.5,
-                    position: 'relative',
-                  }}
-                >
-                  <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
-                    <IconButtonWithTooltip
-                      title="Edit answer"
-                      icon={<EditIcon fontSize="small" />}
-                      onClick={() => setEditor({ question, note: answerNote })}
-                    />
-                  </Box>
-                  <Box sx={{ ...markdownStyles(theme), pr: 4 }}>
-                    <ReactMarkdown>{answerNote.body}</ReactMarkdown>
-                  </Box>
-                </Box>
+                <AnswerNote
+                  note={answerNote}
+                  onEdit={() => setEditor({ question, note: answerNote })}
+                />
               )}
 
               {noteId == null && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => setEditor({ question, note: null })}
-                >
-                  Answer
-                </Button>
+                <AnswerButton onClick={() => setEditor({ question, note: null })} />
               )}
 
               {question.noteIdField === 'what_does_it_say_note_id' && (
