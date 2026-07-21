@@ -7,6 +7,11 @@ export const ContentWithSidebar = styled(Box)(({ theme }) => ({
   alignItems: 'start',
 }));
 
+export const MiddleContentColumn = styled(Box)(({ theme }) => ({
+  gap: theme.spacing(4),
+  maxWidth: 864,
+}));
+
 export const PageContainer = styled(Container)(({ theme }) => ({
   paddingBottom: `calc(${theme.spacing(18)} + env(safe-area-inset-bottom))`,
   [theme.breakpoints.up('xs')]: {

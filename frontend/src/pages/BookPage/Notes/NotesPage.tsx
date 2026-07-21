@@ -11,6 +11,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { MiddleContentColumn } from '@/components/layout/Layouts.tsx';
 import { FilterFab } from '../common/FilterFab.tsx';
 import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
 import { TagsList } from '../navigation/TagsList/TagsList.tsx';
@@ -82,7 +83,7 @@ export const NotesPage = () => {
   ];
 
   return (
-    <Box>
+    <MiddleContentColumn>
       {isDesktop &&
         leftSidebarEl &&
         createPortal(
@@ -144,6 +145,6 @@ export const NotesPage = () => {
       )}
 
       <NoteModals controller={noteModals} />
-    </Box>
+    </MiddleContentColumn>
   );
 };

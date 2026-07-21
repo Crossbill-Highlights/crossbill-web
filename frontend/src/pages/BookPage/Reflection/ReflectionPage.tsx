@@ -12,6 +12,7 @@ import {
 } from '@/api/generated/reflections/reflections.ts';
 import { Spinner } from '@/components/animations/Spinner.tsx';
 import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip.tsx';
+import { MiddleContentColumn } from '@/components/layout/Layouts.tsx';
 import { SectionTitle } from '@/components/typography/SectionTitle.tsx';
 import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
@@ -118,7 +119,7 @@ export const ReflectionPage = () => {
     : undefined;
 
   return (
-    <Box sx={{ maxWidth: 760, py: 1 }}>
+    <MiddleContentColumn>
       {stageHint && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
           {stageHint}
@@ -176,6 +177,6 @@ export const ReflectionPage = () => {
           onCreated={(note) => handleCreated(editor.question, note)}
         />
       )}
-    </Box>
+    </MiddleContentColumn>
   );
 };
