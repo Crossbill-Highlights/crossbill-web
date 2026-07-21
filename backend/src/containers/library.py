@@ -13,6 +13,9 @@ from src.application.library.use_cases.book_management.delete_book_use_case impo
 from src.application.library.use_cases.book_management.get_book_details_use_case import (
     GetBookDetailsUseCase,
 )
+from src.application.library.use_cases.book_management.update_reading_stage_use_case import (
+    UpdateReadingStageUseCase,
+)
 from src.application.library.use_cases.book_queries.get_books_with_counts_use_case import (
     GetBooksWithCountsUseCase,
 )
@@ -84,6 +87,10 @@ class LibraryContainer(containers.DeclarativeContainer):
         DeleteBookUseCase,
         book_repository=book_repository,
         ebook_deletion_use_case=ebook_deletion_use_case,
+    )
+    update_reading_stage_use_case = providers.Factory(
+        UpdateReadingStageUseCase,
+        book_repository=book_repository,
     )
 
     # Book queries

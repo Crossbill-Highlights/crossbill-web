@@ -1,7 +1,7 @@
 """Pydantic schemas for Highlight API request/response validation."""
 
 from datetime import datetime as dt
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -163,6 +163,9 @@ class ChapterWithHighlights(BaseModel):
     model_config = {"from_attributes": True}
 
 
+ReadingStageLiteral = Literal["to_read", "skimming", "reading", "finished", "reflected"]
+
+
 class BookDetails(BaseModel):
     """Schema for detailed Book response with chapters and highlights."""
 
@@ -176,6 +179,9 @@ class BookDetails(BaseModel):
     description: str | None = None
     language: str | None = None
     page_count: int | None = None
+    reading_stage: ReadingStageLiteral | None = Field(
+        None, description="Manual reading stage set by the user"
+    )
     tags: list[TagInBook] = Field(..., description="List of tags for this book")
     tag_groups: list[TagGroupInBook] = Field(..., description="List of tag groups for this book")
     bookmarks: list[Bookmark] = Field(..., description="List of bookmarks for this book")
