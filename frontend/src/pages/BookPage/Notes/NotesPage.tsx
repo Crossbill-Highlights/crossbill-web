@@ -6,7 +6,7 @@ import { Spinner } from '@/components/animations/Spinner.tsx';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { useBookTabFilters } from '@/pages/BookPage/common/useBookTabFilters.ts';
 import { AddIcon } from '@/theme/Icons.tsx';
-import { Alert, Box, Button, Divider, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Alert, Box, Button, Divider } from '@mui/material';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -16,39 +16,27 @@ import { FilterDrawer, type FilterTab } from '../navigation/FilterDrawer.tsx';
 import { TagsList } from '../navigation/TagsList/TagsList.tsx';
 import { NoteCard } from './NoteCard';
 import { NoteModals } from './NoteModals';
+import { NoteKindFilter } from './components/NoteKindFilter';
 import { useNoteModals } from './hooks/useNoteModals';
-import { NOTE_KIND_LABELS, NOTE_KINDS, type NoteKindValue } from './noteKinds';
-
-interface NoteKindFilterProps {
-  value: NoteKindValue | null;
-  onChange: (value: NoteKindValue | null) => void;
-}
-
-const NoteKindFilter = ({ value, onChange }: NoteKindFilterProps) => (
-  <ToggleButtonGroup
-    size="small"
-    exclusive
-    value={value}
-    onChange={(_, next: NoteKindValue | null) => onChange(next)}
-  >
-    {NOTE_KINDS.map((kind) => (
-      <ToggleButton key={kind} value={kind}>
-        {NOTE_KIND_LABELS[kind]}
-      </ToggleButton>
-    ))}
-  </ToggleButtonGroup>
-);
+import {
+  DEFAULT_NOTE_KINDS,
+  type NoteKindValue,
+  isDefaultKindSelection,
+  noteKindOf,
+} from './noteKinds';
 
 export const NotesPage = () => {
   const { book, isDesktop, leftSidebarEl, fabContainerEl } = useBookPage();
   const navigate = useNavigate({ from: '/book/$bookId/notes' });
-  const { kind, chapterId } = useSearch({ from: '/book/$bookId/notes' });
+  const { kinds, chapterId } = useSearch({ from: '/book/$bookId/notes' });
 
   const { selectedTagId, handleTagClick } = useBookTabFilters('/book/$bookId/notes');
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
+  const selectedKinds = kinds ?? DEFAULT_NOTE_KINDS;
+  const kindFilterActive = kinds !== undefined;
+
   const params: GetNotesForBookApiV1BooksBookIdNotesGetParams = {
-    kind: (kind as NoteKindValue | undefined) ?? undefined,
     chapter_id: chapterId,
     tag_id: selectedTagId,
   };
@@ -56,13 +44,24 @@ export const NotesPage = () => {
   // NOTE: the orval axios mutator unwraps the response (`.then(({ data }) => data)`),
   // so the generated GET hook's `data` is the payload itself, not an AxiosResponse.
   const notes = data?.items ?? [];
-  const noteModals = useNoteModals({ allNotes: notes });
+  const visibleNotes = notes.filter((note) => selectedKinds.includes(noteKindOf(note.kind)));
+  const noteModals = useNoteModals({ allNotes: visibleNotes });
 
-  const handleKindFilter = (value: NoteKindValue | null) => {
-    void navigate({ search: (prev) => ({ ...prev, kind: value ?? undefined }) });
+  const handleKindsChange = (next: NoteKindValue[]) => {
+    void navigate({
+      search: (prev) => ({
+        ...prev,
+        kinds: isDefaultKindSelection(next) ? undefined : next,
+      }),
+      replace: true,
+    });
   };
 
   const filterTabs: FilterTab[] = [
+    {
+      label: 'Types',
+      content: <NoteKindFilter selected={selectedKinds} onChange={handleKindsChange} hideTitle />,
+    },
     {
       label: 'Tags',
       content: (
@@ -89,6 +88,8 @@ export const NotesPage = () => {
         createPortal(
           <>
             <Divider sx={{ mb: 4 }} />
+            <NoteKindFilter selected={selectedKinds} onChange={handleKindsChange} />
+            <Divider sx={{ my: 4 }} />
             <TagsList
               tags={book.tags}
               tagGroups={book.tag_groups}
@@ -101,12 +102,7 @@ export const NotesPage = () => {
           leftSidebarEl
         )}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-        <NoteKindFilter
-          value={(kind as NoteKindValue | undefined) ?? null}
-          onChange={handleKindFilter}
-        />
-        <Box sx={{ flexGrow: 1 }} />
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Button variant="contained" startIcon={<AddIcon />} onClick={noteModals.openCreate}>
           New note
         </Button>
@@ -114,16 +110,16 @@ export const NotesPage = () => {
 
       {isLoading && <Spinner />}
       {isError && <Alert severity="error">Failed to load notes.</Alert>}
-      {!isLoading && !isError && notes.length === 0 && (
+      {!isLoading && !isError && visibleNotes.length === 0 && (
         <EmptyStateText>
-          {selectedTagId
-            ? 'No notes found with the selected tag.'
+          {notes.length > 0
+            ? 'No notes match the selected filters.'
             : 'No notes yet. Create notes about characters, terms, and concepts as you read.'}
         </EmptyStateText>
       )}
 
       <CardList>
-        {notes.map((note) => (
+        {visibleNotes.map((note) => (
           <li key={note.id}>
             <NoteCard note={note} onClick={() => noteModals.openView(note)} />
           </li>
@@ -133,7 +129,10 @@ export const NotesPage = () => {
       {!isDesktop &&
         fabContainerEl &&
         createPortal(
-          <FilterFab filterEnabled={!!selectedTagId} onClick={() => setFilterDrawerOpen(true)} />,
+          <FilterFab
+            filterEnabled={!!selectedTagId || kindFilterActive}
+            onClick={() => setFilterDrawerOpen(true)}
+          />,
           fabContainerEl
         )}
       {!isDesktop && (
