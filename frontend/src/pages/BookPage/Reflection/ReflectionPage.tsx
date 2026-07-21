@@ -12,7 +12,6 @@ import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ChapterGistsContext } from './ChapterGistsContext.tsx';
 import { READING_STAGE_HINTS, type ReadingStageValue } from './readingStages.ts';
 import { ReflectionNotesSection } from './ReflectionNotesSection.tsx';
 import {
@@ -93,10 +92,6 @@ export const ReflectionPage = () => {
           {stageHint}
         </Typography>
       )}
-
-      <Box sx={{ mb: 3 }}>
-        <ChapterGistsContext bookId={bookId} />
-      </Box>
 
       <Stack gap={4}>
         {REFLECTION_QUESTIONS.map((question) => (
