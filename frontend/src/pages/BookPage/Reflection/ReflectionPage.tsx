@@ -121,8 +121,22 @@ export const ReflectionPage = () => {
               {noteId != null && !answerNote && <Spinner size={24} />}
 
               {answerNote && (
-                <Box sx={markdownStyles(theme)}>
-                  <ReactMarkdown>{answerNote.body}</ReactMarkdown>
+                <Box sx={{ bgcolor: 'action.hover', borderRadius: 1, px: 2, py: 1.5 }}>
+                  <Box
+                    sx={{
+                      ...markdownStyles(theme),
+                      // Answer headings must read as sub-structure of the answer,
+                      // never compete with the question titles.
+                      '& h1, & h2, & h3, & h4': {
+                        fontSize: '1.05rem',
+                        fontWeight: 600,
+                        margin: '0.75em 0 0.25em',
+                        '&:first-of-type': { marginTop: 0 },
+                      },
+                    }}
+                  >
+                    <ReactMarkdown>{answerNote.body}</ReactMarkdown>
+                  </Box>
                 </Box>
               )}
 
