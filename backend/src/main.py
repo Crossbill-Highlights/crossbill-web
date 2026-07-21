@@ -59,6 +59,7 @@ from src.infrastructure.reading.routers import (
     highlights,
     reading_sessions,
 )
+from src.infrastructure.reflection.routers import book_reflections as reflection_router
 
 settings = get_settings()
 
@@ -410,6 +411,7 @@ app.include_router(job_batches.router, prefix=settings.API_V1_PREFIX)
 
 # Notes
 app.include_router(notes_router.router, prefix=settings.API_V1_PREFIX)
+app.include_router(reflection_router.router, prefix=settings.API_V1_PREFIX)
 
 # Common
 app.include_router(settings_router.router, prefix=settings.API_V1_PREFIX)

@@ -44,6 +44,9 @@ from src.infrastructure.reading.repositories.chapter_prereading_repository impor
 from src.infrastructure.reading.repositories.reading_session_repository import (
     ReadingSessionRepository,
 )
+from src.infrastructure.reflection.repositories.book_reflection_repository import (
+    BookReflectionRepository,
+)
 
 
 def _create_s3_file_repository(settings: Any) -> S3FileRepository:  # noqa: ANN401
@@ -71,6 +74,7 @@ class SharedContainer(containers.DeclarativeContainer):
     tag_repository = providers.Factory(TagRepository, db=db)
     chapter_repository = providers.Factory(ChapterRepository, db=db)
     note_repository = providers.Factory(NoteRepository, db=db)
+    book_reflection_repository = providers.Factory(BookReflectionRepository, db=db)
     reading_session_repository = providers.Factory(ReadingSessionRepository, db=db)
     flashcard_repository = providers.Factory(FlashcardRepository, db=db)
     chapter_prereading_repository = providers.Factory(ChapterPrereadingRepository, db=db)
