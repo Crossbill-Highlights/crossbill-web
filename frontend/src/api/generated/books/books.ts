@@ -22,6 +22,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 import type {
   BookDetails,
+  BookReadingStageUpdateRequest,
   CollectionResponseBookWithHighlightCount,
   GetBooksApiV1BooksGetParams,
   GetRecentlyViewedBooksApiV1BooksRecentlyViewedGetParams,
@@ -545,4 +546,91 @@ export const useDeleteBookApiV1BooksBookIdDelete = <
   TContext
 > => {
   return useMutation(getDeleteBookApiV1BooksBookIdDeleteMutationOptions(options), queryClient);
+};
+/**
+ * Set or clear the manual reading stage on a book.
+ * @summary Update Reading Stage
+ */
+export const updateReadingStageApiV1BooksBookIdReadingStagePut = (
+  bookId: number,
+  bookReadingStageUpdateRequest: BookReadingStageUpdateRequest,
+  signal?: AbortSignal
+) => {
+  return axiosInstance<void>({
+    url: `/api/v1/books/${bookId}/reading-stage`,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    data: bookReadingStageUpdateRequest,
+    signal,
+  });
+};
+
+export const getUpdateReadingStageApiV1BooksBookIdReadingStagePutMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateReadingStageApiV1BooksBookIdReadingStagePut>>,
+    TError,
+    { bookId: number; data: BookReadingStageUpdateRequest },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateReadingStageApiV1BooksBookIdReadingStagePut>>,
+  TError,
+  { bookId: number; data: BookReadingStageUpdateRequest },
+  TContext
+> => {
+  const mutationKey = ['updateReadingStageApiV1BooksBookIdReadingStagePut'];
+  const { mutation: mutationOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateReadingStageApiV1BooksBookIdReadingStagePut>>,
+    { bookId: number; data: BookReadingStageUpdateRequest }
+  > = (props) => {
+    const { bookId, data } = props ?? {};
+
+    return updateReadingStageApiV1BooksBookIdReadingStagePut(bookId, data);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateReadingStageApiV1BooksBookIdReadingStagePutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateReadingStageApiV1BooksBookIdReadingStagePut>>
+>;
+export type UpdateReadingStageApiV1BooksBookIdReadingStagePutMutationBody =
+  BookReadingStageUpdateRequest;
+export type UpdateReadingStageApiV1BooksBookIdReadingStagePutMutationError = HTTPValidationError;
+
+/**
+ * @summary Update Reading Stage
+ */
+export const useUpdateReadingStageApiV1BooksBookIdReadingStagePut = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateReadingStageApiV1BooksBookIdReadingStagePut>>,
+      TError,
+      { bookId: number; data: BookReadingStageUpdateRequest },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateReadingStageApiV1BooksBookIdReadingStagePut>>,
+  TError,
+  { bookId: number; data: BookReadingStageUpdateRequest },
+  TContext
+> => {
+  return useMutation(
+    getUpdateReadingStageApiV1BooksBookIdReadingStagePutMutationOptions(options),
+    queryClient
+  );
 };

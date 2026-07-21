@@ -27,6 +27,8 @@ export interface BookDetails {
   description?: string | null;
   language?: string | null;
   page_count?: number | null;
+  /** Manual reading stage set by the user */
+  reading_stage?: 'to_read' | 'skimming' | 'reading' | 'finished' | 'reflected' | null;
   /** List of tags for this book */
   tags: TagInBook[];
   /** List of tag groups for this book */

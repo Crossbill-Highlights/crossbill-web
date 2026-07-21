@@ -4,6 +4,7 @@ import {
   HighlightsIcon,
   NotesIcon,
   ReadingSessionIcon,
+  ReflectionIcon,
 } from '@/theme/Icons.tsx';
 import type { SvgIconComponent } from '@mui/icons-material';
 
@@ -12,6 +13,7 @@ export type BookPageRoute =
   | '/book/$bookId/highlights'
   | '/book/$bookId/flashcards'
   | '/book/$bookId/notes'
+  | '/book/$bookId/reflection'
   | '/book/$bookId/sessions';
 
 export interface BookPageRouteConfig {
@@ -52,6 +54,13 @@ export const BOOK_PAGE_ROUTES: BookPageRouteConfig[] = [
     segment: 'notes',
     label: 'Notes',
     icon: NotesIcon,
+  },
+  {
+    to: '/book/$bookId/reflection',
+    segment: 'reflection',
+    label: 'Reflection',
+    icon: ReflectionIcon,
+    overflow: true,
   },
   {
     to: '/book/$bookId/sessions',

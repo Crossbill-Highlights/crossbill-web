@@ -29,6 +29,7 @@ export {
   PaletteOutlined as PaletteIcon,
   FormatQuote as QuoteIcon,
   AutoStories as ReadingSessionIcon,
+  Psychology as ReflectionIcon,
   LocalOffer as TagIcon,
 } from '@mui/icons-material';
 
