@@ -1,4 +1,4 @@
-import type { NoteWithLinks, TagInBook } from '@/api/generated/model';
+import type { Note, NoteWithLinks, TagInBook } from '@/api/generated/model';
 import {
   getGetNoteApiV1NotesNoteIdGetQueryKey,
   getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey,
@@ -33,6 +33,8 @@ interface NoteEditorFormProps {
   initialTitle?: string;
   /** Called after a successful create/update. */
   onSaved: () => void;
+  /** Called with the created note after a successful create (not on update). */
+  onCreated?: (note: Note) => void;
   /** Reports save-ability so the hosting dialog can render its footer buttons. */
   onStatusChange?: (status: { isSaving: boolean; canSave: boolean }) => void;
 }
@@ -71,6 +73,7 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
       initialKind,
       initialTitle,
       onSaved,
+      onCreated,
       onStatusChange,
     },
     ref
@@ -128,8 +131,9 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
 
     const createMutation = useCreateNoteApiV1NotesPost({
       mutation: {
-        onSuccess: () => {
+        onSuccess: (response) => {
           invalidateNotes();
+          onCreated?.(response.note);
           onSaved();
         },
         onError: mutationErrorHandler('create note'),

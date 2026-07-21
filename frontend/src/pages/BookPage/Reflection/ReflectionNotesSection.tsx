@@ -1,4 +1,4 @@
-import type { NoteWithLinks } from '@/api/generated/model';
+import type { Note, NoteWithLinks } from '@/api/generated/model';
 import { CardList } from '@/components/CardList.tsx';
 import { EmptyStateText } from '@/components/EmptyStateText.tsx';
 import { UnlinkButton } from '@/components/buttons/UnlinkButton.tsx';
@@ -51,6 +51,11 @@ export const ReflectionNotesSection = ({
     onChange([...noteIds, note.id]);
   };
 
+  const handleCreated = (note: Note) => {
+    if (includes(noteIds, note.id)) return;
+    onChange([...noteIds, note.id]);
+  };
+
   return (
     <Box>
       <DialogToolbar sx={{ mb: 2 }}>
@@ -91,7 +96,7 @@ export const ReflectionNotesSection = ({
           </li>
         ))}
       </CardList>
-      <NoteModals controller={noteModals} />
+      <NoteModals controller={noteModals} onCreated={handleCreated} />
       <NotePickerDialog
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
