@@ -21,8 +21,6 @@ export default defineConfig({
           name: 'axiosInstance',
         },
         query: {
-          useQuery: true,
-          useMutation: true,
           signal: true,
         },
       },
