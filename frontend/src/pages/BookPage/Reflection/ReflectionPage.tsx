@@ -128,20 +128,7 @@ export const ReflectionPage = () => {
                       onClick={() => setEditor({ question, note: answerNote })}
                     />
                   </Box>
-                  <Box
-                    sx={{
-                      ...markdownStyles(theme),
-                      pr: 4,
-                      // Answer headings must read as sub-structure of the answer,
-                      // never compete with the question titles.
-                      '& h1, & h2, & h3, & h4': {
-                        fontSize: '1.05rem',
-                        fontWeight: 600,
-                        margin: '0.75em 0 0.25em',
-                        '&:first-of-type': { marginTop: 0 },
-                      },
-                    }}
-                  >
+                  <Box sx={{ ...markdownStyles(theme), pr: 4 }}>
                     <ReactMarkdown>{answerNote.body}</ReactMarkdown>
                   </Box>
                 </Box>
