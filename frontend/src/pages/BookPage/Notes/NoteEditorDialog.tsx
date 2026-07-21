@@ -4,6 +4,7 @@ import { Box, Button } from '@mui/material';
 import { useRef, useState } from 'react';
 
 import { NoteEditorForm, type NoteEditorFormHandle } from './NoteEditorForm';
+import type { NoteKindValue } from './noteKinds';
 
 interface NoteEditorDialogProps {
   open: boolean;
@@ -13,6 +14,8 @@ interface NoteEditorDialogProps {
   initialChapterIds?: number[];
   initialHighlightIds?: number[];
   initialBody?: string;
+  initialKind?: NoteKindValue;
+  initialTitle?: string;
 }
 
 export const NoteEditorDialog = ({
@@ -22,6 +25,8 @@ export const NoteEditorDialog = ({
   initialChapterIds,
   initialHighlightIds,
   initialBody,
+  initialKind,
+  initialTitle,
 }: NoteEditorDialogProps) => {
   const formRef = useRef<NoteEditorFormHandle>(null);
   const [status, setStatus] = useState({ isSaving: false, canSave: false });
@@ -55,6 +60,8 @@ export const NoteEditorDialog = ({
         initialChapterIds={initialChapterIds}
         initialHighlightIds={initialHighlightIds}
         initialBody={initialBody}
+        initialKind={initialKind}
+        initialTitle={initialTitle}
         onSaved={onClose}
         onStatusChange={setStatus}
       />

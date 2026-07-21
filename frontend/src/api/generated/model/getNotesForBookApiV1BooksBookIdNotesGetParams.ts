@@ -6,7 +6,7 @@
  */
 
 export type GetNotesForBookApiV1BooksBookIdNotesGetParams = {
-  kind?: 'character' | 'term' | 'concept' | 'other' | null;
+  kind?: 'character' | 'term' | 'concept' | 'gist' | 'other' | null;
   chapter_id?: number | null;
   highlight_id?: number | null;
   tag_id?: number | null;

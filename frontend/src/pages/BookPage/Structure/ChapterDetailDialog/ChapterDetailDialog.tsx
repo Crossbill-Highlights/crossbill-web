@@ -21,6 +21,7 @@ import { NoteEditorDialog } from '@/pages/BookPage/Notes/NoteEditorDialog';
 import { Box, Button } from '@mui/material';
 import { sumBy } from 'lodash';
 import { useMemo, useState } from 'react';
+import { ChapterGistSection } from './ChapterGistSection.tsx';
 import { ChapterReviewSection } from './ChapterReviewSection.tsx';
 import { ChapterToolbar } from './ChapterToolbar.tsx';
 import { ChatDialog } from './ChatDialog.tsx';
@@ -159,6 +160,8 @@ export const ChapterDetailDialog = ({
 
   const renderContent = () => (
     <Box>
+      <ChapterGistSection chapterId={chapter.id} chapterName={chapter.name} notes={notes} />
+
       <Box {...summarySwipeHandlers}>
         <PrereadingSummarySection prereadingSummary={prereadingSummary} defaultExpanded={true} />
       </Box>

@@ -1,4 +1,5 @@
 import type { ChapterPrereadingResponse, ChapterWithHighlights } from '@/api/generated/model';
+import { useGetNotesForBookApiV1BooksBookIdNotesGet } from '@/api/generated/notes/notes.ts';
 import { useGetBookPrereadingApiV1BooksBookIdPrereadingGet } from '@/api/generated/prereading/prereading';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { Box, Typography } from '@mui/material';
@@ -23,6 +24,21 @@ export const StructurePage = () => {
     }
     return map;
   }, [bookPrereading]);
+
+  const { data: gistNotes } = useGetNotesForBookApiV1BooksBookIdNotesGet(book.id, {
+    kind: 'gist',
+  });
+
+  const gistByChapterId = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const note of gistNotes?.items ?? []) {
+      const chapterId = note.chapter_ids.at(0);
+      if (chapterId != null && !map.has(chapterId)) {
+        map.set(chapterId, note.body);
+      }
+    }
+    return map;
+  }, [gistNotes]);
 
   const childrenByParentId = useMemo(() => {
     const map = new Map<number | null, ChapterWithHighlights[]>();
@@ -104,6 +120,7 @@ export const StructurePage = () => {
             key={chapter.id}
             chapter={chapter}
             childrenByParentId={childrenByParentId}
+            gistByChapterId={gistByChapterId}
             bookId={book.id}
             isRead={chapterIsRead}
             isCurrent={chapterIsCurrent}

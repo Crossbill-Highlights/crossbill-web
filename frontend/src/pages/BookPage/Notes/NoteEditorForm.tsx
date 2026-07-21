@@ -11,7 +11,7 @@ import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
 import { Autocomplete, Box, MenuItem, TextField } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { forwardRef, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, type ReactNode } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { useNoteTagField } from './hooks/useNoteTagField';
@@ -29,6 +29,8 @@ interface NoteEditorFormProps {
   initialChapterIds?: number[];
   initialHighlightIds?: number[];
   initialBody?: string;
+  initialKind?: NoteKindValue;
+  initialTitle?: string;
   /** Called after a successful create/update. */
   onSaved: () => void;
   /** Reports save-ability so the hosting dialog can render its footer buttons. */
@@ -50,6 +52,8 @@ interface NoteFormValues {
 
 const EMPTY_FORM: NoteFormValues = { title: '', body: '', kind: '', chapters: [], tags: [] };
 
+const GIST_LENGTH_GUIDE = 200;
+
 /**
  * The note create/edit form fields plus mutations, without a dialog shell.
  * Shared by `NoteEditorDialog` (create + standalone edit) and `NoteViewModal`'s
@@ -58,7 +62,17 @@ const EMPTY_FORM: NoteFormValues = { title: '', body: '', kind: '', chapters: []
  */
 export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormProps>(
   function NoteEditorForm(
-    { open, note, initialChapterIds, initialHighlightIds, initialBody, onSaved, onStatusChange },
+    {
+      open,
+      note,
+      initialChapterIds,
+      initialHighlightIds,
+      initialBody,
+      initialKind,
+      initialTitle,
+      onSaved,
+      onStatusChange,
+    },
     ref
   ) {
     const { book } = useBookPage();
@@ -87,7 +101,9 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
       } else {
         reset({
           ...EMPTY_FORM,
+          title: initialTitle ?? '',
           body: initialBody ?? '',
+          kind: initialKind ?? '',
           chapters: chapterOptions.filter((option) =>
             (initialChapterIds ?? []).includes(option.id)
           ),
@@ -132,6 +148,20 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
     const isSaving = createMutation.isPending || updateMutation.isPending;
     const canSave = watch('title').trim().length > 0 && !isSaving;
 
+    const isGist = watch('kind') === 'gist';
+    const bodyLength = watch('body').length;
+    const gistHelperText: ReactNode = isGist ? (
+      <Box component="span" sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+        <span>1–2 sentences: what was this chapter about, in your words?</span>
+        <Box
+          component="span"
+          sx={{ flexShrink: 0, color: bodyLength > GIST_LENGTH_GUIDE ? 'warning.main' : 'inherit' }}
+        >
+          {bodyLength}/{GIST_LENGTH_GUIDE}
+        </Box>
+      </Box>
+    ) : undefined;
+
     useEffect(() => {
       onStatusChange?.({ isSaving, canSave });
     }, [isSaving, canSave, onStatusChange]);
@@ -174,6 +204,7 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
           fullWidth
           multiline
           minRows={5}
+          helperText={gistHelperText}
         />
         <Controller
           name="chapters"

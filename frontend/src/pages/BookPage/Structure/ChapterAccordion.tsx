@@ -18,6 +18,7 @@ type ReadStatus = 'read' | 'current' | 'unread';
 interface ChapterAccordionProps {
   chapter: ChapterWithHighlights;
   childrenByParentId: Map<number | null, ChapterWithHighlights[]>;
+  gistByChapterId: Map<number, string>;
   bookId: number;
   depth?: number;
   isRead?: boolean;
@@ -42,8 +43,24 @@ const accordionSx = (depth: number) => (theme: { spacing: (n: number) => string 
   },
 });
 
+const GistLine = ({ gist }: { gist: string }) => (
+  <Typography
+    variant="body2"
+    color="text.secondary"
+    sx={{
+      display: '-webkit-box',
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: 'vertical',
+      overflow: 'hidden',
+    }}
+  >
+    {gist}
+  </Typography>
+);
+
 const ExpandableChapter = ({
   name,
+  gist,
   depth,
   expanded,
   onToggle,
@@ -51,6 +68,7 @@ const ExpandableChapter = ({
   children,
 }: {
   name: string;
+  gist?: string;
   depth: number;
   expanded: boolean;
   onToggle: () => void;
@@ -66,11 +84,14 @@ const ExpandableChapter = ({
         '& .MuiAccordionSummary-content.Mui-expanded': { my: '12px' },
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
         {readStatus && <ChapterReadIndicator status={readStatus} />}
-        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-          {name}
-        </Typography>
+        <Box>
+          <Typography variant="body1" sx={{ fontWeight: 600 }}>
+            {name}
+          </Typography>
+          {gist && <GistLine gist={gist} />}
+        </Box>
       </Box>
     </AccordionSummary>
     <AccordionDetails sx={{ pt: 0 }}>{children}</AccordionDetails>
@@ -79,11 +100,13 @@ const ExpandableChapter = ({
 
 const LeafChapterRow = ({
   chapter,
+  gist,
   depth,
   readStatus,
   onClick,
 }: {
   chapter: ChapterWithHighlights;
+  gist?: string;
   depth: number;
   readStatus?: ReadStatus;
   onClick?: () => void;
@@ -118,11 +141,14 @@ const LeafChapterRow = ({
         },
       })}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
         {readStatus && <ChapterReadIndicator status={readStatus} />}
-        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-          {chapter.name}
-        </Typography>
+        <Box>
+          <Typography variant="body1" sx={{ fontWeight: 600 }}>
+            {chapter.name}
+          </Typography>
+          {gist && <GistLine gist={gist} />}
+        </Box>
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'text.secondary' }}>
         {highlightCount > 0 && (
@@ -145,6 +171,7 @@ const LeafChapterRow = ({
 export const ChapterAccordion = ({
   chapter,
   childrenByParentId,
+  gistByChapterId,
   bookId,
   depth = 0,
   isRead,
@@ -159,12 +186,14 @@ export const ChapterAccordion = ({
 
   const childChapters = childrenByParentId.get(chapter.id) ?? [];
   const isLeaf = childChapters.length === 0;
+  const gist = gistByChapterId.get(chapter.id);
 
   let content: ReactNode;
   if (!isLeaf) {
     content = (
       <ExpandableChapter
         name={chapter.name}
+        gist={gist}
         depth={depth}
         expanded={expanded}
         onToggle={() => setExpanded(!expanded)}
@@ -190,6 +219,7 @@ export const ChapterAccordion = ({
                 key={child.id}
                 chapter={child}
                 childrenByParentId={childrenByParentId}
+                gistByChapterId={gistByChapterId}
                 bookId={bookId}
                 depth={depth + 1}
                 isRead={childIsRead}
@@ -206,6 +236,7 @@ export const ChapterAccordion = ({
     content = (
       <LeafChapterRow
         chapter={chapter}
+        gist={gist}
         depth={depth}
         readStatus={readStatus}
         onClick={() => onChapterClick?.(chapter.id)}

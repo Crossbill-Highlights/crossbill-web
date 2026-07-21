@@ -389,6 +389,32 @@ class TestGetNotesForBook:
         assert len(notes) == 1
         assert notes[0]["title"] == "Raskolnikov"
 
+    async def test_list_notes_filter_by_gist_kind(
+        self,
+        client: AsyncClient,
+        test_book: models.Book,
+        test_chapter: models.Chapter,
+    ) -> None:
+        await client.post(
+            "/api/v1/notes",
+            json={
+                "title": test_chapter.name,
+                "body": "This chapter is about the crime.",
+                "kind": "gist",
+                "book_id": test_book.id,
+                "chapter_ids": [test_chapter.id],
+            },
+        )
+
+        gist_resp = await client.get(f"/api/v1/books/{test_book.id}/notes?kind=gist")
+        gists = gist_resp.json()["items"]
+        assert len(gists) == 1
+        assert gists[0]["kind"] == "gist"
+        assert gists[0]["chapter_ids"] == [test_chapter.id]
+
+        concept_resp = await client.get(f"/api/v1/books/{test_book.id}/notes?kind=concept")
+        assert concept_resp.json()["items"] == []
+
     async def test_list_notes_filter_by_chapter(
         self,
         client: AsyncClient,

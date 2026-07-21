@@ -40,6 +40,11 @@ class TestNoteInvariants:
         with pytest.raises(DomainError, match="at least one book"):
             make_note(book_ids=[])
 
+    def test_gist_kind(self) -> None:
+        note = make_note(kind=NoteKind.GIST)
+        assert note.kind == NoteKind.GIST
+        assert NoteKind("gist") == NoteKind.GIST
+
 
 class TestNoteUpdate:
     def test_update_content(self) -> None:
