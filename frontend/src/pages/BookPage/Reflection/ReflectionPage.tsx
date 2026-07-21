@@ -118,7 +118,7 @@ export const ReflectionPage = () => {
     : undefined;
 
   return (
-    <Box sx={{ maxWidth: 760, mx: 'auto', py: 1 }}>
+    <Box sx={{ maxWidth: 760, py: 1 }}>
       {stageHint && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
           {stageHint}
