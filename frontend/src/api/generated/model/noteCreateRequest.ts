@@ -17,7 +17,7 @@ export interface NoteCreateRequest {
   /** Markdown body */
   body?: string;
   /** Optional note kind */
-  kind?: 'character' | 'term' | 'concept' | 'other' | null;
+  kind?: 'character' | 'term' | 'concept' | 'gist' | 'other' | null;
   /** Book this note is created in */
   book_id: number;
   chapter_ids?: number[];
