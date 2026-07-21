@@ -17,7 +17,7 @@ export interface NoteUpdateRequest {
   /** Markdown body */
   body?: string;
   /** Optional note kind */
-  kind?: 'character' | 'term' | 'concept' | 'gist' | 'other' | null;
+  kind?: 'character' | 'term' | 'concept' | 'gist' | 'reflection' | 'other' | null;
   chapter_ids?: number[];
   highlight_ids?: number[];
   tag_ids?: number[];

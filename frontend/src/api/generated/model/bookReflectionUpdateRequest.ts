@@ -9,14 +9,14 @@
  * Schema for upserting a book reflection (full replace).
  */
 export interface BookReflectionUpdateRequest {
-  /** Q1: what the whole book is about */
-  what_is_it_about?: string;
-  /** Q2: what the book says in detail */
-  what_does_it_say?: string;
-  /** Q3: the reader's judgement of the book */
-  do_i_agree?: string;
-  /** Q4: what follows if the book is true */
-  so_what?: string;
+  /** Q1 answer note id */
+  what_is_it_about_note_id?: number | null;
+  /** Q2 answer note id */
+  what_does_it_say_note_id?: number | null;
+  /** Q3 answer note id */
+  do_i_agree_note_id?: number | null;
+  /** Q4 answer note id */
+  so_what_note_id?: number | null;
   /** Linked term/concept notes */
   note_ids?: number[];
 }

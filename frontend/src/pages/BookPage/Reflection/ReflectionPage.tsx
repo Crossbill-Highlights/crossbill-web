@@ -1,4 +1,9 @@
-import type { BookReflectionResponse, BookReflectionUpdateRequest } from '@/api/generated/model';
+import type {
+  BookReflectionResponse,
+  BookReflectionUpdateRequest,
+  Note,
+  NoteWithLinks,
+} from '@/api/generated/model';
 import { useGetNotesForBookApiV1BooksBookIdNotesGet } from '@/api/generated/notes/notes.ts';
 import {
   getGetBookReflectionApiV1BooksBookIdReflectionGetQueryKey,
@@ -6,23 +11,34 @@ import {
   useUpsertBookReflectionApiV1BooksBookIdReflectionPut,
 } from '@/api/generated/reflections/reflections.ts';
 import { Spinner } from '@/components/animations/Spinner.tsx';
+import { IconButtonWithTooltip } from '@/components/buttons/IconButtonWithTooltip.tsx';
 import { SectionTitle } from '@/components/typography/SectionTitle.tsx';
 import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
-import { Box, Stack, TextField, Typography } from '@mui/material';
+import { NoteEditorDialog } from '@/pages/BookPage/Notes/NoteEditorDialog.tsx';
+import { EditIcon } from '@/theme/Icons.tsx';
+import { markdownStyles } from '@/theme/theme';
+import { Box, Button, Stack, Typography, useTheme } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { READING_STAGE_HINTS, type ReadingStageValue } from './readingStages.ts';
 import { ReflectionNotesSection } from './ReflectionNotesSection.tsx';
 import {
   REFLECTION_QUESTIONS,
   emptyReflection,
-  type ReflectionField,
+  type ReflectionQuestion,
 } from './reflectionQuestions.ts';
+
+interface EditorState {
+  question: ReflectionQuestion;
+  note: NoteWithLinks | null;
+}
 
 export const ReflectionPage = () => {
   const { book } = useBookPage();
   const bookId = book.id;
+  const theme = useTheme();
   const queryClient = useQueryClient();
   const { mutationErrorHandler } = useBookMutationHelpers(bookId);
 
@@ -30,24 +46,16 @@ export const ReflectionPage = () => {
   const { data: reflection, isLoading } = useGetBookReflectionApiV1BooksBookIdReflectionGet(bookId);
   const { data: notesData } = useGetNotesForBookApiV1BooksBookIdNotesGet(bookId);
   const allNotes = notesData?.items ?? [];
+  const notesById = new Map(allNotes.map((note) => [note.id, note]));
 
-  const [localEdits, setLocalEdits] = useState<Partial<Record<ReflectionField, string>>>({});
+  const [editor, setEditor] = useState<EditorState | null>(null);
 
   const server = reflection ?? emptyReflection(bookId);
-
-  const answers: Record<ReflectionField, string> = {
-    what_is_it_about: server.what_is_it_about,
-    what_does_it_say: server.what_does_it_say,
-    do_i_agree: server.do_i_agree,
-    so_what: server.so_what,
-    ...localEdits,
-  };
 
   const { mutate: save } = useUpsertBookReflectionApiV1BooksBookIdReflectionPut({
     mutation: {
       onSuccess: (updated) => {
         queryClient.setQueryData<BookReflectionResponse>(queryKey, updated);
-        setLocalEdits({});
       },
       onError: mutationErrorHandler('save reflection'),
     },
@@ -57,22 +65,18 @@ export const ReflectionPage = () => {
     save({
       bookId,
       data: {
-        what_is_it_about: answers.what_is_it_about,
-        what_does_it_say: answers.what_does_it_say,
-        do_i_agree: answers.do_i_agree,
-        so_what: answers.so_what,
+        what_is_it_about_note_id: server.what_is_it_about_note_id ?? null,
+        what_does_it_say_note_id: server.what_does_it_say_note_id ?? null,
+        do_i_agree_note_id: server.do_i_agree_note_id ?? null,
+        so_what_note_id: server.so_what_note_id ?? null,
         note_ids: server.note_ids ?? [],
         ...overrides,
       },
     });
   };
 
-  const handleChange = (field: ReflectionField, value: string) => {
-    setLocalEdits((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleBlur = () => {
-    persist({});
+  const handleCreated = (question: ReflectionQuestion, note: Note) => {
+    persist({ [question.noteIdField]: note.id });
   };
 
   const handleNoteIdsChange = (noteIds: number[]) => {
@@ -94,33 +98,70 @@ export const ReflectionPage = () => {
       )}
 
       <Stack gap={4}>
-        {REFLECTION_QUESTIONS.map((question) => (
-          <Box key={question.field}>
-            <SectionTitle>{question.title}</SectionTitle>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-              {question.guide}
-            </Typography>
-            <TextField
-              multiline
-              minRows={4}
-              fullWidth
-              value={answers[question.field]}
-              onChange={(event) => handleChange(question.field, event.target.value)}
-              onBlur={handleBlur}
-            />
-            {question.field === 'what_does_it_say' && (
-              <Box sx={{ mt: 2 }}>
-                <ReflectionNotesSection
-                  bookId={bookId}
-                  noteIds={server.note_ids ?? []}
-                  allNotes={allNotes}
-                  onChange={handleNoteIdsChange}
-                />
-              </Box>
-            )}
-          </Box>
-        ))}
+        {REFLECTION_QUESTIONS.map((question) => {
+          const noteId = server[question.noteIdField];
+          const answerNote = noteId != null ? notesById.get(noteId) : undefined;
+
+          return (
+            <Box key={question.noteIdField}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <SectionTitle>{question.title}</SectionTitle>
+                {answerNote && (
+                  <IconButtonWithTooltip
+                    title="Edit answer"
+                    icon={<EditIcon fontSize="small" />}
+                    onClick={() => setEditor({ question, note: answerNote })}
+                  />
+                )}
+              </Stack>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                {question.guide}
+              </Typography>
+
+              {noteId != null && !answerNote && <Spinner size={24} />}
+
+              {answerNote && (
+                <Box sx={markdownStyles(theme)}>
+                  <ReactMarkdown>{answerNote.body}</ReactMarkdown>
+                </Box>
+              )}
+
+              {noteId == null && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setEditor({ question, note: null })}
+                >
+                  Answer
+                </Button>
+              )}
+
+              {question.noteIdField === 'what_does_it_say_note_id' && (
+                <Box sx={{ mt: 2 }}>
+                  <ReflectionNotesSection
+                    bookId={bookId}
+                    noteIds={server.note_ids ?? []}
+                    allNotes={allNotes}
+                    onChange={handleNoteIdsChange}
+                  />
+                </Box>
+              )}
+            </Box>
+          );
+        })}
       </Stack>
+
+      {editor && (
+        <NoteEditorDialog
+          open
+          onClose={() => setEditor(null)}
+          note={editor.note}
+          initialKind={editor.note ? undefined : 'reflection'}
+          initialTitle={editor.note ? undefined : editor.question.title}
+          guidance={{ title: editor.question.title, text: editor.question.guide }}
+          onCreated={(note) => handleCreated(editor.question, note)}
+        />
+      )}
     </Box>
   );
 };

@@ -7,12 +7,16 @@
 
 /**
  * Schema for a book reflection response.
+
+Each answer is a reference to the note holding that answer's markdown, or
+``None`` when the question is unanswered. The frontend resolves the ids to
+note content from its cached notes-for-book query.
  */
 export interface BookReflectionResponse {
   book_id: number;
-  what_is_it_about: string;
-  what_does_it_say: string;
-  do_i_agree: string;
-  so_what: string;
+  what_is_it_about_note_id?: number | null;
+  what_does_it_say_note_id?: number | null;
+  do_i_agree_note_id?: number | null;
+  so_what_note_id?: number | null;
   note_ids?: number[];
 }
