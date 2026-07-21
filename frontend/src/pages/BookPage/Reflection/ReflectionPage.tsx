@@ -104,16 +104,7 @@ export const ReflectionPage = () => {
 
           return (
             <Box key={question.noteIdField}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <SectionTitle>{question.title}</SectionTitle>
-                {answerNote && (
-                  <IconButtonWithTooltip
-                    title="Edit answer"
-                    icon={<EditIcon fontSize="small" />}
-                    onClick={() => setEditor({ question, note: answerNote })}
-                  />
-                )}
-              </Stack>
+              <SectionTitle>{question.title}</SectionTitle>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
                 {question.guide}
               </Typography>
@@ -121,10 +112,26 @@ export const ReflectionPage = () => {
               {noteId != null && !answerNote && <Spinner size={24} />}
 
               {answerNote && (
-                <Box sx={{ bgcolor: 'action.hover', borderRadius: 1, px: 2, py: 1.5 }}>
+                <Box
+                  sx={{
+                    bgcolor: 'action.hover',
+                    borderRadius: 1,
+                    px: 2,
+                    py: 1.5,
+                    position: 'relative',
+                  }}
+                >
+                  <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+                    <IconButtonWithTooltip
+                      title="Edit answer"
+                      icon={<EditIcon fontSize="small" />}
+                      onClick={() => setEditor({ question, note: answerNote })}
+                    />
+                  </Box>
                   <Box
                     sx={{
                       ...markdownStyles(theme),
+                      pr: 4,
                       // Answer headings must read as sub-structure of the answer,
                       // never compete with the question titles.
                       '& h1, & h2, & h3, & h4': {
