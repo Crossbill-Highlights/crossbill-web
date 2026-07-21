@@ -1,11 +1,22 @@
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from enum import StrEnum
 
 from src.domain.common.entity import Entity
 from src.domain.common.exceptions import DomainError
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.common.value_objects.position import Position
+
+
+class ReadingStage(StrEnum):
+    """Manual, user-set stage of engagement with a book."""
+
+    TO_READ = "to_read"
+    SKIMMING = "skimming"
+    READING = "reading"
+    FINISHED = "finished"
+    REFLECTED = "reflected"
 
 
 @dataclass
@@ -40,6 +51,7 @@ class Book(Entity[BookId]):
     cover_blurhash: str | None = None
     last_viewed: datetime | None = None
     end_position: Position | None = None
+    reading_stage: ReadingStage | None = None
 
     def __post_init__(self) -> None:
         """Validate invariants."""
@@ -91,6 +103,10 @@ class Book(Entity[BookId]):
         """Set the blurhash string for the cover image."""
         self.cover_blurhash = blurhash
 
+    def set_reading_stage(self, reading_stage: ReadingStage | None) -> None:
+        """Set the manual reading stage."""
+        self.reading_stage = reading_stage
+
     # Factory methods
     @classmethod
     def create(
@@ -108,6 +124,7 @@ class Book(Entity[BookId]):
         cover_file: str | None = None,
         cover_blurhash: str | None = None,
         end_position: Position | None = None,
+        reading_stage: ReadingStage | None = None,
     ) -> "Book":
         """Factory for creating new book."""
         now = datetime.now(UTC)
@@ -129,6 +146,7 @@ class Book(Entity[BookId]):
             updated_at=now,
             last_viewed=None,
             end_position=end_position,
+            reading_stage=reading_stage,
         )
 
     @classmethod
@@ -151,6 +169,7 @@ class Book(Entity[BookId]):
         cover_blurhash: str | None = None,
         last_viewed: datetime | None = None,
         end_position: Position | None = None,
+        reading_stage: ReadingStage | None = None,
     ) -> "Book":
         """Factory for reconstituting book from persistence."""
         return cls(
@@ -171,4 +190,5 @@ class Book(Entity[BookId]):
             updated_at=updated_at,
             last_viewed=last_viewed,
             end_position=end_position,
+            reading_stage=reading_stage,
         )

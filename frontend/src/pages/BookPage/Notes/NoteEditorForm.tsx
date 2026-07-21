@@ -1,4 +1,4 @@
-import type { NoteWithLinks, TagInBook } from '@/api/generated/model';
+import type { Note, NoteWithLinks, TagInBook } from '@/api/generated/model';
 import {
   getGetNoteApiV1NotesNoteIdGetQueryKey,
   getGetNotesForBookApiV1BooksBookIdNotesGetQueryKey,
@@ -9,7 +9,7 @@ import { RHFTextField } from '@/components/inputs/RHFTextField.tsx';
 import { TagInput } from '@/components/inputs/TagInput.tsx';
 import { useBookMutationHelpers } from '@/hooks/useBookMutationHelpers.ts';
 import { useBookPage } from '@/pages/BookPage/BookPageContext';
-import { Autocomplete, Box, MenuItem, TextField } from '@mui/material';
+import { Autocomplete, Box, MenuItem, TextField, Typography } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { forwardRef, useEffect, useImperativeHandle, type ReactNode } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -19,6 +19,11 @@ import { NOTE_KIND_LABELS, NOTE_KINDS, type NoteKindValue } from './noteKinds';
 
 export interface NoteEditorFormHandle {
   submit: () => void;
+}
+
+export interface NoteGuidance {
+  title: string;
+  text: string;
 }
 
 interface NoteEditorFormProps {
@@ -31,8 +36,12 @@ interface NoteEditorFormProps {
   initialBody?: string;
   initialKind?: NoteKindValue;
   initialTitle?: string;
+  /** Always-visible prompt shown above the form (e.g. a reflection question). */
+  guidance?: NoteGuidance;
   /** Called after a successful create/update. */
   onSaved: () => void;
+  /** Called with the created note after a successful create (not on update). */
+  onCreated?: (note: Note) => void;
   /** Reports save-ability so the hosting dialog can render its footer buttons. */
   onStatusChange?: (status: { isSaving: boolean; canSave: boolean }) => void;
 }
@@ -70,7 +79,9 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
       initialBody,
       initialKind,
       initialTitle,
+      guidance,
       onSaved,
+      onCreated,
       onStatusChange,
     },
     ref
@@ -128,8 +139,9 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
 
     const createMutation = useCreateNoteApiV1NotesPost({
       mutation: {
-        onSuccess: () => {
+        onSuccess: (response) => {
           invalidateNotes();
+          onCreated?.(response.note);
           onSaved();
         },
         onError: mutationErrorHandler('create note'),
@@ -188,6 +200,24 @@ export const NoteEditorForm = forwardRef<NoteEditorFormHandle, NoteEditorFormPro
 
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+        {guidance && (
+          <Box
+            sx={{
+              bgcolor: 'action.hover',
+              borderRadius: 1,
+              px: 2,
+              py: 1.5,
+              mb: 2,
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+              {guidance.title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {guidance.text}
+            </Typography>
+          </Box>
+        )}
         <RHFTextField name="title" control={control} label="Title" fullWidth autoFocus />
         <RHFTextField name="kind" control={control} select label="Kind" fullWidth>
           <MenuItem value="">None</MenuItem>

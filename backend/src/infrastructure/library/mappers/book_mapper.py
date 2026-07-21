@@ -1,6 +1,6 @@
 from src.domain.common.value_objects.ids import BookId, UserId
 from src.domain.common.value_objects.position import Position
-from src.domain.library.entities.book import Book
+from src.domain.library.entities.book import Book, ReadingStage
 from src.infrastructure.common.mappers import orm_id
 from src.infrastructure.library.orm.book_model import Book as BookORM
 
@@ -30,6 +30,9 @@ class BookMapper:
             end_position=Position.from_json(orm_model.end_position)
             if orm_model.end_position
             else None,
+            reading_stage=ReadingStage(orm_model.reading_stage)
+            if orm_model.reading_stage
+            else None,
         )
 
     def to_orm(self, domain_entity: Book, orm_model: BookORM | None = None) -> BookORM:
@@ -54,5 +57,8 @@ class BookMapper:
         orm_model.last_viewed = domain_entity.last_viewed
         orm_model.end_position = (
             domain_entity.end_position.to_json() if domain_entity.end_position else None
+        )
+        orm_model.reading_stage = (
+            domain_entity.reading_stage.value if domain_entity.reading_stage else None
         )
         return orm_model

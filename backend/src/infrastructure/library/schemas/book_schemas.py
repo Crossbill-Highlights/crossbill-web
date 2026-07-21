@@ -5,6 +5,15 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from src.infrastructure.common.schemas.position_schemas import PositionResponse
+from src.infrastructure.reading.schemas.highlight_schemas import ReadingStageLiteral
+
+
+class BookReadingStageUpdateRequest(BaseModel):
+    """Schema for updating a book's manual reading stage."""
+
+    reading_stage: ReadingStageLiteral | None = Field(
+        None, description="Reading stage, or null to clear it"
+    )
 
 
 class BookBase(BaseModel):

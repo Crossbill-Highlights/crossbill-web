@@ -1,9 +1,9 @@
-import type { NoteWithLinks } from '@/api/generated/model';
+import type { Note, NoteWithLinks } from '@/api/generated/model';
 import { CommonDialog } from '@/components/dialogs/CommonDialog.tsx';
 import { Box, Button } from '@mui/material';
 import { useRef, useState } from 'react';
 
-import { NoteEditorForm, type NoteEditorFormHandle } from './NoteEditorForm';
+import { NoteEditorForm, type NoteEditorFormHandle, type NoteGuidance } from './NoteEditorForm';
 import type { NoteKindValue } from './noteKinds';
 
 interface NoteEditorDialogProps {
@@ -16,6 +16,10 @@ interface NoteEditorDialogProps {
   initialBody?: string;
   initialKind?: NoteKindValue;
   initialTitle?: string;
+  /** Always-visible prompt shown above the form (e.g. a reflection question). */
+  guidance?: NoteGuidance;
+  /** Called with the created note after a successful create (not on update). */
+  onCreated?: (note: Note) => void;
 }
 
 export const NoteEditorDialog = ({
@@ -27,6 +31,8 @@ export const NoteEditorDialog = ({
   initialBody,
   initialKind,
   initialTitle,
+  guidance,
+  onCreated,
 }: NoteEditorDialogProps) => {
   const formRef = useRef<NoteEditorFormHandle>(null);
   const [status, setStatus] = useState({ isSaving: false, canSave: false });
@@ -62,6 +68,8 @@ export const NoteEditorDialog = ({
         initialBody={initialBody}
         initialKind={initialKind}
         initialTitle={initialTitle}
+        guidance={guidance}
+        onCreated={onCreated}
         onSaved={onClose}
         onStatusChange={setStatus}
       />

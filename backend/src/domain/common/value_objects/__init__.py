@@ -3,6 +3,7 @@
 from .content_hash import ContentHash
 from .ids import (
     BookId,
+    BookReflectionId,
     ChapterId,
     FlashcardId,
     HighlightId,
@@ -19,6 +20,7 @@ from .xpoint import XPoint, XPointRange
 
 __all__ = [
     "BookId",
+    "BookReflectionId",
     "ChapterId",
     "ContentHash",
     "FlashcardId",

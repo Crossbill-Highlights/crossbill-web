@@ -1,3 +1,5 @@
+import type { Note } from '@/api/generated/model';
+
 import { NoteEditorDialog } from './NoteEditorDialog';
 import { NoteViewModal } from './NoteViewModal';
 import type { NoteModalsController } from './hooks/useNoteModals';
@@ -8,6 +10,8 @@ interface NoteModalsProps {
   initialChapterIds?: number[];
   /** Pre-link created notes to these highlights (e.g. from the highlight modal). */
   initialHighlightIds?: number[];
+  /** Called with the created note after a successful create (not on update). */
+  onCreated?: (note: Note) => void;
 }
 
 /**
@@ -24,6 +28,7 @@ export const NoteModals = ({
   controller,
   initialChapterIds,
   initialHighlightIds,
+  onCreated,
 }: NoteModalsProps) => {
   const hasNavigation = controller.currentNoteIndex >= 0 && controller.totalCount > 1;
 
@@ -34,6 +39,7 @@ export const NoteModals = ({
         onClose={controller.closeEditor}
         initialChapterIds={initialChapterIds}
         initialHighlightIds={initialHighlightIds}
+        onCreated={onCreated}
       />
       {controller.viewingNoteId !== null && (
         <NoteViewModal

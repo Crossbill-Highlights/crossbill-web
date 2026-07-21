@@ -708,3 +708,54 @@ class TestGetBooksWithFlashcardFilter:
         assert len(data["chapters"][0]["highlights"][0]["flashcards"]) == 1
         highlight_fc = data["chapters"][0]["highlights"][0]["flashcards"][0]
         assert highlight_fc["question"] == "What does this highlight mean?"
+
+
+class TestReadingStage:
+    """Test suite for PUT /books/{book_id}/reading-stage endpoint."""
+
+    async def test_reading_stage_defaults_to_null(
+        self, client: AsyncClient, test_book: models.Book
+    ) -> None:
+        response = await client.get(f"/api/v1/books/{test_book.id}")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["reading_stage"] is None
+
+    async def test_set_reading_stage(self, client: AsyncClient, test_book: models.Book) -> None:
+        response = await client.put(
+            f"/api/v1/books/{test_book.id}/reading-stage",
+            json={"reading_stage": "reading"},
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        details = await client.get(f"/api/v1/books/{test_book.id}")
+        assert details.json()["reading_stage"] == "reading"
+
+    async def test_clear_reading_stage(self, client: AsyncClient, test_book: models.Book) -> None:
+        await client.put(
+            f"/api/v1/books/{test_book.id}/reading-stage",
+            json={"reading_stage": "finished"},
+        )
+        response = await client.put(
+            f"/api/v1/books/{test_book.id}/reading-stage",
+            json={"reading_stage": None},
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        details = await client.get(f"/api/v1/books/{test_book.id}")
+        assert details.json()["reading_stage"] is None
+
+    async def test_invalid_reading_stage_rejected(
+        self, client: AsyncClient, test_book: models.Book
+    ) -> None:
+        response = await client.put(
+            f"/api/v1/books/{test_book.id}/reading-stage",
+            json={"reading_stage": "not-a-stage"},
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+    async def test_reading_stage_book_not_found(self, client: AsyncClient) -> None:
+        response = await client.put(
+            "/api/v1/books/99999/reading-stage",
+            json={"reading_stage": "reading"},
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND

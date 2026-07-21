@@ -9,6 +9,9 @@ from src.application.library.use_cases.book_management.delete_book_use_case impo
 from src.application.library.use_cases.book_management.get_book_details_use_case import (
     GetBookDetailsUseCase,
 )
+from src.application.library.use_cases.book_management.update_reading_stage_use_case import (
+    UpdateReadingStageUseCase,
+)
 from src.application.library.use_cases.book_queries.get_books_with_counts_use_case import (
     GetBooksWithCountsUseCase,
 )
@@ -27,6 +30,7 @@ from src.infrastructure.learning.schemas import Flashcard
 from src.infrastructure.library.schemas import (
     BookWithHighlightCount,
 )
+from src.infrastructure.library.schemas.book_schemas import BookReadingStageUpdateRequest
 from src.infrastructure.reading.schema_mappers import map_chapters_to_schemas
 from src.infrastructure.reading.schemas import (
     BookDetails,
@@ -63,6 +67,7 @@ def _build_book_details_schema(
         description=agg.book.description,
         language=agg.book.language,
         page_count=agg.book.page_count,
+        reading_stage=agg.book.reading_stage.value if agg.book.reading_stage else None,
         tags=[
             TagInBook(
                 id=tag.id.value,
@@ -263,6 +268,23 @@ async def get_book_details(
     """
     agg = await use_case.get_book_details(book_id, current_user.id.value)
     return _build_book_details_schema(agg, agg.labels)
+
+
+@router.put("/{book_id}/reading-stage", status_code=status.HTTP_204_NO_CONTENT)
+async def update_reading_stage(
+    book_id: int,
+    request: BookReadingStageUpdateRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: UpdateReadingStageUseCase = Depends(
+        inject_use_case(container.library.update_reading_stage_use_case)
+    ),
+) -> None:
+    """Set or clear the manual reading stage on a book."""
+    await use_case.update_reading_stage(
+        book_id=book_id,
+        user_id=current_user.id.value,
+        reading_stage=request.reading_stage,
+    )
 
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, StringConstraints
 
 from src.infrastructure.learning.schemas import Flashcard
 
-NoteKindLiteral = Literal["character", "term", "concept", "gist", "other"]
+NoteKindLiteral = Literal["character", "term", "concept", "gist", "reflection", "other"]
 
 NoteTitle = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 

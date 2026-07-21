@@ -80,6 +80,14 @@ export const markdownStyles = (theme: Theme) => ({
   '& li': {
     marginBottom: '0.25em',
   },
+  // Headings in user markdown are content sub-structure — keep them below
+  // the app's own heading scale so they never compete with page titles.
+  '& h1, & h2, & h3, & h4': {
+    fontSize: '1.05rem',
+    fontWeight: 600,
+    margin: '0.75em 0 0.25em',
+    '&:first-of-type': { marginTop: 0 },
+  },
   '& strong': {
     fontWeight: 600,
   },

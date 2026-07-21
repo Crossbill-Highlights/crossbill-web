@@ -1,5 +1,6 @@
 import type { BookDetails } from '@/api/generated/model';
 import { BookCover } from '@/components/BookCover.tsx';
+import { ReadingStageChip } from '@/pages/BookPage/Reflection/ReadingStageChip.tsx';
 import { EditIcon } from '@/theme/Icons.tsx';
 import { Box, Button, LinearProgress, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
@@ -71,6 +72,7 @@ export const BookTitle = ({ book }: BookTitleProps) => {
               sx={{ width: { xs: 160, md: 200 }, mt: 2, borderRadius: 1, height: 6 }}
             />
           </Tooltip>
+          <ReadingStageChip bookId={book.id} readingStage={book.reading_stage ?? null} />
         </Box>
 
         {/* Book Info */}

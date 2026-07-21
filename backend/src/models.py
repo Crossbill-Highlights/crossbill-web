@@ -36,12 +36,15 @@ from src.infrastructure.reading.orm.highlight_style_model import HighlightStyle
 from src.infrastructure.reading.orm.reading_session_model import ReadingSession
 from src.infrastructure.reading.orm.tag_group_model import TagGroup
 from src.infrastructure.reading.orm.tag_model import Tag
+from src.infrastructure.reflection.orm.associations import book_reflection_notes
+from src.infrastructure.reflection.orm.book_reflection_model import BookReflection
 
 __all__ = [
     "AIChatSession",
     "AIUsageRecord",
     "Base",
     "Book",
+    "BookReflection",
     "Bookmark",
     "Chapter",
     "ChapterPrereadingContent",
@@ -55,6 +58,7 @@ __all__ = [
     "Tag",
     "TagGroup",
     "User",
+    "book_reflection_notes",
     "highlight_tags",
     "note_books",
     "note_chapters",

@@ -8,6 +8,7 @@ from src.containers.learning import LearningContainer
 from src.containers.library import LibraryContainer
 from src.containers.notes import NotesContainer
 from src.containers.reading import ReadingContainer
+from src.containers.reflection import ReflectionContainer
 from src.containers.shared import SharedContainer
 
 
@@ -87,6 +88,13 @@ class RootContainer(containers.DeclarativeContainer):
         highlight_repository=shared.highlight_repository,
         tag_repository=shared.tag_repository,
         flashcard_repository=shared.flashcard_repository,
+    )
+
+    reflection = providers.Container(
+        ReflectionContainer,
+        book_reflection_repository=shared.book_reflection_repository,
+        book_repository=shared.book_repository,
+        note_repository=shared.note_repository,
     )
 
     job_queue_service = providers.Dependency()

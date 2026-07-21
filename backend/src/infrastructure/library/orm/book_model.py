@@ -56,6 +56,7 @@ class Book(Base):
         DateTime(timezone=True), nullable=True, index=True
     )
     end_position: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
+    reading_stage: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="books")
